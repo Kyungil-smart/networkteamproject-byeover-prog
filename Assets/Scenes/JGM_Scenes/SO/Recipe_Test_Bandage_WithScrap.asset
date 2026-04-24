@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32f17ffca3e7c7347854b133fdf3a7b9, type: 3}
+  m_Name: Recipe_Test_Bandage_WithScrap
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.RecipeSO
+  recipeID: recipe_test_bandage_scrap
+  result: {fileID: 11400000, guid: d7e77567186e1c347a75af1a88f4ba3e, type: 2}
+  resultCount: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: eb9c858a67683ef4285282173881fbac, type: 2}
+    amount: 2
+  craftTimeSeconds: 0
+  requiredFacilityLevel: 1
+  requiredTier: 0
