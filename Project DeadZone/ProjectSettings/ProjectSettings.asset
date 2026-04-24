@@ -4,7 +4,7 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 28
-  productGUID: 280d8ce5e2340464f95bfd06cb2e76ef
+  productGUID: 091ad58e960c04c4dbf1f809ab498d6a
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: DefaultCompany
-  productName: DeadZone
+  productName: Project DeadZone
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -847,14 +847,14 @@ PlayerSettings:
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: DeadZone
+  metroPackageName: Project DeadZone
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: DeadZone
+  metroApplicationDescription: Project DeadZone
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -925,10 +925,10 @@ PlayerSettings:
   captureStartupLogs: {}
   activeInputHandler: 1
   windowsGamepadBackendHint: 0
-  cloudProjectId: d739fdf4-49a1-409b-ad9e-99e82fd587ad
+  cloudProjectId: 85aef7d0-cc08-426f-a21b-0109068f9f27
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: DeadZone
+  projectName: Project DeadZone
   organizationId: byeover
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
