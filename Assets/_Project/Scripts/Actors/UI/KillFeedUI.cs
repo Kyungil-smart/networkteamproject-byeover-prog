@@ -1,26 +1,57 @@
 ﻿using System.Collections.Generic;
-using TMPro;
+using MoreMountains.Feedbacks;
+using Sirenix.OdinInspector;
 using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
 
+// 작성자 : 홍정옥
+// 기능 : 우상단 킬피드 UI
+// 적 처치/크리티컬/플레이어 사망 이벤트를 동적 엔트리로 표시
+// EventBus로 EnemyKilled / CriticalHit / PlayerDied 구독
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// 우상단 킬피드. 크리티컬 히트는 골드 색상으로 강조.
+    /// 우상단 킬피드 관리자
+    /// 엔트리 연출은 KillFeedEntry 프리팹 내부에서 처리
     /// </summary>
     public class KillFeedUI : MonoBehaviour
     {
-        [SerializeField] private RectTransform entriesRoot;
-        [SerializeField] private TMP_Text entryPrefab;
-        [SerializeField] private int maxEntries = 5;
-        [SerializeField] private float entryLifetime = 5f;
-        [SerializeField] private Color critColor = new(1f, 0.84f, 0f);
-        [SerializeField] private Color normalColor = Color.white;
+        // UI 레퍼런스
+        [BoxGroup("References")]
+        [Required, SerializeField] private RectTransform entriesRoot;// 엔트리가 쌓이는 컨테이너
 
-        private readonly Queue<TMP_Text> activeEntries = new();
+        [BoxGroup("References")]
+        [Required, AssetsOnly, SerializeField] private KillFeedEntry entryPrefab;// 동적 생성할 엔트리 프리팹
 
+        // 설정값
+        [BoxGroup("Config")]
+        [MinValue(1), SerializeField] private int maxEntries = 5;// 동시에 표시할 최대 엔트리 수
+
+        [BoxGroup("Config")]
+        [MinValue(0.1f), SerializeField] private float entryLifetime = 5f;// 엔트리 수명
+
+        // Feel 피드백 (HUD 레벨 - 로컬 플레이어 기준 연출)
+        [FoldoutGroup("Feedbacks")]
+        [Tooltip("로컬 플레이어가 적을 처치했을 때 재생")]
+        [SerializeField] private MMF_Player onLocalKillFeedback;
+
+        [FoldoutGroup("Feedbacks")]
+        [Tooltip("로컬 플레이어가 크리티컬을 냈을 때 재생")]
+        [SerializeField] private MMF_Player onLocalCritFeedback;
+
+        [FoldoutGroup("Feedbacks")]
+        [Tooltip("팀원이 사망했을 때 재생")]
+        [SerializeField] private MMF_Player onTeammateDeathFeedback;
+
+        // 런타임 상태
+        private readonly Queue<KillFeedEntry> activeEntries = new();// 현재 활성화된 엔트리 큐
+
+        [TitleGroup("Debug")]
+        [ShowInInspector, ReadOnly] private int activeEntryCount => activeEntries.Count;// 현재 엔트리 개수
+
+        // 컴포넌트 활성화 시 EventBus 구독 시작
         private void OnEnable()
         {
             EventBus.Subscribe<EnemyKilledEvent>(OnEnemyKilled);
@@ -28,6 +59,7 @@ namespace DeadZone.Actors
             EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
         }
 
+        // 컴포넌트 비활성화 시 구독 해제
         private void OnDisable()
         {
             EventBus.Unsubscribe<EnemyKilledEvent>(OnEnemyKilled);
@@ -35,47 +67,104 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
         }
 
+        // 해당 clientId가 로컬 플레이어인지 판별
+        private bool IsLocalClient(ulong clientId)
+        {
+            return NetworkManager.Singleton != null && clientId == NetworkManager.Singleton.LocalClientId;
+        }
+
+        // 적 처치 이벤트 처리 + 로컬 처치면 HUD 피드백 추가 재생
         private void OnEnemyKilled(EnemyKilledEvent e)
         {
             string attackerName = ResolveName(e.attackerClientId);
-            AddEntry($"{attackerName} killed Enemy ({e.tier})", normalColor);
+            AddEntry($"{attackerName} killed Enemy ({e.tier})", isCritical: false);
+
+            if (IsLocalClient(e.attackerClientId))
+                onLocalKillFeedback?.PlayFeedbacks();
         }
 
+        // 크리티컬 히트 이벤트 처리 + 로컬 크리티컬이면 HUD 피드백 추가
         private void OnCritical(CriticalHitEvent e)
         {
             string attackerName = ResolveName(e.attackerClientId);
-            AddEntry($"{attackerName} CRIT {e.zone} {e.damage}dmg", critColor);
+            AddEntry($"{attackerName} CRIT {e.zone} {e.damage}dmg", isCritical: true);
+
+            if (IsLocalClient(e.attackerClientId))
+                onLocalCritFeedback?.PlayFeedbacks();
         }
 
+        // 플레이어 사망 이벤트 처리 + 팀원 사망이면 무거운 피드백 추가
         private void OnPlayerDied(PlayerDiedEvent e)
         {
             string victim = ResolveName(e.victimClientId);
             string killer = ResolveName(e.killerClientId);
-            AddEntry($"{killer} killed {victim}", normalColor);
+            AddEntry($"{killer} killed {victim}", isCritical: false);
+
+            // 로컬 본인의 죽음은 HUDManager의 Dead 전환 피드백에서 처리되므로 제외
+            if (!IsLocalClient(e.victimClientId))
+                onTeammateDeathFeedback?.PlayFeedbacks();
         }
 
+        // ulong.MaxValue는 Enemy NPC를 의미하는 약속값
         private string ResolveName(ulong clientId)
         {
             if (clientId == ulong.MaxValue) return "Enemy";
             return $"Player {clientId}";
         }
 
-        private void AddEntry(string text, Color color)
+        // 엔트리 프리팹 인스턴스화 + 큐 관리 + 수명 예약
+        private void AddEntry(string text, bool isCritical)
         {
             if (entryPrefab == null || entriesRoot == null) return;
 
             var entry = Instantiate(entryPrefab, entriesRoot);
-            entry.text = text;
-            entry.color = color;
+            entry.Setup(text, isCritical);
             activeEntries.Enqueue(entry);
 
+            // 최대 개수 초과분은 즉시 제거 (페이드 없음 - 이미 오래된 엔트리)
             while (activeEntries.Count > maxEntries)
             {
                 var old = activeEntries.Dequeue();
-                if (old != null) Destroy(old.gameObject);
+                if (old != null) old.DestroyImmediate();
             }
 
-            Destroy(entry.gameObject, entryLifetime);
+            // 수명 만료 시 페이드아웃 후 제거 (코루틴으로 추적)
+            StartCoroutine(ExpireAfter(entry, entryLifetime));
         }
+
+        // 지정된 시간 후 엔트리에 페이드아웃 시작 명령
+        private System.Collections.IEnumerator ExpireAfter(KillFeedEntry entry, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            // maxEntries 초과로 이미 파괴됐을 수 있어 null 체크 필수
+            if (entry != null) entry.BeginExpire();
+        }
+
+        // 에디터 전용 테스트 버튼
+#if UNITY_EDITOR
+        [TitleGroup("Debug")]
+        [Button("Add Test Entry (Normal)")]
+        private void TestNormalEntry()
+        {
+            if (!Application.isPlaying) return;
+            AddEntry("Player 0 killed Enemy (Elite)", isCritical: false);
+        }
+
+        [TitleGroup("Debug")]
+        [Button("Add Test Entry (Crit)"), GUIColor(1f, 0.84f, 0f)]
+        private void TestCritEntry()
+        {
+            if (!Application.isPlaying) return;
+            AddEntry("Player 0 CRIT Head 120dmg", isCritical: true);
+        }
+
+        [TitleGroup("Debug")]
+        [Button("Test Local Kill Feedback")]
+        private void TestLocalKill() => onLocalKillFeedback?.PlayFeedbacks();
+
+        [TitleGroup("Debug")]
+        [Button("Test Local Crit Feedback"), GUIColor(1f, 0.84f, 0f)]
+        private void TestLocalCrit() => onLocalCritFeedback?.PlayFeedbacks();
+#endif
     }
 }
