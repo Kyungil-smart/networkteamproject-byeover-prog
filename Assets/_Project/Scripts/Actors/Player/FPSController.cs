@@ -13,12 +13,19 @@ namespace DeadZone.Actors
     [RequireComponent(typeof(NetworkObject))]
     public class FPSController : NetworkBehaviour
     {
-        [Header("Speed")]
-        [SerializeField] private float walkSpeed = 4f;
-        [SerializeField] private float sprintSpeed = 7f;
-        [SerializeField] private float crawlSpeed = 1f;
+        [Header("====이동속도 설정====")]
+        [Tooltip("기본 이동 속도")]
+        [SerializeField, Min(0f)] private float walkSpeed = 4f;
+        
+        [Tooltip("달리기 상태일 때 적용되는 이동 속도" +
+                 "\n스태미나가 0보다 클 때만 걷기 속도 대신 사용")]
+        [SerializeField, Min(0f)] private float sprintSpeed = 7f;
+        
+        [Tooltip("기어가기 상태일 때 적용되는 이동 속도" +
+                 "\nKnocked 상태처럼 정상 이동이 제한된 상황에서 사용")]
+        [SerializeField, Min(0f)] private float crawlSpeed = 1f;
 
-        [Header("Physics")]
+        [Header("====중력 설정====")]
         [SerializeField] private float gravity = -20f;
         [SerializeField] private LayerMask groundMask = ~0;
 
@@ -43,7 +50,7 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            if (!IsOwner) return;
+            //if (!IsOwner) return; 임시 주석처리 TODO(Step5): 원복
 
             float speed;
             if (isCrawling)

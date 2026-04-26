@@ -18,16 +18,32 @@ namespace DeadZone.Actors
     /// </remarks>
     public class PlayerHealthSystem : NetworkBehaviour, IDamageable, IRevivable, IRecoverable
     {
-        [Header("Alive State")]
-        [SerializeField] private float maxHP = 100f;
+        [Header("====생존 상태 설정====")]
+        [Tooltip("Alive 상태에서 사용하는 최대체력" +
+                 "\n서버가 네트워크 스폰 시 CurrentHP를 이 값으로 초기화")]
+        [SerializeField, Min(1f)] private float maxHP = 100f;
 
-        [Header("Knocked State (PUBG-style)")]
-        [SerializeField] private float knockedMaxHP = 100f;
+        [Header("====기절 상태 설정(PUBG-style)====")]
+        [Tooltip("HP가 0 이하가 되어 Knocked 상태로 전환될 때 KnockedHP에 설정되는 최대 기절 체력" +
+                 "\n이 값이 0이 되면 Dead 상태로 전환")]
+        [SerializeField, Min(1f)] private float knockedMaxHP = 100f;
+        
+        [Tooltip("Knocked 상태에서 Dead 상태로 전환되기까지 허용되는 최대 시간" +
+                 "\n이 시간이 0이 되면 Dead 상태로 전환")]
         [SerializeField] private float bleedoutSeconds = 60f;
+        
+        [Tooltip("Knocked 상태에서 초당 감소하는 KnockedHP 양" +
+                 "\n부활 중이 아닐 때만 적용되며, KnockedHP가 0이 되면 Dead 상태로 전환")]
         [SerializeField] private float bleedoutDamagePerSecond = 1.5f;
+        
+        [Header("====부활 설정====")]
+        [Tooltip("부활 완료 시 CurrentHP에 설정되는 체력" +
+                 "\nKnocked 상태에서 Alive 상태로 복귀할 때의 시작 체력")]
         [SerializeField] private float reviveHpAmount = 30f;
 
-        [Header("Death")]
+        [Header("====사망 처리====")]
+        [Tooltip("Dead 상태로 전환될 때 서버에서 생성할 시체 프리팹" +
+                 "\n인벤토리 이전을 위해 NetworkObject, PlayerCorpse, CorpseInventory 구성이 필요")]
         [SerializeField] private GameObject corpsePrefab;
 
         public NetworkVariable<float> CurrentHP = new(100f);
@@ -69,7 +85,7 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            if (!IsServer) return;
+            // if (!IsServer) return;  // TODO(Step5): 원복
 
             if (IsKnocked && !isBeingRevived)
             {
@@ -87,7 +103,7 @@ namespace DeadZone.Actors
 
         public void ApplyDamage(int damage, ulong attackerClientId, HitInfo hit)
         {
-            if (!IsServer || IsDead) return;
+            // if (!IsServer || IsDead) return;  // TODO(Step5): 원복
 
             if (IsAlive)
             {
@@ -103,13 +119,13 @@ namespace DeadZone.Actors
 
         public void Heal(float amount)
         {
-            if (!IsServer || !IsAlive) return;
+            // if (!IsServer || !IsAlive) return;  // TODO(Step5): 원복
             CurrentHP.Value = Mathf.Min(maxHP, CurrentHP.Value + amount);
         }
 
         private void TransitionToKnocked(ulong attackerClientId)
         {
-            if (!IsServer) return;
+            // if (!IsServer) return;  // TODO(Step5): 원복
             KnockedHP.Value = knockedMaxHP;
             BleedoutRemaining.Value = bleedoutSeconds;
             State.Value = PlayerState.Knocked;
@@ -125,7 +141,7 @@ namespace DeadZone.Actors
 
         private void TransitionToDead(ulong attackerClientId)
         {
-            if (!IsServer) return;
+            // if (!IsServer) return;  // TODO(Step5): 원복
             KnockedHP.Value = 0f;
             BleedoutRemaining.Value = 0f;
             State.Value = PlayerState.Dead;
