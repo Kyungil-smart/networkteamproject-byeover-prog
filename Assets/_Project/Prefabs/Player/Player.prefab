@@ -476,10 +476,10 @@ GameObject:
   - component: {fileID: 95481129507444498}
   - component: {fileID: -1804149649411048333}
   - component: {fileID: 3481043232388762985}
+  - component: {fileID: 8480392820659206216}
   - component: {fileID: 173030480013012939}
-  - component: {fileID: 1860151659725561128}
-  - component: {fileID: 3820137272484299832}
   - component: {fileID: 8354546832462354360}
+  - component: {fileID: 1860151659725561128}
   - component: {fileID: 1755801955162734937}
   m_Layer: 0
   m_Name: Player
@@ -565,7 +565,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 146189795
+  GlobalObjectIdHash: 822112651
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -578,6 +578,24 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &8480392820659206216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58a97fa797aa6cf4fa75a42ab14c1e80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerInputController
+  allowLocalInputWithoutNetworkSpawn: 1
+  inputCamera: {fileID: 0}
+  aimMask:
+    serializedVersion: 2
+    m_Bits: 1
+  aimRayDistance: 200
 --- !u!114 &173030480013012939
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -594,38 +612,13 @@ MonoBehaviour:
   walkSpeed: 4
   sprintSpeed: 7
   crawlSpeed: 1
+  useCameraRelativeMovement: 1
+  movementReference: {fileID: 0}
+  rotateToLookDirection: 1
   gravity: -20
   groundMask:
     serializedVersion: 2
     m_Bits: 1
---- !u!114 &1860151659725561128
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 107751b1a0c737f408d7b48065aafac8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerStaminaSystem
-  ShowTopMostFoldoutHeaderGroup: 1
-  maxStamina: 100
-  regenPerSecond: 8
-  regenDelaySeconds: 1.5
---- !u!114 &3820137272484299832
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7526b12571cf8c84fafc608510107c82, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.LocalTestInput
 --- !u!114 &8354546832462354360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -665,6 +658,22 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
+--- !u!114 &1860151659725561128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 107751b1a0c737f408d7b48065aafac8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerStaminaSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+  maxStamina: 100
+  regenPerSecond: 8
+  regenDelaySeconds: 1.5
 --- !u!114 &1755801955162734937
 MonoBehaviour:
   m_ObjectHideFlags: 0

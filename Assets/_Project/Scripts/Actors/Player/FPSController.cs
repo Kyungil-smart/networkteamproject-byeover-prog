@@ -25,6 +25,20 @@ namespace DeadZone.Actors
                  "\nKnocked 상태처럼 정상 이동이 제한된 상황에서 사용")]
         [SerializeField, Min(0f)] private float crawlSpeed = 1f;
 
+        [Header("====이동 기준====")]
+        [Tooltip("카메라 기준 이동을 사용할지 여부" +
+                 "\n켜면 W/A/S/D가 카메라 화면 방향 기준으로 이동")]
+        [SerializeField] private bool useCameraRelativeMovement = true;
+
+        [Tooltip("이동 방향 계산에 사용할 기준 Transform" +
+                 "\nMainCamera 또는 CameraHolder를 연결" +
+                 "\n비어 있으면 월드 X/Z 기준 이동으로 동작")]
+        [SerializeField] private Transform movementReference;
+
+        [Header("====회전 설정====")]
+        [Tooltip("마우스 방향으로 캐릭터를 회전할지 여부")]
+        [SerializeField] private bool rotateToLookDirection = true;
+        
         [Header("====중력 설정====")]
         [SerializeField] private float gravity = -20f;
         [SerializeField] private LayerMask groundMask = ~0;
@@ -50,7 +64,10 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            //if (!IsOwner) return; 임시 주석처리 TODO(Step5): 원복
+            // TODO(Network): NetworkManager가 스폰한 PlayerPrefab 기준으로 Owner 입력 검증이 끝나면 활성화
+            //if (!IsOwner) return;
+            
+            ApplyLookRotation();
 
             float speed;
             if (isCrawling)
@@ -63,9 +80,7 @@ namespace DeadZone.Actors
                 if (isSprinting && stamina != null && stamina.CurrentStamina.Value > 0) speed = sprintSpeed;
             }
 
-            Vector3 moveDir = new Vector3(moveInput.x, 0, moveInput.y);
-            if (moveDir.sqrMagnitude > 1f) moveDir.Normalize();
-            moveDir = transform.TransformDirection(moveDir);
+            Vector3 moveDir = GetMoveDirection();
 
             if (cc.isGrounded && verticalVelocity < 0) verticalVelocity = -2f;
             verticalVelocity += gravity * Time.deltaTime;
@@ -76,6 +91,43 @@ namespace DeadZone.Actors
             cc.Move(velocity * Time.deltaTime);
         }
 
+        private Vector3 GetMoveDirection()
+        {
+            Vector3 rawInput = new Vector3(moveInput.x, 0f, moveInput.y);
+            
+            if (rawInput.sqrMagnitude > 1f) rawInput.Normalize();
+            if (!useCameraRelativeMovement || movementReference == null) return rawInput;
+            
+            Vector3 forward = movementReference.forward;
+            forward.y = 0f;
+            
+            Vector3 right = movementReference.right;
+            right.y = 0f;
+            
+            if (forward.sqrMagnitude < 0.001f || right.sqrMagnitude < 0.001f) return rawInput;
+            
+            forward.Normalize();
+            right.Normalize();
+            
+            Vector3 moveDir = right * moveInput.x + forward * moveInput.y;
+            
+            if (moveDir.sqrMagnitude > 1f) moveDir.Normalize();
+            
+            return moveDir;
+        }
+
+        private void ApplyLookRotation()
+        {
+            if (!rotateToLookDirection) return;
+            if (lookInput.sqrMagnitude < 0.001f)  return;
+
+            Vector3 lookDir = new Vector3(lookInput.x, 0f, lookInput.y);
+            
+            if (lookDir.sqrMagnitude < 0.001f) return;
+            
+            transform.rotation = Quaternion.LookRotation(lookDir);
+        }
+        
         public void SetMove(Vector2 v) => moveInput = v;
         public void SetLook(Vector2 v) => lookInput = v;
         public void SetSprint(bool b) => isSprinting = b;
