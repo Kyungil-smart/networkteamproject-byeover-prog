@@ -4,6 +4,8 @@ using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
+using System.Reflection;
 
 using DeadZone.Core;
 
@@ -26,16 +28,6 @@ namespace DeadZone.Actors
         [BoxGroup("Bleedout")]
         [Required, SerializeField] private Image bleedoutFill;// 남은 비율 Fill 이미지
 
-        // 부활 UI
-        [BoxGroup("Revive")]
-        [Required, SerializeField] private GameObject revivePanel;// 부활 중에만 켜지는 서브 패널
-
-        [BoxGroup("Revive")]
-        [Required, SerializeField] private Image reviveProgressFill;// 부활 진행도 Fill
-
-        [BoxGroup("Revive")]
-        [Required, SerializeField] private TMP_Text reviveStatusText;// 문구
-
         // 설정값
         [BoxGroup("Config")]
         [Tooltip("플레이어가 기절 상태일 때 설정값 이하가 되는 순간부터 강조")]
@@ -46,26 +38,51 @@ namespace DeadZone.Actors
         [SerializeField] private string reviveStatusLabel = "응급 처치중...";
 
         // Feel 피드백 - 블리드아웃
+        [FoldoutGroup("Feedbacks")]
         [FoldoutGroup("Feedbacks/Bleedout")]
         [Tooltip("기절시 1회 재생")]
         [SerializeField] private MMF_Player onKnockedFeedback;
 
+        [FoldoutGroup("Feedbacks")]
         [FoldoutGroup("Feedbacks/Bleedout")]
         [Tooltip("기절중 루프로 재생되는 심박음, MMF Looper 피드백 사용")]
         [SerializeField] private MMF_Player heartbeatLoopFeedback;
 
+        [FoldoutGroup("Feedbacks")]
         [FoldoutGroup("Feedbacks/Bleedout")]
         [Tooltip("남은 시간이 3초 이하로 떨어지는 순간 1회 재생")]
         [SerializeField] private MMF_Player onCriticalBleedoutFeedback;
+        
+        // 비네트
+        [BoxGroup("Vignette")]
+        [SerializeField] private MonoBehaviour quirkyVignette; // Quirky Vignette 컴포넌트
+
+        [BoxGroup("Vignette")]
+        [SerializeField] private string intensityMemberName = "Intensity"; // 에셋의 강도 변수명
+
+        [BoxGroup("Vignette")]
+        [SerializeField] private float vignetteMin = 0.15f;
+
+        [BoxGroup("Vignette")]
+        [SerializeField] private float vignetteMax = 0.6f;
+
+        private Tween vignetteTween;
+        private float currentVignetteIntensity;
 
         // Feel 피드백 - 부활
+        [FoldoutGroup("Feedbacks")]
         [FoldoutGroup("Feedbacks/Revive")]
         [Tooltip("동료가 응급처치 시작했을 때 재생")]
         [SerializeField] private MMF_Player onReviveStartedFeedback;
 
+        [FoldoutGroup("Feedbacks")]
         [FoldoutGroup("Feedbacks/Revive")]
         [Tooltip("응급처치가 종료됐을 때 재생(성공/취소 공통)")]
         [SerializeField] private MMF_Player onReviveEndedFeedback;
+        
+        [SerializeField] private TMP_Text knockedTitleText;
+        [SerializeField] private TMP_Text knockedCountText;
+        [SerializeField] private TMP_Text knockedGuideText;
 
         // 런타임 상태 (디버그 표시용)
         [TitleGroup("Debug")]
@@ -85,9 +102,6 @@ namespace DeadZone.Actors
             EventBus.Subscribe<ReviveStartedEvent>(OnReviveStarted);
             EventBus.Subscribe<ReviveProgressEvent>(OnReviveProgress);
             EventBus.Subscribe<ReviveEndedEvent>(OnReviveEnded);
-
-            // 부활 패널은 ReviveStartedEvent를 받기 전까지 숨김
-            if (revivePanel != null) revivePanel.SetActive(false);
         }
 
         // 컴포넌트 비활성화 시 구독 해제 + 루프 피드백 강제 정지
@@ -100,6 +114,7 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<ReviveEndedEvent>(OnReviveEnded);
             
             StopHeartbeatLoop();
+            ResetVignette();
         }
 
         // 매 프레임 블리드아웃 타이머 감소 + UI 갱신
@@ -121,8 +136,62 @@ namespace DeadZone.Actors
             if (!criticalTriggered && bleedoutRemaining <= criticalBleedoutSeconds && bleedoutRemaining > 0f)
             {
                 onCriticalBleedoutFeedback?.PlayFeedbacks();
+                StartCriticalVignettePulse();
                 criticalTriggered = true;
             }
+            // 남은 시간이 줄어들수록 비네트 강도 증가
+            if (!criticalTriggered && bleedoutTotal > 0f)
+            {
+                float ratio = bleedoutRemaining / bleedoutTotal;
+                float targetIntensity = Mathf.Lerp(vignetteMax, vignetteMin, ratio);
+                SetVignetteIntensity(targetIntensity);
+            }
+        }
+        // 비네트 강도 설정
+        private void SetVignetteIntensity(float value)
+        {
+            if (quirkyVignette == null) return;
+
+            currentVignetteIntensity = value;
+
+            var type = quirkyVignette.GetType();
+
+            var property = type.GetProperty(intensityMemberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (property != null && property.CanWrite)
+            {
+                property.SetValue(quirkyVignette, value);
+                return;
+            }
+
+            var field = type.GetField(intensityMemberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field != null)
+            {
+                field.SetValue(quirkyVignette, value);
+            }
+        }
+
+        // 크리티컬 상태 비네트 맥박 연출
+        private void StartCriticalVignettePulse()
+        {
+            if (quirkyVignette == null) return;
+
+            vignetteTween?.Kill();
+
+            vignetteTween = DOTween.To(
+                    () => currentVignetteIntensity,
+                    value => SetVignetteIntensity(value),
+                    vignetteMax,
+                    0.3f
+                )
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine);
+        }
+
+        // 비네트 초기화
+        private void ResetVignette()
+        {
+            vignetteTween?.Kill();
+            SetVignetteIntensity(vignetteMin);
         }
 
         // 해당 clientId가 로컬 플레이어인지 판별 (모든 이벤트 핸들러 공용)
@@ -150,13 +219,11 @@ namespace DeadZone.Actors
         // 기절 상태에서 벗어났을 때 정리
         private void OnStateChanged(PlayerStateChangedEvent e)
         {
-            if (!IsLocalClient(e.clientId)) return;
-
             if (e.newState != PlayerState.Knocked)
             {
                 bleedoutActive = false;
-                if (revivePanel != null) revivePanel.SetActive(false);
                 StopHeartbeatLoop();
+                ResetVignette();
             }
         }
 
@@ -165,11 +232,15 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.targetClientId)) return;
 
-            if (revivePanel != null) revivePanel.SetActive(true);
-            if (reviveStatusText != null) reviveStatusText.text = reviveStatusLabel;
+            // 기존 타이틀/카운트 숨김
+            knockedTitleText.gameObject.SetActive(false);
+            knockedCountText.gameObject.SetActive(false);
 
-            // 이전 사이클 값이 남아있을 수 있으므로 0으로 초기화
-            if (reviveProgressFill != null) reviveProgressFill.fillAmount = 0f;
+            // 텍스트 재사용
+            bleedoutText.text = "응급 처치중...";
+
+            // 게이지 초기화
+            bleedoutFill.fillAmount = 0f;
 
             onReviveStartedFeedback?.PlayFeedbacks();
         }
@@ -178,7 +249,8 @@ namespace DeadZone.Actors
         private void OnReviveProgress(ReviveProgressEvent e)
         {
             if (!IsLocalClient(e.targetClientId)) return;
-            if (reviveProgressFill != null) reviveProgressFill.fillAmount = e.progress01;
+
+            bleedoutFill.fillAmount = e.progress01;
         }
 
         // 부활 종료 (성공/취소 공통)
@@ -186,7 +258,12 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.targetClientId)) return;
 
-            if (revivePanel != null) revivePanel.SetActive(false);
+            // 다시 원상복구
+            knockedTitleText.gameObject.SetActive(true);
+            knockedCountText.gameObject.SetActive(true);
+
+            bleedoutText.text = "동료의 응급처치를 기다리세요";
+
             onReviveEndedFeedback?.PlayFeedbacks();
         }
 
@@ -225,12 +302,56 @@ namespace DeadZone.Actors
         private void TestCritical() => onCriticalBleedoutFeedback?.PlayFeedbacks();
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(0.6f, 1f, 0.6f)]
-        private void TestReviveStarted() => onReviveStartedFeedback?.PlayFeedbacks();
+        [Button("Test Revive Started"), GUIColor(0.6f, 1f, 0.6f)]
+        private void TestReviveStarted()
+        {
+            if (!Application.isPlaying) return;
+
+            if (knockedTitleText != null)
+                knockedTitleText.gameObject.SetActive(false);
+
+            if (knockedCountText != null)
+                knockedCountText.gameObject.SetActive(false);
+
+            if (knockedGuideText != null)
+                knockedGuideText.text = reviveStatusLabel;
+
+            if (bleedoutFill != null)
+                bleedoutFill.fillAmount = 0.05f;
+
+            onReviveStartedFeedback?.PlayFeedbacks();
+        }
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium)]
-        private void TestReviveEnded() => onReviveEndedFeedback?.PlayFeedbacks();
+        [Button("Test Revive 50%")]
+        private void TestReviveHalf()
+        {
+            if (!Application.isPlaying) return;
+
+            if (bleedoutFill != null)
+            {
+                bleedoutFill.fillAmount = 0.5f;
+                Debug.Log($"Revive Fill Test: {bleedoutFill.fillAmount}");
+            }
+        }
+        
+        [TitleGroup("Debug")]
+        [Button("Test Revive Ended")]
+        private void TestReviveEnded()
+        {
+            if (!Application.isPlaying) return;
+
+            if (knockedTitleText != null)
+                knockedTitleText.gameObject.SetActive(true);
+
+            if (knockedCountText != null)
+                knockedCountText.gameObject.SetActive(true);
+
+            if (knockedGuideText != null)
+                knockedGuideText.text = "동료의 응급처치를 기다리세요";
+
+            onReviveEndedFeedback?.PlayFeedbacks();
+        }
 
         // 이벤트 없이 10초 블리드아웃 시뮬레이션
         [TitleGroup("Debug")]
@@ -238,10 +359,27 @@ namespace DeadZone.Actors
         private void SimulateBleedout()
         {
             if (!Application.isPlaying) return;
+
             bleedoutTotal = 10f;
             bleedoutRemaining = 10f;
             bleedoutActive = true;
             criticalTriggered = false;
+
+            if (knockedTitleText != null)
+                knockedTitleText.gameObject.SetActive(true);
+
+            if (knockedCountText != null)
+                knockedCountText.gameObject.SetActive(true);
+
+            if (knockedGuideText != null)
+                knockedGuideText.text = "동료의 응급처치를 기다리세요";
+
+            if (bleedoutText != null)
+                bleedoutText.text = "10s";
+
+            if (bleedoutFill != null)
+                bleedoutFill.fillAmount = 1f;
+
             onKnockedFeedback?.PlayFeedbacks();
             StartHeartbeatLoop();
         }

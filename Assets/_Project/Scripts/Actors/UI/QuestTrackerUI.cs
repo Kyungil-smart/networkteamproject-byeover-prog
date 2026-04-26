@@ -56,6 +56,19 @@ namespace DeadZone.Actors
         [ShowInInspector, ReadOnly] private int requiredCount;// 필요 카운트
         [TitleGroup("Debug")]
         [ShowInInspector, ReadOnly] private bool nearCompleteTriggered;// 거의완료 피드백 중복 방지
+        private CanvasGroup panelCanvasGroup;
+
+        private void Awake()
+        {
+            if (panelRoot == null)
+                panelRoot = gameObject;
+
+            panelCanvasGroup = panelRoot.GetComponent<CanvasGroup>();
+            if (panelCanvasGroup == null)
+                panelCanvasGroup = panelRoot.AddComponent<CanvasGroup>();
+
+            HidePanel();
+        }
 
         // 컴포넌트 활성화 시 EventBus 구독 시작
         private void OnEnable()
@@ -78,7 +91,7 @@ namespace DeadZone.Actors
         {
             if (questNameText != null) questNameText.text = e.questId.ToString();
             if (progressText != null)  progressText.text = "0 / ?";
-            if (panelRoot != null)     panelRoot.SetActive(true);
+            ShowPanel();
 
             // 새 퀘스트 사이클이므로 상태값 리셋
             currentCount = 0;
@@ -116,6 +129,26 @@ namespace DeadZone.Actors
         {
             if (questNameText != null) questNameText.text = $"Completed: {e.questId}";
             onQuestCompletedFeedback?.PlayFeedbacks();
+            HidePanel();
+        }
+
+        private void ShowPanel()
+        {
+            if (panelRoot != null && !panelRoot.activeSelf)
+                panelRoot.SetActive(true);
+
+            if (panelCanvasGroup == null) return;
+            panelCanvasGroup.alpha = 1f;
+            panelCanvasGroup.interactable = true;
+            panelCanvasGroup.blocksRaycasts = true;
+        }
+
+        private void HidePanel()
+        {
+            if (panelCanvasGroup == null) return;
+            panelCanvasGroup.alpha = 0f;
+            panelCanvasGroup.interactable = false;
+            panelCanvasGroup.blocksRaycasts = false;
         }
 
         // 에디터 전용 테스트 버튼

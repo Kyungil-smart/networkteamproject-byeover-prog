@@ -2,6 +2,7 @@ using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 // 작성자 : 홍정옥
 // 기능 : 킬피드 개별 엔트리
@@ -50,6 +51,8 @@ namespace DeadZone.Actors
         // KillFeedUI가 Instantiate 직후 호출하는 초기화 메서드
         public void Setup(string text, bool isCritical)
         {
+            ConfigureRect();
+
             if (label != null)
             {
                 label.text = text;
@@ -74,6 +77,43 @@ namespace DeadZone.Actors
         public void DestroyImmediate()
         {
             Destroy(gameObject);
+        }
+
+        private void ConfigureRect()
+        {
+            if (transform is RectTransform root)
+            {
+                root.anchorMin = new Vector2(0f, 1f);
+                root.anchorMax = new Vector2(1f, 1f);
+                root.pivot = new Vector2(1f, 1f);
+                root.anchoredPosition = Vector2.zero;
+            }
+
+            Image background = GetComponentInChildren<Image>(true);
+            if (background != null && background.transform is RectTransform backgroundRect)
+            {
+                backgroundRect.anchorMin = Vector2.zero;
+                backgroundRect.anchorMax = Vector2.one;
+                backgroundRect.pivot = new Vector2(0.5f, 0.5f);
+                backgroundRect.offsetMin = Vector2.zero;
+                backgroundRect.offsetMax = Vector2.zero;
+                backgroundRect.anchoredPosition = Vector2.zero;
+            }
+
+            if (label != null && label.transform is RectTransform labelRect)
+            {
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.pivot = new Vector2(0.5f, 0.5f);
+                labelRect.offsetMin = new Vector2(8f, 2f);
+                labelRect.offsetMax = new Vector2(-8f, -2f);
+                labelRect.anchoredPosition = Vector2.zero;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 10f;
+                label.fontSizeMax = 16f;
+                label.alignment = TextAlignmentOptions.Center;
+                label.raycastTarget = false;
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 using DeadZone.Core;
 
@@ -25,12 +26,30 @@ namespace DeadZone.Actors
         [BoxGroup("References")]
         [Required, AssetsOnly, SerializeField] private KillFeedEntry entryPrefab;// 동적 생성할 엔트리 프리팹
 
+        [BoxGroup("References")]
+        [SerializeField] private RectTransform questRoot;// 비워두면 같은 HUD 아래의 Quest 오브젝트를 자동 탐색
+
         // 설정값
         [BoxGroup("Config")]
         [MinValue(1), SerializeField] private int maxEntries = 5;// 동시에 표시할 최대 엔트리 수
 
         [BoxGroup("Config")]
         [MinValue(0.1f), SerializeField] private float entryLifetime = 5f;// 엔트리 수명
+
+        [BoxGroup("Config")]
+        [SerializeField] private bool configureLayoutOnAwake = true;
+
+        [BoxGroup("Config")]
+        [MinValue(1f), SerializeField] private float entryWidth = 300f;
+
+        [BoxGroup("Config")]
+        [MinValue(1f), SerializeField] private float entryHeight = 28f;
+
+        [BoxGroup("Config")]
+        [MinValue(0f), SerializeField] private float entrySpacing = 4f;
+
+        [BoxGroup("Config")]
+        [SerializeField] private float questBottomGap = 8f;
 
         // Feel 피드백 (HUD 레벨 - 로컬 플레이어 기준 연출)
         [FoldoutGroup("Feedbacks")]
@@ -50,6 +69,12 @@ namespace DeadZone.Actors
 
         [TitleGroup("Debug")]
         [ShowInInspector, ReadOnly] private int activeEntryCount => activeEntries.Count;// 현재 엔트리 개수
+
+        private void Awake()
+        {
+            if (configureLayoutOnAwake)
+                ConfigureEntriesRoot();
+        }
 
         // 컴포넌트 활성화 시 EventBus 구독 시작
         private void OnEnable()
@@ -118,6 +143,7 @@ namespace DeadZone.Actors
             if (entryPrefab == null || entriesRoot == null) return;
 
             var entry = Instantiate(entryPrefab, entriesRoot);
+            ConfigureEntryRect(entry);
             entry.Setup(text, isCritical);
             activeEntries.Enqueue(entry);
 
@@ -130,6 +156,74 @@ namespace DeadZone.Actors
 
             // 수명 만료 시 페이드아웃 후 제거 (코루틴으로 추적)
             StartCoroutine(ExpireAfter(entry, entryLifetime));
+        }
+
+        private void ConfigureEntriesRoot()
+        {
+            if (entriesRoot == null) return;
+
+            entriesRoot.anchorMin = new Vector2(0.5f, 0.5f);
+            entriesRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            entriesRoot.pivot = new Vector2(1f, 1f);
+            entriesRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, entryWidth);
+            entriesRoot.SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Vertical,
+                maxEntries * entryHeight + Mathf.Max(0, maxEntries - 1) * entrySpacing);
+
+            RectTransform targetQuest = questRoot != null ? questRoot : FindQuestRoot();
+            if (targetQuest != null && entriesRoot.parent is RectTransform parent)
+            {
+                Vector3[] questCorners = new Vector3[4];
+                targetQuest.GetWorldCorners(questCorners);
+                Vector2 questBottomRight = parent.InverseTransformPoint(questCorners[3]);
+                entriesRoot.anchoredPosition = new Vector2(questBottomRight.x, questBottomRight.y - questBottomGap);
+            }
+
+            var layout = entriesRoot.GetComponent<VerticalLayoutGroup>();
+            if (layout == null)
+                layout = entriesRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+
+            layout.childAlignment = TextAnchor.UpperRight;
+            layout.spacing = entrySpacing;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+        }
+
+        private RectTransform FindQuestRoot()
+        {
+            Transform current = transform;
+            while (current != null)
+            {
+                Transform quest = current.parent != null ? current.parent.Find("Quest") : null;
+                if (quest != null && quest.TryGetComponent(out RectTransform rect))
+                    return rect;
+
+                current = current.parent;
+            }
+
+            return null;
+        }
+
+        private void ConfigureEntryRect(KillFeedEntry entry)
+        {
+            if (entry == null || !entry.TryGetComponent(out RectTransform rect)) return;
+
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(0f, entryHeight);
+
+            var layoutElement = entry.GetComponent<LayoutElement>();
+            if (layoutElement == null)
+                layoutElement = entry.gameObject.AddComponent<LayoutElement>();
+
+            layoutElement.preferredWidth = entryWidth;
+            layoutElement.preferredHeight = entryHeight;
+            layoutElement.flexibleWidth = 0f;
+            layoutElement.flexibleHeight = 0f;
         }
 
         // 지정된 시간 후 엔트리에 페이드아웃 시작 명령
