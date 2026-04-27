@@ -7,7 +7,7 @@ namespace DeadZone.Core
     public enum FireMode : byte { Semi, Full, Bolt, Pump }
     public enum AmmoType : byte
     {
-        _9mm, _556, _545, _46, _50AE, _357, _762, _12ga
+        AR, SMG, Handgun, Sniper, Shotgun
     }
 
     [CreateAssetMenu(menuName = "DeadZone/Items/Weapon Data", fileName = "Weapon_New")]
@@ -32,12 +32,13 @@ namespace DeadZone.Core
         public float muzzleFlashOffset = 0.2f;
 
         [Header("ADS")]
-        public float adsFOV = 50f;
         public float adsTransitionTime = 0.2f;
 
         [Header("Recoil")]
-        public Vector2 recoilPattern = new(0.3f, 1.5f);
-        public float recoilRecovery = 5f;
+        [Tooltip("연사 시 탄환이 빗나가는 최대 각도 (0 = 완전 정확)")]
+        public Vector2 spreadAngle = new(0.5f, 5.0f); // 최소/최대 탄퍼짐
+        [Tooltip("사격 중단 시 에임이 다시 모이는 속도")]
+        public float spreadRecovery = 10f;
 
         [Header("Durability")]
         public float maxDurability = 100f;

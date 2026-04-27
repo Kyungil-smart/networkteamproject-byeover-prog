@@ -53,14 +53,16 @@ namespace DeadZone.Actors
         {
             ConfigureRect();
 
+            Debug.Log($"[KillFeedEntry] Setup text='{text}', critical={isCritical}", this);
+
             if (label != null)
             {
                 label.text = text;
                 label.color = isCritical ? critColor : normalColor;
             }
 
-            onSpawnFeedback?.PlayFeedbacks();
-            if (isCritical) onCritFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onSpawnFeedback, this, "킬피드 엔트리 생성");
+            if (isCritical) UIFeedbackTester.Play(onCritFeedback, this, "킬피드 엔트리 치명타");
         }
 
         // 수명 만료 시 KillFeedUI가 호출, 페이드아웃 후 자체 파괴
@@ -69,7 +71,8 @@ namespace DeadZone.Actors
             if (expiring) return;
             expiring = true;
 
-            onExpireFeedback?.PlayFeedbacks();
+            Debug.Log($"[KillFeedEntry] BeginExpire: {name}", this);
+            UIFeedbackTester.Play(onExpireFeedback, this, "킬피드 엔트리 만료");
             Destroy(gameObject, fadeOutDuration);
         }
 

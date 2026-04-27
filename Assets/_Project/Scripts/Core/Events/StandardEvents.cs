@@ -50,6 +50,10 @@ namespace DeadZone.Core
     {
         public ulong shooterClientId;
         public FixedString64Bytes weaponId;
+        public WeaponDataSO weaponData;
+        public WeaponCategory weaponCategory;
+        public int maxAmmo;
+        public float maxDurability;
         public Vector3 origin;
         public float loudness;
     }
@@ -196,6 +200,8 @@ namespace DeadZone.Core
         public ulong newTargetClientId;
     }
 
+    //테스트
+    public struct FireInputEvent : IGameEvent {}
 
     // =====================================================================
     // Firebase / Relay 이벤트 (v1.3 추가, Part VII Addendum)
