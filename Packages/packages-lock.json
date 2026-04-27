@@ -208,9 +208,9 @@
         "com.unity.render-pipelines.core": "17.0.3"
       }
     },
-    "com.unity.searcher": {
-      "version": "4.9.4",
-      "depth": 1,
+    "com.unity.scriptablebuildpipeline": {
+      "version": "2.6.1",
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.4.5",

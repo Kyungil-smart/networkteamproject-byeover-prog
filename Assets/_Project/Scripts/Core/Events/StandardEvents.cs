@@ -244,4 +244,7 @@ namespace DeadZone.Core
         // 클라이언트 전용. 접속한 Relay의 JoinCode를 에코백.
         public FixedString32Bytes joinCode;
     }
+    
+    // 테스트
+    public struct FireInputEvent : IGameEvent { }
 }
