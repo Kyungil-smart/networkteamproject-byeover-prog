@@ -53,6 +53,9 @@ namespace DeadZone.Actors
         private float verticalVelocity;
 
         public Vector2 LookInput => lookInput;
+        public Vector2 MoveInput => moveInput;
+        public bool HasMoveInput => moveInput.sqrMagnitude > 0.001f;
+        public Vector3 CurrentMoveDirection => GetMoveDirection();
         public bool IsSprinting => isSprinting;
         public bool IsCrawling => isCrawling;
 

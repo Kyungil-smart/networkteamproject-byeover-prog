@@ -726,9 +726,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   rollDistance: 3.5
   rollDuration: 0.5
-  rollCooldown: 1
-  staminaCost: 25
-  invincibilityWindow: 0.15
   rollCurve:
     serializedVersion: 2
     m_Curve:
@@ -753,6 +750,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  staminaCost: 25
+  rollCooldown: 1
+  allowLocalRollWithoutNetworkSpawn: 1
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0

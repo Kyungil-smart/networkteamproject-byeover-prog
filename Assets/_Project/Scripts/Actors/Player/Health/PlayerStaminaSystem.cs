@@ -58,5 +58,16 @@ namespace DeadZone.Actors
             lastConsumeTime = Time.time;
             return true;
         }
+
+        public bool TryConsumeForLocalTest(float amount)
+        {
+            if (IsSpawned) return false;
+            if (amount <= 0f) return true;
+            if (CurrentStamina.Value < amount) return false;
+            
+            CurrentStamina.Value -= amount;
+            lastConsumeTime = Time.time;
+            return true;
+        }
     }
 }
