@@ -551,7 +551,7 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 1.8
+  m_Height: 1.85
   m_Radius: 0.3
   m_SlopeLimit: 45
   m_StepOffset: 0.3
@@ -639,7 +639,11 @@ MonoBehaviour:
   animator: {fileID: 95481129507444498}
   characterController: {fileID: -1804149649411048333}
   runSpeed: 7
-  speedDampTime: 0.1
+  movingThreshold: 0.05
+  sprintThreshold: 0.75
+  walkBlendMagnitude: 0.5
+  runBlendMagnitude: 1
+  parameterDampTime: 0.1
 --- !u!114 &8354546832462354360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3132,6 +3136,7 @@ GameObject:
   - component: {fileID: 6238157846563175461}
   - component: {fileID: 3761001769809381656}
   - component: {fileID: 2514790329455139048}
+  - component: {fileID: 7787063733367754104}
   m_Layer: 6
   m_Name: Hitbox_Torso
   m_TagString: Untagged
@@ -3147,8 +3152,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 583586641907560999}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.835, z: 0}
+  m_LocalRotation: {x: -0.00000056176054, y: -2.1038327e-13, z: -0.000000374507, w: 1}
+  m_LocalPosition: {x: 0.00000005942742, y: 0.8350001, z: 0.000000059604645}
   m_LocalScale: {x: 1.0905, y: 1.8127933, z: 1.0553}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3188,6 +3193,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.HitZone
   zoneType: 1
+--- !u!1773428102 &7787063733367754104
+ParentConstraint:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 583586641907560999}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Weight: 1
+  m_TranslationAtRest: {x: 0, y: 0.835, z: 0}
+  m_RotationAtRest: {x: 0, y: 0, z: 0}
+  m_TranslationOffsets:
+  - {x: 0.49851334, y: -0.07073487, z: 0}
+  m_RotationOffsets:
+  - {x: 85.643425, y: -89.9998, z: 0.00015735194}
+  m_AffectTranslationX: 1
+  m_AffectTranslationY: 1
+  m_AffectTranslationZ: 1
+  m_AffectRotationX: 1
+  m_AffectRotationY: 1
+  m_AffectRotationZ: 1
+  m_Active: 1
+  m_IsLocked: 1
+  m_Sources:
+  - sourceTransform: {fileID: 4528762010136634}
+    weight: 1
 --- !u!1 &1080251795325289710
 GameObject:
   m_ObjectHideFlags: 0
@@ -3366,6 +3398,7 @@ GameObject:
   - component: {fileID: 6468757118003042615}
   - component: {fileID: 6082482119911403060}
   - component: {fileID: 7572825722357980052}
+  - component: {fileID: 8436125829196079576}
   m_Layer: 6
   m_Name: Hitbox_Head
   m_TagString: Untagged
@@ -3381,8 +3414,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5704027637339536500}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.67, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.0986118e-15, y: 1.67, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3422,6 +3455,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.HitZone
   zoneType: 0
+--- !u!1773428102 &8436125829196079576
+ParentConstraint:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5704027637339536500}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Weight: 1
+  m_TranslationAtRest: {x: 0, y: 1.67, z: 0}
+  m_RotationAtRest: {x: 0, y: 0, z: 0}
+  m_TranslationOffsets:
+  - {x: 0, y: 0.100887656, z: 0.0048395856}
+  m_RotationOffsets:
+  - {x: 0, y: 0, z: 0}
+  m_AffectTranslationX: 1
+  m_AffectTranslationY: 1
+  m_AffectTranslationZ: 1
+  m_AffectRotationX: 1
+  m_AffectRotationY: 1
+  m_AffectRotationZ: 1
+  m_Active: 1
+  m_IsLocked: 1
+  m_Sources:
+  - sourceTransform: {fileID: 4066577191665366}
+    weight: 1
 --- !u!1 &7694351138277081296
 GameObject:
   m_ObjectHideFlags: 0
