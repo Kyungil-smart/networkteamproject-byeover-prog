@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Collections;
 using System.Reflection;
 
 using DeadZone.Core;
@@ -38,18 +39,15 @@ namespace DeadZone.Actors
         [SerializeField] private string reviveStatusLabel = "응급 처치중...";
 
         // Feel 피드백 - 블리드아웃
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/Bleedout")]
+        [FoldoutGroup("Bleedout Feedbacks")]
         [Tooltip("기절시 1회 재생")]
         [SerializeField] private MMF_Player onKnockedFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/Bleedout")]
+        [FoldoutGroup("Bleedout Feedbacks")]
         [Tooltip("기절중 루프로 재생되는 심박음, MMF Looper 피드백 사용")]
         [SerializeField] private MMF_Player heartbeatLoopFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/Bleedout")]
+        [FoldoutGroup("Bleedout Feedbacks")]
         [Tooltip("남은 시간이 3초 이하로 떨어지는 순간 1회 재생")]
         [SerializeField] private MMF_Player onCriticalBleedoutFeedback;
         
@@ -68,15 +66,14 @@ namespace DeadZone.Actors
 
         private Tween vignetteTween;
         private float currentVignetteIntensity;
+        private Coroutine reviveTestCoroutine;
 
         // Feel 피드백 - 부활
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/Revive")]
+        [FoldoutGroup("Revive Feedbacks")]
         [Tooltip("동료가 응급처치 시작했을 때 재생")]
         [SerializeField] private MMF_Player onReviveStartedFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/Revive")]
+        [FoldoutGroup("Revive Feedbacks")]
         [Tooltip("응급처치가 종료됐을 때 재생(성공/취소 공통)")]
         [SerializeField] private MMF_Player onReviveEndedFeedback;
         
@@ -93,6 +90,8 @@ namespace DeadZone.Actors
         [ShowInInspector, ReadOnly] private bool bleedoutActive;// 타이머 구동 여부
         [TitleGroup("Debug")]
         [ShowInInspector, ReadOnly] private bool criticalTriggered;// 크리티컬 피드백 중복 방지
+        [TitleGroup("Debug")]
+        [ShowInInspector, ReadOnly] private bool reviveActive;// 부활 진행 중에는 bleedout fill 갱신을 막음
 
         // 컴포넌트 활성화 시 EventBus 구독 시작
         private void OnEnable()
@@ -107,6 +106,8 @@ namespace DeadZone.Actors
         // 컴포넌트 비활성화 시 구독 해제 + 루프 피드백 강제 정지
         private void OnDisable()
         {
+            StopReviveTestCoroutine();
+
             EventBus.Unsubscribe<PlayerKnockedEvent>(OnKnocked);
             EventBus.Unsubscribe<PlayerStateChangedEvent>(OnStateChanged);
             EventBus.Unsubscribe<ReviveStartedEvent>(OnReviveStarted);
@@ -129,13 +130,13 @@ namespace DeadZone.Actors
             if (bleedoutText != null) bleedoutText.text = $"{Mathf.CeilToInt(bleedoutRemaining)}s";
 
             // 비율 Fill 갱신 (0 나누기 방지)
-            if (bleedoutFill != null && bleedoutTotal > 0f)
+            if (!reviveActive && bleedoutFill != null && bleedoutTotal > 0f)
                 bleedoutFill.fillAmount = bleedoutRemaining / bleedoutTotal;
 
             // 크리티컬 구간 진입 순간 1회만 피드백 재생 (edge trigger)
             if (!criticalTriggered && bleedoutRemaining <= criticalBleedoutSeconds && bleedoutRemaining > 0f)
             {
-                onCriticalBleedoutFeedback?.PlayFeedbacks();
+                UIFeedbackTester.Play(onCriticalBleedoutFeedback, this, "위험 출혈");
                 StartCriticalVignettePulse();
                 criticalTriggered = true;
             }
@@ -205,25 +206,37 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.victimClientId)) return;
 
+            Debug.Log($"[KnockedHUD] PlayerKnocked victim={e.victimClientId}, attacker={e.attackerClientId}, bleedout={e.bleedoutSeconds:F1}", this);
+
+            gameObject.SetActive(true);
             bleedoutTotal = e.bleedoutSeconds;
             bleedoutRemaining = e.bleedoutSeconds;
             bleedoutActive = true;
+            reviveActive = false;
 
             // 새 사이클이므로 크리티컬 플래그 리셋 (두 번째 기절중에도 경고 울리게)
             criticalTriggered = false;
 
-            onKnockedFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onKnockedFeedback, this, "기절 진입");
             StartHeartbeatLoop();
         }
 
         // 기절 상태에서 벗어났을 때 정리
         private void OnStateChanged(PlayerStateChangedEvent e)
         {
+            if (!IsLocalClient(e.clientId)) return;
+            Debug.Log($"[KnockedHUD] PlayerStateChanged {e.oldState} -> {e.newState}", this);
+
             if (e.newState != PlayerState.Knocked)
             {
                 bleedoutActive = false;
+                reviveActive = false;
                 StopHeartbeatLoop();
                 ResetVignette();
+            }
+            else
+            {
+                gameObject.SetActive(true);
             }
         }
 
@@ -232,17 +245,21 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.targetClientId)) return;
 
+            Debug.Log($"[KnockedHUD] ReviveStarted reviver={e.reviverClientId}, target={e.targetClientId}, duration={e.duration:F1}", this);
+
+            reviveActive = true;
+
             // 기존 타이틀/카운트 숨김
-            knockedTitleText.gameObject.SetActive(false);
-            knockedCountText.gameObject.SetActive(false);
+            if (knockedTitleText != null) knockedTitleText.gameObject.SetActive(false);
+            if (knockedCountText != null) knockedCountText.gameObject.SetActive(false);
 
             // 텍스트 재사용
-            bleedoutText.text = "응급 처치중...";
+            if (bleedoutText != null) bleedoutText.text = reviveStatusLabel;
 
             // 게이지 초기화
-            bleedoutFill.fillAmount = 0f;
+            if (bleedoutFill != null) bleedoutFill.fillAmount = 0f;
 
-            onReviveStartedFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onReviveStartedFeedback, this, "부활 시작");
         }
 
         // 응급처치 진행도 갱신
@@ -250,7 +267,11 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.targetClientId)) return;
 
-            bleedoutFill.fillAmount = e.progress01;
+            reviveActive = true;
+            float progress = Mathf.Clamp01(e.progress01);
+            Debug.Log($"[KnockedHUD] ReviveProgress target={e.targetClientId}, progress={progress:F2}", this);
+
+            if (bleedoutFill != null) bleedoutFill.fillAmount = progress;
         }
 
         // 부활 종료 (성공/취소 공통)
@@ -258,21 +279,24 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.targetClientId)) return;
 
+            Debug.Log($"[KnockedHUD] ReviveEnded reviver={e.reviverClientId}, target={e.targetClientId}, result={e.result}", this);
+
+            reviveActive = false;
+
             // 다시 원상복구
-            knockedTitleText.gameObject.SetActive(true);
-            knockedCountText.gameObject.SetActive(true);
+            if (knockedTitleText != null) knockedTitleText.gameObject.SetActive(true);
+            if (knockedCountText != null) knockedCountText.gameObject.SetActive(true);
 
-            bleedoutText.text = "동료의 응급처치를 기다리세요";
+            if (bleedoutText != null) bleedoutText.text = "동료의 응급처치를 기다리세요";
 
-            onReviveEndedFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onReviveEndedFeedback, this, "부활 종료");
         }
 
         // 심박음 루프 시작 (중복 재생 방지)
         private void StartHeartbeatLoop()
         {
-            if (heartbeatLoopFeedback == null) return;
-            if (!heartbeatLoopFeedback.IsPlaying)
-                heartbeatLoopFeedback.PlayFeedbacks();
+            if (heartbeatLoopFeedback != null && heartbeatLoopFeedback.IsPlaying) return;
+            UIFeedbackTester.Play(heartbeatLoopFeedback, this, "심박 루프");
         }
 
         // 심박음 루프 정지
@@ -283,29 +307,58 @@ namespace DeadZone.Actors
                 heartbeatLoopFeedback.StopFeedbacks();
         }
 
+        private void StopReviveTestCoroutine()
+        {
+            if (reviveTestCoroutine == null) return;
+
+            StopCoroutine(reviveTestCoroutine);
+            reviveTestCoroutine = null;
+        }
+
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(1f, 0.5f, 0.5f)]
-        private void TestKnocked() => onKnockedFeedback?.PlayFeedbacks();
+        [Button("기절 피드백"), GUIColor(1f, 0.5f, 0.5f)]
+        private void TestKnocked()
+        {
+            if (!Application.isPlaying) return;
+
+            gameObject.SetActive(true);
+            bleedoutTotal = 10f;
+            bleedoutRemaining = 10f;
+            bleedoutActive = true;
+            reviveActive = false;
+            criticalTriggered = false;
+
+            if (knockedTitleText != null) knockedTitleText.gameObject.SetActive(true);
+            if (knockedCountText != null) knockedCountText.gameObject.SetActive(true);
+            if (bleedoutText != null) bleedoutText.text = "10s";
+            if (bleedoutFill != null) bleedoutFill.fillAmount = 1f;
+
+            UIFeedbackTester.Play(onKnockedFeedback, this, "기절");
+            StartHeartbeatLoop();
+        }
 
         [TitleGroup("Debug")]
-        [Button("Start Heartbeat Loop")]
+        [Button("심박 루프 시작")]
         private void TestStartHeartbeat() => StartHeartbeatLoop();
 
         [TitleGroup("Debug")]
-        [Button("Stop Heartbeat Loop")]
+        [Button("심박 루프 정지")]
         private void TestStopHeartbeat() => StopHeartbeatLoop();
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(1f, 0.3f, 0.3f)]
-        private void TestCritical() => onCriticalBleedoutFeedback?.PlayFeedbacks();
+        [Button("위험 출혈 피드백"), GUIColor(1f, 0.3f, 0.3f)]
+        private void TestCritical() => UIFeedbackTester.Play(onCriticalBleedoutFeedback, this, "위험 출혈");
 
         [TitleGroup("Debug")]
-        [Button("Test Revive Started"), GUIColor(0.6f, 1f, 0.6f)]
+        [Button("부활 시작 테스트"), GUIColor(0.6f, 1f, 0.6f)]
         private void TestReviveStarted()
         {
             if (!Application.isPlaying) return;
+
+            gameObject.SetActive(true);
+            reviveActive = true;
 
             if (knockedTitleText != null)
                 knockedTitleText.gameObject.SetActive(false);
@@ -319,14 +372,16 @@ namespace DeadZone.Actors
             if (bleedoutFill != null)
                 bleedoutFill.fillAmount = 0.05f;
 
-            onReviveStartedFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onReviveStartedFeedback, this, "부활 시작");
         }
 
         [TitleGroup("Debug")]
-        [Button("Test Revive 50%")]
+        [Button("부활 50% 테스트")]
         private void TestReviveHalf()
         {
             if (!Application.isPlaying) return;
+
+            reviveActive = true;
 
             if (bleedoutFill != null)
             {
@@ -336,10 +391,12 @@ namespace DeadZone.Actors
         }
         
         [TitleGroup("Debug")]
-        [Button("Test Revive Ended")]
+        [Button("부활 종료 테스트")]
         private void TestReviveEnded()
         {
             if (!Application.isPlaying) return;
+
+            reviveActive = false;
 
             if (knockedTitleText != null)
                 knockedTitleText.gameObject.SetActive(true);
@@ -350,12 +407,12 @@ namespace DeadZone.Actors
             if (knockedGuideText != null)
                 knockedGuideText.text = "동료의 응급처치를 기다리세요";
 
-            onReviveEndedFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onReviveEndedFeedback, this, "부활 종료");
         }
 
         // 이벤트 없이 10초 블리드아웃 시뮬레이션
         [TitleGroup("Debug")]
-        [Button("Simulate 10s Bleedout"), GUIColor(0.8f, 0.8f, 1f)]
+        [Button("10초 출혈 테스트"), GUIColor(0.8f, 0.8f, 1f)]
         private void SimulateBleedout()
         {
             if (!Application.isPlaying) return;
@@ -363,6 +420,7 @@ namespace DeadZone.Actors
             bleedoutTotal = 10f;
             bleedoutRemaining = 10f;
             bleedoutActive = true;
+            reviveActive = false;
             criticalTriggered = false;
 
             if (knockedTitleText != null)
@@ -380,8 +438,78 @@ namespace DeadZone.Actors
             if (bleedoutFill != null)
                 bleedoutFill.fillAmount = 1f;
 
-            onKnockedFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onKnockedFeedback, this, "기절");
             StartHeartbeatLoop();
+        }
+
+        [TitleGroup("Debug")]
+        [Button("기절+부활 통합 테스트"), GUIColor(0.7f, 1f, 0.9f)]
+        private void TestKnockedReviveFlow()
+        {
+            if (!Application.isPlaying) return;
+
+            StopReviveTestCoroutine();
+            reviveTestCoroutine = StartCoroutine(TestKnockedReviveFlowRoutine());
+        }
+
+        private IEnumerator TestKnockedReviveFlowRoutine()
+        {
+            gameObject.SetActive(true);
+
+            bleedoutTotal = 10f;
+            bleedoutRemaining = 10f;
+            bleedoutActive = false;
+            reviveActive = true;
+            criticalTriggered = false;
+
+            if (knockedTitleText != null)
+                knockedTitleText.gameObject.SetActive(false);
+
+            if (knockedCountText != null)
+                knockedCountText.gameObject.SetActive(false);
+
+            if (knockedGuideText != null)
+                knockedGuideText.text = reviveStatusLabel;
+
+            if (bleedoutText != null)
+                bleedoutText.text = reviveStatusLabel;
+
+            if (bleedoutFill != null)
+                bleedoutFill.fillAmount = 0f;
+
+            UIFeedbackTester.Play(onReviveStartedFeedback, this, "부활 시작");
+
+            const float duration = 3f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(elapsed / duration);
+
+                if (bleedoutFill != null)
+                    bleedoutFill.fillAmount = progress;
+
+                yield return null;
+            }
+
+            if (bleedoutFill != null)
+                bleedoutFill.fillAmount = 1f;
+
+            reviveActive = false;
+            bleedoutActive = false;
+
+            if (knockedTitleText != null)
+                knockedTitleText.gameObject.SetActive(true);
+
+            if (knockedCountText != null)
+                knockedCountText.gameObject.SetActive(true);
+
+            if (knockedGuideText != null)
+                knockedGuideText.text = "동료의 응급처치를 기다리세요";
+
+            UIFeedbackTester.Play(onReviveEndedFeedback, this, "부활 종료");
+            reviveTestCoroutine = null;
         }
 #endif
     }

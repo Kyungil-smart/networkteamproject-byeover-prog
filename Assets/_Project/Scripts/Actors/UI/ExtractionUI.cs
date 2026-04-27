@@ -89,6 +89,8 @@ namespace DeadZone.Actors
             if (NetworkManager.Singleton == null) return;
             if (e.clientId != NetworkManager.Singleton.LocalClientId) return;
 
+            Debug.Log($"[ExtractionUI] ExtractionStarted id={e.extractionId}, countdown={e.countdownSeconds:F1}", this);
+
             active = true;
             timeRemaining = e.countdownSeconds;
             totalTime = e.countdownSeconds;
@@ -97,7 +99,7 @@ namespace DeadZone.Actors
             if (panelRoot != null) panelRoot.SetActive(true);
             if (extractionNameText != null) extractionNameText.text = e.extractionId.ToString();
 
-            onStartFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onStartFeedback, this, "탈출 시작");
         }
 
         // 탈출 완료 시 UI 종료
@@ -106,8 +108,10 @@ namespace DeadZone.Actors
             if (NetworkManager.Singleton == null) return;
             if (e.clientId != NetworkManager.Singleton.LocalClientId) return;
 
+            Debug.Log($"[ExtractionUI] ExtractionCompleted id={e.extractionId}", this);
+
             active = false;
-            onCompletedFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onCompletedFeedback, this, "탈출 완료");
             if (panelRoot != null) panelRoot.SetActive(false);
         }
 
@@ -132,33 +136,39 @@ namespace DeadZone.Actors
 
                 // 파이널 구간은 강한 틱, 일반 구간은 약한 틱
                 if (displaySecond <= finalCountdownSeconds)
-                    onFinalCountdownTickFeedback?.PlayFeedbacks();
+                {
+                    Debug.Log($"[ExtractionUI] FinalTick second={displaySecond}", this);
+                    UIFeedbackTester.Play(onFinalCountdownTickFeedback, this, "탈출 마지막 카운트다운");
+                }
                 else
-                    onTickFeedback?.PlayFeedbacks();
+                {
+                    Debug.Log($"[ExtractionUI] Tick second={displaySecond}", this);
+                    UIFeedbackTester.Play(onTickFeedback, this, "탈출 일반 틱");
+                }
             }
         }
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(1f, 0.9f, 0.5f)]
-        private void TestStart() => onStartFeedback?.PlayFeedbacks();
+        [Button("탈출 시작 피드백"), GUIColor(1f, 0.9f, 0.5f)]
+        private void TestStart() => UIFeedbackTester.Play(onStartFeedback, this, "탈출 시작");
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium)]
-        private void TestTick() => onTickFeedback?.PlayFeedbacks();
+        [Button("일반 틱 피드백")]
+        private void TestTick() => UIFeedbackTester.Play(onTickFeedback, this, "일반 틱");
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(1f, 0.5f, 0.5f)]
-        private void TestFinalTick() => onFinalCountdownTickFeedback?.PlayFeedbacks();
+        [Button("마지막 카운트다운 피드백"), GUIColor(1f, 0.5f, 0.5f)]
+        private void TestFinalTick() => UIFeedbackTester.Play(onFinalCountdownTickFeedback, this, "마지막 카운트다운");
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(0.6f, 1f, 0.6f)]
-        private void TestCompleted() => onCompletedFeedback?.PlayFeedbacks();
+        [Button("탈출 완료 피드백"), GUIColor(0.6f, 1f, 0.6f)]
+        private void TestCompleted() => UIFeedbackTester.Play(onCompletedFeedback, this, "탈출 완료");
 
         // 이벤트 없이 10초 카운트다운 시뮬레이션
         [TitleGroup("Debug")]
-        [Button("Simulate 10s Countdown"), GUIColor(0.8f, 0.8f, 1f)]
+        [Button("10초 카운트다운 테스트"), GUIColor(0.8f, 0.8f, 1f)]
         private void SimulateCountdown()
         {
             if (!Application.isPlaying) return;
@@ -167,7 +177,7 @@ namespace DeadZone.Actors
             totalTime = 10f;
             lastDisplayedSecond = -1;
             if (panelRoot != null) panelRoot.SetActive(true);
-            onStartFeedback?.PlayFeedbacks();
+            UIFeedbackTester.Play(onStartFeedback, this, "탈출 시작");
         }
 #endif
     }
