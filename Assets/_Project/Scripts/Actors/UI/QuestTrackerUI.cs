@@ -89,8 +89,6 @@ namespace DeadZone.Actors
         // 퀘스트 수락 시 텍스트 초기화 + 패널 활성화
         private void OnQuestAccepted(QuestAcceptedEvent e)
         {
-            Debug.Log($"[QuestTrackerUI] QuestAccepted id={e.questId}", this);
-
             if (questNameText != null) questNameText.text = e.questId.ToString();
             if (progressText != null)  progressText.text = "0 / ?";
             ShowPanel();
@@ -100,21 +98,19 @@ namespace DeadZone.Actors
             requiredCount = 0;
             nearCompleteTriggered = false;
 
-            UIFeedbackTester.Play(onQuestAcceptedFeedback, this, "퀘스트 수락");
+            onQuestAcceptedFeedback?.PlayFeedbacks();
         }
 
         // 퀘스트 진행도 갱신 + 진행 피드백 재생
         private void OnQuestProgress(QuestProgressEvent e)
         {
-            Debug.Log($"[QuestTrackerUI] QuestProgress id={e.questId}, count={e.currentCount}/{e.requiredCount}", this);
-
             currentCount = e.currentCount;
             requiredCount = e.requiredCount;
 
             if (progressText != null)
                 progressText.text = $"{e.currentCount} / {e.requiredCount}";
 
-            UIFeedbackTester.Play(onQuestProgressFeedback, this, "퀘스트 진행");
+            onQuestProgressFeedback?.PlayFeedbacks();
 
             // 거의완료 구간 진입 순간 1회만 피드백 재생 (edge trigger)
             if (!nearCompleteTriggered && requiredCount > 0)
@@ -122,7 +118,7 @@ namespace DeadZone.Actors
                 float ratio = (float)currentCount / requiredCount;
                 if (ratio >= nearCompleteThreshold && ratio < 1f)
                 {
-                    UIFeedbackTester.Play(onNearCompleteFeedback, this, "퀘스트 거의 완료");
+                    onNearCompleteFeedback?.PlayFeedbacks();
                     nearCompleteTriggered = true;
                 }
             }
@@ -131,10 +127,8 @@ namespace DeadZone.Actors
         // 퀘스트 완료 시 텍스트 변경 + 완료 피드백 재생
         private void OnQuestCompleted(QuestCompletedEvent e)
         {
-            Debug.Log($"[QuestTrackerUI] QuestCompleted id={e.questId}", this);
-
             if (questNameText != null) questNameText.text = $"Completed: {e.questId}";
-            UIFeedbackTester.Play(onQuestCompletedFeedback, this, "퀘스트 완료");
+            onQuestCompletedFeedback?.PlayFeedbacks();
             HidePanel();
         }
 
@@ -160,20 +154,20 @@ namespace DeadZone.Actors
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
         [TitleGroup("Debug")]
-        [Button("퀘스트 수락 피드백"), GUIColor(0.7f, 0.9f, 1f)]
-        private void TestAccepted() => UIFeedbackTester.Play(onQuestAcceptedFeedback, this, "퀘스트 수락");
+        [Button(ButtonSizes.Medium), GUIColor(0.7f, 0.9f, 1f)]
+        private void TestAccepted() => onQuestAcceptedFeedback?.PlayFeedbacks();
 
         [TitleGroup("Debug")]
-        [Button("퀘스트 진행 피드백")]
-        private void TestProgress() => UIFeedbackTester.Play(onQuestProgressFeedback, this, "퀘스트 진행");
+        [Button(ButtonSizes.Medium)]
+        private void TestProgress() => onQuestProgressFeedback?.PlayFeedbacks();
 
         [TitleGroup("Debug")]
-        [Button("거의 완료 피드백"), GUIColor(1f, 0.9f, 0.5f)]
-        private void TestNearComplete() => UIFeedbackTester.Play(onNearCompleteFeedback, this, "거의 완료");
+        [Button(ButtonSizes.Medium), GUIColor(1f, 0.9f, 0.5f)]
+        private void TestNearComplete() => onNearCompleteFeedback?.PlayFeedbacks();
 
         [TitleGroup("Debug")]
-        [Button("퀘스트 완료 피드백"), GUIColor(0.6f, 1f, 0.6f)]
-        private void TestCompleted() => UIFeedbackTester.Play(onQuestCompletedFeedback, this, "퀘스트 완료");
+        [Button(ButtonSizes.Medium), GUIColor(0.6f, 1f, 0.6f)]
+        private void TestCompleted() => onQuestCompletedFeedback?.PlayFeedbacks();
 #endif
     }
 }

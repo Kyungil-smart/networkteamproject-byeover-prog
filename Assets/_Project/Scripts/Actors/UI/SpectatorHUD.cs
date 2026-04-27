@@ -80,8 +80,6 @@ namespace DeadZone.Actors
             if (NetworkManager.Singleton == null) return;
             if (e.spectatorClientId != NetworkManager.Singleton.LocalClientId) return;
 
-            Debug.Log($"[SpectatorHUD] SpectatorTargetChanged spectator={e.spectatorClientId}, target={e.newTargetClientId}", this);
-
             currentTargetClientId = e.newTargetClientId;
 
             // ulong.MaxValue는 '자유 카메라 모드'를 의미하는 약속값
@@ -95,30 +93,30 @@ namespace DeadZone.Actors
             // 관전 첫 진입은 다른 피드백 사용 (전환과 구분)
             if (!hasStartedSpectating)
             {
-                UIFeedbackTester.Play(onSpectateStartFeedback, this, "관전 시작");
+                onSpectateStartFeedback?.PlayFeedbacks();
                 hasStartedSpectating = true;
                 return;
             }
 
             if (e.newTargetClientId == ulong.MaxValue)
-                UIFeedbackTester.Play(onFreeCameraFeedback, this, "자유 카메라");
+                onFreeCameraFeedback?.PlayFeedbacks();
             else
-                UIFeedbackTester.Play(onTeammateTargetFeedback, this, "팀원 관전 전환");
+                onTeammateTargetFeedback?.PlayFeedbacks();
         }
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
         [TitleGroup("Debug")]
-        [Button("관전 시작 피드백"), GUIColor(0.5f, 0.5f, 0.5f)]
-        private void TestSpectateStart() => UIFeedbackTester.Play(onSpectateStartFeedback, this, "관전 시작");
+        [Button(ButtonSizes.Medium), GUIColor(0.5f, 0.5f, 0.5f)]
+        private void TestSpectateStart() => onSpectateStartFeedback?.PlayFeedbacks();
 
         [TitleGroup("Debug")]
-        [Button("팀원 관전 전환 피드백")]
-        private void TestTeammateSwitch() => UIFeedbackTester.Play(onTeammateTargetFeedback, this, "팀원 관전 전환");
+        [Button(ButtonSizes.Medium)]
+        private void TestTeammateSwitch() => onTeammateTargetFeedback?.PlayFeedbacks();
 
         [TitleGroup("Debug")]
-        [Button("자유 카메라 피드백")]
-        private void TestFreeCamera() => UIFeedbackTester.Play(onFreeCameraFeedback, this, "자유 카메라");
+        [Button(ButtonSizes.Medium)]
+        private void TestFreeCamera() => onFreeCameraFeedback?.PlayFeedbacks();
 #endif
     }
 }

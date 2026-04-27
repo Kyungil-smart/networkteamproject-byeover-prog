@@ -101,45 +101,33 @@ namespace DeadZone.Actors
         // 적 처치 이벤트 처리 + 로컬 처치면 HUD 피드백 추가 재생
         private void OnEnemyKilled(EnemyKilledEvent e)
         {
-            Debug.Log($"[KillFeedUI] EnemyKilled attacker={e.attackerClientId}, tier={e.tier}", this);
-
             string attackerName = ResolveName(e.attackerClientId);
-            KillFeedEntry entry = AddEntry($"{attackerName} killed Enemy ({e.tier})", isCritical: false);
+            AddEntry($"{attackerName} killed Enemy ({e.tier})", isCritical: false);
 
             if (IsLocalClient(e.attackerClientId))
-            {
-                Debug.Log($"[KillFeedUI] Local kill entry feedback target={(entry != null ? entry.name : "none")}", this);
-                UIFeedbackTester.Play(onLocalKillFeedback, this, "로컬 처치 HUD");
-            }
+                onLocalKillFeedback?.PlayFeedbacks();
         }
 
         // 크리티컬 히트 이벤트 처리 + 로컬 크리티컬이면 HUD 피드백 추가
         private void OnCritical(CriticalHitEvent e)
         {
-            Debug.Log($"[KillFeedUI] CriticalHit attacker={e.attackerClientId}, zone={e.zone}, damage={e.damage}", this);
-
             string attackerName = ResolveName(e.attackerClientId);
-            KillFeedEntry entry = AddEntry($"{attackerName} CRIT {e.zone} {e.damage}dmg", isCritical: true);
+            AddEntry($"{attackerName} CRIT {e.zone} {e.damage}dmg", isCritical: true);
 
             if (IsLocalClient(e.attackerClientId))
-            {
-                Debug.Log($"[KillFeedUI] Local crit entry feedback target={(entry != null ? entry.name : "none")}", this);
-                UIFeedbackTester.Play(onLocalCritFeedback, this, "로컬 치명타 HUD");
-            }
+                onLocalCritFeedback?.PlayFeedbacks();
         }
 
         // 플레이어 사망 이벤트 처리 + 팀원 사망이면 무거운 피드백 추가
         private void OnPlayerDied(PlayerDiedEvent e)
         {
-            Debug.Log($"[KillFeedUI] PlayerDied victim={e.victimClientId}, killer={e.killerClientId}", this);
-
             string victim = ResolveName(e.victimClientId);
             string killer = ResolveName(e.killerClientId);
             AddEntry($"{killer} killed {victim}", isCritical: false);
 
             // 로컬 본인의 죽음은 HUDManager의 Dead 전환 피드백에서 처리되므로 제외
             if (!IsLocalClient(e.victimClientId))
-                UIFeedbackTester.Play(onTeammateDeathFeedback, this, "팀원 사망 HUD");
+                onTeammateDeathFeedback?.PlayFeedbacks();
         }
 
         // ulong.MaxValue는 Enemy NPC를 의미하는 약속값
@@ -150,19 +138,14 @@ namespace DeadZone.Actors
         }
 
         // 엔트리 프리팹 인스턴스화 + 큐 관리 + 수명 예약
-        private KillFeedEntry AddEntry(string text, bool isCritical)
+        private void AddEntry(string text, bool isCritical)
         {
-            if (entryPrefab == null || entriesRoot == null)
-            {
-                Debug.LogWarning("[KillFeedUI] Entry prefab or entriesRoot is missing.", this);
-                return null;
-            }
+            if (entryPrefab == null || entriesRoot == null) return;
 
             var entry = Instantiate(entryPrefab, entriesRoot);
             ConfigureEntryRect(entry);
             entry.Setup(text, isCritical);
             activeEntries.Enqueue(entry);
-            Debug.Log($"[KillFeedUI] Entry spawned: {entry.name}, critical={isCritical}", entry);
 
             // 최대 개수 초과분은 즉시 제거 (페이드 없음 - 이미 오래된 엔트리)
             while (activeEntries.Count > maxEntries)
@@ -173,7 +156,6 @@ namespace DeadZone.Actors
 
             // 수명 만료 시 페이드아웃 후 제거 (코루틴으로 추적)
             StartCoroutine(ExpireAfter(entry, entryLifetime));
-            return entry;
         }
 
         private void ConfigureEntriesRoot()
@@ -255,7 +237,7 @@ namespace DeadZone.Actors
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
         [TitleGroup("Debug")]
-        [Button("일반 킬피드 추가")]
+        [Button("Add Test Entry (Normal)")]
         private void TestNormalEntry()
         {
             if (!Application.isPlaying) return;
@@ -263,7 +245,7 @@ namespace DeadZone.Actors
         }
 
         [TitleGroup("Debug")]
-        [Button("치명타 킬피드 추가"), GUIColor(1f, 0.84f, 0f)]
+        [Button("Add Test Entry (Crit)"), GUIColor(1f, 0.84f, 0f)]
         private void TestCritEntry()
         {
             if (!Application.isPlaying) return;
@@ -271,12 +253,12 @@ namespace DeadZone.Actors
         }
 
         [TitleGroup("Debug")]
-        [Button("로컬 처치 피드백")]
-        private void TestLocalKill() => UIFeedbackTester.Play(onLocalKillFeedback, this, "로컬 처치");
+        [Button("Test Local Kill Feedback")]
+        private void TestLocalKill() => onLocalKillFeedback?.PlayFeedbacks();
 
         [TitleGroup("Debug")]
-        [Button("로컬 치명타 피드백"), GUIColor(1f, 0.84f, 0f)]
-        private void TestLocalCrit() => UIFeedbackTester.Play(onLocalCritFeedback, this, "로컬 치명타");
+        [Button("Test Local Crit Feedback"), GUIColor(1f, 0.84f, 0f)]
+        private void TestLocalCrit() => onLocalCritFeedback?.PlayFeedbacks();
 #endif
     }
 }
