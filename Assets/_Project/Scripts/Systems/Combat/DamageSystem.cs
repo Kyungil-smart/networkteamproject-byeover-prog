@@ -2,6 +2,7 @@
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Actors;
 
 namespace DeadZone.Systems
 {
@@ -28,79 +29,52 @@ namespace DeadZone.Systems
             ServiceLocator.Unregister<DamageSystem>();
         }
 
-        public void ApplyDamage(HitInfo hit, AmmoDataSO ammo, WeaponDataSO weapon, ulong shooterClientId)
+        public void ApplyDamage(
+            IDamageable victim, 
+            Vector3 hitPoint, 
+            ProjectileData data)
         {
-            if (!IsServer) return;
-            if (hit.victim == null || ammo == null || weapon == null) return;
+            if (!IsServer || victim == null || victim.IsDead) return;
 
-            var victim = hit.victim.GetComponent<IDamageable>();
-            if (victim == null || victim.IsDead) return;
-
-            BodyPart effectiveZone = hit.zone;
-            bool effectiveCritical = hit.zone == BodyPart.Head;
-
-            if (IsAttackerAI(shooterClientId) && victim.IsPlayer && hit.zone == BodyPart.Head)
+            var victimNetObj = (victim as MonoBehaviour)?
+                .GetComponent<NetworkObject>();
+    
+            // 1. 의도 기반 판정 (물리적 hitZone은 아예 인자로 받지 않음)
+            bool isCritical = false;
+            if (victimNetObj != null && 
+                victimNetObj.NetworkObjectId == data.TargetNetId)
             {
-                effectiveZone = BodyPart.Torso;
-                effectiveCritical = false;
+                isCritical = data.WasHeadAim;
             }
 
-            var armored = hit.victim.GetComponent<IArmored>();
-            DamageResult result = CalculateDamage(armored, ammo, weapon, effectiveZone);
+            // 2. 판정 부위 강제 고정
+            // 치명타면 Head(3.0x), 아니면 무조건 Torso(1.0x)
+            BodyPart effectiveZone = isCritical ? 
+                BodyPart.Head : BodyPart.Torso;
 
+            // 3. 최종 계산 및 적용
+            var armored = (victim as MonoBehaviour)?.GetComponent<IArmored>();
+            DamageResult result = PenetrationCalculator.Calculate(
+                armored, effectiveZone, data);
+
+            victim.ApplyDamage(result.finalDamage, data.ShooterId, hitPoint);
+
+            // 4. 아머 내구도 소모 처리
             if (armored != null && result.armorDamage > 0)
             {
-                if (effectiveZone == BodyPart.Head) armored.DamageHelmetDurability(result.armorDamage);
-                else if (effectiveZone == BodyPart.Torso) armored.DamageArmorDurability(result.armorDamage);
-            }
-
-            victim.ApplyDamage(result.finalDamage, shooterClientId, hit);
-
-            if (effectiveCritical && result.finalDamage > 0)
-            {
-                EventBus.Publish(new CriticalHitEvent
-                {
-                    attackerClientId = shooterClientId,
-                    zone = hit.zone,
-                    damage = result.finalDamage,
-                });
+                if (effectiveZone == BodyPart.Head) 
+                    armored.DamageHelmetDurability(result.armorDamage);
+                else 
+                    armored.DamageArmorDurability(result.armorDamage);
             }
         }
 
-        private bool IsAttackerAI(ulong shooterClientId)
+        private DamageResult CalculateFinalDamage(
+            IArmored armored, BodyPart zone, ProjectileData data)
         {
-            if (shooterClientId == AI_SHOOTER_ID) return true;
-            if (NetworkManager.Singleton == null) return false;
-            return !NetworkManager.Singleton.ConnectedClients.ContainsKey(shooterClientId);
-        }
-
-        private DamageResult CalculateDamage(IArmored armored, AmmoDataSO ammo, WeaponDataSO weapon, BodyPart zone)
-        {
-            if (armored == null)
-            {
-                return PenetrationCalculator.CalculateUnarmored(ammo, zone, weapon.damage);
-            }
-
-            switch (zone)
-            {
-                case BodyPart.Head:
-                    var helmet = armored.GetEquippedHelmet();
-                    if (helmet != null && armored.GetHelmetDurability() > 0)
-                    {
-                        return PenetrationCalculator.CalculateHelmet(
-                            ammo, helmet, armored.GetHelmetDurability(), zone, weapon.damage);
-                    }
-                    break;
-                case BodyPart.Torso:
-                    var armorPiece = armored.GetEquippedArmor();
-                    if (armorPiece != null && armored.GetArmorDurability() > 0)
-                    {
-                        return PenetrationCalculator.CalculateArmor(
-                            ammo, armorPiece, armored.GetArmorDurability(), zone, weapon.damage);
-                    }
-                    break;
-            }
-            return PenetrationCalculator.CalculateUnarmored(ammo, zone, weapon.damage);
+            // PenetrationCalculator가 HitInfo대신 ProjectileData를 받도록 수정
+            // isCritical이 true라면 내부적으로 헤드셋 배율을 강제 적용
+            return PenetrationCalculator.Calculate(armored, zone, data);
         }
     }
 }
