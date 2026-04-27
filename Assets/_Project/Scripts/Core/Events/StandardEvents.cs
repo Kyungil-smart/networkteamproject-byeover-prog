@@ -50,6 +50,10 @@ namespace DeadZone.Core
     {
         public ulong shooterClientId;
         public FixedString64Bytes weaponId;
+        public WeaponDataSO weaponData;
+        public WeaponCategory weaponCategory;
+        public int maxAmmo;
+        public float maxDurability;
         public Vector3 origin;
         public float loudness;
     }
@@ -244,7 +248,4 @@ namespace DeadZone.Core
         // 클라이언트 전용. 접속한 Relay의 JoinCode를 에코백.
         public FixedString32Bytes joinCode;
     }
-    
-    // 테스트
-    public struct FireInputEvent : IGameEvent { }
 }
