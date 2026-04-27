@@ -20,24 +20,22 @@ namespace DeadZone.Actors
     public class HUDManager : MonoBehaviour
     {
         // HP / 스태미나 UI
-        [BoxGroup("HP")]
-        [BoxGroup("HP/Stamina")]
-
+        [BoxGroup("Stats")]
         [Required, SerializeField] private Image hpFill;// HP Fill 이미지
 
-        [BoxGroup("HP")]
-        [BoxGroup("HP/Stamina")]
+        [BoxGroup("Stats")]
+        [SerializeField] private TMP_Text hpValueText;
 
+        [BoxGroup("Stats")]
         [Required, SerializeField] private Image staminaFill;// 스태미나 Fill 이미지
 
-        [BoxGroup("HP")]
-        [BoxGroup("HP/Stamina")]
+        [BoxGroup("Stats")]
+        [SerializeField] private TMP_Text staminaValueText;
 
+        [BoxGroup("Stats")]
         [MinValue(1f), SerializeField] private float maxHP = 100f;// 최대 HP
 
-        [BoxGroup("HP")]
-        [BoxGroup("HP/Stamina")]
-
+        [BoxGroup("Stats")]
         [MinValue(1f), SerializeField] private float maxStamina = 100f;// 최대 스태미나
 
         // 상호작용 프롬프트
@@ -58,39 +56,32 @@ namespace DeadZone.Actors
         [Required, SerializeField] private GameObject spectatorPanel;// 사망 관전 패널
 
         // Feel 피드백 - HP
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/HP")]
+        [FoldoutGroup("HP Feedbacks")]
         [Tooltip("HP 감소 시 재생")]
         [SerializeField] private MMF_Player hpDamagedFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/HP")]
+        [FoldoutGroup("HP Feedbacks")]
         [Tooltip("HP 회복 시 재생")]
         [SerializeField] private MMF_Player hpHealedFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/HP")]
+        [FoldoutGroup("HP Feedbacks")]
         [Tooltip("저체력 경고가 발동되는 HP 비율 (0~1)")]
         [PropertyRange(0f, 1f), SerializeField] private float lowHpThreshold = 0.3f;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/HP")]
+        [FoldoutGroup("HP Feedbacks")]
         [Tooltip("저체력 임계치를 처음 넘었을 때 1회 재생")]
         [SerializeField] private MMF_Player lowHpEnteredFeedback;
 
         // Feel 피드백 - 상태 전환
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/State")]
+        [FoldoutGroup("State Feedbacks")]
         [Tooltip("Alive 상태 진입 시 재생 (부활 축하 연출)")]
         [SerializeField] private MMF_Player onAliveFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/State")]
+        [FoldoutGroup("State Feedbacks")]
         [Tooltip("Knocked 상태 진입 시 재생")]
         [SerializeField] private MMF_Player onKnockedFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [FoldoutGroup("Feedbacks/State")]
+        [FoldoutGroup("State Feedbacks")]
         [Tooltip("Dead 상태 진입 시 재생")]
         [SerializeField] private MMF_Player onSpectatorFeedback;
 
@@ -103,6 +94,8 @@ namespace DeadZone.Actors
         private void Awake()
         {
             ShowInteractPrompt(string.Empty);
+            RefreshHpUI(maxHP);
+            RefreshStaminaUI(maxStamina);
         }
 
         // 컴포넌트 활성화 시 EventBus 구독 시작
@@ -133,21 +126,21 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.clientId)) return;
 
-            float prev = currentHp01;
-            currentHp01 = Mathf.Clamp01(e.newValue / maxHP);
+            Debug.Log($"[HUDManager] PlayerHpChanged old={e.oldValue:F1}, new={e.newValue:F1}", this);
 
-            if (hpFill != null) hpFill.fillAmount = currentHp01;
+            float prev = currentHp01;
+            RefreshHpUI(e.newValue);
 
             // 이전값과 비교해서 데미지인지 회복인지 자동 분기
             if (currentHp01 < prev)
-                hpDamagedFeedback?.PlayFeedbacks();
+                UIFeedbackTester.Play(hpDamagedFeedback, this, "HUD HP 피해");
             else if (currentHp01 > prev)
-                hpHealedFeedback?.PlayFeedbacks();
+                UIFeedbackTester.Play(hpHealedFeedback, this, "HUD HP 회복");
 
             // 저체력 구간 진입 순간 1회만 경고 피드백 (edge trigger)
             bool nowLow = currentHp01 <= lowHpThreshold && currentHp01 > 0f;
             if (nowLow && !isLowHp)
-                lowHpEnteredFeedback?.PlayFeedbacks();
+                UIFeedbackTester.Play(lowHpEnteredFeedback, this, "HUD 저체력 진입");
             isLowHp = nowLow;
         }
 
@@ -155,7 +148,24 @@ namespace DeadZone.Actors
         private void OnStaminaChanged(PlayerStaminaChangedEvent e)
         {
             if (!IsLocalClient(e.clientId)) return;
-            if (staminaFill != null) staminaFill.fillAmount = e.newValue / maxStamina;
+            Debug.Log($"[HUDManager] PlayerStaminaChanged old={e.oldValue:F1}, new={e.newValue:F1}", this);
+            RefreshStaminaUI(e.newValue);
+        }
+
+        private void RefreshHpUI(float value)
+        {
+            float clamped = Mathf.Clamp(value, 0f, maxHP);
+            currentHp01 = Mathf.Clamp01(clamped / maxHP);
+
+            if (hpFill != null) hpFill.fillAmount = currentHp01;
+            if (hpValueText != null) hpValueText.text = Mathf.CeilToInt(clamped).ToString();
+        }
+
+        private void RefreshStaminaUI(float value)
+        {
+            float clamped = Mathf.Clamp(value, 0f, maxStamina);
+            if (staminaFill != null) staminaFill.fillAmount = Mathf.Clamp01(clamped / maxStamina);
+            if (staminaValueText != null) staminaValueText.text = Mathf.CeilToInt(clamped).ToString();
         }
 
         // 플레이어 상태 변경 시 패널 전환 + 상태별 피드백 재생
@@ -163,15 +173,17 @@ namespace DeadZone.Actors
         {
             if (!IsLocalClient(e.clientId)) return;
 
+            Debug.Log($"[HUDManager] PlayerStateChanged {e.oldState} -> {e.newState}", this);
+
             if (alivePanel != null)     alivePanel.SetActive(e.newState == PlayerState.Alive);
             if (knockedPanel != null)   knockedPanel.SetActive(e.newState == PlayerState.Knocked);
             if (spectatorPanel != null) spectatorPanel.SetActive(e.newState == PlayerState.Dead);
 
             switch (e.newState)
             {
-                case PlayerState.Alive:   onAliveFeedback?.PlayFeedbacks();     break;
-                case PlayerState.Knocked: onKnockedFeedback?.PlayFeedbacks();   break;
-                case PlayerState.Dead:    onSpectatorFeedback?.PlayFeedbacks(); break;
+                case PlayerState.Alive:   UIFeedbackTester.Play(onAliveFeedback, this, "HUD 생존 상태"); break;
+                case PlayerState.Knocked: UIFeedbackTester.Play(onKnockedFeedback, this, "HUD 기절 상태"); break;
+                case PlayerState.Dead:    UIFeedbackTester.Play(onSpectatorFeedback, this, "HUD 관전 상태"); break;
             }
         }
 
@@ -185,16 +197,60 @@ namespace DeadZone.Actors
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(1f, 0.7f, 0.7f)]
-        private void TestHpDamaged() => hpDamagedFeedback?.PlayFeedbacks();
+        [Button("HP 피해 피드백"), GUIColor(1f, 0.7f, 0.7f)]
+        private void TestHpDamaged() => UIFeedbackTester.Play(hpDamagedFeedback, this, "HP 피해");
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium), GUIColor(0.7f, 1f, 0.7f)]
-        private void TestHpHealed() => hpHealedFeedback?.PlayFeedbacks();
+        [Button("HP 회복 피드백"), GUIColor(0.7f, 1f, 0.7f)]
+        private void TestHpHealed() => UIFeedbackTester.Play(hpHealedFeedback, this, "HP 회복");
 
         [TitleGroup("Debug")]
-        [Button(ButtonSizes.Medium)]
-        private void TestLowHp() => lowHpEnteredFeedback?.PlayFeedbacks();
+        [Button("HP 회복 UI+피드백 테스트"), GUIColor(0.55f, 1f, 0.55f)]
+        private void TestHealValueAndFeedback()
+        {
+            if (!Application.isPlaying) return;
+
+            float before = currentHp01 * maxHP;
+            float healed = Mathf.Min(maxHP, before + 20f);
+            RefreshHpUI(healed);
+            Debug.Log($"[HUDManager] Test heal UI refreshed before={before:F1}, after={healed:F1}", this);
+            UIFeedbackTester.Play(hpHealedFeedback, this, "HUD HP 회복 테스트");
+        }
+
+        [TitleGroup("Debug")]
+        [Button("저체력 경고 피드백")]
+        private void TestLowHp() => UIFeedbackTester.Play(lowHpEnteredFeedback, this, "저체력 경고");
 #endif
+    }
+
+    internal static class UIFeedbackTester
+    {
+        public static void Play(MMF_Player feedback, Object context, string label)
+        {
+            if (feedback == null)
+            {
+                Debug.LogWarning($"{label} 피드백 참조가 비어 있습니다.", context);
+                return;
+            }
+
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning($"{label} 피드백은 Play Mode에서 테스트해주세요.", context);
+                return;
+            }
+
+            if (!feedback.gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning($"{label} 피드백 오브젝트가 비활성화 상태입니다: {feedback.name}", feedback);
+                return;
+            }
+
+            feedback.Initialization(feedback.gameObject);
+
+            if (feedback.IsPlaying)
+                feedback.StopFeedbacks();
+
+            feedback.PlayFeedbacks();
+        }
     }
 }
