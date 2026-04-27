@@ -6,30 +6,34 @@ using DeadZone.Core;
 
 namespace DeadZone.Systems
 {
-    // 작업대 제작 요청을 처리하는 중심 스크립트이다.
-    // 현재는 UI와 Player 인벤토리가 아직 없으므로 WorkbenchTestInventory로 제작 로직을 먼저 검증한다.
-    // 추후 Player 작업이 완료되면 실제 IInventory를 받아 제작 처리하도록 확장할 수 있다.
+    /// <summary>
+    /// 작업대 제작 요청을 처리하는 컨트롤러이다.
+    /// 작업대 레벨은 Workbench 시설의 CurrentLevel을 기준으로 판단한다.
+    /// 현재 Player GridInventory와 UI가 완성되지 않았으므로, 제작 재료 검증은 WorkbenchTestInventory로 테스트할 수 있다.
+    /// </summary>
     public class WorkbenchCraftingController : NetworkBehaviour
     {
-        [Header("테스트 모드")]
+        private const int MinWorkbenchLevel = 1;
+        private const int MaxWorkbenchLevel = 4;
 
-        [Tooltip("체크하면 Player 인벤토리 없이 WorkbenchTestInventory로 제작을 테스트합니다.")]
+        [Header("작업대 시설")]
+
+        [Tooltip("제작 가능 레벨을 판단할 Workbench 시설입니다. 비어 있으면 같은 오브젝트에서 자동으로 찾습니다.")]
+        [SerializeField] private Workbench workbenchFacility;
+
+
+        [Header("테스트 인벤토리")]
+
+        [Tooltip("체크하면 Player 인벤토리 대신 WorkbenchTestInventory로 제작을 테스트합니다.")]
         [SerializeField] private bool useTestInventory = true;
 
         [Tooltip("플레이어 인벤토리 대신 사용할 테스트 인벤토리입니다.")]
         [SerializeField] private WorkbenchTestInventory testInventory;
 
 
-        [Header("테스트용 작업대 레벨")]
-
-        [Tooltip("Workbench 시설 연결 전까지 사용할 임시 작업대 레벨입니다.")]
-        [Min(1)]
-        [SerializeField] private int testWorkbenchLevel = 1;
-
-
         [Header("제작 레시피")]
 
-        [Tooltip("이 작업대에서 제작 가능한 레시피 목록입니다.")]
+        [Tooltip("이 작업대에서 사용할 제작 레시피 목록입니다.")]
         [SerializeField] private List<RecipeSO> recipes = new List<RecipeSO>();
 
 
@@ -44,16 +48,19 @@ namespace DeadZone.Systems
 
         private void Awake()
         {
-            if (testInventory == null)
-                testInventory = GetComponent<WorkbenchTestInventory>();
-
+            FindRequiredComponents();
             BuildRecipeLookup();
         }
 
         private void OnValidate()
         {
-            if (testWorkbenchLevel < 1)
-                testWorkbenchLevel = 1;
+            FindRequiredComponents();
+        }
+
+        private void FindRequiredComponents()
+        {
+            if (workbenchFacility == null)
+                workbenchFacility = GetComponent<Workbench>();
 
             if (testInventory == null)
                 testInventory = GetComponent<WorkbenchTestInventory>();
@@ -71,7 +78,10 @@ namespace DeadZone.Systems
                     continue;
 
                 if (string.IsNullOrWhiteSpace(recipe.recipeID))
+                {
+                    Debug.LogWarning("[WorkbenchCraftingController] recipeID가 비어 있는 레시피가 있습니다.", this);
                     continue;
+                }
 
                 if (recipeLookup.ContainsKey(recipe.recipeID))
                 {
@@ -86,6 +96,66 @@ namespace DeadZone.Systems
         public IReadOnlyList<RecipeSO> GetRecipes()
         {
             return recipes;
+        }
+
+        public IReadOnlyList<RecipeSO> GetUnlockedRecipes()
+        {
+            BuildRecipeLookup();
+
+            List<RecipeSO> unlockedRecipes = new List<RecipeSO>();
+
+            if (!HasWorkbenchFacility())
+                return unlockedRecipes;
+
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                RecipeSO recipe = recipes[i];
+
+                if (recipe == null)
+                    continue;
+
+                if (!CanUseRecipeByWorkbenchLevel(recipe))
+                    continue;
+
+                unlockedRecipes.Add(recipe);
+            }
+
+            return unlockedRecipes;
+        }
+
+        public int GetCurrentWorkbenchLevel()
+        {
+            if (workbenchFacility == null)
+                return 0;
+
+            return Mathf.Clamp(workbenchFacility.CurrentLevel.Value, MinWorkbenchLevel, MaxWorkbenchLevel);
+        }
+
+        public bool CanCraft(string recipeID)
+        {
+            BuildRecipeLookup();
+
+            if (!HasWorkbenchFacility())
+                return false;
+
+            if (string.IsNullOrWhiteSpace(recipeID))
+                return false;
+
+            if (!TryGetRecipe(recipeID, out RecipeSO recipe))
+                return false;
+
+            if (!CanUseRecipeByWorkbenchLevel(recipe))
+                return false;
+
+            if (recipe.result == null)
+                return false;
+
+            IInventory inventory = GetActiveInventory();
+
+            if (inventory == null)
+                return false;
+
+            return HasAllIngredients(inventory, recipe);
         }
 
         public void RequestCraft(string recipeID)
@@ -119,9 +189,28 @@ namespace DeadZone.Systems
             TryCraftWithInventory(recipeID, inventory);
         }
 
+        private IInventory GetActiveInventory()
+        {
+            if (useTestInventory)
+                return testInventory;
+
+            if (NetworkManager.Singleton == null)
+                return null;
+
+            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+            if (!TryGetRequesterInventory(localClientId, out IInventory inventory))
+                return null;
+
+            return inventory;
+        }
+
         private void TryCraftWithInventory(string recipeID, IInventory inventory)
         {
             BuildRecipeLookup();
+
+            if (!HasWorkbenchFacility())
+                return;
 
             if (inventory == null)
             {
@@ -137,7 +226,10 @@ namespace DeadZone.Systems
 
             if (!CanUseRecipeByWorkbenchLevel(recipe))
             {
-                Debug.LogWarning($"[WorkbenchCraftingController] 작업대 레벨이 부족합니다. 현재 레벨: {testWorkbenchLevel}, 필요 레벨: {recipe.requiredFacilityLevel}", this);
+                int currentLevel = GetCurrentWorkbenchLevel();
+                int requiredLevel = GetRequiredWorkbenchLevel(recipe);
+
+                Debug.LogWarning($"[WorkbenchCraftingController] 작업대 레벨이 부족합니다. 현재 레벨: {currentLevel}, 필요 레벨: {requiredLevel}, RecipeID: {recipe.recipeID}", this);
                 return;
             }
 
@@ -172,6 +264,20 @@ namespace DeadZone.Systems
             Debug.Log($"[WorkbenchCraftingController] 제작 성공: {recipe.recipeID} → {recipe.result.itemID} x{resultCount}", this);
         }
 
+        private bool HasWorkbenchFacility()
+        {
+            if (workbenchFacility != null)
+                return true;
+
+            workbenchFacility = GetComponent<Workbench>();
+
+            if (workbenchFacility != null)
+                return true;
+
+            Debug.LogWarning("[WorkbenchCraftingController] Workbench 시설 컴포넌트가 없습니다. 제작 레벨을 판단할 수 없습니다.", this);
+            return false;
+        }
+
         private bool TryGetRecipe(string recipeID, out RecipeSO recipe)
         {
             recipe = null;
@@ -204,7 +310,22 @@ namespace DeadZone.Systems
             if (recipe == null)
                 return false;
 
-            return testWorkbenchLevel >= recipe.requiredFacilityLevel;
+            int currentLevel = GetCurrentWorkbenchLevel();
+
+            if (currentLevel < MinWorkbenchLevel)
+                return false;
+
+            int requiredLevel = GetRequiredWorkbenchLevel(recipe);
+
+            return currentLevel >= requiredLevel;
+        }
+
+        private int GetRequiredWorkbenchLevel(RecipeSO recipe)
+        {
+            if (recipe == null)
+                return MaxWorkbenchLevel;
+
+            return Mathf.Clamp(recipe.requiredFacilityLevel, MinWorkbenchLevel, MaxWorkbenchLevel);
         }
 
         private bool TryGetRequesterInventory(ulong requesterClientId, out IInventory inventory)
@@ -322,7 +443,6 @@ namespace DeadZone.Systems
                 inventory.TryAddItem(ingredient.item, amount);
             }
         }
-
 
 #if UNITY_EDITOR
         [ContextMenu("Debug Craft Recipe")]
