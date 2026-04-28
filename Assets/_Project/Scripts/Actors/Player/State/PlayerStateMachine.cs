@@ -44,6 +44,7 @@ namespace DeadZone.Actors
                 WeaponSwitching = GetComponent<WeaponSwitching>(),
                 Interaction = GetComponentInChildren<InteractionSystem>(),
                 CharacterController = GetComponent<CharacterController>(),
+                Animator = GetComponent<Animator>(),
                 OwnerClientId = OwnerClientId,
                 IsOwner = IsOwner,
                 IsServer = IsServer,
@@ -52,7 +53,7 @@ namespace DeadZone.Actors
             if (health != null)
             {
                 health.State.OnValueChanged += OnHealthStateChanged;
-                EnterState(health.State.Value);
+                EnterState(health.State.Value, health.State.Value);
             }
         }
 
@@ -66,20 +67,27 @@ namespace DeadZone.Actors
 
         private void OnHealthStateChanged(PlayerState oldState, PlayerState newState)
         {
-            EnterState(newState);
+            EnterState(newState, oldState);
         }
 
-        private void EnterState(PlayerState target)
+        private void EnterState(PlayerState target, PlayerState previous)
         {
+            if (context != null)
+            {
+                context.FromState = previous;
+                context.ToState = target;
+            }
+
             current?.OnExit(context);
-            if (states.TryGetValue(target, out var next))
+
+            if (states.TryGetValue(target, out PlayerStateBase next))
             {
                 current = next;
                 current.OnEnter(context);
             }
             else
             {
-                Debug.LogError($"[PlayerStateMachine] Missing state for {target}");
+                Debug.LogError($"[PlayerStateMachine] Missing state for {target}", this);
                 current = null;
             }
         }

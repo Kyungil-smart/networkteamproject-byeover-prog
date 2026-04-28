@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-
+using DeadZone.Core;
 
 namespace DeadZone.Actors
 {
@@ -19,6 +19,10 @@ namespace DeadZone.Actors
         public WeaponSwitching WeaponSwitching;
         public InteractionSystem Interaction;
         public CharacterController CharacterController;
+        public Animator Animator;
+        public PlayerState FromState;
+        public PlayerState ToState;
+        
 
         public ulong OwnerClientId;
         public bool IsOwner;
