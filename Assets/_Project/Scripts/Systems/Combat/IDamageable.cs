@@ -1,4 +1,6 @@
-﻿namespace DeadZone.Systems
+﻿using UnityEngine;
+
+namespace DeadZone.Systems
 {
     /// <summary>
     /// DamageSystem이 데미지를 줄 수 있는 모든 것. 의도적으로 슬림하게 설계.
@@ -9,5 +11,6 @@
         bool IsPlayer { get; }
         bool IsDead { get; }
         void ApplyDamage(int damage, ulong attackerClientId, HitInfo hit);
+        void ApplyDamage(int damage, ulong attackerClientId, Vector3 hit);
     }
 }

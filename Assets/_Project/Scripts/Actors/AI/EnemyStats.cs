@@ -46,6 +46,22 @@ namespace DeadZone.Actors
                 NetworkObject?.Despawn(destroy: true);
             }
         }
+        
+        public void ApplyDamage(int damage, ulong attackerClientId, Vector3 hit)
+        {
+            if (!IsServer || IsDead) return;
+            CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
+            if (CurrentHP.Value <= 0f)
+            {
+                EventBus.Publish(new EnemyKilledEvent
+                {
+                    attackerClientId = attackerClientId,
+                    tier = statsSO != null ? statsSO.tier : EnemyTier.T1,
+                    position = transform.position,
+                });
+                NetworkObject?.Despawn(destroy: true);
+            }
+        }
 
         public HelmetDataSO GetEquippedHelmet() => null;
         public ArmorDataSO GetEquippedArmor() => statsSO != null ? statsSO.defaultArmor : null;
