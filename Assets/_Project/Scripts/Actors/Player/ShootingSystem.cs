@@ -158,7 +158,7 @@ namespace DeadZone.Actors
                 return;
 
             // 1. 탄환 소모
-            ConsumeAmmoOnServer();
+            equipment.ConsumeCurrentWeaponAmmo();
 
             // 2. 탄속 계산: 무기 기본 탄속 * 탄약 배율
             // V_final = V_muzzle * M_velocity
@@ -173,25 +173,6 @@ namespace DeadZone.Actors
 
             // 5. 이벤트 발행
             PublishFireEvent(rpc.Receive.SenderClientId, weaponId);
-        }
-        
-        /// <summary>
-        /// 서버에서 현재 장착된 슬롯의 잔탄량을 1 감소시킵니다.
-        /// </summary>
-        private void ConsumeAmmoOnServer()
-        {
-            // EquipmentSlots에 정의된 상태를 직접 수정 (서버에서 실행 중이므로 가능)
-            var state = equipment.CurrentWeaponState;
-            state.currentAmmo--;
-
-            // 현재 장착된 슬롯을 찾아 NetworkVariable 업데이트
-            FixedString64Bytes curId = equipment.CurrentEquipped.Value;
-            if (curId == equipment.Primary1Id.Value) 
-                equipment.Primary1State.Value = state;
-            else if (curId == equipment.Primary2Id.Value) 
-                equipment.Primary2State.Value = state;
-            else if (curId == equipment.SecondaryId.Value) 
-                equipment.SecondaryState.Value = state;
         }
         
         /// <summary>

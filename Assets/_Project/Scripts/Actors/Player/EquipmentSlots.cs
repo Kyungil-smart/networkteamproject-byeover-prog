@@ -98,6 +98,32 @@ namespace DeadZone.Actors
             if (!IsServer) return;
             ArmorDurability.Value = Mathf.Max(0f, ArmorDurability.Value - amount);
         }
+        
+        /// <summary>
+        /// 현재 손에 들고 있는 무기의 탄환을 1발 소모합니다. (서버 전용)
+        /// </summary>
+        public void ConsumeCurrentWeaponAmmo()
+        {
+            if (!IsServer) return;
+
+            FixedString64Bytes curId = CurrentEquipped.Value;
+    
+            // 현재 슬롯을 찾아 WeaponState 업데이트
+            if (curId == Primary1Id.Value) 
+                Primary1State.Value = DecreaseAmmo(Primary1State.Value);
+            else if (curId == Primary2Id.Value) 
+                Primary2State.Value = DecreaseAmmo(Primary2State.Value);
+            else if (curId == SecondaryId.Value) 
+                SecondaryState.Value = DecreaseAmmo(SecondaryState.Value);
+        }
+        private WeaponState DecreaseAmmo(WeaponState state)
+        {
+            if (state.currentAmmo > 0)
+            {
+                state.currentAmmo--;
+            }
+            return state;
+        }
 
         [ServerRpc]
         public void EquipHelmetServerRpc(FixedString64Bytes helmetId)
