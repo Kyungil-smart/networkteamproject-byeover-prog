@@ -59,6 +59,7 @@ namespace DeadZone.Actors
         
         public bool IsRolling => isRolling;
         public bool IsDamageImmune => isDamageImmune;
+        public Vector3 CurrentRollDirection => rollDirection;
         public float StaminaCost => staminaCost;
         public float InvincibilityWindow => invincibilityWindow;
 

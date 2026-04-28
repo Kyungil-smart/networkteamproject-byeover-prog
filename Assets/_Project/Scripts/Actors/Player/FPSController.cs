@@ -45,6 +45,7 @@ namespace DeadZone.Actors
 
         private CharacterController cc;
         private PlayerStaminaSystem stamina;
+        private RollSystem rollSystem;
 
         private Vector2 moveInput;
         private Vector2 lookInput;
@@ -63,6 +64,7 @@ namespace DeadZone.Actors
         {
             cc = GetComponent<CharacterController>();
             stamina = GetComponent<PlayerStaminaSystem>();
+            rollSystem = GetComponent<RollSystem>();
         }
 
         private void Update()
@@ -70,6 +72,13 @@ namespace DeadZone.Actors
             // TODO(NetworkAuthority): 로컬 단일 플레이 이동 테스트 중에는 Owner 가드를 임시 비활성화
             // 복구 조건: NetworkManager가 PlayerPrefab을 스폰하고 소유자 입력 라우팅이 검증되면 활성화
             // if (IsSpawned && !IsOwner) return;
+            
+            if (rollSystem != null && rollSystem.IsRolling)
+            {
+                ApplyRollRotation();
+                ApplyGravityOnly();
+                return;
+            }
             
             ApplyLookRotation();
 
@@ -130,6 +139,28 @@ namespace DeadZone.Actors
             if (lookDir.sqrMagnitude < 0.001f) return;
             
             transform.rotation = Quaternion.LookRotation(lookDir);
+        }
+
+        private void ApplyRollRotation()
+        {
+            Vector3 rollDirection = rollSystem.CurrentRollDirection;
+            rollDirection.y = 0f;
+            
+            if (rollDirection.sqrMagnitude < 0.001f) return;
+            
+            transform.rotation = Quaternion.LookRotation(rollDirection.normalized);
+        }
+
+        private void ApplyGravityOnly()
+        {
+            if (cc == null) return;
+
+            if (cc.isGrounded && verticalVelocity < 0f) verticalVelocity = -2f;
+            
+            verticalVelocity += gravity * Time.deltaTime;
+            
+            Vector3 velocity = Vector3.up * verticalVelocity;
+            cc.Move(velocity * Time.deltaTime);
         }
         
         public void SetMove(Vector2 v) => moveInput = v;

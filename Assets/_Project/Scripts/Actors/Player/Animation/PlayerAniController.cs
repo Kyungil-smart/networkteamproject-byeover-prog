@@ -1,4 +1,3 @@
-using System.Threading;
 using UnityEngine;
 
 namespace DeadZone.Actors
@@ -20,6 +19,10 @@ namespace DeadZone.Actors
         [Tooltip("실제 이동 속도를 읽을 CharacterController" +
                  "\n비어 있으면 같은 오브젝트의 CharacterController를 사용")]
         [SerializeField] private CharacterController characterController;
+        
+        [Tooltip("구르기 상태를 Animator IsRolling 파라미터로 전달할 RollSystem" +
+                 "\n비어 있으면 같은 오브젝트에서 자동으로 찾음")]
+        [SerializeField] private RollSystem rollSystem;
         
         [Header("====속도 단계 기준====")]
         [Tooltip("Run 애니메이션에 도달하는 기준 속도" +
@@ -50,11 +53,13 @@ namespace DeadZone.Actors
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
         private static readonly int IsSprintingHash = Animator.StringToHash("IsSprinting");
+        private static readonly int IsRollingHash = Animator.StringToHash("IsRolling");
 
         private void Awake()
         {
             if (animator == null) animator = GetComponent<Animator>();
             if (characterController == null) characterController = GetComponent<CharacterController>();
+            if (rollSystem == null) rollSystem = GetComponent<RollSystem>();
         }
 
         private void Update()
@@ -101,6 +106,8 @@ namespace DeadZone.Actors
             
             animator.SetBool(IsMovingHash, isMoving);
             animator.SetBool(IsSprintingHash, isSprinting);
+            if (rollSystem != null) animator.SetBool(IsRollingHash, rollSystem.IsRolling);
+            
         }
         
     }
