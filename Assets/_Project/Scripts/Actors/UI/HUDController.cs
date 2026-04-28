@@ -65,9 +65,11 @@ namespace DeadZone.Actors
         {
             currentState = state;
 
-            if (playerHUD != null) playerHUD.SetActive(state == PlayerState.Alive);
-            if (knockedHUD != null) knockedHUD.SetActive(state == PlayerState.Knocked);
+            if (playerHUD != null) playerHUD.SetActive(state != PlayerState.Dead);
+            ApplyKnockedHudVisibility(state == PlayerState.Knocked);
             if (spectatorHUD != null) spectatorHUD.SetActive(state == PlayerState.Dead);
+
+            ApplyLinkedHpBarState(state);
 
             if (!playFeedback) return;
 
@@ -82,6 +84,33 @@ namespace DeadZone.Actors
                 case PlayerState.Dead:
                     UIFeedbackTester.Play(onSpectatorFeedback, this, "HUDController 관전 상태");
                     break;
+            }
+        }
+
+        private void ApplyKnockedHudVisibility(bool visible)
+        {
+            if (knockedHUD == null) return;
+
+            KnockedHUD knockedHudComponent = knockedHUD.GetComponent<KnockedHUD>();
+            if (knockedHudComponent != null)
+            {
+                knockedHUD.SetActive(true);
+                knockedHudComponent.SetVisibleForUI(visible);
+                return;
+            }
+
+            knockedHUD.SetActive(visible);
+        }
+
+        private void ApplyLinkedHpBarState(PlayerState state)
+        {
+            HUDManager[] hudManagers = GetComponentsInChildren<HUDManager>(true);
+            foreach (HUDManager hudManager in hudManagers)
+            {
+                if (state == PlayerState.Knocked)
+                    hudManager.ApplyKnockedHpModeForUI();
+                else if (state == PlayerState.Alive)
+                    hudManager.ApplyAliveHpModeForUI();
             }
         }
 
