@@ -52,6 +52,7 @@ namespace DeadZone.Actors
         private bool isSprinting;
         private bool isCrawling;
         private float verticalVelocity;
+        private bool isMoveLocked;
 
         public Vector2 LookInput => lookInput;
         public Vector2 MoveInput => moveInput;
@@ -59,6 +60,7 @@ namespace DeadZone.Actors
         public Vector3 CurrentMoveDirection => GetMoveDirection();
         public bool IsSprinting => isSprinting;
         public bool IsCrawling => isCrawling;
+        public bool IsMoveLocked => isMoveLocked;
 
         private void Awake()
         {
@@ -72,6 +74,12 @@ namespace DeadZone.Actors
             // TODO(NetworkAuthority): 로컬 단일 플레이 이동 테스트 중에는 Owner 가드를 임시 비활성화
             // 복구 조건: NetworkManager가 PlayerPrefab을 스폰하고 소유자 입력 라우팅이 검증되면 활성화
             // if (IsSpawned && !IsOwner) return;
+            
+            if (isMoveLocked)
+            {
+                ApplyGravityOnly();
+                return;
+            }
             
             if (rollSystem != null && rollSystem.IsRolling)
             {
@@ -104,6 +112,17 @@ namespace DeadZone.Actors
             cc.Move(velocity * Time.deltaTime);
         }
 
+        public void SetMoveLocked(bool locked)
+        {
+            isMoveLocked = locked;
+
+            if (locked)
+            {
+                moveInput = Vector2.zero;
+                isSprinting = false;
+            }
+        }
+        
         private Vector3 GetMoveDirection()
         {
             Vector3 rawInput = new Vector3(moveInput.x, 0f, moveInput.y);

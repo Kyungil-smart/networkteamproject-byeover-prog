@@ -12,12 +12,35 @@ namespace DeadZone.Actors
 
         public override void OnEnter(PlayerStateContext ctx)
         {
-            SetCombatEnabled(ctx, true);
-            if (ctx.CharacterController != null) ctx.CharacterController.enabled = true;
+            if (ctx.Animator != null)
+            {
+                ctx.Animator.SetBool(IsKnockedHash, false);
+                ctx.Animator.SetBool(IsDeadHash, false);
+            }
+            
+            if (ctx.FPS != null)
+            {
+                ctx.FPS.enabled = true;
+                ctx.FPS.SetMoveLocked(false);
+                ctx.FPS.SetCrawlMode(false);
+            }
+            
+            if (ctx.Roll != null) ctx.Roll.enabled = true;
+            if (ctx.Shooting != null) ctx.Shooting.enabled = true;
+            if (ctx.Reload != null) ctx.Reload.enabled = true;
+            if (ctx.ADS != null) ctx.ADS.enabled = true;
+            if (ctx.WeaponSwitching != null) ctx.WeaponSwitching.enabled = true;
+            if (ctx.Interaction != null) ctx.Interaction.enabled = true;
         }
 
         public override void OnExit(PlayerStateContext ctx)
         {
+            if (ctx.Animator == null) return;
+
+            if (ctx.ToState == PlayerState.Knocked)
+            {
+                ctx.Animator.SetTrigger(KnockdownHash);
+            }
         }
 
         private void SetCombatEnabled(PlayerStateContext ctx, bool enabled)

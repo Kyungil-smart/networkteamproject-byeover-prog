@@ -79,6 +79,13 @@ namespace DeadZone.Actors
             UpdateRollMovement();
         }
         
+        public void CancelRoll()
+        {
+            isRolling = false;
+            distanceTraveled = 0f;
+            isDamageImmune = false;
+        }
+        
         public void TryRoll()
         {
             // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 Owner 가드를 임시 비활성화

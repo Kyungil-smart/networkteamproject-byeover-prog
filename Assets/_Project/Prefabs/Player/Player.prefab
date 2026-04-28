@@ -483,6 +483,7 @@ GameObject:
   - component: {fileID: 1860151659725561128}
   - component: {fileID: 1755801955162734937}
   - component: {fileID: -4358573395740997876}
+  - component: {fileID: 8112840747869453086}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -707,7 +708,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7ea9f4b67d0dc64591ab82a3dc85d0e, type: 3}
   m_Name: 
@@ -756,6 +757,19 @@ MonoBehaviour:
   useDamageImmuneWindow: 1
   invincibilityWindow: 0.15
   allowLocalRollWithoutNetworkSpawn: 1
+--- !u!114 &8112840747869453086
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0830c62a4e78594b80143906773e1aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerStateMachine
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0
