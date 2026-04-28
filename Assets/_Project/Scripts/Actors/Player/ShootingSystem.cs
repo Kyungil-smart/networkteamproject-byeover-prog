@@ -24,7 +24,6 @@ namespace DeadZone.Actors
 
         private EquipmentSlots equipment;
         private float nextFireAllowed;
-        private GameObject projectilePrefab; // 무기에서 추출 필요
         
         
         // 조준 분석 결과를 담는 내부 구조체
@@ -152,39 +151,100 @@ namespace DeadZone.Actors
             FixedString64Bytes weaponId, ServerRpcParams rpc = default)
         {
             var weapon = equipment?.Lookup(weaponId.ToString()) as WeaponDataSO;
-            if (weapon == null) return;
+            var state = equipment?.CurrentWeaponState ?? default;
+            var ammo = equipment?.CurrentAmmoData;
 
+            if (weapon == null || ammo == null || state.currentAmmo <= 0) 
+                return;
+
+            // 1. 탄환 소모
+            ConsumeAmmoOnServer();
+
+            // 2. 탄속 계산: 무기 기본 탄속 * 탄약 배율
+            // V_final = V_muzzle * M_velocity
+            float finalVelocity = weapon.muzzleVelocity * ammo.velocityMultiplier;
+
+            // 3. 투사체 데이터 생성
+            ProjectileData pData = CreateProjectileData(rpc.Receive.SenderClientId, 
+                tId, head, weapon, ammo);
+    
+            // 4. 투사체 생성 시 계산된 탄속 전달
+            SpawnProjectile(pData, target, weapon, finalVelocity);
+
+            // 5. 이벤트 발행
+            PublishFireEvent(rpc.Receive.SenderClientId, weaponId);
+        }
+        
+        /// <summary>
+        /// 서버에서 현재 장착된 슬롯의 잔탄량을 1 감소시킵니다.
+        /// </summary>
+        private void ConsumeAmmoOnServer()
+        {
+            // EquipmentSlots에 정의된 상태를 직접 수정 (서버에서 실행 중이므로 가능)
+            var state = equipment.CurrentWeaponState;
+            state.currentAmmo--;
+
+            // 현재 장착된 슬롯을 찾아 NetworkVariable 업데이트
+            FixedString64Bytes curId = equipment.CurrentEquipped.Value;
+            if (curId == equipment.Primary1Id.Value) 
+                equipment.Primary1State.Value = state;
+            else if (curId == equipment.Primary2Id.Value) 
+                equipment.Primary2State.Value = state;
+            else if (curId == equipment.SecondaryId.Value) 
+                equipment.SecondaryState.Value = state;
+        }
+        
+        /// <summary>
+        /// 무기와 탄약 데이터를 조합하여 최종 투사체 구조체를 생성합니다.
+        /// </summary>
+        private ProjectileData CreateProjectileData(ulong shooter, ulong target, 
+            bool isHead, WeaponDataSO w, AmmoDataSO a)
+        {
+            return new ProjectileData
+            {
+                ShooterId = shooter,
+                // 최종 데미지 = 무기 기본 데미지 * 탄약 배율
+                BaseDamage = Mathf.RoundToInt(w.damage * a.damageMultiplier),
+                // 탄약의 관통력 적용
+                Penetration = a.penetration,
+                TargetNetId = target,
+                WasHeadAim = isHead,
+                Range = w.engageRange.y
+            };
+        }
+        
+        /// <summary>
+        /// 실제 투사체 오브젝트를 월드에 생성하고 네트워크에 등록합니다.
+        /// </summary>
+        private void SpawnProjectile(ProjectileData pData, Vector3 target, 
+            WeaponDataSO w, float velocity)
+        {
             Vector3 spawnPos = muzzleTransform.position;
             Vector3 fireDir = (target - spawnPos).normalized;
 
-            // 탄환 생성 및 스폰
-            GameObject bullet = Instantiate(projectilePrefab, spawnPos, Quaternion.identity);
+            // 탄환 프리팹 생성 및 방향 설정
+            GameObject bullet = Instantiate(w.projectilePrefab, spawnPos, 
+                Quaternion.LookRotation(fireDir));
+    
             var netObj = bullet.GetComponent<NetworkObject>();
             netObj.Spawn(true);
 
-            // 투사체 초기화 (구조체 데이터 전달)
+            // ProjectileController에 최종 계산된 velocity 주입
             if (bullet.TryGetComponent<ProjectileController>(out var pc))
             {
-                var pData = new ProjectileData
-                {
-                    ShooterId = rpc.Receive.SenderClientId,
-                    BaseDamage = (int)weapon.damage,
-                    Penetration = 1, // 필요 시 무기/탄약 데이터 연동
-                    TargetNetId = tId,
-                    WasHeadAim = head,
-                    Range = weapon.engageRange.y
-                };
-
-                pc.Initialize(pData, fireDir, weapon.muzzleVelocity);
+                pc.Initialize(pData, fireDir, velocity);
             }
-
-            // 발사 이벤트 전파 (사운드, 이펙트 등)
+        }
+        
+        private void PublishFireEvent(ulong clientId, FixedString64Bytes wId)
+        {
             EventBus.Publish(new WeaponFiredEvent
             {
-                shooterClientId = rpc.Receive.SenderClientId,
-                weaponId = weaponId,
-                origin = spawnPos
+                shooterClientId = clientId,
+                weaponId = wId,
+                origin = muzzleTransform.position
             });
         }
+
     }
 }

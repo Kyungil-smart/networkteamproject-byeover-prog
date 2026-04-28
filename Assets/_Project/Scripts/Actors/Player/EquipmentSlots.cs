@@ -19,6 +19,11 @@ namespace DeadZone.Actors
         [Header("SO Database (look up by ID)")]
         [SerializeField] private ItemDataSO[] itemDatabase;
 
+        // 총알을 포함한 장착 무기 슬롯 정보
+        public NetworkVariable<WeaponState> Primary1State = new();
+        public NetworkVariable<WeaponState> Primary2State = new();
+        public NetworkVariable<WeaponState> SecondaryState = new();
+        
         public NetworkVariable<FixedString64Bytes> HeadSlotId      = new("");
         public NetworkVariable<FixedString64Bytes> TorsoSlotId     = new("");
         public NetworkVariable<FixedString64Bytes> Primary1Id      = new("");
@@ -52,6 +57,30 @@ namespace DeadZone.Actors
         }
 
         public WeaponDataSO GetCurrentWeapon() => Lookup(CurrentEquipped.Value.ToString()) as WeaponDataSO;
+        /// <summary>
+        /// 현재 손에 들고 있는 무기의 런타임 상태(잔탄/탄종)를 반환합니다.
+        /// </summary>
+        public WeaponState CurrentWeaponState
+        {
+            get
+            {
+                FixedString64Bytes curId = CurrentEquipped.Value;
+                if (curId == Primary1Id.Value) return Primary1State.Value;
+                if (curId == Primary2Id.Value) return Primary2State.Value;
+                if (curId == SecondaryId.Value) return SecondaryState.Value;
+                return default;
+            }
+        }
+        /// <summary>
+        /// 현재 무기의 정적 데이터(SO)를 반환합니다.
+        /// </summary>
+        public WeaponDataSO CurrentWeaponData => GetCurrentWeapon();
+
+        /// <summary>
+        /// 현재 무기에 장전된 탄약의 정적 데이터(SO)를 반환합니다.
+        /// </summary>
+        public AmmoDataSO CurrentAmmoData => 
+            Lookup(CurrentWeaponState.loadedAmmoId.ToString()) as AmmoDataSO;
 
         public HelmetDataSO GetEquippedHelmet() => Lookup(HeadSlotId.Value.ToString()) as HelmetDataSO;
         public ArmorDataSO GetEquippedArmor() => Lookup(TorsoSlotId.Value.ToString()) as ArmorDataSO;
