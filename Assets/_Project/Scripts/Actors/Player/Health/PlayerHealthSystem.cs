@@ -133,13 +133,30 @@ namespace DeadZone.Actors
             }
         }
 
+        public void ApplyDamage(int damage, ulong attackerClientId, Vector3 hit)
+        {
+            if (!IsServer || IsDead) return;
+
+            if (ShouldIgnoreDamage()) return;
+
+            if (IsAlive)
+            {
+                CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
+                if (CurrentHP.Value <= 0f) TransitionToKnocked(attackerClientId);
+            }
+            else if (IsKnocked)
+            {
+                KnockedHP.Value = Mathf.Max(0f, KnockedHP.Value - damage);
+                if (KnockedHP.Value <= 0f) TransitionToDead(attackerClientId);
+            }
+        }
+
         private bool ShouldIgnoreDamage()
         {
             if (!IsAlive) return false;
 
             return rollSystem != null && rollSystem.IsDamageImmune;
         }
-        
         public void Heal(float amount)
         {
             if (!IsAlive) return;

@@ -14,18 +14,32 @@ namespace DeadZone.Actors
     public class ShootingSystem : NetworkBehaviour
     {
         [Header("Refs")]
+        [Tooltip("총구를 할당해주세요")]
         [SerializeField] private Transform muzzleTransform;
+        [Tooltip("피격 가능 대상의 레이어 입니다")]
         [SerializeField] private LayerMask hitMask = ~0;
+        [Tooltip("바닥의 레이어 입니다")]
+        [SerializeField] private LayerMask groundMask;
         [SerializeField] private float maxRange = 600f;
 
         private EquipmentSlots equipment;
         private float nextFireAllowed;
-
+        
+        
+        // 조준 분석 결과를 담는 내부 구조체
+        private struct AimResult
+        {
+            public Vector3 targetPoint;
+            public ulong targetId;
+            public bool isHeadAim;
+        }
+       
         private void Awake()
         {
             equipment = GetComponent<EquipmentSlots>();
         }
 
+        // 레거시 
         public void TryFire()
         {
             if (!IsOwner) return;
@@ -38,45 +52,180 @@ namespace DeadZone.Actors
             Vector3 origin = muzzleTransform != null ? muzzleTransform.position : transform.position;
             Vector3 dir = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
 
-            FireServerRpc(origin, dir, weapon.itemID);
+            // FireServerRpc(origin, dir, weapon.itemID);
+        }
+        // 탑뷰 기반 발사 시도 함수
+        // 요청이 들어올 때 
+        public void TryFire(Vector2 mousePos)
+        {
+            if (!IsOwner) return;
+            if (Time.time < nextFireAllowed) return;
+
+            var weapon = equipment?.GetCurrentWeapon();
+            if (weapon == null) return;
+
+            // 1. 조준 의도 분석 (누구를, 어디를 노렸는가)
+            AimResult result = AnalyzeAim(mousePos);
+            if (result.targetPoint == Vector3.zero) return;
+
+            // 2. 쿨타임 계산 및 서버 요청
+            nextFireAllowed = Time.time + (1f / Mathf.Max(0.1f, weapon.fireRate));
+            
+            FireServerRpc(
+                result.targetPoint, 
+                result.targetId, 
+                result.isHeadAim, 
+                weapon.itemID
+            );
+        }
+        
+        private AimResult AnalyzeAim(Vector2 screenPos)
+        {
+            Ray ray = Camera.main.ScreenPointToRay(screenPos);
+
+            // 1. 우선순위에 따른 타겟팅 시도
+            if (TryHitboxAim(ray, out AimResult hitboxResult))
+                return hitboxResult;
+
+            if (TryGroundAim(ray, out AimResult groundResult))
+                return groundResult;
+
+            return new AimResult { targetPoint = Vector3.zero };
+        }
+
+        // 히트박스(적) 조준 분석
+        private bool TryHitboxAim(Ray ray, out AimResult result)
+        {
+            result = new AimResult();
+            if (Physics.Raycast(ray, out var hit, 200f, hitMask))
+            {
+                result.targetPoint = hit.point;
+        
+                // HitZone으로부터 대상 식별 및 의도 추출
+                if (hit.collider.TryGetComponent<HitZone>(out var zone))
+                {
+                    var netObj = zone.GetOwner<NetworkObject>();
+                    result.targetId = netObj != null ? 
+                        netObj.NetworkObjectId : 0;
+                    result.isHeadAim = (zone.ZoneType == BodyPart.Head);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // 지면(지형) 조준 및 수평 궤적 역산
+        private bool TryGroundAim(Ray ray, out AimResult result)
+        {
+            result = new AimResult();
+            if (Physics.Raycast(ray, out var hit, 200f, groundMask))
+            {
+                // 총구 높이를 유지하기 위한 수평 좌표 역산
+                result.targetPoint = CalculateHorizontalPoint(ray, hit.point);
+                result.targetId = 0;
+                result.isHeadAim = false;
+                return true;
+            }
+            return false;
+        }
+
+        // 삼각함수 기반 수평 좌표 계산 유틸리티
+        private Vector3 CalculateHorizontalPoint(Ray ray, Vector3 hitPoint)
+        {
+            Vector3 revDir = -ray.direction.normalized;
+            float h = muzzleTransform.position.y - hitPoint.y;
+            float cos = Vector3.Dot(Vector3.up, revDir);
+
+            // 카메라 각도가 너무 낮을 경우를 대비한 방어 로직
+            if (cos <= 0.1f)
+            {
+                return new Vector3(hitPoint.x, muzzleTransform.position.y, hitPoint.z);
+            }
+
+            // d = h / cos(theta) 수식을 적용하여 총구 높이의 지점 산출
+            return hitPoint + (revDir * (h / cos));
         }
 
         [ServerRpc]
-        private void FireServerRpc(Vector3 origin, Vector3 dir, FixedString64Bytes weaponId, ServerRpcParams rpc = default)
+        private void FireServerRpc(Vector3 target, ulong tId, bool head, 
+            FixedString64Bytes weaponId, ServerRpcParams rpc = default)
         {
-            ulong shooterId = rpc.Receive.SenderClientId;
+            var weapon = equipment?.Lookup(weaponId.ToString()) as WeaponDataSO;
+            var state = equipment?.CurrentWeaponState ?? default;
+            var ammo = equipment?.CurrentAmmoData;
 
-            var weapon = equipment != null ? equipment.Lookup(weaponId.ToString()) as WeaponDataSO : null;
-            if (weapon == null) return;
+            if (weapon == null || ammo == null || state.currentAmmo <= 0) 
+                return;
 
-            EventBus.Publish(new WeaponFiredEvent
+            // 1. 탄환 소모
+            equipment.ConsumeCurrentWeaponAmmo();
+
+            // 2. 탄속 계산: 무기 기본 탄속 * 탄약 배율
+            // V_final = V_muzzle * M_velocity
+            float finalVelocity = weapon.muzzleVelocity * ammo.velocityMultiplier;
+
+            // 3. 투사체 데이터 생성
+            ProjectileData pData = CreateProjectileData(rpc.Receive.SenderClientId, 
+                tId, head, weapon, ammo);
+    
+            // 4. 투사체 생성 시 계산된 탄속 전달
+            SpawnProjectile(pData, target, weapon, finalVelocity);
+
+            // 5. 이벤트 발행
+            PublishFireEvent(rpc.Receive.SenderClientId, weaponId);
+        }
+        
+        /// <summary>
+        /// 무기와 탄약 데이터를 조합하여 최종 투사체 구조체를 생성합니다.
+        /// </summary>
+        private ProjectileData CreateProjectileData(ulong shooter, ulong target, 
+            bool isHead, WeaponDataSO w, AmmoDataSO a)
+        {
+            return new ProjectileData
             {
-                shooterClientId = shooterId,
-                weaponId = weaponId,
-                origin = origin,
-                loudness = 1f,
-            });
+                ShooterId = shooter,
+                // 최종 데미지 = 무기 기본 데미지 * 탄약 배율
+                BaseDamage = Mathf.RoundToInt(w.damage * a.damageMultiplier),
+                // 탄약의 관통력 적용
+                Penetration = a.penetration,
+                TargetNetId = target,
+                WasHeadAim = isHead,
+                Range = w.engageRange.y
+            };
+        }
+        
+        /// <summary>
+        /// 실제 투사체 오브젝트를 월드에 생성하고 네트워크에 등록합니다.
+        /// </summary>
+        private void SpawnProjectile(ProjectileData pData, Vector3 target, 
+            WeaponDataSO w, float velocity)
+        {
+            Vector3 spawnPos = muzzleTransform.position;
+            Vector3 fireDir = (target - spawnPos).normalized;
 
-            if (Physics.Raycast(origin, dir, out RaycastHit hitInfo, maxRange, hitMask))
+            // 탄환 프리팹 생성 및 방향 설정
+            GameObject bullet = Instantiate(w.projectilePrefab, spawnPos, 
+                Quaternion.LookRotation(fireDir));
+    
+            var netObj = bullet.GetComponent<NetworkObject>();
+            netObj.Spawn(true);
+
+            // ProjectileController에 최종 계산된 velocity 주입
+            if (bullet.TryGetComponent<ProjectileController>(out var pc))
             {
-                var hitZone = hitInfo.collider.GetComponent<HitZone>();
-                if (hitZone == null) return;
-
-                var hit = new HitInfo
-                {
-                    victim = hitZone.GetComponentInParent<NetworkObject>()?.gameObject,
-                    zone = hitZone.ZoneType,
-                    hitPoint = hitInfo.point,
-                    hitNormal = hitInfo.normal,
-                    distance = hitInfo.distance,
-                };
-
-                var defaultAmmo = ScriptableObject.CreateInstance<AmmoDataSO>();
-                defaultAmmo.penetration = 3;
-                defaultAmmo.damageMultiplier = 1f;
-
-                ServiceLocator.Get<DamageSystem>()?.ApplyDamage(hit, defaultAmmo, weapon, shooterId);
+                pc.Initialize(pData, fireDir, velocity);
             }
         }
+        
+        private void PublishFireEvent(ulong clientId, FixedString64Bytes wId)
+        {
+            EventBus.Publish(new WeaponFiredEvent
+            {
+                shooterClientId = clientId,
+                weaponId = wId,
+                origin = muzzleTransform.position
+            });
+        }
+
     }
 }
