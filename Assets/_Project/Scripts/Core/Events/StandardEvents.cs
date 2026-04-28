@@ -200,7 +200,7 @@ namespace DeadZone.Core
         public ulong newTargetClientId;
     }
 
-
+    public struct FireInputEvent : IGameEvent { }
     // =====================================================================
     // Firebase / Relay 이벤트 (v1.3 추가, Part VII Addendum)
     //
