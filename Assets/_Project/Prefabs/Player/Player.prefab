@@ -482,7 +482,7 @@ GameObject:
   - component: {fileID: 8354546832462354360}
   - component: {fileID: 1860151659725561128}
   - component: {fileID: 1755801955162734937}
-  - component: {fileID: 5025810526715758917}
+  - component: {fileID: -4358573395740997876}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -570,7 +570,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 146189795
+  GlobalObjectIdHash: 2875219163
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -711,7 +711,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7ea9f4b67d0dc64591ab82a3dc85d0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.HealthDebugCommands
---- !u!114 &5025810526715758917
+--- !u!114 &-4358573395740997876
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -752,6 +752,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   staminaCost: 25
   rollCooldown: 1
+  useDamageImmuneWindow: 1
+  invincibilityWindow: 0.15
   allowLocalRollWithoutNetworkSpawn: 1
 --- !u!1 &1136982649051480
 GameObject:

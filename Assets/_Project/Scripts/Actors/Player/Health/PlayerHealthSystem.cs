@@ -1,4 +1,5 @@
-﻿using Unity.Netcode;
+﻿using System;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -51,6 +52,8 @@ namespace DeadZone.Actors
         public NetworkVariable<float> BleedoutRemaining = new(0f);
         public NetworkVariable<PlayerState> State = new(PlayerState.Alive);
 
+        private RollSystem rollSystem;
+        
         public float MaxHP => maxHP;
         public bool IsAlive => State.Value == PlayerState.Alive;
         public bool IsKnocked => State.Value == PlayerState.Knocked;
@@ -60,6 +63,11 @@ namespace DeadZone.Actors
 
         private bool isBeingRevived;
         private ulong reviverClientId;
+
+        private void Awake()
+        {
+            rollSystem = GetComponent<RollSystem>();
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -85,7 +93,9 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            // if (!IsServer) return;  // TODO(Step5): 원복
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
+            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
+            // if (IsSpawned && !IsServer) return;
 
             if (IsKnocked && !isBeingRevived)
             {
@@ -103,8 +113,14 @@ namespace DeadZone.Actors
 
         public void ApplyDamage(int damage, ulong attackerClientId, HitInfo hit)
         {
-            // if (!IsServer || IsDead) return;  // TODO(Step5): 원복
+            if (IsDead) return;
+            
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
+            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
+            // if (IsSpawned && !IsServer) return;
 
+            if (ShouldIgnoreDamage()) return;
+            
             if (IsAlive)
             {
                 CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
@@ -117,15 +133,30 @@ namespace DeadZone.Actors
             }
         }
 
+        private bool ShouldIgnoreDamage()
+        {
+            if (!IsAlive) return false;
+
+            return rollSystem != null && rollSystem.IsDamageImmune;
+        }
+        
         public void Heal(float amount)
         {
-            // if (!IsServer || !IsAlive) return;  // TODO(Step5): 원복
+            if (!IsAlive) return;
+            
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
+            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
+            // if (IsSpawned && !IsServer) return;
+            
             CurrentHP.Value = Mathf.Min(maxHP, CurrentHP.Value + amount);
         }
 
         private void TransitionToKnocked(ulong attackerClientId)
         {
-            // if (!IsServer) return;  // TODO(Step5): 원복
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
+            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
+            // if (IsSpawned && !IsServer) return;
+            
             KnockedHP.Value = knockedMaxHP;
             BleedoutRemaining.Value = bleedoutSeconds;
             State.Value = PlayerState.Knocked;
@@ -141,7 +172,10 @@ namespace DeadZone.Actors
 
         private void TransitionToDead(ulong attackerClientId)
         {
-            // if (!IsServer) return;  // TODO(Step5): 원복
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
+            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
+            // if (IsSpawned && !IsServer) return;
+            
             KnockedHP.Value = 0f;
             BleedoutRemaining.Value = 0f;
             State.Value = PlayerState.Dead;

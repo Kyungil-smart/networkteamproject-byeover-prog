@@ -31,6 +31,13 @@ namespace DeadZone.Actors
         [Tooltip("구르기 종료 후 다시 구를 수 있기까지의 대기시간")]
         [SerializeField, Min(0f)] private float rollCooldown = 1.0f;
         
+        [Header("====구르기 무적 설정====")]
+        [Tooltip("구르기 중 데미지를 무시할지 여부")]
+        [SerializeField] private bool useDamageImmuneWindow = true;
+        
+        [Tooltip("구르기 시작 후 데미지를 무시하는 시간")]
+        [SerializeField, Min(0f)] private float invincibilityWindow = 0.15f;
+        
         [Header("====로컬 테스트====")]
         [Tooltip("NetworkObject가 스폰되지 않은 로컬 테스트 씬에서도 구르기를 허용할지 여부" +
                  "\nNGO 멀티 테스트 에서는 false로 하세요!!")]
@@ -46,9 +53,14 @@ namespace DeadZone.Actors
         private float cooldownUntil;
         private float distanceTraveled;
         private Vector3 rollDirection;
-
+        
+        private bool isDamageImmune;   // 무적시간 확인용
+        private float damageImmuneUntil;
+        
         public bool IsRolling => isRolling;
+        public bool IsDamageImmune => isDamageImmune;
         public float StaminaCost => staminaCost;
+        public float InvincibilityWindow => invincibilityWindow;
 
         private void Awake()
         {
@@ -59,6 +71,8 @@ namespace DeadZone.Actors
 
         private void Update()
         {
+            UpdateDamageImmuneWindow();
+            
             if (!isRolling || cc == null) return;
 
             UpdateRollMovement();
@@ -66,7 +80,9 @@ namespace DeadZone.Actors
         
         public void TryRoll()
         {
-            //if (!IsOwner) return;
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 Owner 가드를 임시 비활성화
+            // 복구 조건: NetworkManager 스폰과 소유자 입력 라우팅이 검증되면 활성화
+            // if (IsSpawned && !IsOwner) return;
             
             if (!CanProcessRoll) return;
             if (isRolling) return;
@@ -117,6 +133,8 @@ namespace DeadZone.Actors
             rollEndTime = Time.time + rollDuration;
             cooldownUntil = rollEndTime + rollCooldown;
             distanceTraveled = 0f;
+            
+            StartDamageImmuneWindow();
         }
 
         private bool TryConsumeStamina()
@@ -131,11 +149,30 @@ namespace DeadZone.Actors
                 return true;
             }
             
-            // 로컬 테스트 전용
-            // TODO : 스테미나 실제 차감 테스트는 host/server 테스트 에서
+            // TODO(NetworkTest): 일반 로컬 테스트에서는 ServerRpc를 호출할 수 없으므로 로컬 스태미나 차감 경로를 사용
+            // 복구 조건: Host/Client 테스트에서 서버 스태미나 차감 경로가 검증되면 테스트 전용 분기로 유지할지 제거할지 결정
             //return staminaSystem.CurrentStamina.Value >= staminaCost;
             
             return staminaSystem.TryConsumeForLocalTest(staminaCost);
+        }
+        
+        private void UpdateDamageImmuneWindow()
+        {
+            if (!isDamageImmune) return;
+
+            if (Time.time >= damageImmuneUntil) isDamageImmune = false;
+        }
+        
+        private void StartDamageImmuneWindow()
+        {
+            if (!useDamageImmuneWindow || invincibilityWindow <= 0f)
+            {
+                isDamageImmune = false;
+                return;
+            }
+
+            isDamageImmune = true;
+            damageImmuneUntil = Time.time + invincibilityWindow;
         }
         
         [ServerRpc] private void ConsumeStaminaServerRpc(float amount) => staminaSystem?.TryConsume(amount);

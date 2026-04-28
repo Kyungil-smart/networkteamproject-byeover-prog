@@ -43,7 +43,10 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            //if (!IsServer) return;    임시 주석처리 TODO(Step5): 원복
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
+            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
+            // if (IsSpawned && !IsServer) return;
+            
             if (CurrentStamina.Value >= maxStamina) return;
             if (Time.time - lastConsumeTime < regenDelaySeconds) return;
 
@@ -52,7 +55,9 @@ namespace DeadZone.Actors
 
         public bool TryConsume(float amount)
         {
-            if (!IsServer) return false;
+            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
+            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
+            // if (IsSpawned && !IsServer) return false;
             if (CurrentStamina.Value < amount) return false;
             CurrentStamina.Value -= amount;
             lastConsumeTime = Time.time;

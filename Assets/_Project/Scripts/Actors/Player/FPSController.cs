@@ -67,8 +67,9 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            // TODO(Network): NetworkManager가 스폰한 PlayerPrefab 기준으로 Owner 입력 검증이 끝나면 활성화
-            //if (!IsOwner) return;
+            // TODO(NetworkAuthority): 로컬 단일 플레이 이동 테스트 중에는 Owner 가드를 임시 비활성화
+            // 복구 조건: NetworkManager가 PlayerPrefab을 스폰하고 소유자 입력 라우팅이 검증되면 활성화
+            // if (IsSpawned && !IsOwner) return;
             
             ApplyLookRotation();
 
