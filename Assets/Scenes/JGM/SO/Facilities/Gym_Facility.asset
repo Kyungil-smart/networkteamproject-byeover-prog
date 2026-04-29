@@ -16,25 +16,25 @@ MonoBehaviour:
   levels:
   - level: 1
     upgradeMaterials: []
-    effectDescription: "\uC2A4\uD0DC\uBBF8\uB098 +5, \uC18C\uC9C0\uBB34\uAC8C +5kg"
+    effectDescription: " \uCD5C\uB300 \uCCB4\uB825 \uBCF4\uB108\uC2A4 \uC5C6\uC74C"
   - level: 2
     upgradeMaterials:
-    - item: {fileID: 11400000, guid: eb9c858a67683ef4285282173881fbac, type: 2}
-      amount: 8
-    - item: {fileID: 11400000, guid: 66aff6e4f4e52c643becc47bb1b9fbb7, type: 2}
-      amount: 3
-    effectDescription: "\uC2A4\uD0DC\uBBF8\uB098 +10, \uC18C\uC9C0\uBB34\uAC8C +10kg"
+    - item: {fileID: 11400000, guid: d332c1e70bea65e44928063dee194070, type: 2}
+      amount: 5
+    - item: {fileID: 11400000, guid: 87f44ca48190d194685a6abe75f897f2, type: 2}
+      amount: 5
+    effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +5"
   - level: 3
     upgradeMaterials:
-    - item: {fileID: 11400000, guid: 66aff6e4f4e52c643becc47bb1b9fbb7, type: 2}
-      amount: 6
-    - item: {fileID: 11400000, guid: 6a502676d9d905f45951b1884f416a3c, type: 2}
-      amount: 3
-    effectDescription: "\uC2A4\uD0DC\uBBF8\uB098 +15, \uC18C\uC9C0\uBB34\uAC8C +15kg"
+    - item: {fileID: 11400000, guid: d332c1e70bea65e44928063dee194070, type: 2}
+      amount: 10
+    - item: {fileID: 11400000, guid: d2e6249cfc98c0644ae487c33ab7b888, type: 2}
+      amount: 1
+    - item: {fileID: 11400000, guid: 87f44ca48190d194685a6abe75f897f2, type: 2}
+      amount: 10
+    effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +10"
   - level: 4
     upgradeMaterials:
-    - item: {fileID: 11400000, guid: 66aff6e4f4e52c643becc47bb1b9fbb7, type: 2}
-      amount: 10
-    - item: {fileID: 11400000, guid: 9539d3313cec35941a428798d67139eb, type: 2}
+    - item: {fileID: 11400000, guid: 8da928dea7cc2c6499bd0acc540abd9a, type: 2}
       amount: 1
-    effectDescription: "\uC2A4\uD0DC\uBBF8\uB098 +20, \uC18C\uC9C0\uBB34\uAC8C +20kg"
+    effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +15"
