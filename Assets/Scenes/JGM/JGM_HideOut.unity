@@ -8546,46 +8546,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2017031196594520207, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: facilityData
-      value: 
-      objectReference: {fileID: 11400000, guid: 0cae5472576c1cc47840a83c92555be7, type: 2}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.size
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[0].item
-      value: 
-      objectReference: {fileID: 11400000, guid: 34c2679a69ea93d449be66ec10b4bb63, type: 2}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[1].item
-      value: 
-      objectReference: {fileID: 11400000, guid: 8ccb4d4248b2613479c63b6ebd4d00e0, type: 2}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[2].item
-      value: 
-      objectReference: {fileID: 11400000, guid: 17664e286c8534e42bc085ce0c8732b1, type: 2}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[3].item
-      value: 
-      objectReference: {fileID: 11400000, guid: 4cd3ff943e3cc5f4fb7d37d9f1140441, type: 2}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[0].amount
-      value: 12
-      objectReference: {fileID: 0}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[1].amount
-      value: 23
-      objectReference: {fileID: 0}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[2].amount
-      value: 12
-      objectReference: {fileID: 0}
-    - target: {fileID: 3735789869395504731, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
-      propertyPath: startingItems.Array.data[3].amount
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3737060524621592450, guid: 00e4926bc54a34a49856fcf692801938, type: 3}
       propertyPath: m_LocalPosition.x
       value: 19.685066
