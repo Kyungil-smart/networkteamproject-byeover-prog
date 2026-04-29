@@ -70,7 +70,7 @@ namespace DeadZone.Actors
                         var defaultAmmo = ScriptableObject.CreateInstance<AmmoDataSO>();
                         defaultAmmo.penetration = 2;
                         defaultAmmo.damageMultiplier = 1f;
-                        damageSystem.ApplyDamage(hitInfo, defaultAmmo, so.defaultWeapon, DamageSystem.AI_SHOOTER_ID);
+                        // 탄환 방식으로 수정 필요 damageSystem.ApplyDamage(hitInfo, defaultAmmo, so.defaultWeapon, DamageSystem.AI_SHOOTER_ID);
                     }
                 }
             }

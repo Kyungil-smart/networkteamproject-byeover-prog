@@ -1,4 +1,5 @@
 ﻿using DeadZone.Core;
+using UnityEngine;
 
 
 namespace DeadZone.Actors
@@ -9,6 +10,10 @@ namespace DeadZone.Actors
     /// </summary>
     public abstract class PlayerStateBase
     {
+        protected static readonly int IsKnockedHash = Animator.StringToHash("IsKnocked");
+        protected static readonly int IsDeadHash = Animator.StringToHash("IsDead");
+        protected static readonly int KnockdownHash = Animator.StringToHash("Knockdown");
+        
         public abstract PlayerState State { get; }
 
         public virtual void OnEnter(PlayerStateContext ctx) { }
