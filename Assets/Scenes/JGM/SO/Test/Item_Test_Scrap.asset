@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: mat_test_scrap
   displayName: "\uD14C\uC2A4\uD2B8 \uACE0\uCCA0"
-  description: "\uC791\uC5C5\uB300 \uC81C\uC791 \uD14C\uC2A4\uD2B8\uC5D0 \uC0AC\uC6A9\uD558\uB294
-    \uC784\uC2DC \uC7AC\uB8CC\uC785\uB2C8\uB2E4."
+  description: "\uACE0\uCCA0"
   icon: {fileID: 0}
   category: 7
   rarity: 0

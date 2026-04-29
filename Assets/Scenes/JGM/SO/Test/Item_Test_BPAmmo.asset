@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: ammo_test_bp
   displayName: "\uD14C\uC2A4\uD2B8 BP \uD0C4\uC57D"
-  description: "\uC791\uC5C5\uB300 Lv2 \uC81C\uC791 \uC81C\uD55C \uD14C\uC2A4\uD2B8\uC6A9
-    \uD0C4\uC57D\uC785\uB2C8\uB2E4."
+  description: "\uD0C4\uC57D"
   icon: {fileID: 0}
   category: 1
   rarity: 1

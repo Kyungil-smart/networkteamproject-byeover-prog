@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: med_test_bandage
   displayName: "\uD14C\uC2A4\uD2B8 \uBD95\uB300"
-  description: "\uC791\uC5C5\uB300 \uC81C\uC791 \uACB0\uACFC \uD655\uC778\uC6A9 \uC784\uC2DC
-    \uBD95\uB300\uC785\uB2C8\uB2E4."
+  description: "\uBD95\uB300"
   icon: {fileID: 0}
   category: 4
   rarity: 0
