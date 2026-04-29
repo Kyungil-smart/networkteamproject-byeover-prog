@@ -210,7 +210,7 @@ namespace DeadZone.Actors
             // 올림으로 표시 — 0.3초 남았을 때 0초가 잠깐 보이는 현상 방지
             if (bleedoutText != null) bleedoutText.text = $"{Mathf.CeilToInt(bleedoutRemaining)}s";
 
-            // ⭐ 부활 진행 중이 아닐 때만 bleedout fill 갱신
+            // 부활 진행 중이 아닐 때만 bleedout fill 갱신
             // (부활 게이지는 OnReviveProgress에서 별도 처리)
             if (!reviveActive && bleedoutFill != null && bleedoutTotal > 0f)
                 bleedoutFill.fillAmount = bleedoutRemaining / bleedoutTotal;
@@ -600,7 +600,7 @@ namespace DeadZone.Actors
             float progress = Mathf.Clamp01(e.progress01);
             Debug.Log($"[KnockedHUD] ReviveProgress target={e.targetClientId}, progress={progress:F2}", this);
 
-            // ⭐ 부활 게이지는 여기서 직접 갱신 (Update의 bleedout 갱신과 별개)
+            // 부활 게이지는 여기서 직접 갱신 (Update의 bleedout 갱신과 별개)
             if (bleedoutFill != null) bleedoutFill.fillAmount = progress;
         }
 
