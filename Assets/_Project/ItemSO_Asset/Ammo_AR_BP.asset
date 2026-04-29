@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a9487b101f97d74299616679f4b16c7, type: 3}
   m_Name: Ammo_AR_BP
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.AmmoDataSO
-  itemID: 
-  displayName: 
+  itemID: AR_BP
+  displayName: AR_BP
   description: 
   icon: {fileID: 0}
-  category: 0
+  category: 1
   rarity: 0
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
@@ -24,7 +24,7 @@ MonoBehaviour:
   baseSellPrice: 0
   worldPrefab: {fileID: 0}
   caliber: 0
-  grade: 0
+  grade: 1
   penetration: 1
   damageMultiplier: 1
   priceMultiplier: 1

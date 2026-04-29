@@ -22,18 +22,18 @@ MonoBehaviour:
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 0
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 1396424805824408, guid: f68f19ab55ee89d4bb00eaa083ab7849, type: 3}
   weaponCategory: 0
   damage: 30
   fireRate: 10
   magSize: 30
-  engageRange: {x: 0, y: 100}
+  engageRange: {x: 0, y: 600}
   ammoType: 0
-  availableModes: 
-  muzzleVelocity: 900
+  availableModes: 01
+  muzzleVelocity: 9
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.2
-  spreadAngle: {x: 0.5, y: 5}
-  spreadRecovery: 10
+  spreadAngle: {x: 1, y: 5}
+  spreadRecovery: 1
   maxDurability: 100

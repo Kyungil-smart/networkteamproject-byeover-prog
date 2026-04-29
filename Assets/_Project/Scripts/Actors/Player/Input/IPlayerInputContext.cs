@@ -9,7 +9,7 @@ namespace DeadZone.Actors
     /// </summary>
     public interface IPlayerInputContext
     {
-        void Tick(Vector2 move, Vector2 look);
+        void Tick(Vector2 move, Vector2 look, Vector2 mousePos);
 
         void OnFire();
         void OnAim(bool down);

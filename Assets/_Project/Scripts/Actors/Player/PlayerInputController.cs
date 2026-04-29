@@ -110,7 +110,7 @@ namespace DeadZone.Actors
             ReadContinuousInput();
             UpdateLookDirectionFromMousePosition();
 
-            currentContext.Tick(moveInput, lookDirection);
+            currentContext.Tick(moveInput, lookDirection, lookScreenPosition);
         }
 
         private bool CanProcessInput

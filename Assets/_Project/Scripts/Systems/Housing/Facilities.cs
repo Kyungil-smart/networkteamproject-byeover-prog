@@ -1,5 +1,14 @@
-﻿namespace DeadZone.Systems
+﻿using UnityEngine;
+
+namespace DeadZone.Systems
 {
+    public class Workbench : FacilityBase
+    {
+        protected override void OnLevelChanged(int newLevel)
+        {
+        }
+    }
+
     public class CommStation : FacilityBase
     {
         protected override void OnLevelChanged(int newLevel)

@@ -124,6 +124,32 @@ namespace DeadZone.Actors
             }
             return state;
         }
+        // 임시 슬롯 업데이트함수 
+        public void UpdateSlot(WeaponSlot slot, string itemId, WeaponState state)
+        {
+            if (!IsServer) return;
+
+            switch (slot)
+            {
+                case WeaponSlot.Primary1:
+                    Primary1Id.Value = itemId;
+                    Primary1State.Value = state;
+                    break;
+                case WeaponSlot.Primary2:
+                    Primary2Id.Value = itemId;
+                    Primary2State.Value = state;
+                    break;
+                case WeaponSlot.Secondary:
+                    SecondaryId.Value = itemId;
+                    SecondaryState.Value = state;
+                    break;
+            }
+            
+            if (CurrentEquipped.Value.Length == 0)
+            {
+                CurrentEquipped.Value = itemId;
+            }
+        }
 
         [ServerRpc]
         public void EquipHelmetServerRpc(FixedString64Bytes helmetId)
