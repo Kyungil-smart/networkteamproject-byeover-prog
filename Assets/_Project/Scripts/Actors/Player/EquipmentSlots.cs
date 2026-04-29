@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -8,22 +7,17 @@ using DeadZone.Systems;
 
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// 플레이어 장비 (헬멧 + 상체 아머 + 4개 무기 + 6개 퀵슬롯).
-    /// v1.1 §4.4 — 배낭 슬롯 제거.
-    /// IArmored를 구현하여 DamageSystem이 구체 EquipmentSlots 타입에 결합되지 않고
-    /// 방어구를 질의할 수 있게 한다.
-    /// </summary>
+    
     public class EquipmentSlots : NetworkBehaviour, IArmored
     {
-        [Header("SO Database (look up by ID)")]
-        [SerializeField] private ItemDataSO[] itemDatabase;
+        // ----------- 무기 런타임 상태 -----------
 
-        // 총알을 포함한 장착 무기 슬롯 정보
-        public NetworkVariable<WeaponState> Primary1State = new();
-        public NetworkVariable<WeaponState> Primary2State = new();
+        public NetworkVariable<WeaponState> Primary1State  = new();
+        public NetworkVariable<WeaponState> Primary2State  = new();
         public NetworkVariable<WeaponState> SecondaryState = new();
-        
+
+        // ----------- 슬롯 ID -----------
+
         public NetworkVariable<FixedString64Bytes> HeadSlotId      = new("");
         public NetworkVariable<FixedString64Bytes> TorsoSlotId     = new("");
         public NetworkVariable<FixedString64Bytes> Primary1Id      = new("");
@@ -32,60 +26,65 @@ namespace DeadZone.Actors
         public NetworkVariable<FixedString64Bytes> MeleeId         = new("");
         public NetworkVariable<FixedString64Bytes> CurrentEquipped = new("");
 
+        // ----------- 방어구 내구도 -----------
+
         public NetworkVariable<float> HelmetDurability = new(0f);
         public NetworkVariable<float> ArmorDurability  = new(0f);
 
-        private Dictionary<string, ItemDataSO> dbCache;
+        // ----------- 서비스 -----------
 
-        private void Awake()
+        private IItemDatabase itemDb;
+
+        // ----------- Lifecycle -----------
+
+        public override void OnNetworkSpawn()
         {
-            dbCache = new Dictionary<string, ItemDataSO>();
-            if (itemDatabase != null)
+            base.OnNetworkSpawn();
+            itemDb = ServiceLocator.Get<IItemDatabase>();
+
+            if (itemDb == null)
             {
-                foreach (var so in itemDatabase)
-                {
-                    if (so == null || string.IsNullOrEmpty(so.itemID)) continue;
-                    dbCache[so.itemID] = so;
-                }
+                Debug.LogError("[EquipmentSlots] IItemDatabase 서비스가 등록되어 있지 않음.");
             }
         }
 
-        public ItemDataSO Lookup(string itemId)
-        {
-            if (string.IsNullOrEmpty(itemId)) return null;
-            return dbCache.TryGetValue(itemId, out var so) ? so : null;
-        }
+        // ----------- Lookup -----------
 
-        public WeaponDataSO GetCurrentWeapon() => Lookup(CurrentEquipped.Value.ToString()) as WeaponDataSO;
-        /// <summary>
-        /// 현재 손에 들고 있는 무기의 런타임 상태(잔탄/탄종)를 반환합니다.
-        /// </summary>
+        public ItemDataSO Lookup(string itemId) => itemDb?.GetById(itemId);
+        public T Lookup<T>(string itemId) where T : ItemDataSO => itemDb?.GetById<T>(itemId);
+
+        // ----------- 현재 무기 ----------
+
+        public WeaponDataSO GetCurrentWeapon()
+            => Lookup<WeaponDataSO>(CurrentEquipped.Value.ToString());
+
         public WeaponState CurrentWeaponState
         {
             get
             {
                 FixedString64Bytes curId = CurrentEquipped.Value;
-                if (curId == Primary1Id.Value) return Primary1State.Value;
-                if (curId == Primary2Id.Value) return Primary2State.Value;
+                if (curId == Primary1Id.Value)  return Primary1State.Value;
+                if (curId == Primary2Id.Value)  return Primary2State.Value;
                 if (curId == SecondaryId.Value) return SecondaryState.Value;
                 return default;
             }
         }
-        /// <summary>
-        /// 현재 무기의 정적 데이터(SO)를 반환합니다.
-        /// </summary>
+
         public WeaponDataSO CurrentWeaponData => GetCurrentWeapon();
 
-        /// <summary>
-        /// 현재 무기에 장전된 탄약의 정적 데이터(SO)를 반환합니다.
-        /// </summary>
-        public AmmoDataSO CurrentAmmoData => 
-            Lookup(CurrentWeaponState.loadedAmmoId.ToString()) as AmmoDataSO;
+        public AmmoDataSO CurrentAmmoData
+            => Lookup<AmmoDataSO>(CurrentWeaponState.loadedAmmoId.ToString());
 
-        public HelmetDataSO GetEquippedHelmet() => Lookup(HeadSlotId.Value.ToString()) as HelmetDataSO;
-        public ArmorDataSO GetEquippedArmor() => Lookup(TorsoSlotId.Value.ToString()) as ArmorDataSO;
+        // ----------- IArmored -----------
+
+        public HelmetDataSO GetEquippedHelmet()
+            => Lookup<HelmetDataSO>(HeadSlotId.Value.ToString());
+
+        public ArmorDataSO GetEquippedArmor()
+            => Lookup<ArmorDataSO>(TorsoSlotId.Value.ToString());
+
         public float GetHelmetDurability() => HelmetDurability.Value;
-        public float GetArmorDurability() => ArmorDurability.Value;
+        public float GetArmorDurability()  => ArmorDurability.Value;
 
         public void DamageHelmetDurability(float amount)
         {
@@ -98,38 +97,36 @@ namespace DeadZone.Actors
             if (!IsServer) return;
             ArmorDurability.Value = Mathf.Max(0f, ArmorDurability.Value - amount);
         }
-        
-        /// <summary>
-        /// 현재 손에 들고 있는 무기의 탄환을 1발 소모합니다. (서버 전용)
-        /// </summary>
+
+        // ----------- 탄약 소모 -----------
+
         public void ConsumeCurrentWeaponAmmo()
         {
             if (!IsServer) return;
 
             FixedString64Bytes curId = CurrentEquipped.Value;
-    
-            // 현재 슬롯을 찾아 WeaponState 업데이트
-            if (curId == Primary1Id.Value) 
+
+            if (curId == Primary1Id.Value)
                 Primary1State.Value = DecreaseAmmo(Primary1State.Value);
-            else if (curId == Primary2Id.Value) 
+            else if (curId == Primary2Id.Value)
                 Primary2State.Value = DecreaseAmmo(Primary2State.Value);
-            else if (curId == SecondaryId.Value) 
+            else if (curId == SecondaryId.Value)
                 SecondaryState.Value = DecreaseAmmo(SecondaryState.Value);
         }
+
         private WeaponState DecreaseAmmo(WeaponState state)
         {
-            if (state.currentAmmo > 0)
-            {
-                state.currentAmmo--;
-            }
+            if (state.currentAmmo > 0) state.currentAmmo--;
             return state;
         }
+
+        // ----------- 장착 ServerRpc -----------
 
         [ServerRpc]
         public void EquipHelmetServerRpc(FixedString64Bytes helmetId)
         {
             HeadSlotId.Value = helmetId;
-            var h = Lookup(helmetId.ToString()) as HelmetDataSO;
+            var h = Lookup<HelmetDataSO>(helmetId.ToString());
             HelmetDurability.Value = h != null ? h.maxDurability : 0f;
         }
 
@@ -137,7 +134,7 @@ namespace DeadZone.Actors
         public void EquipArmorServerRpc(FixedString64Bytes armorId)
         {
             TorsoSlotId.Value = armorId;
-            var a = Lookup(armorId.ToString()) as ArmorDataSO;
+            var a = Lookup<ArmorDataSO>(armorId.ToString());
             ArmorDurability.Value = a != null ? a.maxDurability : 0f;
         }
 

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8b0105d2dd790742991f430360cfcc5, type: 3}
+  m_Name: LT_DocCase
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.LootTableSO
+  entries:
+  - item: {fileID: 11400000, guid: d7dcc67a1c0a5ce4e8e363d9dff71bb3, type: 2}
+    weight: 2250
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: dd09bded2b26a244b90c21af4c7c3979, type: 2}
+    weight: 2250
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 4f0cafcfb6b8c384fbf5690c1a34acc9, type: 2}
+    weight: 1166
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: cb3f3da92fff8c54c9d0af4e3fb34a8f, type: 2}
+    weight: 1166
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 4c034d34135dc4b4d80c0de61ab4b745, type: 2}
+    weight: 1166
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: b27355a7c7d86b443ac6eec0ae31c705, type: 2}
+    weight: 425
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 767b74ff11969224e8c3e739ffb9f6d2, type: 2}
+    weight: 425
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 70b64b4d61efeea4d8c87e176bfe579e, type: 2}
+    weight: 425
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 23027d9e3710c3d4196f81e0c4894d77, type: 2}
+    weight: 425
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: ade4166c86eaef94ea5da60c62f567e1, type: 2}
+    weight: 50
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: cc0ce44d84d0cc34ab4d6a88f2359507, type: 2}
+    weight: 50
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 0df0dedc48d93ea47b75ba37f2cf5fda, type: 2}
+    weight: 50
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 728122c12004cff4d88706ba8460cbfc, type: 2}
+    weight: 50
+    countRange: {x: 1, y: 1}
+  - item: {fileID: 11400000, guid: 39fb106a9ca422441861300f5faba982, type: 2}
+    weight: 100
+    countRange: {x: 1, y: 1}
+  lockedZoneMultiplier: 1.5

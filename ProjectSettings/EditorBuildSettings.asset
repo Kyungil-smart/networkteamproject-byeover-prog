@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/PlayerTestScene_LSH.unity
     guid: 6e44cfef83ae93c45bdcca3c2a646e46
+  - enabled: 1
+    path: Assets/Scenes/Game_Scene.unity
+    guid: e187a1ee92c27e0468c4fd87c74ff375
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
