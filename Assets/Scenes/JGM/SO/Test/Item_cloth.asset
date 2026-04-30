@@ -16,8 +16,9 @@ MonoBehaviour:
   displayName: "\uCC9C \uC870\uAC01"
   description: "\uBD95\uB300 \uC81C\uC791"
   icon: {fileID: 0}
-  category: 7
+  category: 1
   rarity: 0
+  isValuable: 0
   gridSize: {x: 1, y: 1}
   maxStackSize: 99
   weightKg: 0.1
