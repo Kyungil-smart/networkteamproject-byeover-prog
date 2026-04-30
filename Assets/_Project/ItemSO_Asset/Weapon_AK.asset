@@ -30,7 +30,7 @@ MonoBehaviour:
   engageRange: {x: 0, y: 600}
   ammoType: 0
   availableModes: 01
-  muzzleVelocity: 9
+  muzzleVelocity: 20
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.2

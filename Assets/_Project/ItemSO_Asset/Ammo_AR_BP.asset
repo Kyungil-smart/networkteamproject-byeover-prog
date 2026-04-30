@@ -28,5 +28,5 @@ MonoBehaviour:
   penetration: 1
   damageMultiplier: 1
   priceMultiplier: 1
-  velocityMultiplier: 1
+  velocityMultiplier: 0.1
   dragCoefficient: 0.002
