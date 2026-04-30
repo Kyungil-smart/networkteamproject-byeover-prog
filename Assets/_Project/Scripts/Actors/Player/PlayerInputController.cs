@@ -113,6 +113,11 @@ namespace DeadZone.Actors
             currentContext.Tick(moveInput, lookDirection, lookScreenPosition);
         }
 
+        public void SetInputCamera(Camera cam)
+        {
+            inputCamera = cam;
+        }
+        
         private bool CanProcessInput
         {
             get
