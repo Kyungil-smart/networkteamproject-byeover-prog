@@ -6,97 +6,110 @@ using DeadZone.Core;
 
 namespace DeadZone.Systems
 {
-
-    // UI와 Player 인벤토리가 아직 없을 때 작업대 제작 로직을 테스트하기 위한 임시 인벤토리이다.
-    // 실제 게임 최종 구조에서는 Player의 GridInventory가 IInventory 역할을 맡고,
-    // 이 스크립트는 개발 테스트용으로만 사용한다.
-
+    // 작업대 제작 테스트용 임시 인벤토리입니다.
+    // 실제 Player 인벤토리가 완성되기 전까지 IInventory 흐름을 검증하는 용도로만 사용합니다.
+    [DisallowMultipleComponent]
     public class WorkbenchTestInventory : MonoBehaviour, IInventory
     {
         [Serializable]
-        private class TestItemStack
+        private class TestInventoryItem
         {
-            [Tooltip("테스트 인벤토리에 넣을 아이템 데이터")]
+            [Tooltip("테스트 인벤토리에 넣을 아이템 데이터입니다.")]
             public ItemDataSO item;
 
             [Min(0)]
-            [Tooltip("아이템 보유 개수")]
+            [Tooltip("테스트 인벤토리에 보유한 아이템 수량입니다.")]
             public int amount;
         }
 
+        [Header("테스트 보유 아이템")]
+        [SerializeField]
+        [Tooltip("플레이 시작 전에 테스트로 보유할 아이템 목록입니다.")]
+        private List<TestInventoryItem> startItems = new();
 
-        [Header("시작 보유 아이템")]
+        [Header("로그")]
+        [SerializeField]
+        [Tooltip("아이템 추가, 소모, 부족 상황을 Console에 출력할지 여부입니다.")]
+        private bool logInventoryChange = true;
 
-        [Tooltip("테스트 시작 시 가지고 있는 재료 아이템 목록입니다.")]
-        [SerializeField] private List<TestItemStack> startingItems = new List<TestItemStack>();
-
-
-        [Header("현재 보유 아이템")]
-
-        [Tooltip("플레이 중 실제로 변화하는 테스트 인벤토리 상태입니다.")]
-        [SerializeField] private List<TestItemStack> currentItems = new List<TestItemStack>();
-
-
-        [Header("제작 결과 기록")]
-
-        [Tooltip("제작 성공으로 추가된 아이템을 확인하기 위한 기록입니다.")]
-        [SerializeField] private List<TestItemStack> craftedItems = new List<TestItemStack>();
-
-
-        private readonly Dictionary<string, TestItemStack> itemLookup = new Dictionary<string, TestItemStack>();
-
+        private readonly Dictionary<string, InventoryItemState> itemStates = new();
 
         private void Awake()
         {
-            ResetInventory();
+            RebuildInventory();
         }
 
-        [ContextMenu("Reset Test Inventory")]
-        public void ResetInventory()
+        private void OnValidate()
         {
-            currentItems.Clear();
-            craftedItems.Clear();
-            itemLookup.Clear();
+            RemoveInvalidItems();
+        }
 
-            for (int i = 0; i < startingItems.Count; i++)
+        private void RebuildInventory()
+        {
+            itemStates.Clear();
+
+            for (int i = 0; i < startItems.Count; i++)
             {
-                TestItemStack source = startingItems[i];
+                TestInventoryItem entry = startItems[i];
 
-                if (source == null)
+                if (entry == null || entry.item == null)
                     continue;
 
-                if (source.item == null)
+                if (string.IsNullOrWhiteSpace(entry.item.itemID))
                     continue;
 
-                if (string.IsNullOrWhiteSpace(source.item.itemID))
+                if (entry.amount <= 0)
                     continue;
 
-                int amount = Mathf.Max(0, source.amount);
-
-                if (amount <= 0)
-                    continue;
-
-                AddToCurrentItems(source.item, amount);
+                AddItemInternal(entry.item, entry.amount);
             }
+        }
 
-            Debug.Log("[WorkbenchTestInventory] 테스트 인벤토리를 초기화했습니다.", this);
+        private void RemoveInvalidItems()
+        {
+            if (startItems == null)
+                return;
+
+            for (int i = startItems.Count - 1; i >= 0; i--)
+            {
+                TestInventoryItem entry = startItems[i];
+
+                if (entry == null)
+                {
+                    startItems.RemoveAt(i);
+                    continue;
+                }
+
+                if (entry.amount < 0)
+                    entry.amount = 0;
+            }
         }
 
         public bool TryAddItem(ItemDataSO item, int amount = 1)
         {
             if (item == null)
+            {
+                LogWarning("추가할 아이템 데이터가 없습니다.");
                 return false;
+            }
 
             if (string.IsNullOrWhiteSpace(item.itemID))
+            {
+                LogWarning($"{item.name} 아이템의 itemID가 비어 있습니다.");
                 return false;
+            }
 
             if (amount <= 0)
+            {
+                LogWarning($"추가 수량이 올바르지 않습니다. itemID: {item.itemID}, amount: {amount}");
                 return false;
+            }
 
-            AddToCurrentItems(item, amount);
-            AddToCraftedItems(item, amount);
+            AddItemInternal(item, amount);
 
-            Debug.Log($"[WorkbenchTestInventory] 아이템 추가: {item.itemID} x{amount}", this);
+            if (logInventoryChange)
+                Debug.Log($"[WorkbenchTestInventory] 아이템 추가: {item.displayName}({item.itemID}) x{amount}", this);
+
             return true;
         }
 
@@ -106,12 +119,10 @@ namespace DeadZone.Systems
                 return false;
 
             if (count <= 0)
-                return false;
+                return true;
 
-            if (!itemLookup.TryGetValue(itemId, out TestItemStack stack))
-                return false;
-
-            return stack.amount >= count;
+            return itemStates.TryGetValue(itemId, out InventoryItemState state)
+                   && state.Amount >= count;
         }
 
         public bool ConsumeItem(string itemId, int count)
@@ -120,65 +131,98 @@ namespace DeadZone.Systems
                 return false;
 
             if (count <= 0)
-                return false;
+                return true;
 
-            if (!itemLookup.TryGetValue(itemId, out TestItemStack stack))
-                return false;
-
-            if (stack.amount < count)
-                return false;
-
-            stack.amount -= count;
-
-            if (stack.amount <= 0)
+            if (!itemStates.TryGetValue(itemId, out InventoryItemState state))
             {
-                currentItems.Remove(stack);
-                itemLookup.Remove(itemId);
+                LogWarning($"소모할 아이템이 없습니다. itemID: {itemId}");
+                return false;
             }
 
-            Debug.Log($"[WorkbenchTestInventory] 아이템 소모: {itemId} x{count}", this);
+            if (state.Amount < count)
+            {
+                LogWarning($"아이템 수량이 부족합니다. itemID: {itemId}, 필요: {count}, 보유: {state.Amount}");
+                return false;
+            }
+
+            state.Amount -= count;
+
+            if (state.Amount <= 0)
+                itemStates.Remove(itemId);
+            else
+                itemStates[itemId] = state;
+
+            if (logInventoryChange)
+                Debug.Log($"[WorkbenchTestInventory] 아이템 소모: {state.DisplayName}({itemId}) x{count}", this);
+
             return true;
         }
 
-        private void AddToCurrentItems(ItemDataSO item, int amount)
+        public int GetItemCount(string itemId)
         {
-            if (itemLookup.TryGetValue(item.itemID, out TestItemStack stack))
+            if (string.IsNullOrWhiteSpace(itemId))
+                return 0;
+
+            return itemStates.TryGetValue(itemId, out InventoryItemState state)
+                ? state.Amount
+                : 0;
+        }
+
+        [ContextMenu("테스트 인벤토리 다시 만들기")]
+        public void RebuildInventoryForTest()
+        {
+            RebuildInventory();
+            Debug.Log("[WorkbenchTestInventory] 테스트 인벤토리를 초기 설정값으로 다시 만들었습니다.", this);
+        }
+
+        [ContextMenu("테스트 인벤토리 출력")]
+        public void PrintInventoryForTest()
+        {
+            if (itemStates.Count == 0)
             {
-                stack.amount += amount;
+                Debug.Log("[WorkbenchTestInventory] 현재 보유 아이템이 없습니다.", this);
                 return;
             }
 
-            TestItemStack newStack = new TestItemStack
+            foreach (KeyValuePair<string, InventoryItemState> pair in itemStates)
             {
-                item = item,
-                amount = amount
-            };
-
-            currentItems.Add(newStack);
-            itemLookup.Add(item.itemID, newStack);
+                InventoryItemState state = pair.Value;
+                Debug.Log($"[WorkbenchTestInventory] 보유 아이템: {state.DisplayName}({pair.Key}) x{state.Amount}", this);
+            }
         }
 
-        private void AddToCraftedItems(ItemDataSO item, int amount)
+        private void AddItemInternal(ItemDataSO item, int amount)
         {
-            for (int i = 0; i < craftedItems.Count; i++)
+            string itemId = item.itemID;
+
+            if (itemStates.TryGetValue(itemId, out InventoryItemState state))
             {
-                TestItemStack stack = craftedItems[i];
-
-                if (stack == null)
-                    continue;
-
-                if (stack.item == item)
-                {
-                    stack.amount += amount;
-                    return;
-                }
+                state.Amount += amount;
+                itemStates[itemId] = state;
+                return;
             }
 
-            craftedItems.Add(new TestItemStack
+            itemStates.Add(itemId, new InventoryItemState
             {
-                item = item,
-                amount = amount
+                Item = item,
+                DisplayName = string.IsNullOrWhiteSpace(item.displayName) ? item.name : item.displayName,
+                Amount = amount
             });
+        }
+
+        private void LogWarning(string message)
+        {
+            if (!logInventoryChange)
+                return;
+
+            Debug.LogWarning($"[WorkbenchTestInventory] {message}", this);
+        }
+
+        private struct InventoryItemState
+        {
+            public ItemDataSO Item;
+            public string DisplayName;
+            public int Amount;
         }
     }
 }

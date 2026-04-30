@@ -20,28 +20,28 @@ MonoBehaviour:
       \uBD95\uB300, Class 1~2 \uC544\uBA38 \uC81C\uC791 \uAC00\uB2A5"
   - level: 2
     upgradeMaterials:
-    - item: {fileID: 11400000, guid: 34c2679a69ea93d449be66ec10b4bb63, type: 2}
+    - item: {fileID: 11400000, guid: f81fe9af2c05da2438cf6b6cd3678123, type: 2}
       amount: 10
-    - item: {fileID: 11400000, guid: 6e32d34290daeb440b08f9f77dcaa694, type: 2}
+    - item: {fileID: 11400000, guid: 418c8937adb4bb34ab14c881b6409919, type: 2}
       amount: 3
     effectDescription: "Lv2 - Rare \uC81C\uC791 \uAC00\uB2A5 / BP \uD0C4\uC57D, \uC758\uB8CC\uD0A4\uD2B8,
       Class 3 \uC544\uBA38, \uBD80\uCC29\uBB3C \uC81C\uC791 \uAC00\uB2A5"
   - level: 3
     upgradeMaterials:
-    - item: {fileID: 11400000, guid: 17664e286c8534e42bc085ce0c8732b1, type: 2}
+    - item: {fileID: 11400000, guid: 0a9e2f60b9f77a54784bc8834da9eaa7, type: 2}
       amount: 5
-    - item: {fileID: 11400000, guid: 6e32d34290daeb440b08f9f77dcaa694, type: 2}
+    - item: {fileID: 11400000, guid: 418c8937adb4bb34ab14c881b6409919, type: 2}
       amount: 8
     effectDescription: "Lv3 - VeryRare \uC81C\uC791 \uAC00\uB2A5 / AP \uD0C4\uC57D
       \uC77C\uBD80, Class 4~5 \uC544\uBA38, \uACE0\uAE09 \uBD80\uCC29\uBB3C \uC81C\uC791
       \uAC00\uB2A5"
   - level: 4
     upgradeMaterials:
-    - item: {fileID: 11400000, guid: 4cd3ff943e3cc5f4fb7d37d9f1140441, type: 2}
+    - item: {fileID: 11400000, guid: 03fafc6ba56f5a84183e99c498efa87b, type: 2}
       amount: 3
-    - item: {fileID: 11400000, guid: 17664e286c8534e42bc085ce0c8732b1, type: 2}
+    - item: {fileID: 11400000, guid: 0a9e2f60b9f77a54784bc8834da9eaa7, type: 2}
       amount: 10
-    - item: {fileID: 11400000, guid: 063ad636504036042942051e1e34e318, type: 2}
+    - item: {fileID: 11400000, guid: f4e19352559d12640aec0b6018edf425, type: 2}
       amount: 2
     effectDescription: "Lv4 - Epic \uC81C\uC791 \uAC00\uB2A5 / AP \uC804\uC885, Class
       6 \uC544\uBA38, \uCD5C\uC0C1\uC704 \uC7A5\uBE44 \uC81C\uC791 \uAC00\uB2A5"

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32f17ffca3e7c7347854b133fdf3a7b9, type: 3}
+  m_Name: Recipe_ArmorClass6
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.RecipeSO
+  recipeID: recipe_armor_class_6
+  result: {fileID: 11400000, guid: 25f266057dfcb924ab3ec391d244b1ba, type: 2}
+  resultCount: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 0a9e2f60b9f77a54784bc8834da9eaa7, type: 2}
+    amount: 5
+  - item: {fileID: 11400000, guid: 418c8937adb4bb34ab14c881b6409919, type: 2}
+    amount: 4
+  craftTimeSeconds: 5
+  requiredFacilityLevel: 4
+  requiredTier: 3
