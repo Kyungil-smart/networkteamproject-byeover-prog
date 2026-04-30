@@ -7,21 +7,28 @@ using DeadZone.Systems;
 
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// 8x6 그리드 인벤토리. 서버 권위.
-    /// readPerm = Owner라서 다른 플레이어는 본인 인벤토리를 볼 수 없다.
-    /// </summary>
+    
     public class GridInventory : NetworkBehaviour, IInventory
     {
-        [SerializeField] private byte gridWidth = 8;
-        [SerializeField] private byte gridHeight = 6;
+        // ----------- 상수 (마스터 결정) -----------
 
+        public const byte BASE_WIDTH = 4;
+        public const byte BASE_HEIGHT = 5;
+
+        // ----------- Network State -----------
+
+        /// <summary>그리드에 놓인 아이템 슬롯 리스트</summary>
         public NetworkList<ItemSlotData> ServerGrid;
 
-        private EquipmentSlots equipment;
+        // ----------- 캐시 -----------
 
-        public byte Width => gridWidth;
-        public byte Height => gridHeight;
+        private EquipmentSlots equipment;
+        private IItemDatabase itemDb;
+
+        public byte Width => BASE_WIDTH;
+        public byte Height => BASE_HEIGHT;
+
+        // ----------- Lifecycle -----------
 
         private void Awake()
         {
@@ -33,13 +40,27 @@ namespace DeadZone.Actors
             equipment = GetComponent<EquipmentSlots>();
         }
 
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            itemDb = ServiceLocator.Get<IItemDatabase>();
+
+            if (itemDb == null)
+            {
+                Debug.LogError("[GridInventory] IItemDatabase 서비스가 등록되어 있지 않음. " +
+                               "씬 ItemDatabase GameObject 확인.");
+            }
+        }
+
+        // ----------- IInventory: Add / Has / Consume -----------
+
         public bool TryAddItem(ItemDataSO item, int amount = 1)
         {
             if (!IsServer || item == null) return false;
 
-            for (byte y = 0; y < gridHeight; y++)
+            for (byte y = 0; y < BASE_HEIGHT; y++)
             {
-                for (byte x = 0; x < gridWidth; x++)
+                for (byte x = 0; x < BASE_WIDTH; x++)
                 {
                     if (CanPlaceAt(x, y, item.gridSize, false))
                     {
@@ -53,7 +74,11 @@ namespace DeadZone.Actors
                             currentDurability = (item is WeaponDataSO w) ? w.maxDurability : 0,
                             currentAmmo = 0,
                         });
-                        EventBus.Publish(new ItemAddedEvent { clientId = OwnerClientId, itemId = item.itemID });
+                        EventBus.Publish(new ItemAddedEvent
+                        {
+                            clientId = OwnerClientId,
+                            itemId = item.itemID
+                        });
                         return true;
                     }
                 }
@@ -87,7 +112,11 @@ namespace DeadZone.Actors
                 {
                     remaining -= slot.stackCount;
                     ServerGrid.RemoveAt(i);
-                    EventBus.Publish(new ItemRemovedEvent { clientId = OwnerClientId, itemId = slot.itemId });
+                    EventBus.Publish(new ItemRemovedEvent
+                    {
+                        clientId = OwnerClientId,
+                        itemId = slot.itemId
+                    });
                 }
                 else
                 {
@@ -99,18 +128,32 @@ namespace DeadZone.Actors
             return true;
         }
 
+        // ----------- Collision Check -----------
+
+        /// <summary>
+        /// (x, y) 위치에 size 크기의 아이템을 놓을 수 있는지 검사.
+        /// IItemDatabase로 기존 슬롯의 진짜 SO를 조회해서 정확한 사이즈로 충돌 검사.
+        /// </summary>
         private bool CanPlaceAt(byte x, byte y, Vector2Int size, bool rotated)
         {
             int w = rotated ? size.y : size.x;
             int h = rotated ? size.x : size.y;
-            if (x + w > gridWidth || y + h > gridHeight) return false;
+
+            if (x + w > BASE_WIDTH || y + h > BASE_HEIGHT) return false;
 
             for (int i = 0; i < ServerGrid.Count; i++)
             {
                 var s = ServerGrid[i];
-                var soSize = new Vector2Int(1, 1);
-                int sw = s.rotated ? soSize.y : soSize.x;
-                int sh = s.rotated ? soSize.x : soSize.y;
+
+                Vector2Int existingSize = Vector2Int.one;
+                if (itemDb != null)
+                {
+                    var so = itemDb.GetById(s.itemId.ToString());
+                    if (so != null) existingSize = so.gridSize;
+                }
+
+                int sw = s.rotated ? existingSize.y : existingSize.x;
+                int sh = s.rotated ? existingSize.x : existingSize.y;
 
                 bool overlap = !(x + w <= s.gridX || s.gridX + sw <= x ||
                                  y + h <= s.gridY || s.gridY + sh <= y);
