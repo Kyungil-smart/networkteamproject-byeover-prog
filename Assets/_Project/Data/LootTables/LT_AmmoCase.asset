@@ -13,12 +13,9 @@ MonoBehaviour:
   m_Name: LT_AmmoCase
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.LootTableSO
   entries:
-  - item: {fileID: 11400000, guid: 818f11356231c4247a72b8cfb7a34799, type: 2}
+  - item: {fileID: 11400000, guid: d887afca23280a142ba7c0a138497431, type: 2}
     weight: 6000
     countRange: {x: 30, y: 60}
-  - item: {fileID: 11400000, guid: 3ae9f5c20250a6d49930bbee3e89dbea, type: 2}
-    weight: 3300
-    countRange: {x: 15, y: 30}
   - item: {fileID: 11400000, guid: 900402ba7020a11468fc67a08b870065, type: 2}
     weight: 700
     countRange: {x: 8, y: 15}

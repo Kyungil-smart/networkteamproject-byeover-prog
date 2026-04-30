@@ -14,16 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.LootTableSO
   entries:
   - item: {fileID: 11400000, guid: 771885c03bd11074aa30d0110f6f6197, type: 2}
-    weight: 1500
-    countRange: {x: 1, y: 2}
-  - item: {fileID: 11400000, guid: 53befb21f30176c46ad950dff20916e6, type: 2}
-    weight: 1500
+    weight: 2000
     countRange: {x: 1, y: 2}
   - item: {fileID: 11400000, guid: 7433f73e64ef87341b970691c4658c4a, type: 2}
-    weight: 1500
+    weight: 2000
     countRange: {x: 1, y: 2}
   - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
-    weight: 1500
+    weight: 2000
     countRange: {x: 1, y: 2}
   - item: {fileID: 11400000, guid: 864e28078fe6c744a9dff30580d17dbf, type: 2}
     weight: 800
