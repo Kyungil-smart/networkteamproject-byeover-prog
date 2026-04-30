@@ -7,20 +7,28 @@ using DeadZone.Systems;
 
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// 월드에 스폰된 루팅 아이템. 플레이어가 F 키를 누르면 → ServerRpc → 서버가 인벤토리에 추가 + despawns.
-    /// </summary>
     public class LootInteractable : NetworkBehaviour, IInteractable, ILootCarrier
     {
-        [SerializeField] private ItemDataSO[] itemDatabase;
-
         public NetworkVariable<FixedString64Bytes> ItemId = new("");
 
         private ItemDataSO cachedItem;
+        private IItemDatabase itemDb;
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            itemDb = ServiceLocator.Get<IItemDatabase>();
+
+            if (itemDb == null)
+            {
+                Debug.LogError("[LootInteractable] IItemDatabase 서비스가 등록되어 있지 않음. " +
+                               "PersistentSystems > ItemDatabase 가 씬에 있는지 확인.");
+            }
+        }
 
         public string GetPromptText()
         {
-            if (cachedItem == null) cachedItem = LookupItem(ItemId.Value.ToString());
+            if (cachedItem == null) cachedItem = itemDb?.GetById(ItemId.Value.ToString());
             return cachedItem != null ? $"[F] Pick up {cachedItem.displayName}" : "[F] Pick up";
         }
 
@@ -48,7 +56,14 @@ namespace DeadZone.Actors
             var inv = playerObj.GetComponent<IInventory>();
             if (inv == null) return;
 
-            var item = LookupItem(ItemId.Value.ToString());
+            // 서버에서도 itemDb 확인
+            if (itemDb == null)
+            {
+                itemDb = ServiceLocator.Get<IItemDatabase>();
+                if (itemDb == null) return;
+            }
+
+            var item = itemDb.GetById(ItemId.Value.ToString());
             if (item == null) return;
 
             if (inv.TryAddItem(item))
@@ -61,16 +76,7 @@ namespace DeadZone.Actors
                 });
                 NetworkObject.Despawn(destroy: true);
             }
-        }
-
-        private ItemDataSO LookupItem(string id)
-        {
-            if (itemDatabase == null) return null;
-            foreach (var so in itemDatabase)
-            {
-                if (so != null && so.itemID == id) return so;
-            }
-            return null;
+            // else: 인벤 가득 → Despawn 안 함, 아이템 그대로 유지
         }
     }
 }

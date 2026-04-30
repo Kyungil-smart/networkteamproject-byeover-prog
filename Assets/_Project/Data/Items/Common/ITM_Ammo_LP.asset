@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
+<<<<<<<< HEAD:Assets/_Project/Data/Items/Common/ITM_Ammo_LP.asset
+  m_Name: ITM_Ammo_LP
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  itemID: Ammo_LP
+  displayName: "LP \uD0C4\uC57D"
+  description: 
+========
+  m_Name: Item_cloth
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  itemID: material_cloth
+  displayName: "\uCC9C \uC870\uAC01"
+  description: "\uBD95\uB300 \uC81C\uC791"
+>>>>>>>> origin/Develop3:Assets/Scenes/JGM/SO/Test/Item_cloth.asset
+  icon: {fileID: 0}
+  category: 1
+  rarity: 0
+  isValuable: 0
+  gridSize: {x: 1, y: 1}
+<<<<<<<< HEAD:Assets/_Project/Data/Items/Common/ITM_Ammo_LP.asset
+  maxStackSize: 60
+  weightKg: 0.01
+  baseSellPrice: 10
+========
+  maxStackSize: 99
+  weightKg: 0.1
+  baseSellPrice: 99
+>>>>>>>> origin/Develop3:Assets/Scenes/JGM/SO/Test/Item_cloth.asset
+  worldPrefab: {fileID: 0}

@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
+<<<<<<<< HEAD:Assets/_Project/Data/Items/Common/ITM_MedicalSupplies.asset
+  m_Name: ITM_MedicalSupplies
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  itemID: MedicalSupplies
+  displayName: "\uC758\uB8CC\uC6A9\uD488"
+  description: 
+  icon: {fileID: 0}
+  category: 5
+========
+  m_Name: Iron
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  itemID: 
+  displayName: 
+  description: "AK74 \uC804\uC6A9 \uCD1D\uC54C"
+  icon: {fileID: 0}
+  category: 1
+>>>>>>>> origin/Develop3:Assets/Scenes/KHW/Iron.asset
+  rarity: 0
+  isValuable: 0
+  gridSize: {x: 1, y: 1}
+  maxStackSize: 10
+<<<<<<<< HEAD:Assets/_Project/Data/Items/Common/ITM_MedicalSupplies.asset
+  weightKg: 0.1
+  baseSellPrice: 100
+========
+  weightKg: 5
+  baseSellPrice: 5
+>>>>>>>> origin/Develop3:Assets/Scenes/KHW/Iron.asset
+  worldPrefab: {fileID: 0}
