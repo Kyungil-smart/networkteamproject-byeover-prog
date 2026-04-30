@@ -4,6 +4,7 @@ using UnityEngine;
 
 using DeadZone.Core;
 using DeadZone.Systems;
+using UnityEngine.Rendering.UI;
 
 namespace DeadZone.Actors
 {
@@ -24,7 +25,8 @@ namespace DeadZone.Actors
 
         private EquipmentSlots equipment;
         private float nextFireAllowed;
-        
+        private float currentSpreadAngle;
+        private float lastServerFireTime;
         
         // 조준 분석 결과를 담는 내부 구조체
         private struct AimResult
@@ -64,10 +66,10 @@ namespace DeadZone.Actors
             var weapon = equipment?.GetCurrentWeapon();
             if (weapon == null) return;
 
-            // 1. 조준 의도 분석 (누구를, 어디를 노렸는가)
+            // 1. 레이 캐스트로 조준 의도 분석 (누구를, 어디를 노렸는가)
             AimResult result = AnalyzeAim(mousePos);
             if (result.targetPoint == Vector3.zero) return;
-
+            
             // 2. 쿨타임 계산 및 서버 요청
             nextFireAllowed = Time.time + (1f / Mathf.Max(0.1f, weapon.fireRate));
             
@@ -89,7 +91,7 @@ namespace DeadZone.Actors
 
             if (TryGroundAim(ray, out AimResult groundResult))
                 return groundResult;
-
+            
             return new AimResult { targetPoint = Vector3.zero };
         }
 
@@ -154,9 +156,8 @@ namespace DeadZone.Actors
             var state = equipment?.CurrentWeaponState ?? default;
             var ammo = equipment?.CurrentAmmoData;
 
-            if (weapon == null || ammo == null || state.currentAmmo <= 0) 
-                return;
-
+            if (weapon == null || ammo == null || state.currentAmmo <= 0) return;
+            
             // 1. 탄환 소모
             equipment.ConsumeCurrentWeaponAmmo();
 
@@ -165,8 +166,7 @@ namespace DeadZone.Actors
             float finalVelocity = weapon.muzzleVelocity * ammo.velocityMultiplier;
 
             // 3. 투사체 데이터 생성
-            ProjectileData pData = CreateProjectileData(rpc.Receive.SenderClientId, 
-                tId, head, weapon, ammo);
+            ProjectileData pData = CreateProjectileData(rpc.Receive.SenderClientId, tId, head, weapon, ammo);
     
             // 4. 투사체 생성 시 계산된 탄속 전달
             SpawnProjectile(pData, target, weapon, finalVelocity);
@@ -201,7 +201,8 @@ namespace DeadZone.Actors
             WeaponDataSO w, float velocity)
         {
             Vector3 spawnPos = muzzleTransform.position;
-            Vector3 fireDir = (target - spawnPos).normalized;
+            Vector3 fireDir = ApplySpread((target - spawnPos).normalized, w);
+            Debug.Log("FireDir: " + fireDir);
 
             // 탄환 프리팹 생성 및 방향 설정
             GameObject bullet = Instantiate(w.projectilePrefab, spawnPos, 
@@ -216,6 +217,34 @@ namespace DeadZone.Actors
                 pc.Initialize(pData, fireDir, velocity);
             }
         }
+
+        private Vector3 ApplySpread(Vector3 baseDir, WeaponDataSO weapon)
+        {
+            if (weapon == null) return baseDir;
+
+            // x는 최소(기본), y는 최대 탄퍼짐으로 정의
+            float minSpread = weapon.spreadAngle.x;
+            float maxSpread = weapon.spreadAngle.y;
+
+            // 1. 회복 로직: 마지막 사격 이후 흐른 시간만큼 회복
+            float elapsed = lastServerFireTime > 0f ? 
+                Time.time - lastServerFireTime : 0f;
+    
+            // minSpread 미만으로 내려가지 않도록 차단
+            currentSpreadAngle = Mathf.Max(minSpread, 
+                currentSpreadAngle - (weapon.spreadRecovery * elapsed));
+
+            // 2. 현재 각도로 탄퍼짐 계산 (첫 탄은 minSpread 상태)
+            float yawSpread = Random.Range(-currentSpreadAngle, currentSpreadAngle);
+            Vector3 spreadDir = Quaternion.AngleAxis(yawSpread, Vector3.up) * baseDir;
+
+            // 3. 다음 탄을 위해 탄퍼짐 누적 최소치의 절반만큼씩 누적
+            float spreadIncrement = minSpread * 0.5f; 
+            currentSpreadAngle = Mathf.Min(maxSpread, currentSpreadAngle + spreadIncrement);
+
+            lastServerFireTime = Time.time;
+            return spreadDir.normalized;
+        }
         
         private void PublishFireEvent(ulong clientId, FixedString64Bytes wId)
         {
@@ -226,6 +255,5 @@ namespace DeadZone.Actors
                 origin = muzzleTransform.position
             });
         }
-
     }
 }

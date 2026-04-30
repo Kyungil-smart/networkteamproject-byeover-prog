@@ -17,7 +17,7 @@ namespace DeadZone.Actors
             this.spectator = spectator;
         }
 
-        public void Tick(Vector2 move, Vector2 look)
+        public void Tick(Vector2 move, Vector2 look, Vector2 mousePos)
         {
             if (spectator != null) spectator.SetFreeCamInput(move, look);
         }

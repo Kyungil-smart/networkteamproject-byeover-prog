@@ -15,6 +15,7 @@ namespace DeadZone.Actors
         private readonly RollSystem roll;
         private readonly InteractionSystem interaction;
         private readonly WeaponSwitching weaponSwitching;
+        private Vector2 mousePos;
 
         public AliveInputContext(
             FPSController fps, ShootingSystem shooting, ADSSystem ads,
@@ -30,16 +31,17 @@ namespace DeadZone.Actors
             this.weaponSwitching = weaponSwitching;
         }
 
-        public void Tick(Vector2 move, Vector2 look)
+        public void Tick(Vector2 move, Vector2 look, Vector2 mousePos)
         {
             if (fps != null)
             {
                 fps.SetMove(move);
                 fps.SetLook(look);
             }
+            this.mousePos = mousePos;
         }
 
-        public void OnFire() => shooting?.TryFire();
+        public void OnFire() => shooting?.TryFire(mousePos);
         public void OnAim(bool down) => ads?.SetADS(down);
         public void OnReload() => reload?.TryReload();
         public void OnInteract() => interaction?.TryInteract();
