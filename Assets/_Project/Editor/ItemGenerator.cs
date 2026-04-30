@@ -13,9 +13,22 @@ namespace DeadZone.EditorTools
     {
         private const string ROOT_FOLDER = "Assets/_Project/Data/Items";
 
+        // 카테고리별 전용 폴더 — 팀원 Common/ 과 분리
+        private static readonly Dictionary<ItemCategory, string> CATEGORY_FOLDERS = new()
+        {
+            { ItemCategory.Material, "Materials" },
+            { ItemCategory.Med,      "Medical" },
+            { ItemCategory.Valuable, "Valuables" },
+            { ItemCategory.Tool,     "Tools" },
+            { ItemCategory.Armor,    "Armor" },
+            { ItemCategory.Helmet,   "Armor" },   // 헬멧도 같은 폴더 (방어구 계열)
+        };
+
+        private const string MISC_FOLDER = "Misc";  // 위 매핑에 없는 카테고리
+
         // ----------- 메뉴 진입점 -----------
 
-        [MenuItem("Tools/DeadZone/Generate All Items")]
+        [MenuItem("Tools/DeadZone/Generate Farming Items (v3)")]
         public static void GenerateAll()
         {
             int created = 0, skipped = 0;
@@ -27,7 +40,7 @@ namespace DeadZone.EditorTools
             {
                 if (!seen.Add(def.id))
                 {
-                    Debug.LogWarning($"[ItemGenerator] 중복 itemID '{def.id}' 스킵");
+                    Debug.LogWarning($"[ItemGenerator v3] 중복 itemID '{def.id}' 스킵");
                     continue;
                 }
 
@@ -42,13 +55,16 @@ namespace DeadZone.EditorTools
             AssetDatabase.Refresh();
 
             EditorUtility.DisplayDialog(
-                "DeadZone Item Generator v2",
-                $"완료 (마스터: ItemIconPrompts v1.0 / 총 68종)\n\n" +
+                "DeadZone Item Generator v3",
+                $"파밍팀 자산 생성 완료 (총 56종)\n\n" +
                 $"신규 생성: {created}개\n" +
                 $"기존 스킵: {skipped}개\n\n" +
-                $"다음 단계:\n" +
+                $"제외 항목 (무기팀 담당):\n" +
+                $"  - 무기 9종 (Weapon_*.asset)\n" +
+                $"  - 탄약 3종 (Ammo_*.asset)\n\n" +
+                $"다음:\n" +
                 $"1. Tools/DeadZone/Refresh ItemDatabase\n" +
-                $"2. Tools/DeadZone/Generate All LootTables",
+                $"2. Tools/DeadZone/Generate All LootTables (v2)",
                 "OK");
         }
 
@@ -57,7 +73,7 @@ namespace DeadZone.EditorTools
         private static bool TryCreateItem(ItemDef def, out bool skipped)
         {
             skipped = false;
-            string folder = GetFolderForRarity(def.rarity);
+            string folder = GetFolderForCategory(def.category);
             string path = $"{ROOT_FOLDER}/{folder}/ITM_{def.id}.asset";
 
             if (AssetDatabase.LoadAssetAtPath<ItemDataSO>(path) != null)
@@ -82,14 +98,17 @@ namespace DeadZone.EditorTools
             return true;
         }
 
-        // ----------- 폴더 (등급별 분류 — 마스터 §4.1) -----------
+        // ----------- 폴더 -----------
 
         private static void EnsureRootFolders()
         {
             EnsureFolder("Assets/_Project");
             EnsureFolder("Assets/_Project/Data");
             EnsureFolder("Assets/_Project/Data/Items");
-            foreach (var folder in RARITY_FOLDERS.Values)
+
+            // 카테고리 폴더 (중복 제거)
+            var uniqueFolders = new HashSet<string>(CATEGORY_FOLDERS.Values) { MISC_FOLDER };
+            foreach (var folder in uniqueFolders)
             {
                 EnsureFolder($"{ROOT_FOLDER}/{folder}");
             }
@@ -104,17 +123,8 @@ namespace DeadZone.EditorTools
             AssetDatabase.CreateFolder(parent, name);
         }
 
-        private static string GetFolderForRarity(RarityTier r)
-            => RARITY_FOLDERS.TryGetValue(r, out var f) ? f : "Misc";
-
-        private static readonly Dictionary<RarityTier, string> RARITY_FOLDERS = new()
-        {
-            { RarityTier.Common,    "Common" },
-            { RarityTier.Uncommon,  "Uncommon" },
-            { RarityTier.Rare,      "Rare" },
-            { RarityTier.Epic,      "Epic" },
-            { RarityTier.Legendary, "Legendary" },
-        };
+        private static string GetFolderForCategory(ItemCategory cat)
+            => CATEGORY_FOLDERS.TryGetValue(cat, out var f) ? f : MISC_FOLDER;
 
         // ----------- 정의 구조체 -----------
 
@@ -144,11 +154,11 @@ namespace DeadZone.EditorTools
             };
         }
 
-        // ----------- 68종 정의 (ItemIconPrompts v1.0 §3 1:1 매칭) -----------
+        // ----------- 56종 정의 (ItemIconPrompts v1.0 - 무기 9 - 탄약 3) -----------
 
         private static readonly ItemDef[] ALL_ITEMS = new[]
         {
-            // ========== Common (20개) — 60% ==========
+            // ========== Common (16개 = 20 - 무기 2 - 탄약 1 - DuctTape USDollars 유지) ==========
             Mk("Bolt",             "볼트",          ItemCategory.Material, RarityTier.Common, new Vector2Int(1,1), 30, 0.05f, 30),
             Mk("MetalScrap",       "금속 조각",      ItemCategory.Material, RarityTier.Common, new Vector2Int(1,1), 20, 0.3f,  50),
             Mk("WoodScrap",        "나무 조각",      ItemCategory.Material, RarityTier.Common, new Vector2Int(1,1), 20, 0.2f,  40),
@@ -162,15 +172,14 @@ namespace DeadZone.EditorTools
             Mk("BrokenLCD",        "부서진 LCD",    ItemCategory.Valuable, RarityTier.Common, new Vector2Int(1,2), 1,  1.5f,  600,  valuable:true),
             Mk("USDollars",        "현금/달러",      ItemCategory.Valuable, RarityTier.Common, new Vector2Int(1,1), 50, 0.01f, 100),
             Mk("HardDiskDrive",    "하드디스크",     ItemCategory.Valuable, RarityTier.Common, new Vector2Int(1,1), 1,  0.4f,  800,  valuable:true),
-            Mk("Ammo_LP",          "LP 탄약",       ItemCategory.Ammo,     RarityTier.Common, new Vector2Int(1,1), 60, 0.01f, 10),
-            Mk("Glock17",          "글락-17",       ItemCategory.Weapon,   RarityTier.Common, new Vector2Int(2,2), 1,  0.7f,  1500),
-            Mk("DefensePistol",    "호신용 권총",    ItemCategory.Weapon,   RarityTier.Common, new Vector2Int(2,2), 1,  0.6f,  1200),
             Mk("Armor_C1",         "1 클래스 아머",  ItemCategory.Armor,    RarityTier.Common, new Vector2Int(2,3), 1,  1.5f,  1000),
             Mk("Armor_C2",         "2 클래스 아머",  ItemCategory.Armor,    RarityTier.Common, new Vector2Int(2,3), 1,  2.5f,  2500),
             Mk("Helmet_C1",        "1 클래스 헬멧",  ItemCategory.Helmet,   RarityTier.Common, new Vector2Int(2,2), 1,  0.8f,  800),
+
+            // 추가 — Helmet C2도 Common
             Mk("Helmet_C2",        "2 클래스 헬멧",  ItemCategory.Helmet,   RarityTier.Common, new Vector2Int(2,2), 1,  1.2f,  1800),
 
-            // ========== Uncommon (22개) — 30% ==========
+            // ========== Uncommon (19개 = 22 - 무기 2 - 탄약 1) ==========
             Mk("GunParts",            "총기 부품",      ItemCategory.Material, RarityTier.Uncommon, new Vector2Int(1,1), 5,  0.4f, 600),
             Mk("SSD",                 "SSD",          ItemCategory.Material, RarityTier.Uncommon, new Vector2Int(1,1), 1,  0.1f, 500),
             Mk("WoodPlank",           "나무 판자",     ItemCategory.Material, RarityTier.Uncommon, new Vector2Int(1,3), 5,  1.0f, 200),
@@ -187,18 +196,11 @@ namespace DeadZone.EditorTools
             Mk("Watch",               "시계",         ItemCategory.Valuable, RarityTier.Uncommon, new Vector2Int(1,1), 1,  0.1f, 800,  valuable:true),
             Mk("AcousticGuitar",      "통기타",       ItemCategory.Valuable, RarityTier.Uncommon, new Vector2Int(2,4), 1,  2.5f, 1500, valuable:true),
             Mk("Grenade",             "수류탄",       ItemCategory.Material, RarityTier.Uncommon, new Vector2Int(1,1), 1,  0.5f, 3000),
-            Mk("Ammo_BP",             "BP 탄약",      ItemCategory.Ammo,     RarityTier.Uncommon, new Vector2Int(1,1), 60, 0.015f, 25),
-            Mk("Revolver",            "리볼버",       ItemCategory.Weapon,   RarityTier.Uncommon, new Vector2Int(2,2), 1,  1.0f, 5000),
-            Mk("PumpShotgun",         "펌프샷건",     ItemCategory.Weapon,   RarityTier.Uncommon, new Vector2Int(2,4), 1,  3.5f, 6500),
             Mk("Armor_C3",            "3 클래스 아머", ItemCategory.Armor,    RarityTier.Uncommon, new Vector2Int(2,3), 1,  4.0f, 5500),
             Mk("Armor_C4",            "4 클래스 아머", ItemCategory.Armor,    RarityTier.Uncommon, new Vector2Int(2,3), 1,  6.0f, 12000),
             Mk("Helmet_C3",           "3 클래스 헬멧", ItemCategory.Helmet,   RarityTier.Uncommon, new Vector2Int(2,2), 1,  2.0f, 5000),
 
-            // ========== Rare (18개) — 8.9% ==========
-            Mk("SK74",                  "SK-74",          ItemCategory.Weapon,   RarityTier.Rare, new Vector2Int(2,4), 1, 3.5f,  12000),
-            Mk("B90",                   "B90",            ItemCategory.Weapon,   RarityTier.Rare, new Vector2Int(2,3), 1, 2.8f,  10000),
-            Mk("MB7",                   "MB-7",           ItemCategory.Weapon,   RarityTier.Rare, new Vector2Int(2,3), 1, 4.0f,  15000),
-            Mk("Ammo_AP",               "AP 탄약",         ItemCategory.Ammo,     RarityTier.Rare, new Vector2Int(1,1), 60, 0.02f, 60),
+            // ========== Rare (14개 = 18 - 무기 3 - 탄약 1) ==========
             Mk("FastHealSyringe",       "급속 회복 주사기",   ItemCategory.Med,      RarityTier.Rare, new Vector2Int(1,1), 3, 0.1f,  4000),
             Mk("WeightCapacitySyringe", "무게 증가 주사기",   ItemCategory.Med,      RarityTier.Rare, new Vector2Int(1,1), 3, 0.1f,  3500),
             Mk("AdvancedFirstAidKit",   "고급 구급상자",     ItemCategory.Med,      RarityTier.Rare, new Vector2Int(2,2), 1, 0.7f,  6000),
@@ -214,9 +216,7 @@ namespace DeadZone.EditorTools
             Mk("Armor_C5",              "5 클래스 아머",    ItemCategory.Armor,    RarityTier.Rare, new Vector2Int(2,3), 1, 9.0f,  25000),
             Mk("Helmet_C4",             "4 클래스 헬멧",    ItemCategory.Helmet,   RarityTier.Rare, new Vector2Int(2,2), 1, 2.5f,  12000),
 
-            // ========== Epic (7개) — 1% ==========
-            Mk("F2",                "F2 소총",         ItemCategory.Weapon,   RarityTier.Epic, new Vector2Int(2,4), 1, 4.5f,  35000),
-            Mk("DragSniper",        "드라그 소총",      ItemCategory.Weapon,   RarityTier.Epic, new Vector2Int(2,4), 1, 5.0f,  40000),
+            // ========== Epic (5개 = 7 - 무기 2) ==========
             Mk("Armor_C6",          "6 클래스 아머",    ItemCategory.Armor,    RarityTier.Epic, new Vector2Int(2,3), 1, 12.0f, 60000),
             Mk("GraphicsCard",      "그래픽 카드",      ItemCategory.Valuable, RarityTier.Epic, new Vector2Int(2,2), 1, 0.5f,  20000, valuable:true),
             Mk("JadeChanLaptop",    "JADE쨩의 노트북",  ItemCategory.Valuable, RarityTier.Epic, new Vector2Int(2,3), 1, 1.5f,  25000, valuable:true),

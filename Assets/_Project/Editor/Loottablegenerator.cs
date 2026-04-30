@@ -14,7 +14,7 @@ namespace DeadZone.EditorTools
     {
         private const string OUTPUT_FOLDER = "Assets/_Project/Data/LootTables";
 
-        [MenuItem("Tools/DeadZone/Generate All LootTables")]
+        [MenuItem("Tools/DeadZone/Generate All LootTables (v2)")]
         public static void GenerateAll()
         {
             EnsureFolder(OUTPUT_FOLDER);
@@ -24,10 +24,23 @@ namespace DeadZone.EditorTools
             {
                 EditorUtility.DisplayDialog(
                     "DeadZone LootTable Generator v2",
-                    "ItemDataSO 자산이 1개도 없음.\n먼저 Tools/DeadZone/Generate All Items 실행 필요.",
+                    "ItemDataSO 자산이 1개도 없음.\n" +
+                    "1. Tools/DeadZone/Generate Farming Items (v3) 실행\n" +
+                    "2. 팀원이 만든 무기/탄약 자산도 Develop3에서 머지된 상태인지 확인",
                     "OK");
                 return;
             }
+
+            // 자산 분포 진단
+            int weapons = allItems.Count(i => i.category == ItemCategory.Weapon);
+            int ammo = allItems.Count(i => i.category == ItemCategory.Ammo);
+            int valuables = allItems.Count(i => i.category == ItemCategory.Valuable);
+
+            Debug.Log($"[LootTableGenerator v2] 자산 풀 진단:\n" +
+                      $"  - 전체: {allItems.Count}개\n" +
+                      $"  - 무기: {weapons}개 (팀원 영역)\n" +
+                      $"  - 탄약: {ammo}개 (팀원 영역)\n" +
+                      $"  - 귀중품: {valuables}개 (너 영역)");
 
             int created = 0;
 
@@ -50,24 +63,28 @@ namespace DeadZone.EditorTools
             }, allItems, categoryFilter: null);
 
             // ----- 카테고리 케이스 4종 -----
+
+            // WeaponCase — 팀원 자산만 들어감
             created += BuildTable("LT_WeaponCase", new[]
             {
                 (RarityTier.Common, 35), (RarityTier.Uncommon, 45),
                 (RarityTier.Rare, 18), (RarityTier.Epic, 2)
             }, allItems, categoryFilter: ItemCategory.Weapon);
 
+            // MedicalCase — 너 자산만
             created += BuildTable("LT_MedicalCase", new[]
             {
                 (RarityTier.Common, 60), (RarityTier.Uncommon, 32), (RarityTier.Rare, 8)
             }, allItems, categoryFilter: ItemCategory.Med);
 
-            // DocCase = 귀중품(Valuable + isValuable=true) 풀. JADE 피규어 출현 가능.
+            // DocCase — 귀중품(너 자산만, isValuable=true)
             created += BuildTable("LT_DocCase", new[]
             {
                 (RarityTier.Common, 45), (RarityTier.Uncommon, 35), (RarityTier.Rare, 17),
                 (RarityTier.Epic, 2), (RarityTier.Legendary, 1)
             }, allItems, categoryFilter: ItemCategory.Valuable, valuableOnly: true);
 
+            // AmmoCase — 팀원 자산만
             created += BuildTable("LT_AmmoCase", new[]
             {
                 (RarityTier.Common, 60), (RarityTier.Uncommon, 33), (RarityTier.Rare, 7)
@@ -76,17 +93,20 @@ namespace DeadZone.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
+            string warning = "";
+            if (weapons == 0)
+                warning += "\n⚠️ 무기 자산 0개 — LT_WeaponCase 비어있을 수 있음\n  → 팀원 무기 자산 머지 후 다시 실행 권장";
+            if (ammo == 0)
+                warning += "\n⚠️ 탄약 자산 0개 — LT_AmmoCase 비어있을 수 있음\n  → 팀원 탄약 자산 머지 후 다시 실행 권장";
+
             EditorUtility.DisplayDialog(
                 "DeadZone LootTable Generator v2",
-                $"완료\n\n생성된 LootTable: {created}개 (박스 7종)\n\n" +
-                "다음: 박스 7종 Inspector → Loot Table 필드에 드래그\n" +
-                "  CommonBox    → LT_CommonBox\n" +
-                "  UnCommonBox  → LT_UncommonBox\n" +
-                "  RareBox      → LT_RareBox\n" +
-                "  WaponCase    → LT_WeaponCase\n" +
-                "  MedicalCase  → LT_MedicalCase\n" +
-                "  DocCase      → LT_DocCase\n" +
-                "  AmmoCase     → LT_AmmoCase",
+                $"완료\n\n" +
+                $"생성된 LootTable: {created}개\n" +
+                $"전체 아이템 풀: {allItems.Count}개\n" +
+                $"  - 무기: {weapons}개\n" +
+                $"  - 탄약: {ammo}개\n" +
+                $"  - 귀중품: {valuables}개" + warning,
                 "OK");
         }
 
@@ -128,7 +148,7 @@ namespace DeadZone.EditorTools
 
             if (entries.Count == 0)
             {
-                Debug.LogWarning($"[LootTableGenerator] '{name}' — 후보 0개. 자산 생성 스킵.");
+                Debug.LogWarning($"[LootTableGenerator v2] '{name}' — 후보 0개. 자산 생성 스킵.");
                 return 0;
             }
 
@@ -144,7 +164,7 @@ namespace DeadZone.EditorTools
             else
                 EditorUtility.SetDirty(table);
 
-            Debug.Log($"[LootTableGenerator] '{name}' — {entries.Count}개 엔트리 생성");
+            Debug.Log($"[LootTableGenerator v2] '{name}' — {entries.Count}개 엔트리 생성");
             return 1;
         }
 
@@ -152,14 +172,13 @@ namespace DeadZone.EditorTools
 
         private static Vector2Int GetCountRange(ItemDataSO item)
         {
-            // 마스터 §3 기준 탄약 단일 카테고리 (LP/BP/AP 각 1종)
             return item.category switch
             {
                 ItemCategory.Ammo => item.rarity switch
                 {
-                    RarityTier.Common   => new Vector2Int(30, 60),  // LP 30~60발
-                    RarityTier.Uncommon => new Vector2Int(15, 30),  // BP 15~30발
-                    RarityTier.Rare     => new Vector2Int(8, 15),   // AP 8~15발
+                    RarityTier.Common   => new Vector2Int(30, 60),
+                    RarityTier.Uncommon => new Vector2Int(15, 30),
+                    RarityTier.Rare     => new Vector2Int(8, 15),
                     _ => new Vector2Int(1, 1),
                 },
                 ItemCategory.Material => new Vector2Int(1, 3),
@@ -170,6 +189,7 @@ namespace DeadZone.EditorTools
 
         private static List<ItemDataSO> LoadAllItems()
         {
+            // ★ 폴더 무관 — 프로젝트 전체 검색 (너 자산 + 팀원 자산 모두)
             string[] guids = AssetDatabase.FindAssets("t:ItemDataSO");
             return guids
                 .Select(g => AssetDatabase.GUIDToAssetPath(g))
