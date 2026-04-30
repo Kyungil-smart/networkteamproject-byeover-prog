@@ -13,4 +13,30 @@ MonoBehaviour:
   m_Name: Bed_Facility
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.FacilityDataSO
   type: 5
-  levels: []
+  levels:
+  - level: 1
+    upgradeMaterials: []
+    effectDescription: "\uCD94\uAC00 \uD6A8\uACFC \uC5C6\uC74C"
+  - level: 2
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: f81fe9af2c05da2438cf6b6cd3678123, type: 2}
+      amount: 5
+    - item: {fileID: 11400000, guid: 916a8c314adad4a4781de3ce614e3283, type: 2}
+      amount: 4
+    effectDescription: "\uC624\uD504\uB77C\uC778 HP \uD68C\uBCF5 \uC18D\uB3C4 +20%"
+  - level: 3
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 122468e9d49ea1c498e23dc5b4753d2e, type: 2}
+      amount: 10
+    - item: {fileID: 11400000, guid: 916a8c314adad4a4781de3ce614e3283, type: 2}
+      amount: 2
+    effectDescription: "\uC624\uD504\uB77C\uC778 HP \uD68C\uBCF5 \uC18D\uB3C4 +40%,
+      \uB808\uC774\uB4DC \uC2DC\uC791 \uC2DC \uACBD\uBBF8 \uCE58\uB8CC"
+  - level: 4
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 916a8c314adad4a4781de3ce614e3283, type: 2}
+      amount: 5
+    - item: {fileID: 11400000, guid: 03fafc6ba56f5a84183e99c498efa87b, type: 2}
+      amount: 1
+    effectDescription: "\uC624\uD504\uB77C\uC778 HP \uD68C\uBCF5 \uC18D\uB3C4 +60%,
+      \uB808\uC774\uB4DC \uC2DC\uC791 \uC2DC \uD480HP"
