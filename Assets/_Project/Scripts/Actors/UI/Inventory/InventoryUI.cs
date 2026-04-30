@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DeadZone.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -7,17 +8,21 @@ namespace DeadZone.Actors.UI
     public class InventoryUI : MonoBehaviour
     {
         [BoxGroup("루트")]
-        [Tooltip("켜고 끌 인벤토리 전체 오브젝트")]
+        [Tooltip("켜고 끌 InventoryVisibleRoot 오브젝트입니다. Inventory와 QuickSlotPanel은 이 루트 밖에서 켜진 상태를 유지해야 합니다.")]
         [SerializeField] private GameObject inventoryRoot;
 
         [BoxGroup("가방 설정")]
-        [Tooltip("현재 가방 레벨")]
+        [Tooltip("현재 가방 레벨입니다.")]
         [Range(1, 3)]
         [SerializeField] private int bagLevel = 1;
 
         [BoxGroup("가방 슬롯")]
         [Tooltip("가방 슬롯 20개를 순서대로 넣으세요.")]
         [SerializeField] private List<InventorySlotUI> bagSlots = new();
+
+        [BoxGroup("ItemDataSO 테스트")]
+        [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
+        [SerializeField] private List<ItemDataSO> testItemPool = new();
 
         public bool IsOpen => inventoryRoot != null && inventoryRoot.activeSelf;
 
@@ -89,6 +94,12 @@ namespace DeadZone.Actors.UI
         [Button("슬롯 잠금 상태 새로고침")]
         public void RefreshBagSlots()
         {
+            if (bagSlots == null)
+            {
+                Debug.LogWarning("[InventoryUI] Bag Slots가 연결되지 않았습니다.");
+                return;
+            }
+
             int unlockedCount = GetCapacityByBagLevel(bagLevel);
 
             for (int i = 0; i < bagSlots.Count; i++)
@@ -100,48 +111,97 @@ namespace DeadZone.Actors.UI
                 bagSlots[i].SetLocked(locked);
             }
         }
-        
-        [BoxGroup("아이콘 테스트")]
-        [Tooltip("테스트용으로 슬롯에 표시할 임시 아이콘입니다.")]
-        [SerializeField] private Sprite testIcon;
 
-        [BoxGroup("아이콘 테스트")]
-        [Button("0번 슬롯 아이템 표시")]
-        private void TestShowItemAtSlot0()
+        [BoxGroup("ItemDataSO 테스트")]
+        [Button("랜덤 아이템 1개 배치")]
+        private void FillRandomItem1()
         {
-            if (bagSlots == null || bagSlots.Count == 0 || bagSlots[0] == null)
-            {
-                Debug.LogWarning("[InventoryUI] 0번 슬롯이 연결되지 않았습니다.");
-                return;
-            }
-
-            bagSlots[0].SetItem(testIcon, InventoryItemRarity.Rare, 1);
+            FillRandomItems(1);
         }
 
-        [BoxGroup("아이콘 테스트")]
-        [Button("0번 슬롯 아이템 5개 표시")]
-        private void TestShowStackItemAtSlot0()
+        [BoxGroup("ItemDataSO 테스트")]
+        [Button("랜덤 아이템 5개 배치")]
+        private void FillRandomItems5()
         {
-            if (bagSlots == null || bagSlots.Count == 0 || bagSlots[0] == null)
-            {
-                Debug.LogWarning("[InventoryUI] 0번 슬롯이 연결되지 않았습니다.");
-                return;
-            }
-
-            bagSlots[0].SetItem(testIcon, InventoryItemRarity.Rare, 5);
+            FillRandomItems(5);
         }
 
-        [BoxGroup("아이콘 테스트")]
-        [Button("0번 슬롯 아이템 제거")]
-        private void TestClearItemAtSlot0()
+        [BoxGroup("ItemDataSO 테스트")]
+        [Button("랜덤 아이템 10개 배치")]
+        private void FillRandomItems10()
         {
-            if (bagSlots == null || bagSlots.Count == 0 || bagSlots[0] == null)
+            FillRandomItems(10);
+        }
+
+        [BoxGroup("ItemDataSO 테스트")]
+        [Button("랜덤 아이템 15개 배치")]
+        private void FillRandomItems15()
+        {
+            FillRandomItems(15);
+        }
+
+        [BoxGroup("ItemDataSO 테스트")]
+        [Button("랜덤 아이템 20개 배치")]
+        private void FillRandomItems20()
+        {
+            FillRandomItems(20);
+        }
+
+        [BoxGroup("ItemDataSO 테스트")]
+        [Button("모든 슬롯 비우기")]
+        public void ClearAllSlots()
+        {
+            if (bagSlots == null || bagSlots.Count == 0)
             {
-                Debug.LogWarning("[InventoryUI] 0번 슬롯이 연결되지 않았습니다.");
+                Debug.LogWarning("[InventoryUI] Bag Slots가 연결되지 않았습니다.");
                 return;
             }
 
-            bagSlots[0].ClearItem();
+            foreach (InventorySlotUI slot in bagSlots)
+            {
+                if (slot == null)
+                    continue;
+
+                slot.ClearItem();
+            }
+
+            RefreshBagSlots();
+        }
+
+        public void FillRandomItems(int count)
+        {
+            if (bagSlots == null || bagSlots.Count == 0)
+            {
+                Debug.LogWarning("[InventoryUI] Bag Slots가 연결되지 않았습니다.");
+                return;
+            }
+
+            ClearAssignedSlots();
+
+            if (testItemPool == null || testItemPool.Count == 0)
+            {
+                Debug.LogWarning("[InventoryUI] Test Item Pool이 비어 있습니다.");
+                RefreshBagSlots();
+                return;
+            }
+
+            int unlockedCount = Mathf.Min(GetCapacityByBagLevel(bagLevel), bagSlots.Count);
+            int fillCount = Mathf.Clamp(count, 0, unlockedCount);
+
+            for (int i = 0; i < fillCount; i++)
+            {
+                InventorySlotUI slot = bagSlots[i];
+                if (slot == null)
+                    continue;
+
+                ItemDataSO itemData = GetRandomTestItem();
+                if (itemData == null)
+                    continue;
+
+                slot.SetItem(itemData, GetRandomStackCount(itemData));
+            }
+
+            RefreshBagSlots();
         }
 
         [BoxGroup("테스트")]
@@ -184,6 +244,31 @@ namespace DeadZone.Actors.UI
         private void TestBagLevel3()
         {
             SetBagLevel(3);
+        }
+
+        private void ClearAssignedSlots()
+        {
+            foreach (InventorySlotUI slot in bagSlots)
+            {
+                if (slot == null)
+                    continue;
+
+                slot.ClearItem();
+            }
+        }
+
+        private ItemDataSO GetRandomTestItem()
+        {
+            return testItemPool[Random.Range(0, testItemPool.Count)];
+        }
+
+        private int GetRandomStackCount(ItemDataSO itemData)
+        {
+            if (itemData == null || itemData.maxStackSize <= 1)
+                return 1;
+
+            int maxStackCount = Mathf.Min(itemData.maxStackSize, 99);
+            return Random.Range(1, maxStackCount + 1);
         }
 
         private int GetCapacityByBagLevel(int level)
