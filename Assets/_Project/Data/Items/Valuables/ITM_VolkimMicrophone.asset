@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: VolkimMicrophone
   displayName: "\uBCFC\uD0B4\uC758 \uB9C8\uC774\uD06C"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: fe0560b524f2d2845b409fc2b6f08dd5, type: 3}
   category: 7
   rarity: 3
   isValuable: 1

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Hammer
   displayName: "\uB9DD\uCE58"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4f95c35a41d8bb34b9a4159514ed113f, type: 3}
   category: 9
   rarity: 1
   isValuable: 0

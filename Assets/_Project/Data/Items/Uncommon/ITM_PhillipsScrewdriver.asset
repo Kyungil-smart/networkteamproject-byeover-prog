@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: PhillipsScrewdriver
   displayName: "\uC2ED\uC790 \uB4DC\uB77C\uC774\uBC84"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: d933c2b9c6734db4c995db750c40ab7a, type: 3}
   category: 9
   rarity: 1
   isValuable: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: HardDiskDrive
   displayName: "\uD558\uB4DC\uB514\uC2A4\uD06C"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 138567ff21d7f464d84ae597324e79a0, type: 3}
   category: 7
   rarity: 0
   isValuable: 1
