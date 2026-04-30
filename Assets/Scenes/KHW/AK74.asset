@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d08d12c5cb63506429f308ff7ff1d220, type: 3}
+  m_Name: AK74
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
+  itemID: AK74_01
+  displayName: 
+  description: 
+  icon: {fileID: 0}
+  category: 0
+  rarity: 0
+  gridSize: {x: 1, y: 1}
+  maxStackSize: 1
+  weightKg: 0.1
+  baseSellPrice: 0
+  worldPrefab: {fileID: 0}
+  weaponCategory: 0
+  damage: 30
+  fireRate: 10
+  magSize: 30
+  engageRange: {x: 0, y: 100}
+  ammoType: 0
+  availableModes: 
+  muzzleVelocity: 900
+  projectilePrefab: {fileID: 0}
+  muzzleFlashOffset: 0.2
+  adsTransitionTime: 0.2
+  spreadAngle: {x: 0.5, y: 5}
+  spreadRecovery: 10
+  maxDurability: 100

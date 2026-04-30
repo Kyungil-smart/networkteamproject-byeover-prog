@@ -4,11 +4,11 @@
 TagManager:
   serializedVersion: 3
   tags:
-  - ' Enemy'
-  - ' LootItem'
-  - ' LootContainer'
+  - Enemy
+  - LootItem
+  - LootContainer
   - Door
-  - ' Facility'
+  - Facility
   - ExtractionZone
   layers:
   - Default
@@ -26,8 +26,8 @@ TagManager:
   - PlayerProjectile
   - Door
   - ViewBlocker
-  - 
-  - 
+  - Ground
+  - ItemBox
   - 
   - 
   - 

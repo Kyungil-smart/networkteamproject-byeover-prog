@@ -15,7 +15,7 @@ namespace DeadZone.Actors
 
         public BodyPart ZoneType => zoneType;
 
-        public T GetOwner<T>() where T : Component
+        public T GetOwner<T>() where T : class // Component -> class로 변경, 인터페이스에 대응하지만 null 체크 필요
         {
             return GetComponentInParent<T>();
         }
