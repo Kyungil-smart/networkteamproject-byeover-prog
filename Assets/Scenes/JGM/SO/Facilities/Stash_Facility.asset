@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a440bdd4a2fb31f42a2f8ee769edf7e9, type: 3}
+  m_Name: Stash_Facility
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.FacilityDataSO
+  type: 3
+  levels:
+  - level: 1
+    upgradeMaterials: []
+    effectDescription: "\uBCF4\uAD00\uD568 \uD06C\uAE30 8 x 6 / \uCD1D 48\uCE78"
+  - level: 2
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: f81fe9af2c05da2438cf6b6cd3678123, type: 2}
+      amount: 12
+    - item: {fileID: 11400000, guid: 87f44ca48190d194685a6abe75f897f2, type: 2}
+      amount: 8
+    effectDescription: "\uBCF4\uAD00\uD568 \uD06C\uAE30 10 x 8 / \uCD1D 80\uCE78"
+  - level: 3
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 0a9e2f60b9f77a54784bc8834da9eaa7, type: 2}
+      amount: 4
+    - item: {fileID: 11400000, guid: 87f44ca48190d194685a6abe75f897f2, type: 2}
+      amount: 15
+    effectDescription: "\uBCF4\uAD00\uD568 \uD06C\uAE30 12 x 9 / \uCD1D 108\uCE78"
+  - level: 4
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 0a9e2f60b9f77a54784bc8834da9eaa7, type: 2}
+      amount: 8
+    - item: {fileID: 11400000, guid: 03fafc6ba56f5a84183e99c498efa87b, type: 2}
+      amount: 1
+    effectDescription: "\uBCF4\uAD00\uD568 \uD06C\uAE30 14 x 10 / \uCD1D 140\uCE78"
