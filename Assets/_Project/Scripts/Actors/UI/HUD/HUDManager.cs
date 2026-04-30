@@ -1,4 +1,4 @@
-﻿using MoreMountains.Feedbacks;
+using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Netcode;
@@ -20,98 +20,98 @@ namespace DeadZone.Actors
     public class HUDManager : MonoBehaviour
     {
         // HP / 스태미나 UI
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [Required, SerializeField] private Image hpFill;// HP Fill 이미지
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [SerializeField] private TMP_Text hpValueText;
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [Required, SerializeField] private Image staminaFill;// 스태미나 Fill 이미지
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [SerializeField] private TMP_Text staminaValueText;
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [MinValue(1f), SerializeField] private float maxHP = 100f;// 최대 HP
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [MinValue(1f), SerializeField] private float maxStamina = 100f;// 최대 스태미나
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [SerializeField] private Color aliveHpColor = new(0.78f, 0.08f, 0.05f, 1f);
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [SerializeField] private Color knockedHpColor = new(1f, 0.45f, 0.2f);
 
-        [BoxGroup("Stats")]
-        [Tooltip("비워두면 hpFill만 색상 변경합니다. 추가로 같은 색을 입힐 Graphic이 있으면 지정하세요.")]
+        [BoxGroup("스탯")]
+        [Tooltip("비워두면 hpFill만 색상 변경합니다. 추가로 같은 색을 입힐 그래픽이 있으면 지정하세요.")]
         [SerializeField] private Graphic[] hpColorTargets;
 
-        [BoxGroup("Stats")]
+        [BoxGroup("스탯")]
         [MinValue(1f), SerializeField] private float fallbackBleedoutSeconds = 60f;
 
         // 상호작용 프롬프트
-        [FoldoutGroup("Interact Prompt")]
+        [FoldoutGroup("상호작용 안내")]
         [Required, SerializeField] private GameObject interactPromptRoot;// 프롬프트 루트
 
-        [FoldoutGroup("Interact Prompt")]
+        [FoldoutGroup("상호작용 안내")]
         [Required, SerializeField] private TMP_Text interactPromptText;// 프롬프트 문구
 
         // 상태 패널
-        [FoldoutGroup("State Panels")]
+        [FoldoutGroup("상태 패널")]
         [Required, SerializeField] private GameObject alivePanel;// 생존 상태 패널
 
-        [FoldoutGroup("State Panels")]
+        [FoldoutGroup("상태 패널")]
         [Required, SerializeField] private GameObject knockedPanel;// 기절 상태 패널
 
-        [FoldoutGroup("State Panels")]
+        [FoldoutGroup("상태 패널")]
         [Required, SerializeField] private GameObject spectatorPanel;// 사망 관전 패널
 
         // Feel 피드백 - HP
-        [FoldoutGroup("HP Feedbacks")]
-        [Tooltip("HP 감소 시 재생")]
+        [FoldoutGroup("체력 피드백")]
+        [Tooltip("체력 감소 시 재생")]
         [SerializeField] private MMF_Player hpDamagedFeedback;
 
-        [FoldoutGroup("HP Feedbacks")]
-        [Tooltip("HP 회복 시 재생")]
+        [FoldoutGroup("체력 피드백")]
+        [Tooltip("체력 회복 시 재생")]
         [SerializeField] private MMF_Player hpHealedFeedback;
 
-        [FoldoutGroup("HP Feedbacks")]
-        [Tooltip("저체력 경고가 발동되는 HP 비율 (0~1)")]
+        [FoldoutGroup("체력 피드백")]
+        [Tooltip("저체력 경고가 발동되는 체력 비율 (0~1)")]
         [PropertyRange(0f, 1f), SerializeField] private float lowHpThreshold = 0.3f;
 
-        [FoldoutGroup("HP Feedbacks")]
+        [FoldoutGroup("체력 피드백")]
         [Tooltip("저체력 임계치를 처음 넘었을 때 1회 재생")]
         [SerializeField] private MMF_Player lowHpEnteredFeedback;
 
         // Feel 피드백 - 상태 전환
-        [FoldoutGroup("State Feedbacks")]
-        [Tooltip("Alive 상태 진입 시 재생 (부활 축하 연출)")]
+        [FoldoutGroup("상태 피드백")]
+        [Tooltip("생존 상태 진입 시 재생 (부활 축하 연출)")]
         [SerializeField] private MMF_Player onAliveFeedback;
 
-        [FoldoutGroup("State Feedbacks")]
-        [Tooltip("Knocked 상태 진입 시 재생")]
+        [FoldoutGroup("상태 피드백")]
+        [Tooltip("기절 상태 진입 시 재생")]
         [SerializeField] private MMF_Player onKnockedFeedback;
 
-        [FoldoutGroup("State Feedbacks")]
-        [Tooltip("Dead 상태 진입 시 재생")]
+        [FoldoutGroup("상태 피드백")]
+        [Tooltip("사망 상태 진입 시 재생")]
         [SerializeField] private MMF_Player onSpectatorFeedback;
 
         // 런타임 상태 (디버그 표시용)
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float currentHp01 = 1f;// 현재 HP 비율
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool isLowHp;// 저체력 구간 진입 여부
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool isKnockedHpMode;
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool knockedBleedoutActive;
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool knockedReviveActive;
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float knockedBleedoutRemaining;
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float knockedBleedoutTotal;
 
         private float currentHpValue;
@@ -534,16 +534,16 @@ namespace DeadZone.Actors
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
-        [Button("HP 피해 피드백"), GUIColor(1f, 0.7f, 0.7f)]
+        [TitleGroup("디버그")]
+        [Button("체력 피해 피드백"), GUIColor(1f, 0.7f, 0.7f)]
         private void TestHpDamaged() => UIFeedbackTester.Play(hpDamagedFeedback, this, "HP 피해");
 
-        [TitleGroup("Debug")]
-        [Button("HP 회복 피드백"), GUIColor(0.7f, 1f, 0.7f)]
+        [TitleGroup("디버그")]
+        [Button("체력 회복 피드백"), GUIColor(0.7f, 1f, 0.7f)]
         private void TestHpHealed() => UIFeedbackTester.Play(hpHealedFeedback, this, "HP 회복");
 
-        [TitleGroup("Debug")]
-        [Button("HP 회복 UI+피드백 테스트"), GUIColor(0.55f, 1f, 0.55f)]
+        [TitleGroup("디버그")]
+        [Button("체력 회복 화면+피드백 테스트"), GUIColor(0.55f, 1f, 0.55f)]
         private void TestHealValueAndFeedback()
         {
             if (!Application.isPlaying) return;
@@ -555,12 +555,12 @@ namespace DeadZone.Actors
             UIFeedbackTester.Play(hpHealedFeedback, this, "HUD HP 회복 테스트");
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("저체력 경고 피드백")]
         private void TestLowHp() => UIFeedbackTester.Play(lowHpEnteredFeedback, this, "저체력 경고");
 
-        [TitleGroup("Debug")]
-        [Button("기절 HP바 색상 테스트"), GUIColor(1f, 0.55f, 0.25f)]
+        [TitleGroup("디버그")]
+        [Button("기절 체력바 색상 테스트"), GUIColor(1f, 0.55f, 0.25f)]
         private void TestKnockedHpBar()
         {
             if (!Application.isPlaying) return;
@@ -569,20 +569,20 @@ namespace DeadZone.Actors
             EnterKnockedHpMode(fallbackBleedoutSeconds);
         }
 
-        [TitleGroup("Debug")]
-        [Button("일반 HP바 복구 테스트"), GUIColor(0.55f, 1f, 0.55f)]
+        [TitleGroup("디버그")]
+        [Button("일반 체력바 복구 테스트"), GUIColor(0.55f, 1f, 0.55f)]
         private void TestAliveHpBar()
         {
             if (!Application.isPlaying) return;
             ApplyAliveHpModeForUI();
         }
 
-        [TitleGroup("Debug")]
-        [Button("HP 색상 타겟 진단")]
+        [TitleGroup("디버그")]
+        [Button("체력 색상 대상 진단")]
         private void TestDumpHpColorTargets() => DumpHpColorTargets();
         
-        [TitleGroup("Debug")]
-        [Button("hpFill 상태 로그")]
+        [TitleGroup("디버그")]
+        [Button("체력 채움 상태 로그")]
         private void TestLogHpFillState() => LogHpFillState("Manual Test");
 #endif
     }

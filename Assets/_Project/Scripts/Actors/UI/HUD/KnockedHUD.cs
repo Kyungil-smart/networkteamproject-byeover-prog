@@ -1,4 +1,4 @@
-﻿using MoreMountains.Feedbacks;
+using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Netcode;
@@ -22,72 +22,72 @@ namespace DeadZone.Actors
     /// </summary>
     public class KnockedHUD : MonoBehaviour
     {
-        [BoxGroup("Root")]
-        [Tooltip("KnockedHUD 루트는 가능하면 항상 활성화하고, 실제 표시/숨김은 이 루트로 제어합니다.")]
+        [BoxGroup("루트")]
+        [Tooltip("기절 UI 루트는 가능하면 항상 활성화하고, 실제 표시/숨김은 이 루트로 제어합니다.")]
         [SerializeField] private GameObject contentRoot;
 
         // 블리드아웃 UI
-        [BoxGroup("Bleedout")]
-        [Required, SerializeField, Tooltip("⚠️ HUDManager의 hpFill과 다른 Image를 할당하세요")]
+        [BoxGroup("출혈")]
+        [Required, SerializeField, Tooltip("HUDManager의 hpFill과 다른 이미지를 할당하세요")]
         private TMP_Text bleedoutText;// 남은 시간 표시
 
-        [BoxGroup("Bleedout")]
-        [Required, SerializeField, Tooltip("⚠️ HUDManager의 hpFill과 다른 Image를 할당하세요")]
+        [BoxGroup("출혈")]
+        [Required, SerializeField, Tooltip("HUDManager의 hpFill과 다른 이미지를 할당하세요")]
         private Image bleedoutFill;// 남은 비율 Fill 이미지
 
         // 설정값
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("플레이어가 기절 상태일 때 설정값 이하가 되는 순간부터 강조")]
         [MinValue(1), SerializeField] private int criticalBleedoutSeconds = 3;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("부활 시작 시 표시 문구")]
         [SerializeField] private string reviveStatusLabel = "응급 처치중...";
 
         // Feel 피드백 - 블리드아웃
-        [FoldoutGroup("Bleedout Feedbacks")]
+        [FoldoutGroup("출혈 피드백")]
         [Tooltip("기절시 1회 재생")]
         [SerializeField] private MMF_Player onKnockedFeedback;
 
-        [FoldoutGroup("Bleedout Feedbacks")]
-        [Tooltip("기절중 루프로 재생되는 심박음, MMF Looper 피드백 사용")]
+        [FoldoutGroup("출혈 피드백")]
+        [Tooltip("기절 중 반복 재생되는 심박음, MMF 반복 피드백 사용")]
         [SerializeField] private MMF_Player heartbeatLoopFeedback;
 
-        [FoldoutGroup("Bleedout Feedbacks")]
+        [FoldoutGroup("출혈 피드백")]
         [Tooltip("남은 시간이 3초 이하로 떨어지는 순간 1회 재생")]
         [SerializeField] private MMF_Player onCriticalBleedoutFeedback;
         
         // 비네트
-        [BoxGroup("Vignette")]
-        [Tooltip("선택 사항. 비워두면 Blood Vignette Root 아래에서 Q_Vignette 컴포넌트를 자동 탐색합니다.")]
+        [BoxGroup("비네트")]
+        [Tooltip("선택 사항. 비워두면 피 화면 효과 루트 아래에서 Q_Vignette 컴포넌트를 자동 탐색합니다.")]
         [SerializeField] private MonoBehaviour quirkyVignette; // Quirky Vignette 컴포넌트
 
-        [BoxGroup("Vignette")]
+        [BoxGroup("비네트")]
         [SerializeField] private GameObject bloodVignetteRoot;
 
-        [BoxGroup("Vignette")]
-        [Tooltip("Fallback 전용. Q_Vignette/CanvasGroup을 찾지 못했을 때만 사용합니다.")]
+        [BoxGroup("비네트")]
+        [Tooltip("대체 처리 전용. Q_Vignette나 CanvasGroup을 찾지 못했을 때만 사용합니다.")]
         [SerializeField] private Graphic bloodVignetteGraphic;
 
-        [BoxGroup("Vignette")]
+        [BoxGroup("비네트")]
         [SerializeField] private Color bloodVignetteColor = new(0.9f, 0.02f, 0.02f, 1f);
 
-        [BoxGroup("Vignette")]
+        [BoxGroup("비네트")]
         [PropertyRange(0f, 1f), SerializeField] private float vignetteMinAlpha = 0.15f;
 
-        [BoxGroup("Vignette")]
+        [BoxGroup("비네트")]
         [PropertyRange(0f, 1f), SerializeField] private float vignetteMaxAlpha = 0.75f;
 
-        [BoxGroup("Vignette Scale")]
+        [BoxGroup("비네트 크기")]
         [SerializeField] private bool animateVignetteScale = true;
 
-        [BoxGroup("Vignette Scale")]
+        [BoxGroup("비네트 크기")]
         [SerializeField] private Transform bloodVignetteScaleTarget;
 
-        [BoxGroup("Vignette Scale")]
+        [BoxGroup("비네트 크기")]
         [SerializeField] private float vignetteMinScale = 1f;
 
-        [BoxGroup("Vignette Scale")]
+        [BoxGroup("비네트 크기")]
         [SerializeField] private float vignetteMaxScale = 1.35f;
 
         private Tween vignetteTween;
@@ -103,11 +103,11 @@ namespace DeadZone.Actors
         private Graphic[] bloodVignetteGraphics;
 
         // Feel 피드백 - 부활
-        [FoldoutGroup("Revive Feedbacks")]
+        [FoldoutGroup("부활 피드백")]
         [Tooltip("동료가 응급처치 시작했을 때 재생")]
         [SerializeField] private MMF_Player onReviveStartedFeedback;
 
-        [FoldoutGroup("Revive Feedbacks")]
+        [FoldoutGroup("부활 피드백")]
         [Tooltip("응급처치가 종료됐을 때 재생(성공/취소 공통)")]
         [SerializeField] private MMF_Player onReviveEndedFeedback;
         
@@ -116,15 +116,15 @@ namespace DeadZone.Actors
         [SerializeField] private TMP_Text knockedGuideText;
 
         // 런타임 상태 (디버그 표시용)
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float bleedoutTotal;// 서버가 알려준 총 기절 시간
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float bleedoutRemaining;// 현재 남은 시간
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool bleedoutActive;// 타이머 구동 여부
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool criticalTriggered;// 크리티컬 피드백 중복 방지
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool reviveActive;// 부활 진행 중에는 bleedout fill 갱신을 막음
 
         private void Awake()
@@ -227,7 +227,7 @@ namespace DeadZone.Actors
             if (bleedoutTotal > 0f)
             {
                 float knockedRatio = Mathf.Clamp01(bleedoutRemaining / bleedoutTotal);
-                ApplyBloodVignetteFromKnockedRatio(knockedRatio, "Bleedout");
+                ApplyBloodVignetteFromKnockedRatio(knockedRatio, "출혈");
             }
         }
         
@@ -669,7 +669,7 @@ namespace DeadZone.Actors
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("기절 피드백"), GUIColor(1f, 0.5f, 0.5f)]
         private void TestKnocked()
         {
@@ -692,15 +692,15 @@ namespace DeadZone.Actors
             StartHeartbeatLoop();
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("심박 루프 시작")]
         private void TestStartHeartbeat() => StartHeartbeatLoop();
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("심박 루프 정지")]
         private void TestStopHeartbeat() => StopHeartbeatLoop();
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("위험 출혈 피드백"), GUIColor(1f, 0.3f, 0.3f)]
         private void TestCritical()
         {
@@ -709,15 +709,15 @@ namespace DeadZone.Actors
             UIFeedbackTester.Play(onCriticalBleedoutFeedback, this, "위험 출혈");
         }
 
-        [TitleGroup("Debug")]
-        [Button("Test Blood Vignette Max"), GUIColor(1f, 0.25f, 0.25f)]
+        [TitleGroup("디버그")]
+        [Button("피 비네트 최대값 테스트"), GUIColor(1f, 0.25f, 0.25f)]
         private void TestBloodVignetteMax()
         {
             if (!EnsureActiveForTest()) return;
             SetBloodVignetteMax("Max Test");
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("부활 시작 테스트"), GUIColor(0.6f, 1f, 0.6f)]
         private void TestReviveStarted()
         {
@@ -739,7 +739,7 @@ namespace DeadZone.Actors
             UIFeedbackTester.Play(onReviveStartedFeedback, this, "부활 시작");
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("부활 50% 테스트")]
         private void TestReviveHalf()
         {
@@ -754,7 +754,7 @@ namespace DeadZone.Actors
             }
         }
         
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("부활 종료 테스트")]
         private void TestReviveEnded()
         {
@@ -775,7 +775,7 @@ namespace DeadZone.Actors
         }
 
         // 이벤트 없이 10초 블리드아웃 시뮬레이션
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("10초 출혈 테스트"), GUIColor(0.8f, 0.8f, 1f)]
         private void SimulateBleedout()
         {
@@ -809,7 +809,7 @@ namespace DeadZone.Actors
             StartHeartbeatLoop();
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("기절+부활 통합 테스트"), GUIColor(0.7f, 1f, 0.9f)]
         private void TestKnockedReviveFlow()
         {

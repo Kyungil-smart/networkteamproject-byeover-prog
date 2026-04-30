@@ -10,10 +10,10 @@ namespace DeadZone.Actors
     /// </summary>
     public class PlayerStatsUI : MonoBehaviour
     {
-        [FoldoutGroup("Interact Prompt")]
+        [FoldoutGroup("상호작용 안내")]
         [SerializeField] private GameObject interactPromptRoot;
 
-        [FoldoutGroup("Interact Prompt")]
+        [FoldoutGroup("상호작용 안내")]
         [SerializeField] private TMP_Text interactPromptText;
 
         private void OnEnable()
@@ -31,11 +31,11 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("상호작용 문구 보이기")]
         private void TestShowPrompt() => ShowInteractPrompt("[E] 상호작용");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("상호작용 문구 숨기기")]
         private void TestHidePrompt() => ShowInteractPrompt(string.Empty);
 #endif

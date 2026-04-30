@@ -1,4 +1,4 @@
-﻿using MoreMountains.Feedbacks;
+using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -17,44 +17,44 @@ namespace DeadZone.Actors
     public class QuestTrackerUI : MonoBehaviour
     {
         // UI 레퍼런스
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text questNameText;// 퀘스트 이름 텍스트
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text progressText;// 진행도 텍스트 (예: "3 / 10")
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Tooltip("퀘스트가 없을 때 숨길 루트, 비워두면 항상 보임")]
         [SerializeField] private GameObject panelRoot;
 
         // 설정값
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("이 비율 이상 진행 시 '거의 완료' 피드백이 1회 재생됨 (0.5 ~ 0.99)")]
         [PropertyRange(0.5f, 0.99f), SerializeField] private float nearCompleteThreshold = 0.8f;
 
         // Feel 피드백
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("퀘스트 신규 수락 시 재생")]
         [SerializeField] private MMF_Player onQuestAcceptedFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("카운트가 1 올라갈 때마다 재생")]
         [SerializeField] private MMF_Player onQuestProgressFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [Tooltip("진행률이 nearCompleteThreshold를 처음 넘었을 때 1회 재생")]
+        [FoldoutGroup("피드백")]
+        [Tooltip("진행률이 거의 완료 임계치를 처음 넘었을 때 1회 재생")]
         [SerializeField] private MMF_Player onNearCompleteFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("퀘스트 완료 시 재생")]
         [SerializeField] private MMF_Player onQuestCompletedFeedback;
 
         // 런타임 상태 (디버그 표시용)
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private int currentCount;// 현재 진행 카운트
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private int requiredCount;// 필요 카운트
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool nearCompleteTriggered;// 거의완료 피드백 중복 방지
         private CanvasGroup panelCanvasGroup;
 
@@ -159,19 +159,19 @@ namespace DeadZone.Actors
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("퀘스트 수락 피드백"), GUIColor(0.7f, 0.9f, 1f)]
         private void TestAccepted() => UIFeedbackTester.Play(onQuestAcceptedFeedback, this, "퀘스트 수락");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("퀘스트 진행 피드백")]
         private void TestProgress() => UIFeedbackTester.Play(onQuestProgressFeedback, this, "퀘스트 진행");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("거의 완료 피드백"), GUIColor(1f, 0.9f, 0.5f)]
         private void TestNearComplete() => UIFeedbackTester.Play(onNearCompleteFeedback, this, "거의 완료");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("퀘스트 완료 피드백"), GUIColor(0.6f, 1f, 0.6f)]
         private void TestCompleted() => UIFeedbackTester.Play(onQuestCompletedFeedback, this, "퀘스트 완료");
 #endif

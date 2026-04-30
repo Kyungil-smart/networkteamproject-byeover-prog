@@ -13,34 +13,34 @@ namespace DeadZone.Actors
     /// </summary>
     public class WeaponStatsUI : MonoBehaviour
     {
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private Image weaponIcon;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private TMP_Text weaponNameText;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private TMP_Text ammoText;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private TMP_Text durabilityText;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private Image durabilityFill;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(1), SerializeField] private int maxAmmo = 30;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(0f), SerializeField] private float maxDurability = 100f;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(0f), SerializeField] private float durabilityCostPerShot = 1f;
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private int currentAmmo;
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float currentDurability;
 
         private string currentWeaponId;
@@ -146,8 +146,8 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
-        [Button("무기 UI 초기화")]
+        [TitleGroup("디버그")]
+        [Button("무기 화면 초기화")]
         private void TestResetWeapon()
         {
             currentAmmo = maxAmmo;
@@ -155,7 +155,7 @@ namespace DeadZone.Actors
             RefreshUI();
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("발사 테스트")]
         private void TestFire()
         {

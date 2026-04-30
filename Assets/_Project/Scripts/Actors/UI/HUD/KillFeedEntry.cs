@@ -16,32 +16,32 @@ namespace DeadZone.Actors
     public class KillFeedEntry : MonoBehaviour
     {
         // UI 레퍼런스
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text label;// 엔트리 문구 텍스트
 
         // 설정값
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("일반 킬 색상")]
         [SerializeField] private Color normalColor = Color.white;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("크리티컬 히트 색상")]
         [SerializeField] private Color critColor = new(1f, 0.84f, 0f);// 골드
 
-        [BoxGroup("Config")]
-        [Tooltip("Expire 피드백 재생 후 실제 Destroy까지 대기 시간 (초)")]
+        [BoxGroup("설정")]
+        [Tooltip("만료 피드백 재생 후 실제 파괴까지 대기 시간 (초)")]
         [MinValue(0f), SerializeField] private float fadeOutDuration = 0.5f;
 
         // Feel 피드백
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("엔트리 생성 시 재생 (슬라이드인/페이드인)")]
         [SerializeField] private MMF_Player onSpawnFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("크리티컬 엔트리일 때 추가 재생 (번쩍임/셰이크)")]
         [SerializeField] private MMF_Player onCritFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("수명 만료로 사라지기 직전 재생 (페이드아웃)")]
         [SerializeField] private MMF_Player onExpireFeedback;
 

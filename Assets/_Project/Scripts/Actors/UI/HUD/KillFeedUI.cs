@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using Unity.Netcode;
@@ -20,54 +20,54 @@ namespace DeadZone.Actors
     public class KillFeedUI : MonoBehaviour
     {
         // UI 레퍼런스
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private RectTransform entriesRoot;// 엔트리가 쌓이는 컨테이너
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, AssetsOnly, SerializeField] private KillFeedEntry entryPrefab;// 동적 생성할 엔트리 프리팹
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private RectTransform questRoot;// 비워두면 같은 HUD 아래의 Quest 오브젝트를 자동 탐색
 
         // 설정값
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(1), SerializeField] private int maxEntries = 5;// 동시에 표시할 최대 엔트리 수
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(0.1f), SerializeField] private float entryLifetime = 5f;// 엔트리 수명
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [SerializeField] private bool configureLayoutOnAwake = true;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(1f), SerializeField] private float entryWidth = 300f;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(1f), SerializeField] private float entryHeight = 28f;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [MinValue(0f), SerializeField] private float entrySpacing = 4f;
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [SerializeField] private float questBottomGap = 8f;
 
         // Feel 피드백 (HUD 레벨 - 로컬 플레이어 기준 연출)
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("로컬 플레이어가 적을 처치했을 때 재생")]
         [SerializeField] private MMF_Player onLocalKillFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("로컬 플레이어가 크리티컬을 냈을 때 재생")]
         [SerializeField] private MMF_Player onLocalCritFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("팀원이 사망했을 때 재생")]
         [SerializeField] private MMF_Player onTeammateDeathFeedback;
 
         // 런타임 상태
         private readonly Queue<KillFeedEntry> activeEntries = new();// 현재 활성화된 엔트리 큐
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private int activeEntryCount => activeEntries.Count;// 현재 엔트리 개수
 
         private void Awake()
@@ -214,7 +214,7 @@ namespace DeadZone.Actors
             Transform current = transform;
             while (current != null)
             {
-                Transform quest = current.parent != null ? current.parent.Find("Quest") : null;
+                Transform quest = current.parent != null ? current.parent.Find("퀘스트") : null;
                 if (quest != null && quest.TryGetComponent(out RectTransform rect))
                     return rect;
 
@@ -254,7 +254,7 @@ namespace DeadZone.Actors
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("일반 킬피드 추가")]
         private void TestNormalEntry()
         {
@@ -262,7 +262,7 @@ namespace DeadZone.Actors
             AddEntry("Player 0 killed Enemy (Elite)", isCritical: false);
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("치명타 킬피드 추가"), GUIColor(1f, 0.84f, 0f)]
         private void TestCritEntry()
         {
@@ -270,11 +270,11 @@ namespace DeadZone.Actors
             AddEntry("Player 0 CRIT Head 120dmg", isCritical: true);
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("로컬 처치 피드백")]
         private void TestLocalKill() => UIFeedbackTester.Play(onLocalKillFeedback, this, "로컬 처치");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("로컬 치명타 피드백"), GUIColor(1f, 0.84f, 0f)]
         private void TestLocalCrit() => UIFeedbackTester.Play(onLocalCritFeedback, this, "로컬 치명타");
 #endif

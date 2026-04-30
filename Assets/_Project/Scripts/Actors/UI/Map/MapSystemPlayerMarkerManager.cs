@@ -9,53 +9,53 @@ namespace DeadZone.Actors
     [DisallowMultipleComponent]
     public sealed class MapSystemPlayerMarkerManager : MonoBehaviour
     {
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private RectTransform miniMapRect;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private RectTransform worldMapRect;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private RectTransform miniMapMarkerRoot;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private RectTransform worldMapMarkerRoot;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [SerializeField] private MapBoundsProvider boundsProvider;
 
-        [BoxGroup("Templates")]
+        [BoxGroup("템플릿")]
         [SerializeField] private RectTransform miniMapMarkerTemplate;
 
-        [BoxGroup("Templates")]
+        [BoxGroup("템플릿")]
         [SerializeField] private RectTransform worldMapMarkerTemplate;
 
-        [BoxGroup("World Bounds")]
+        [BoxGroup("월드 경계")]
         [SerializeField] private Vector2 worldMin = new(-406.74f, -149.42f);
 
-        [BoxGroup("World Bounds")]
+        [BoxGroup("월드 경계")]
         [SerializeField] private Vector2 worldMax = new(6.08078f, 55.42514f);
 
-        [BoxGroup("World Bounds")]
+        [BoxGroup("월드 경계")]
         [SerializeField] private bool invertY;
 
-        [BoxGroup("Marker")]
+        [BoxGroup("마커")]
         [SerializeField] private Vector2 markerSize = new(18f, 18f);
 
-        [BoxGroup("Marker")]
+        [BoxGroup("마커")]
         [SerializeField] private float localMarkerScale = 1.3f;
 
-        [BoxGroup("Marker")]
-        [Tooltip("MiniMap now uses a centered local marker and moving map image. Enable only when remote minimap markers are intentionally added later.")]
+        [BoxGroup("마커")]
+        [Tooltip("미니맵은 중앙 고정 로컬 마커와 이동하는 맵 이미지를 사용합니다. 원격 미니맵 마커를 나중에 의도적으로 추가할 때만 켜세요.")]
         [SerializeField] private bool createMinimapMarkers;
 
-        [BoxGroup("Marker")]
+        [BoxGroup("마커")]
         [SerializeField] private bool createWorldMapMarkers = true;
 
-        [BoxGroup("Debug")]
+        [BoxGroup("디버그")]
         [SerializeField] private bool logMarkerImages = true;
 
-        [BoxGroup("Marker")]
+        [BoxGroup("마커")]
         [SerializeField] private Color[] markerColors =
         {
             Color.cyan,
@@ -79,7 +79,7 @@ namespace DeadZone.Actors
             SyncPlayerMarkers();
         }
 
-        [Button("Resolve References")]
+        [Button("참조 찾기")]
         public void ResolveReferences()
         {
             ResolveBoundsProvider();
@@ -99,7 +99,7 @@ namespace DeadZone.Actors
                 worldMapMarkerRoot ??= GetOrCreateMarkerRoot(worldMapRect, "MarkerRoot_WorldMap");
         }
 
-        [Button("Apply Full Map Bounds")]
+        [Button("전체 맵 경계 적용")]
         public void ApplyFullMapBounds()
         {
             worldMin = MapCoordinateUtility.FullMapWorldMin;
@@ -108,7 +108,7 @@ namespace DeadZone.Actors
                 boundsProvider.ApplyFullMapBounds();
         }
 
-        [Button("Apply Fence Bounds")]
+        [Button("울타리 경계 적용")]
         public void ApplyFenceBounds()
         {
             worldMin = MapCoordinateUtility.FenceWorldMin;

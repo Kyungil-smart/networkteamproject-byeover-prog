@@ -8,73 +8,73 @@ namespace DeadZone.Actors
     [DisallowMultipleComponent]
     public sealed class MiniMapMapImageFollower : MonoBehaviour
     {
-        [BoxGroup("References")]
-        [Tooltip("MiniMap root. If empty, this component uses itself or finds a child named MiniMap.")]
+        [BoxGroup("참조")]
+        [Tooltip("미니맵 루트입니다. 비워두면 이 컴포넌트 자신을 사용하거나 MiniMap 이름의 자식을 찾습니다.")]
         [SerializeField] private RectTransform miniMapRoot;
 
-        [BoxGroup("References")]
-        [Tooltip("The moving world map image RectTransform. Example: MiniMapMapImage.")]
+        [BoxGroup("참조")]
+        [Tooltip("이동하는 월드맵 이미지 RectTransform입니다. 예: MiniMapMapImage")]
         [SerializeField] private RectTransform mapImageRect;
 
-        [BoxGroup("References")]
-        [Tooltip("The local player Transform to follow. In network play this is assigned at runtime.")]
+        [BoxGroup("참조")]
+        [Tooltip("따라갈 로컬 플레이어 Transform입니다. 네트워크 플레이에서는 런타임에 할당됩니다.")]
         [SerializeField] private Transform target;
 
-        [BoxGroup("References")]
-        [Tooltip("Optional shared bounds provider. If empty, this component searches its parents and then falls back to the serialized values below.")]
+        [BoxGroup("참조")]
+        [Tooltip("선택 사항인 공유 경계 제공자입니다. 비워두면 부모에서 찾고, 없으면 아래 직렬화 값을 사용합니다.")]
         [SerializeField] private MapBoundsProvider boundsProvider;
 
-        [BoxGroup("Runtime Structure")]
+        [BoxGroup("런타임 구조")]
         [SerializeField] private RectTransform miniMapMask;
 
-        [BoxGroup("Runtime Structure")]
+        [BoxGroup("런타임 구조")]
         [SerializeField] private RectTransform markerRoot;
 
-        [BoxGroup("Runtime Structure")]
+        [BoxGroup("런타임 구조")]
         [SerializeField] private RectTransform localPlayerMarker;
 
-        [BoxGroup("Runtime Structure")]
+        [BoxGroup("런타임 구조")]
         [SerializeField] private RectTransform miniMapFrame;
 
-        [BoxGroup("Marker")]
-        [Tooltip("Optional fallback icon for the local player marker. If empty, the existing Image sprite is preserved.")]
+        [BoxGroup("마커")]
+        [Tooltip("로컬 플레이어 마커에 사용할 선택 사항 대체 아이콘입니다. 비워두면 기존 이미지 스프라이트를 유지합니다.")]
         [SerializeField] private Sprite localPlayerIconSprite;
 
-        [BoxGroup("World Bounds")]
-        [Tooltip("World X/Z coordinate for the bottom-left of the map image.")]
+        [BoxGroup("월드 경계")]
+        [Tooltip("맵 이미지의 좌하단에 해당하는 월드 X/Z 좌표입니다.")]
         [SerializeField] private Vector2 worldMin = new(-406.74f, -149.42f);
 
-        [BoxGroup("World Bounds")]
-        [Tooltip("World X/Z coordinate for the top-right of the map image.")]
+        [BoxGroup("월드 경계")]
+        [Tooltip("맵 이미지의 우상단에 해당하는 월드 X/Z 좌표입니다.")]
         [SerializeField] private Vector2 worldMax = new(6.08078f, 55.42514f);
 
-        [BoxGroup("Layout")]
+        [BoxGroup("레이아웃")]
         [SerializeField] private Vector2 miniMapSize = new(300f, 300f);
 
-        [BoxGroup("Layout")]
+        [BoxGroup("레이아웃")]
         [SerializeField] private Vector2 mapImageSize = new(1000f, 563f);
 
-        [BoxGroup("Layout")]
+        [BoxGroup("레이아웃")]
         [SerializeField] private Vector2 localMarkerSize = new(16f, 16f);
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField] private bool updateEveryFrame = true;
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField] private bool clampToMap = true;
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField] private bool invertY;
 
-        [BoxGroup("Options")]
-        [Tooltip("When true, the local marker stays centered even when the map image is clamped at the edges.")]
+        [BoxGroup("옵션")]
+        [Tooltip("켜면 맵 이미지가 가장자리에서 제한되어도 로컬 마커를 중앙에 유지합니다.")]
         [SerializeField] private bool keepLocalMarkerCenteredAtEdges;
 
-        [BoxGroup("Options")]
-        [Tooltip("If target is empty, bind to NetworkManager.Singleton.LocalClient.PlayerObject.")]
+        [BoxGroup("옵션")]
+        [Tooltip("대상이 비어 있으면 NetworkManager.Singleton.LocalClient.PlayerObject에 바인딩합니다.")]
         [SerializeField] private bool autoBindLocalPlayer = true;
 
-        [BoxGroup("Debug")]
+        [BoxGroup("디버그")]
         [SerializeField] private bool logStructureBuild = true;
 
         private bool warnedTargetOutsideBounds;
@@ -96,7 +96,7 @@ namespace DeadZone.Actors
             Refresh();
         }
 
-        [Button("Resolve / Build MiniMap Structure")]
+        [Button("미니맵 구조 찾기/생성")]
         public void EnsureMiniMapStructure()
         {
             ResolveMiniMapRoot();
@@ -191,7 +191,7 @@ namespace DeadZone.Actors
             WarnUnexpectedMiniMapFollowers();
         }
 
-        [Button("Bind Local Player")]
+        [Button("로컬 플레이어 바인딩")]
         public bool TryBindLocalPlayer()
         {
             NetworkManager networkManager = NetworkManager.Singleton;
@@ -206,7 +206,7 @@ namespace DeadZone.Actors
             return true;
         }
 
-        [Button("Refresh MiniMap Image Position")]
+        [Button("미니맵 이미지 위치 새로고침")]
         public void Refresh()
         {
             if (mapImageRect == null || target == null)
@@ -231,7 +231,7 @@ namespace DeadZone.Actors
             Refresh();
         }
 
-        [Button("Apply Full Map Bounds")]
+        [Button("전체 맵 경계 적용")]
         public void ApplyFullMapBounds()
         {
             worldMin = MapCoordinateUtility.FullMapWorldMin;
@@ -242,7 +242,7 @@ namespace DeadZone.Actors
             Refresh();
         }
 
-        [Button("Apply Fence Bounds")]
+        [Button("울타리 경계 적용")]
         public void ApplyFenceBounds()
         {
             worldMin = MapCoordinateUtility.FenceWorldMin;
@@ -253,7 +253,7 @@ namespace DeadZone.Actors
             Refresh();
         }
 
-        [Button("Debug Current MiniMap Position")]
+        [Button("현재 미니맵 위치 디버그")]
         public void DebugCurrentMiniMapPosition()
         {
             if (mapImageRect == null || target == null)
@@ -277,13 +277,13 @@ namespace DeadZone.Actors
                 this);
         }
 
-        [Button("Log MiniMap Markers")]
+        [Button("미니맵 마커 로그")]
         public void LogMiniMapMarkers()
         {
             DebugMiniMapMarkerObjects();
         }
 
-        [Button("Debug MiniMap Marker Objects")]
+        [Button("미니맵 마커 오브젝트 디버그")]
         public void DebugMiniMapMarkerObjects()
         {
             if (miniMapRoot == null)

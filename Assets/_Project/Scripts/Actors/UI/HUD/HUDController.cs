@@ -12,28 +12,28 @@ namespace DeadZone.Actors
     /// </summary>
     public class HUDController : MonoBehaviour
     {
-        [BoxGroup("State Panels")]
+        [BoxGroup("상태 패널")]
         [Required, SerializeField] private GameObject playerHUD;
 
-        [BoxGroup("State Panels")]
+        [BoxGroup("상태 패널")]
         [Required, SerializeField] private GameObject knockedHUD;
 
-        [BoxGroup("State Panels")]
+        [BoxGroup("상태 패널")]
         [Required, SerializeField] private GameObject spectatorHUD;
 
-        [FoldoutGroup("Feedbacks")]
-        [Tooltip("Alive 상태 진입 시 재생")]
+        [FoldoutGroup("피드백")]
+        [Tooltip("생존 상태 진입 시 재생")]
         [SerializeField] private MMF_Player onAliveFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [Tooltip("Knocked 상태 진입 시 재생")]
+        [FoldoutGroup("피드백")]
+        [Tooltip("기절 상태 진입 시 재생")]
         [SerializeField] private MMF_Player onKnockedFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [Tooltip("Dead 상태 진입 시 재생")]
+        [FoldoutGroup("피드백")]
+        [Tooltip("사망 상태 진입 시 재생")]
         [SerializeField] private MMF_Player onSpectatorFeedback;
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private PlayerState currentState;
 
         private void OnEnable()
@@ -115,15 +115,15 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("생존 상태로 변경"), GUIColor(0.6f, 1f, 0.6f)]
         private void TestAlive() => ApplyState(PlayerState.Alive, playFeedback: true);
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("기절 상태로 변경"), GUIColor(1f, 0.7f, 0.4f)]
         private void TestKnocked() => ApplyState(PlayerState.Knocked, playFeedback: true);
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("관전 상태로 변경"), GUIColor(0.5f, 0.5f, 0.5f)]
         private void TestDead() => ApplyState(PlayerState.Dead, playFeedback: true);
 #endif

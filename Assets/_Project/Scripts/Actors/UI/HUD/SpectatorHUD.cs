@@ -1,4 +1,4 @@
-﻿using MoreMountains.Feedbacks;
+using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Netcode;
@@ -19,43 +19,43 @@ namespace DeadZone.Actors
     public class SpectatorHUD : MonoBehaviour
     {
         // UI 레퍼런스
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text targetNameText;// 현재 관전 대상 이름
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text keyHintsText;// 조작 키 힌트 문구
 
         // 설정값
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("자유 카메라 모드일 때 표시할 문구")]
         [SerializeField] private string freeCameraLabel = "자유 카메라";
 
-        [BoxGroup("Config")]
-        [Tooltip("팀원 관전 시 표시할 포맷. {0} = clientId")]
+        [BoxGroup("설정")]
+        [Tooltip("팀원 관전 시 표시할 형식입니다. {0}에는 clientId가 들어갑니다.")]
         [SerializeField] private string spectatingFormat = "관전중: Player {0}";
 
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("조작 키 힌트. 로컬라이징/키바인딩 변경 시 여기만 수정")]
         [MultiLineProperty(2), SerializeField]
         private string keyHintsLabel = "[Q/E] 팀원 전환   [Tab] 자유 카메라";
 
         // Feel 피드백
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("팀원 관전 대상으로 전환 시 재생")]
         [SerializeField] private MMF_Player onTeammateTargetFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("자유 카메라로 전환 시 재생")]
         [SerializeField] private MMF_Player onFreeCameraFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [Tooltip("관전 시작(Dead 진입 후 첫 타겟 설정) 시 1회 재생")]
+        [FoldoutGroup("피드백")]
+        [Tooltip("관전 시작(사망 진입 후 첫 대상 설정) 시 1회 재생")]
         [SerializeField] private MMF_Player onSpectateStartFeedback;
 
         // 런타임 상태 (디버그 표시용)
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private ulong currentTargetClientId;// 현재 관전 중인 대상 ID
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool hasStartedSpectating;// 관전 시작 여부 (첫 진입 구분용)
 
         // 컴포넌트 활성화 시 EventBus 구독 + 키 힌트 초기화
@@ -108,15 +108,15 @@ namespace DeadZone.Actors
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("관전 시작 피드백"), GUIColor(0.5f, 0.5f, 0.5f)]
         private void TestSpectateStart() => UIFeedbackTester.Play(onSpectateStartFeedback, this, "관전 시작");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("팀원 관전 전환 피드백")]
         private void TestTeammateSwitch() => UIFeedbackTester.Play(onTeammateTargetFeedback, this, "팀원 관전 전환");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("자유 카메라 피드백")]
         private void TestFreeCamera() => UIFeedbackTester.Play(onFreeCameraFeedback, this, "자유 카메라");
 #endif

@@ -5,37 +5,37 @@ namespace DeadZone.Actors
 {
     public class MapMarkerFollower : MonoBehaviour
     {
-        [BoxGroup("References")]
-        [Tooltip("UI map RectTransform used as the marker coordinate space.")]
+        [BoxGroup("참조")]
+        [Tooltip("마커 좌표 공간으로 사용할 UI 맵 RectTransform")]
         [SerializeField] private RectTransform mapRect;
 
-        [BoxGroup("References")]
-        [Tooltip("Marker RectTransform to move.")]
+        [BoxGroup("참조")]
+        [Tooltip("이동시킬 마커 RectTransform")]
         [SerializeField] private RectTransform markerRect;
 
-        [BoxGroup("References")]
-        [Tooltip("World target Transform. This is assigned at runtime for the local player.")]
+        [BoxGroup("참조")]
+        [Tooltip("월드 대상 Transform입니다. 로컬 플레이어는 런타임에 할당됨.")]
         [SerializeField] private Transform target;
 
-        [BoxGroup("World Bounds")]
-        [Tooltip("Optional shared bounds provider. If empty, this component searches its parents and then falls back to the serialized values below.")]
+        [BoxGroup("월드 경계")]
+        [Tooltip("선택 사항인 공유 경계 제공자입니다. 비워두면 부모에서 찾고, 없으면 아래 직렬화 값을 사용합니다.")]
         [SerializeField] private MapBoundsProvider boundsProvider;
 
-        [BoxGroup("World Bounds")]
-        [Tooltip("World X/Z coordinate represented by the lower-left of the map image.")]
+        [BoxGroup("월드 경계")]
+        [Tooltip("맵 이미지의 좌하단에 해당하는 월드 X/Z 좌표")]
         [SerializeField] private Vector2 worldMin = new(-406.74f, -149.42f);
 
-        [BoxGroup("World Bounds")]
-        [Tooltip("World X/Z coordinate represented by the upper-right of the map image.")]
+        [BoxGroup("월드 경계")]
+        [Tooltip("맵 이미지의 우상단에 해당하는 월드 X/Z 좌표")]
         [SerializeField] private Vector2 worldMax = new(6.08078f, 55.42514f);
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField] private bool updateEveryFrame = true;
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField] private bool clampToMap = true;
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField] private bool invertY;
 
         public Transform Target => target;
@@ -101,7 +101,7 @@ namespace DeadZone.Actors
             RefreshMarkerPosition();
         }
 
-        [Button("Apply Full Map Bounds")]
+        [Button("전체 맵 경계 적용")]
         public void ApplyFullMapBounds()
         {
             worldMin = MapCoordinateUtility.FullMapWorldMin;
@@ -112,7 +112,7 @@ namespace DeadZone.Actors
             RefreshMarkerPosition();
         }
 
-        [Button("Apply Fence Bounds")]
+        [Button("울타리 경계 적용")]
         public void ApplyFenceBounds()
         {
             worldMin = MapCoordinateUtility.FenceWorldMin;
@@ -123,7 +123,7 @@ namespace DeadZone.Actors
             RefreshMarkerPosition();
         }
 
-        [Button("Refresh Marker Position")]
+        [Button("마커 위치 새로고침")]
         public void RefreshMarkerPosition()
         {
             if (mapRect == null || markerRect == null || target == null)
@@ -136,7 +136,7 @@ namespace DeadZone.Actors
             markerRect.anchoredPosition = MapCoordinateUtility.NormalizedToCenteredRectPosition(correctedNormalized, mapRect);
         }
 
-        [Button("Debug Current WorldMap Position")]
+        [Button("현재 월드맵 위치 디버그")]
         public void DebugCurrentWorldMapPosition()
         {
             if (mapRect == null || markerRect == null || target == null)
@@ -248,7 +248,7 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR
-        [Button("Set Marker To Self")]
+        [Button("마커를 자기 자신으로 설정")]
         private void SetMarkerToSelf()
         {
             markerRect = transform as RectTransform;

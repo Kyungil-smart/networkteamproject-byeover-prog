@@ -20,53 +20,53 @@ namespace DeadZone.Actors
     /// </summary>
     public class WorldMapController : MonoBehaviour
     {
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, Tooltip("M키로 켜고 끌 전체 맵 UI")]
         [SerializeField] private GameObject worldMapUI;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Tooltip("잠금 구역 오브젝트들이 들어있는 부모")]
         [SerializeField] private Transform areaRoot;
 
-        [BoxGroup("Input")]
-        [Tooltip("전체 맵을 열고 닫는 Input System 액션")]
+        [BoxGroup("입력")]
+        [Tooltip("전체 맵을 열고 닫는 입력 시스템 액션")]
         [SerializeField] private InputActionReference toggleMapAction;
 
-        [BoxGroup("Input")]
-        [Tooltip("전체 맵이 열려 있을 때 닫는 Input System 액션")]
+        [BoxGroup("입력")]
+        [Tooltip("전체 맵이 열려 있을 때 닫는 입력 시스템 액션")]
         [SerializeField] private InputActionReference closeMapAction;
         
-        [BoxGroup("Input")]
-        [Tooltip("Close Map 입력으로 전체 맵을 닫을지 여부")]
+        [BoxGroup("입력")]
+        [Tooltip("맵 닫기 입력으로 전체 맵을 닫을지 여부")]
         [SerializeField] private bool closeWithEscape = true;
 
-        [BoxGroup("State")]
+        [BoxGroup("상태")]
         [SerializeField] private bool hideMapOnAwake = true;
 
-        [BoxGroup("State")]
-        [Tooltip("MapSystem 루트 Scale이 0으로 저장된 경우를 런타임에서 1로 복구")]
+        [BoxGroup("상태")]
+        [Tooltip("맵 시스템 루트 스케일이 0으로 저장된 경우 런타임에서 1로 복구")]
         [SerializeField] private bool forceRootScaleOne = true;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("맵을 열 때 재생할 피드백")]
         [SerializeField] private MMF_Player onOpenFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("맵을 닫을 때 재생할 피드백")]
         [SerializeField] private MMF_Player onCloseFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("구역이 해금될 때 재생할 피드백")]
         [SerializeField] private MMF_Player onAreaUnlockedFeedback;
 
-        [FoldoutGroup("Area Locks")]
+        [FoldoutGroup("구역 잠금")]
         [ListDrawerSettings(Expanded = true, DraggableItems = true, ShowIndexLabels = true)]
         [SerializeField] private List<MapAreaLock> areaLocks = new();
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool isOpen;
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private string lastUnlockedAreaId;
 
         private MapSystemPlayerMarkerManager playerMarkerManager;
@@ -339,7 +339,7 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("맵 열기"), GUIColor(0.65f, 0.9f, 1f)]
         private void TestOpenMap()
         {
@@ -354,7 +354,7 @@ namespace DeadZone.Actors
             OpenMap();
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("맵 닫기"), GUIColor(0.8f, 0.8f, 0.8f)]
         private void TestCloseMap()
         {
@@ -368,11 +368,11 @@ namespace DeadZone.Actors
             CloseMap();
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("잠금 상태 새로고침")]
         private void TestRefresh() => RefreshAllAreaLocks();
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("모든 구역 잠금"), GUIColor(1f, 0.7f, 0.7f)]
         private void TestLockAll()
         {
@@ -380,7 +380,7 @@ namespace DeadZone.Actors
                 areaLock.SetUnlocked(false);
         }
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("모든 구역 해금"), GUIColor(0.65f, 1f, 0.65f)]
         private void TestUnlockAll()
         {
@@ -388,8 +388,8 @@ namespace DeadZone.Actors
                 areaLock.SetUnlocked(true);
         }
 
-        [TitleGroup("Debug")]
-        [Button("Area 하위 Lock_ 자동 수집"), GUIColor(0.7f, 0.85f, 1f)]
+        [TitleGroup("디버그")]
+        [Button("구역 하위 잠금 오브젝트 자동 수집"), GUIColor(0.7f, 0.85f, 1f)]
         private void AutoCollectAreaLocks()
         {
             if (areaRoot == null)
@@ -414,8 +414,8 @@ namespace DeadZone.Actors
             RefreshAllAreaLocks();
         }
 
-        [TitleGroup("Debug")]
-        [Button("잠금 UI Raycast Target 끄기")]
+        [TitleGroup("디버그")]
+        [Button("잠금 화면 레이캐스트 대상 끄기")]
         private void DisableRaycastTargetsInLockUI()
         {
             int count = 0;
@@ -437,30 +437,30 @@ namespace DeadZone.Actors
         [HorizontalGroup("Header")]
         [SerializeField] private bool unlocked;
 
-        [BoxGroup("Quest")]
+        [BoxGroup("퀘스트")]
         [Tooltip("이 퀘스트가 완료되면 해당 구역이 해금")]
         [SerializeField] private string requiredQuestId;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Tooltip("구역 전체 루트")]
         [SerializeField] private GameObject areaRoot;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Tooltip("잠금 상태일 때만 켜질 오브젝트들")]
         [SerializeField] private GameObject[] lockOnlyObjects;
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Tooltip("잠금/해금과 관계없이 계속 보일 오브젝트들")]
         [SerializeField] private GameObject[] alwaysVisibleObjects;
 
-        [BoxGroup("References")]
-        [Tooltip("나중에 실제 월드 진입을 막을 Collider/Gate 오브젝트")]
+        [BoxGroup("참조")]
+        [Tooltip("나중에 실제 월드 진입을 막을 충돌체 또는 게이트 오브젝트")]
         [SerializeField] private GameObject[] worldBlockerObjects;
 
-        [ShowInInspector, ReadOnly, BoxGroup("Debug")]
+        [ShowInInspector, ReadOnly, BoxGroup("디버그")]
         public string AreaId => areaId;
 
-        [ShowInInspector, ReadOnly, BoxGroup("Debug")]
+        [ShowInInspector, ReadOnly, BoxGroup("디버그")]
         public bool IsUnlocked => unlocked;
 
         public bool HasRequiredQuest(string questId)
@@ -502,11 +502,11 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR
-        [BoxGroup("Debug")]
+        [BoxGroup("디버그")]
         [Button("이 구역 잠금"), GUIColor(1f, 0.7f, 0.7f)]
         private void TestLock() => SetUnlocked(false);
 
-        [BoxGroup("Debug")]
+        [BoxGroup("디버그")]
         [Button("이 구역 해금"), GUIColor(0.65f, 1f, 0.65f)]
         private void TestUnlock() => SetUnlocked(true);
 #endif

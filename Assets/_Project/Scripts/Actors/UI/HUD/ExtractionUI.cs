@@ -1,4 +1,4 @@
-﻿using MoreMountains.Feedbacks;
+using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Netcode;
@@ -19,48 +19,48 @@ namespace DeadZone.Actors
     public class ExtractionUI : MonoBehaviour
     {
         // UI 레퍼런스
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private GameObject panelRoot;// 탈출 UI 루트 (진입 시 활성화)
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text countdownText;// 남은 시간 텍스트
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text extractionNameText;// 탈출 지점 이름
 
-        [BoxGroup("References")]
+        [BoxGroup("참조")]
         [Required, SerializeField] private Image progressFill;// 진행도 Fill (0 -> 1)
 
         // 설정값
-        [BoxGroup("Config")]
+        [BoxGroup("설정")]
         [Tooltip("이 시간 이하 구간에서 강한 틱 피드백이 매초 재생됨")]
         [MinValue(1), SerializeField] private int finalCountdownSeconds = 3;
 
         // Feel 피드백
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("탈출 카운트다운 시작 시 재생")]
         [SerializeField] private MMF_Player onStartFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("남은 초가 1 줄어들 때마다 재생 (일반 구간)")]
         [SerializeField] private MMF_Player onTickFeedback;
 
-        [FoldoutGroup("Feedbacks")]
-        [Tooltip("finalCountdownSeconds 이하 구간에서 매초 재생 (긴장 구간)")]
+        [FoldoutGroup("피드백")]
+        [Tooltip("최종 카운트다운 시간 이하 구간에서 매초 재생 (긴장 구간)")]
         [SerializeField] private MMF_Player onFinalCountdownTickFeedback;
 
-        [FoldoutGroup("Feedbacks")]
+        [FoldoutGroup("피드백")]
         [Tooltip("탈출 완료 시 재생")]
         [SerializeField] private MMF_Player onCompletedFeedback;
 
         // 런타임 상태 (디버그 표시용)
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool active;// 카운트다운 진행 여부
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float timeRemaining;// 현재 남은 시간
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private float totalTime;// 총 카운트다운 시간
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private int lastDisplayedSecond = -1;// 직전 프레임에 표시한 초 (틱 감지용)
 
         // 시작 시 패널 숨기기
@@ -150,24 +150,24 @@ namespace DeadZone.Actors
 
         // 에디터 전용 테스트 버튼
 #if UNITY_EDITOR
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("탈출 시작 피드백"), GUIColor(1f, 0.9f, 0.5f)]
         private void TestStart() => UIFeedbackTester.Play(onStartFeedback, this, "탈출 시작");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("일반 틱 피드백")]
         private void TestTick() => UIFeedbackTester.Play(onTickFeedback, this, "일반 틱");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("마지막 카운트다운 피드백"), GUIColor(1f, 0.5f, 0.5f)]
         private void TestFinalTick() => UIFeedbackTester.Play(onFinalCountdownTickFeedback, this, "마지막 카운트다운");
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("탈출 완료 피드백"), GUIColor(0.6f, 1f, 0.6f)]
         private void TestCompleted() => UIFeedbackTester.Play(onCompletedFeedback, this, "탈출 완료");
 
         // 이벤트 없이 10초 카운트다운 시뮬레이션
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [Button("10초 카운트다운 테스트"), GUIColor(0.8f, 0.8f, 1f)]
         private void SimulateCountdown()
         {

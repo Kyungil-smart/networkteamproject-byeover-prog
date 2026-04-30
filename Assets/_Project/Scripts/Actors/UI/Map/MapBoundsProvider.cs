@@ -7,38 +7,38 @@ namespace DeadZone.Actors
     [DisallowMultipleComponent]
     public sealed class MapBoundsProvider : MonoBehaviour
     {
-        [BoxGroup("Transform Bounds")]
-        [Tooltip("World-space lower-left reference. Uses X/Z.")]
+        [BoxGroup("트랜스폼 경계")]
+        [Tooltip("월드 공간의 좌하단 기준점입니다. X/Z 좌표를 사용")]
         [SerializeField] private Transform mapBoundMin;
 
-        [BoxGroup("Transform Bounds")]
-        [Tooltip("World-space upper-right reference. Uses X/Z.")]
+        [BoxGroup("트랜스폼 경계")]
+        [Tooltip("월드 공간의 우상단 기준점입니다. X/Z 좌표를 사용")]
         [SerializeField] private Transform mapBoundMax;
 
-        [BoxGroup("Transform Bounds")]
+        [BoxGroup("트랜스폼 경계")]
         [SerializeField] private bool useTransformBounds = true;
 
-        [BoxGroup("Fallback Bounds")]
-        [Tooltip("Used only when transform bounds are disabled or missing.")]
+        [BoxGroup("대체 경계")]
+        [Tooltip("트랜스폼 경계가 비활성화되었거나 누락되었을 때만 사용")]
         [SerializeField] private Vector2 fallbackWorldMin = new(-250f, -50f);
 
-        [BoxGroup("Fallback Bounds")]
-        [Tooltip("Used only when transform bounds are disabled or missing.")]
+        [BoxGroup("대체 경계")]
+        [Tooltip("트랜스폼 경계가 비활성화되었거나 누락되었을 때만 사용")]
         [SerializeField] private Vector2 fallbackWorldMax = new(15f, 24f);
 
-        [BoxGroup("Normalized Correction")]
-        [Tooltip("이동량 보정의 기준점입니다. rawNormalized가 이 값과 같으면 보정 후에도 같은 위치를 유지합니다.")]
+        [BoxGroup("정규화 보정")]
+        [Tooltip("이동량 보정의 기준점입니다. 원본 정규화 좌표가 이 값과 같으면 보정 후에도 같은 위치를 유지")]
         [SerializeField] private Vector2 normalizedAnchor = new(0.9433962f, 0.6756757f);
 
-        [BoxGroup("Normalized Correction")]
-        [Tooltip("normalizedAnchor를 기준으로 플레이어 이동량을 줄이거나 늘립니다.")]
+        [BoxGroup("정규화 보정")]
+        [Tooltip("정규화 앵커를 기준으로 플레이어 이동량을 줄이거나 늘림")]
         [SerializeField] private Vector2 normalizedScale = new(0.65f, 0.65f);
 
-        [BoxGroup("Normalized Correction")]
-        [Tooltip("정규화 좌표 보정 후 전체 위치를 미세 조정합니다.")]
+        [BoxGroup("정규화 보정")]
+        [Tooltip("정규화 좌표 보정 후 전체 위치를 미세 조정")]
         [SerializeField] private Vector2 normalizedOffset = Vector2.zero;
 
-        [BoxGroup("Debug")]
+        [BoxGroup("디버그")]
         [SerializeField] private bool warnWhenUsingFallback = true;
 
         private bool warnedMissingTransformBounds;
@@ -121,8 +121,8 @@ namespace DeadZone.Actors
             return MapCoordinateUtility.ContainsWorldPosition(worldPosition, activeWorldMin, activeWorldMax);
         }
 
-        [BoxGroup("Preset Buttons")]
-        [Button("Move Bounds To Full Map Preset")]
+        [BoxGroup("프리셋 버튼")]
+        [Button("경계를 전체 맵 프리셋으로 이동")]
         public void ApplyFullMapBounds()
         {
             fallbackWorldMin = MapCoordinateUtility.FullMapWorldMin;
@@ -130,8 +130,8 @@ namespace DeadZone.Actors
             MoveBoundTransformsToFallback();
         }
 
-        [BoxGroup("Preset Buttons")]
-        [Button("Move Bounds To Fence Preset")]
+        [BoxGroup("프리셋 버튼")]
+        [Button("경계를 울타리 프리셋으로 이동")]
         public void ApplyFenceBounds()
         {
             fallbackWorldMin = MapCoordinateUtility.FenceWorldMin;
@@ -139,8 +139,8 @@ namespace DeadZone.Actors
             MoveBoundTransformsToFallback();
         }
 
-        [BoxGroup("Transform Buttons")]
-        [Button("Create / Refresh MapBound Transforms")]
+        [BoxGroup("트랜스폼 버튼")]
+        [Button("맵 경계 트랜스폼 생성/새로고침")]
         public void CreateOrRefreshBoundTransforms()
         {
             Transform root = transform.Find("MapBounds");
@@ -161,8 +161,8 @@ namespace DeadZone.Actors
                 MoveBoundTransformsToFallback();
         }
 
-        [BoxGroup("Transform Buttons")]
-        [Button("Apply Bounds From Transforms")]
+        [BoxGroup("트랜스폼 버튼")]
+        [Button("트랜스폼에서 경계 적용")]
         public void ApplyBoundsFromTransforms()
         {
             if (mapBoundMin == null || mapBoundMax == null)
@@ -177,8 +177,8 @@ namespace DeadZone.Actors
             DebugActiveBounds();
         }
 
-        [BoxGroup("Debug")]
-        [Button("Debug Active Bounds")]
+        [BoxGroup("디버그")]
+        [Button("활성 경계 디버그")]
         public void DebugActiveBounds()
         {
             GetBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax);
@@ -186,8 +186,8 @@ namespace DeadZone.Actors
             Debug.Log($"[MapBoundsProvider] source={source}, provider={name}, worldMin={activeWorldMin}, worldMax={activeWorldMax}, normalizedAnchor={normalizedAnchor}, normalizedScale={normalizedScale}, normalizedOffset={normalizedOffset}", this);
         }
 
-        [BoxGroup("Normalized Correction")]
-        [Button("현재 로컬 플레이어 위치를 Anchor로 설정")]
+        [BoxGroup("정규화 보정")]
+        [Button("현재 로컬 플레이어 위치를 앵커로 설정")]
         public void SetAnchorFromLocalPlayer()
         {
             NetworkManager networkManager = NetworkManager.Singleton;
@@ -212,8 +212,8 @@ namespace DeadZone.Actors
             Debug.Log($"[MapBoundsProvider] Anchor set from local player. playerX={localPlayerObject.transform.position.x}, playerZ={localPlayerObject.transform.position.z}, normalizedAnchor={normalizedAnchor}", this);
         }
 
-        [BoxGroup("Normalized Correction")]
-        [Button("Anchor 초기화")]
+        [BoxGroup("정규화 보정")]
+        [Button("앵커 초기화")]
         public void ResetAnchor()
         {
             GetBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax);

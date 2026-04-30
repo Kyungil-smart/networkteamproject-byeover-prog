@@ -7,17 +7,17 @@ namespace DeadZone.Actors
     [DisallowMultipleComponent]
     public sealed class MapSystemTargetBinder : MonoBehaviour
     {
-        [BoxGroup("References")]
-        [Tooltip("Bind these map markers to the local player. Empty means auto-collect children.")]
+        [BoxGroup("참조")]
+        [Tooltip("이 맵 마커들을 로컬 플레이어에 바인딩합니다. 비워두면 자식에서 자동 수집합니다.")]
         [SerializeField] private MapMarkerFollower[] markerFollowers;
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField] private bool autoCollectMarkers = true;
 
-        [BoxGroup("Options")]
+        [BoxGroup("옵션")]
         [SerializeField, Min(0.05f)] private float retryInterval = 0.25f;
 
-        [TitleGroup("Debug")]
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private Transform currentTarget;
 
         private float nextRetryTime;
@@ -44,7 +44,7 @@ namespace DeadZone.Actors
             TryBindLocalPlayer();
         }
 
-        [Button("Collect Map Markers")]
+        [Button("맵 마커 수집")]
         public void CollectMarkersIfNeeded()
         {
             if (!autoCollectMarkers)
@@ -53,7 +53,7 @@ namespace DeadZone.Actors
             markerFollowers = GetComponentsInChildren<MapMarkerFollower>(true);
         }
 
-        [Button("Bind Local Player")]
+        [Button("로컬 플레이어 바인딩")]
         public bool TryBindLocalPlayer()
         {
             Transform localPlayer = ResolveLocalPlayerTransform();
