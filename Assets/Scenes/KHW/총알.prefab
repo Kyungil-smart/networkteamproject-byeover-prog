@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 7660661441118582661}
   - component: {fileID: 4628333849347325317}
   - component: {fileID: 6624775955366785478}
-  - component: {fileID: 6459700165935728375}
+  - component: {fileID: -3422510654986822666}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: "\uCD1D\uC54C"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -126,7 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2228447913
+  GlobalObjectIdHash: 3091581930
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -139,7 +139,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &6459700165935728375
+--- !u!114 &-3422510654986822666
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -152,13 +152,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.KHWLootInteractable
   ShowTopMostFoldoutHeaderGroup: 1
-  scriptObjectPool: {fileID: 11400000, guid: 295be2ecf7e90c641987758244309024, type: 2}
+  scriptObjectPool: {fileID: 0}
   promptFormat: "[F] \uC90D\uAE30: {0} x{1}"
   fallbackPrompt: "[F] \uC90D\uAE30"
   despawnOnLootSuccess: 1
-  normalizeOneCellOnLoot: 1
-  fallbackItemDatabase:
-  - {fileID: 11400000, guid: 5cc3100d5c8f9334c8875518d902346f, type: 2}
+  fallbackItemDatabase: []
   ItemId:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0

@@ -16,4 +16,7 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 5cc3100d5c8f9334c8875518d902346f, type: 2}
     weight: 60
     countRange: {x: 15, y: 30}
+  - item: {fileID: 11400000, guid: 67e515b19b1845f4ea8d7fdeac09db10, type: 2}
+    weight: 70
+    countRange: {x: 20, y: 30}
   lockedZoneMultiplier: 1.5

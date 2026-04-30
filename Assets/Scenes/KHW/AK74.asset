@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d08d12c5cb63506429f308ff7ff1d220, type: 3}
   m_Name: AK74
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
-  itemID: 
+  itemID: AK74_01
   displayName: 
   description: 
   icon: {fileID: 0}

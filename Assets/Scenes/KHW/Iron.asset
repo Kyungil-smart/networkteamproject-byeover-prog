@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
   m_Name: Iron
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
-  itemID: AK74_01
-  displayName: "\uCD1D\uC54C"
+  itemID: 
+  displayName: 
   description: "AK74 \uC804\uC6A9 \uCD1D\uC54C"
   icon: {fileID: 0}
   category: 1
