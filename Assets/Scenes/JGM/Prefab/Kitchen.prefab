@@ -10,11 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 2415893806792476549}
   - component: {fileID: 7026512893391676798}
-  - component: {fileID: 762355597511889432}
-  - component: {fileID: 1063084981823629659}
-  - component: {fileID: 4244908874976759222}
-  - component: {fileID: 1449448334670505725}
-  - component: {fileID: 5284327291007278605}
+  - component: {fileID: 4493161800847847200}
+  - component: {fileID: 615246254226651655}
+  - component: {fileID: 681311236479050772}
+  - component: {fileID: 8198312432828582917}
+  - component: {fileID: 3545674678178965027}
   m_Layer: 0
   m_Name: Kitchen
   m_TagString: Untagged
@@ -66,19 +66,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 684845446
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 4185684075
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &762355597511889432
+--- !u!114 &4493161800847847200
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -87,9 +87,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7876965717257492438}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 89d1515914d15f94da6d8275d9e3ede1, type: 3}
+  m_Script: {fileID: 11500000, guid: 086ee43720b118b49af6407e8e3cf191, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Workbench
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.KitchenFacility
   ShowTopMostFoldoutHeaderGroup: 1
   facilityData: {fileID: 11400000, guid: 61c3433f50afa274f90ed52576bddff2, type: 2}
   interactDistance: 2.5
@@ -98,7 +98,67 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
---- !u!114 &1063084981823629659
+  logLevelChanged: 1
+--- !u!114 &615246254226651655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7876965717257492438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96155e15f0c296e4fa4e0919652adf12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.KitchenUpgradeController
+  ShowTopMostFoldoutHeaderGroup: 1
+  kitchenFacility: {fileID: 4493161800847847200}
+  kitchenFacilityData: {fileID: 11400000, guid: 61c3433f50afa274f90ed52576bddff2, type: 2}
+  staminaBonusController: {fileID: 681311236479050772}
+  useTestInventory: 1
+  allowOfflineTestUpgrade: 1
+  testInventory: {fileID: 3545674678178965027}
+  logUpgradeResult: 1
+--- !u!114 &681311236479050772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7876965717257492438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8453139b2a8b11747a7813b535d96347, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.KitchenStaminaBonusController
+  kitchenFacility: {fileID: 4493161800847847200}
+  bonusStartLevel: 2
+  staminaBonusPerLevel: 5
+  useOfflineTestLevel: 0
+  offlineTestLevel: 1
+  currentKitchenLevel: 1
+  currentMaxStaminaBonus: 0
+  logBonusChanged: 1
+--- !u!114 &8198312432828582917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7876965717257492438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68178c46c84344c49b2a5f29c92b71c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.KitchenStaminaBonusTestReceiver
+  baseMaxStamina: 100
+  fillStaminaWhenMaxStaminaChanged: 1
+  currentKitchenLevel: 1
+  currentStaminaBonus: 0
+  currentMaxStamina: 100
+  currentStamina: 100
+  logBonusReceived: 1
+--- !u!114 &3545674678178965027
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -111,75 +171,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.WorkbenchTestInventory
   startItems:
-  - item: {fileID: 11400000, guid: a4beeb9e9855e7743b1f1a603d0a41b0, type: 2}
+  - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: 3e7fa9938538ec14a809ee6ad052af1b, type: 2}
+  - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: 3e542f6faa329954a86bb94e12c78342, type: 2}
+  - item: {fileID: 11400000, guid: 62bfb5be1f6350342aac4c5a39528dd9, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: d6153532ec28d1949a16d866288fcc43, type: 2}
+  - item: {fileID: 11400000, guid: 767b74ff11969224e8c3e739ffb9f6d2, type: 2}
     amount: 99
   logInventoryChange: 1
---- !u!114 &4244908874976759222
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7876965717257492438}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8453139b2a8b11747a7813b535d96347, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.KitchenStaminaBonusController
-  kitchenFacility: {fileID: 762355597511889432}
-  bonusStartLevel: 2
-  staminaBonusPerLevel: 5
-  useOfflineTestLevel: 0
-  offlineTestLevel: 1
-  currentKitchenLevel: 1
-  currentMaxStaminaBonus: 0
-  logBonusChanged: 1
---- !u!114 &1449448334670505725
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7876965717257492438}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68178c46c84344c49b2a5f29c92b71c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.KitchenStaminaBonusTestReceiver
-  staminaBonusController: {fileID: 4244908874976759222}
-  baseMaxStamina: 100
-  fillStaminaWhenMaxStaminaChanged: 1
-  currentKitchenLevel: 1
-  currentStaminaBonus: 0
-  currentMaxStamina: 100
-  currentStamina: 100
-  logStaminaChanged: 1
---- !u!114 &5284327291007278605
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7876965717257492438}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96155e15f0c296e4fa4e0919652adf12, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.KitchenUpgradeController
-  ShowTopMostFoldoutHeaderGroup: 1
-  kitchenFacility: {fileID: 762355597511889432}
-  staminaBonusController: {fileID: 4244908874976759222}
-  kitchenFacilityData: {fileID: 11400000, guid: 61c3433f50afa274f90ed52576bddff2, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
-  testInventory: {fileID: 1063084981823629659}
-  logUpgradeResult: 1
 --- !u!1001 &47583156926359737
 PrefabInstance:
   m_ObjectHideFlags: 0

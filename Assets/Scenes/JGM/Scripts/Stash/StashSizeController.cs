@@ -1,88 +1,80 @@
 using System;
 using UnityEngine;
 
-namespace DeadZone.Systems
+using DeadZone.Core;
+using DeadZone.Systems;
+
+namespace DeadZone.Systems.Housing
 {
     /// <summary>
-    /// º¸°üÇÔ ½Ã¼³ ·¹º§¿¡ µû¶ó º¸°üÇÔ Å©±â¸¦ °è»êÇÕ´Ï´Ù.
-    /// UI, ÇÃ·¹ÀÌ¾î ÀÎº¥Åä¸®, ÆÄ¹Ö ¾ÆÀÌÅÛÀº Á÷Á¢ ÂüÁ¶ÇÏÁö ¾Ê°í ÇöÀç Å©±â Á¤º¸¸¸ Á¦°øÇÕ´Ï´Ù.
+    /// ë³´ê´€í•¨ ë ˆë²¨ì— ë”°ë¥¸ ìŠ¤íƒœì‰¬ í¬ê¸°ë¥¼ ê³„ì‚°í•˜ê³  ì´ë²¤íŠ¸ë¡œ ì•Œë¦½ë‹ˆë‹¤.
+    /// ì‹¤ì œ ë³´ê´€í•¨ UIë‚˜ í”Œë ˆì´ì–´ ë³´ê´€ ì¸ë²¤í† ë¦¬ë¥¼ ì§ì ‘ ì°¸ì¡°í•˜ì§€ ì•Šê³ , ì¶”í›„ ì—°ë™ì€ EventBus êµ¬ë…ìœ¼ë¡œ ì²˜ë¦¬í•©ë‹ˆë‹¤.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(FacilityBase))]
-    public class StashSizeController : MonoBehaviour
+    public sealed class StashSizeController : MonoBehaviour
     {
-        [Header("º¸°üÇÔ ½Ã¼³")]
+        [Serializable]
+        private struct StashSizeRule
+        {
+            [Min(1)] public int level;
+            [Min(1)] public int columns;
+            [Min(1)] public int rows;
+
+            public int TotalSlots => Mathf.Max(1, columns) * Mathf.Max(1, rows);
+        }
+
+        [Header("ë³´ê´€í•¨ ì‹œì„¤")]
         [SerializeField]
-        [Tooltip("º¸°üÇÔ ·¹º§À» ÀĞÀ» ½Ã¼³ÀÔ´Ï´Ù. ºñ¿öµÎ¸é °°Àº ¿ÀºêÁ§Æ®ÀÇ FacilityBase¸¦ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [Tooltip("ìŠ¤íƒœì‰¬ í¬ê¸°ë¥¼ ê³„ì‚°í•  ë³´ê´€í•¨ ì‹œì„¤ì…ë‹ˆë‹¤. ë¹„ì›Œë‘ë©´ ê°™ì€ ì˜¤ë¸Œì íŠ¸ì—ì„œ ìë™ìœ¼ë¡œ ì°¾ìŠµë‹ˆë‹¤.")]
         private FacilityBase stashFacility;
 
-        [Header("·¹º§º° º¸°üÇÔ Å©±â")]
+        [Header("ë ˆë²¨ë³„ ìŠ¤íƒœì‰¬ í¬ê¸°")]
         [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv1 º¸°üÇÔ °¡·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level1Width = 8;
+        [Tooltip("ë ˆë²¨ë³„ ë³´ê´€í•¨ ê·¸ë¦¬ë“œ í¬ê¸°ì…ë‹ˆë‹¤. ê¸°íš ê¸°ì¤€ì€ Lv1 8x6, Lv2 10x8, Lv3 12x9, Lv4 14x10ì…ë‹ˆë‹¤.")]
+        private StashSizeRule[] sizeRules =
+        {
+            new StashSizeRule { level = 1, columns = 8, rows = 6 },
+            new StashSizeRule { level = 2, columns = 10, rows = 8 },
+            new StashSizeRule { level = 3, columns = 12, rows = 9 },
+            new StashSizeRule { level = 4, columns = 14, rows = 10 },
+        };
+
+        [Header("ì˜¤í”„ë¼ì¸ í…ŒìŠ¤íŠ¸")]
+        [SerializeField]
+        [Tooltip("NetworkVariableì„ ì§ì ‘ ë³€ê²½í•˜ì§€ ì•Šê³  í…ŒìŠ¤íŠ¸ìš© ë ˆë²¨ë¡œ ë³´ê´€í•¨ í¬ê¸°ë¥¼ ê³„ì‚°í• ì§€ ì—¬ë¶€ì…ë‹ˆë‹¤.")]
+        private bool useOfflineTestLevel;
 
         [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv1 º¸°üÇÔ ¼¼·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level1Height = 6;
+        [Range(1, 4)]
+        [Tooltip("ì˜¤í”„ë¼ì¸ í…ŒìŠ¤íŠ¸ì—ì„œ ì‚¬ìš©í•  ë³´ê´€í•¨ ë ˆë²¨ì…ë‹ˆë‹¤.")]
+        private int offlineTestLevel = 1;
 
+        [Header("ëŸ°íƒ€ì„ ìƒíƒœ")]
         [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv2 º¸°üÇÔ °¡·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level2Width = 10;
-
-        [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv2 º¸°üÇÔ ¼¼·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level2Height = 8;
-
-        [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv3 º¸°üÇÔ °¡·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level3Width = 12;
-
-        [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv3 º¸°üÇÔ ¼¼·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level3Height = 9;
-
-        [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv4 º¸°üÇÔ °¡·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level4Width = 14;
-
-        [SerializeField]
-        [Min(1)]
-        [Tooltip("Lv4 º¸°üÇÔ ¼¼·Î Ä­ ¼öÀÔ´Ï´Ù.")]
-        private int level4Height = 10;
-
-        [Header("ÇöÀç º¸°üÇÔ Å©±â")]
-        [SerializeField]
-        [Tooltip("ÇöÀç º¸°üÇÔ ·¹º§ÀÔ´Ï´Ù. ·±Å¸ÀÓ È®ÀÎ¿ë °ªÀÔ´Ï´Ù.")]
+        [Tooltip("í˜„ì¬ ë³´ê´€í•¨ ë ˆë²¨ì…ë‹ˆë‹¤. ëŸ°íƒ€ì„ í™•ì¸ìš©ì…ë‹ˆë‹¤.")]
         private int currentStashLevel = 1;
 
         [SerializeField]
-        [Tooltip("ÇöÀç º¸°üÇÔ °¡·Î Ä­ ¼öÀÔ´Ï´Ù. ·±Å¸ÀÓ È®ÀÎ¿ë °ªÀÔ´Ï´Ù.")]
-        private int currentWidth;
+        [Tooltip("í˜„ì¬ ë³´ê´€í•¨ ê°€ë¡œ ì¹¸ ìˆ˜ì…ë‹ˆë‹¤. ëŸ°íƒ€ì„ í™•ì¸ìš©ì…ë‹ˆë‹¤.")]
+        private int currentColumns = 8;
 
         [SerializeField]
-        [Tooltip("ÇöÀç º¸°üÇÔ ¼¼·Î Ä­ ¼öÀÔ´Ï´Ù. ·±Å¸ÀÓ È®ÀÎ¿ë °ªÀÔ´Ï´Ù.")]
-        private int currentHeight;
+        [Tooltip("í˜„ì¬ ë³´ê´€í•¨ ì„¸ë¡œ ì¹¸ ìˆ˜ì…ë‹ˆë‹¤. ëŸ°íƒ€ì„ í™•ì¸ìš©ì…ë‹ˆë‹¤.")]
+        private int currentRows = 6;
 
         [SerializeField]
-        [Tooltip("ÇöÀç º¸°üÇÔ ÀüÃ¼ Ä­ ¼öÀÔ´Ï´Ù. ·±Å¸ÀÓ È®ÀÎ¿ë °ªÀÔ´Ï´Ù.")]
-        private int currentTotalSlotCount;
+        [Tooltip("í˜„ì¬ ë³´ê´€í•¨ ì „ì²´ ì¹¸ ìˆ˜ì…ë‹ˆë‹¤. ëŸ°íƒ€ì„ í™•ì¸ìš©ì…ë‹ˆë‹¤.")]
+        private int currentTotalSlots = 48;
 
-        [Header("·Î±×")]
+        [Header("ë¡œê·¸")]
         [SerializeField]
-        [Tooltip("º¸°üÇÔ Å©±â º¯°æ ·Î±×¸¦ Console¿¡ Ãâ·ÂÇÒÁö ¿©ºÎÀÔ´Ï´Ù.")]
+        [Tooltip("ë³´ê´€í•¨ í¬ê¸°ê°€ ë³€ê²½ë  ë•Œ Console ë¡œê·¸ë¥¼ ì¶œë ¥í• ì§€ ì—¬ë¶€ì…ë‹ˆë‹¤.")]
         private bool logSizeChanged = true;
 
         public int CurrentStashLevel => currentStashLevel;
-        public int CurrentWidth => currentWidth;
-        public int CurrentHeight => currentHeight;
-        public int CurrentTotalSlotCount => currentTotalSlotCount;
+        public int CurrentColumns => currentColumns;
+        public int CurrentRows => currentRows;
+        public int CurrentTotalSlots => currentTotalSlots;
 
         public event Action<int, int, int, int> OnStashSizeChanged;
 
@@ -94,13 +86,12 @@ namespace DeadZone.Systems
         private void Awake()
         {
             FindRequiredComponents();
-            RefreshSize();
         }
 
         private void OnEnable()
         {
             SubscribeFacilityLevelChanged();
-            RefreshSize();
+            RefreshSize(true);
         }
 
         private void OnDisable()
@@ -110,37 +101,15 @@ namespace DeadZone.Systems
 
         private void OnValidate()
         {
-            ClampSizeValues();
+            ValidateSizeRules();
+            offlineTestLevel = Mathf.Clamp(offlineTestLevel, 1, 4);
             FindRequiredComponents();
-
-            if (!Application.isPlaying)
-            {
-                currentStashLevel = 1;
-                currentWidth = level1Width;
-                currentHeight = level1Height;
-                currentTotalSlotCount = currentWidth * currentHeight;
-            }
         }
 
         private void FindRequiredComponents()
         {
             if (stashFacility == null)
                 stashFacility = GetComponent<FacilityBase>();
-        }
-
-        private void ClampSizeValues()
-        {
-            level1Width = Mathf.Max(1, level1Width);
-            level1Height = Mathf.Max(1, level1Height);
-
-            level2Width = Mathf.Max(1, level2Width);
-            level2Height = Mathf.Max(1, level2Height);
-
-            level3Width = Mathf.Max(1, level3Width);
-            level3Height = Mathf.Max(1, level3Height);
-
-            level4Width = Mathf.Max(1, level4Width);
-            level4Height = Mathf.Max(1, level4Height);
         }
 
         private void SubscribeFacilityLevelChanged()
@@ -162,131 +131,163 @@ namespace DeadZone.Systems
 
         private void HandleFacilityLevelChanged(int previousLevel, int newLevel)
         {
-            RefreshSize();
+            RefreshSize(false);
         }
 
         public void RefreshSize()
         {
-            if (stashFacility == null)
+            RefreshSize(false);
+        }
+
+        public void RefreshSize(bool forceNotify)
+        {
+            if (!IsValidStashFacility())
+                return;
+
+            int nextLevel = GetCurrentStashLevel();
+            StashSizeRule nextRule = GetSizeRule(nextLevel);
+
+            bool changed = currentStashLevel != nextLevel
+                           || currentColumns != nextRule.columns
+                           || currentRows != nextRule.rows
+                           || currentTotalSlots != nextRule.TotalSlots;
+
+            currentStashLevel = nextLevel;
+            currentColumns = Mathf.Max(1, nextRule.columns);
+            currentRows = Mathf.Max(1, nextRule.rows);
+            currentTotalSlots = currentColumns * currentRows;
+
+            if (!changed && !forceNotify)
+                return;
+
+            OnStashSizeChanged?.Invoke(currentStashLevel, currentColumns, currentRows, currentTotalSlots);
+
+            EventBus.Publish(new StashSizeChangedEvent
             {
-                Debug.LogWarning("[StashSizeController] FacilityBase°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.", this);
-                return;
-            }
-
-            int previousWidth = currentWidth;
-            int previousHeight = currentHeight;
-            int previousTotalSlotCount = currentTotalSlotCount;
-
-            currentStashLevel = Mathf.Clamp(stashFacility.CurrentLevel.Value, 1, 4);
-
-            GetSizeByLevel(currentStashLevel, out currentWidth, out currentHeight);
-            currentTotalSlotCount = currentWidth * currentHeight;
-
-            bool changed =
-                previousWidth != currentWidth ||
-                previousHeight != currentHeight ||
-                previousTotalSlotCount != currentTotalSlotCount;
-
-            if (!changed)
-                return;
-
-            OnStashSizeChanged?.Invoke(
-                currentStashLevel,
-                currentWidth,
-                currentHeight,
-                currentTotalSlotCount
-            );
+                level = currentStashLevel,
+                columns = currentColumns,
+                rows = currentRows,
+                totalSlots = currentTotalSlots,
+            });
 
             if (logSizeChanged)
             {
                 Debug.Log(
-                    $"[StashSizeController] º¸°üÇÔ Lv.{currentStashLevel} / Å©±â {currentWidth} x {currentHeight} / ÃÑ {currentTotalSlotCount}Ä­",
+                    $"[StashSizeController] ë³´ê´€í•¨ Lv.{currentStashLevel} í¬ê¸° ì ìš©\n" +
+                    $"ìŠ¤íƒœì‰¬ í¬ê¸°: {currentColumns} x {currentRows}\n" +
+                    $"ì´ ì¹¸ ìˆ˜: {currentTotalSlots}ì¹¸",
                     this
                 );
             }
         }
 
-        public bool IsInsideGrid(int x, int y)
+        public int GetTotalSlots()
         {
-            RefreshSize();
+            return currentTotalSlots;
+        }
 
-            if (x < 0)
-                return false;
+        public int GetTotalSlotsForLevel(int stashLevel)
+        {
+            return GetSizeRule(stashLevel).TotalSlots;
+        }
 
-            if (y < 0)
-                return false;
+        public void SetOfflineTestLevel(int level)
+        {
+            useOfflineTestLevel = true;
+            offlineTestLevel = Mathf.Clamp(level, 1, 4);
+            RefreshSize(true);
+        }
 
-            if (x >= currentWidth)
-                return false;
+        public void ClearOfflineTestLevel()
+        {
+            useOfflineTestLevel = false;
+            RefreshSize(true);
+        }
 
-            if (y >= currentHeight)
+        private int GetCurrentStashLevel()
+        {
+            if (useOfflineTestLevel)
+                return Mathf.Clamp(offlineTestLevel, 1, 4);
+
+            if (stashFacility == null)
+                return 1;
+
+            return Mathf.Max(1, stashFacility.CurrentLevel.Value);
+        }
+
+        private StashSizeRule GetSizeRule(int level)
+        {
+            ValidateSizeRules();
+
+            int safeLevel = Mathf.Max(1, level);
+            StashSizeRule fallback = sizeRules[0];
+
+            for (int i = 0; i < sizeRules.Length; i++)
+            {
+                if (sizeRules[i].level == safeLevel)
+                    return sizeRules[i];
+
+                if (sizeRules[i].level < safeLevel)
+                    fallback = sizeRules[i];
+            }
+
+            return fallback;
+        }
+
+        private void ValidateSizeRules()
+        {
+            if (sizeRules == null || sizeRules.Length == 0)
+            {
+                sizeRules = new[]
+                {
+                    new StashSizeRule { level = 1, columns = 8, rows = 6 },
+                    new StashSizeRule { level = 2, columns = 10, rows = 8 },
+                    new StashSizeRule { level = 3, columns = 12, rows = 9 },
+                    new StashSizeRule { level = 4, columns = 14, rows = 10 },
+                };
+            }
+
+            for (int i = 0; i < sizeRules.Length; i++)
+            {
+                if (sizeRules[i].level < 1)
+                    sizeRules[i].level = i + 1;
+
+                if (sizeRules[i].columns < 1)
+                    sizeRules[i].columns = 1;
+
+                if (sizeRules[i].rows < 1)
+                    sizeRules[i].rows = 1;
+            }
+        }
+
+        private bool IsValidStashFacility()
+        {
+            if (stashFacility == null)
+            {
+                Debug.LogWarning("[StashSizeController] FacilityBaseê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.", this);
                 return false;
+            }
+
+            if (stashFacility.Type != FacilityType.Stash)
+            {
+                Debug.LogWarning($"[StashSizeController] ì—°ê²°ëœ ì‹œì„¤ íƒ€ì…ì´ Stashê°€ ì•„ë‹™ë‹ˆë‹¤. í˜„ì¬ íƒ€ì…: {stashFacility.Type}", this);
+                return false;
+            }
 
             return true;
         }
 
-        public void GetCurrentSize(out int width, out int height, out int totalSlotCount)
-        {
-            RefreshSize();
-
-            width = currentWidth;
-            height = currentHeight;
-            totalSlotCount = currentTotalSlotCount;
-        }
-
-        private void GetSizeByLevel(int level, out int width, out int height)
-        {
-            switch (level)
-            {
-                case 1:
-                    width = level1Width;
-                    height = level1Height;
-                    break;
-
-                case 2:
-                    width = level2Width;
-                    height = level2Height;
-                    break;
-
-                case 3:
-                    width = level3Width;
-                    height = level3Height;
-                    break;
-
-                case 4:
-                    width = level4Width;
-                    height = level4Height;
-                    break;
-
-                default:
-                    width = level1Width;
-                    height = level1Height;
-                    break;
-            }
-        }
-
 #if UNITY_EDITOR
-        [ContextMenu("º¸°üÇÔ Å©±â ´Ù½Ã °è»ê")]
+        [ContextMenu("ë³´ê´€í•¨ í¬ê¸° ë‹¤ì‹œ ê³„ì‚°")]
         private void DebugRefreshSize()
         {
-            if (!Application.isPlaying)
-            {
-                Debug.LogWarning("[StashSizeController] ÇÃ·¹ÀÌ Áß¿¡¸¸ Å×½ºÆ®ÇÒ ¼ö ÀÖ½À´Ï´Ù.", this);
-                return;
-            }
-
-            RefreshSize();
+            RefreshSize(true);
         }
 
-        [ContextMenu("º¸°üÇÔ ÇöÀç Å©±â Ãâ·Â")]
-        private void DebugPrintCurrentSize()
+        [ContextMenu("ì˜¤í”„ë¼ì¸ í…ŒìŠ¤íŠ¸ ë ˆë²¨ í•´ì œ")]
+        private void DebugClearOfflineTestLevel()
         {
-            RefreshSize();
-
-            Debug.Log(
-                $"[StashSizeController] ÇöÀç º¸°üÇÔ Lv.{currentStashLevel} / {currentWidth} x {currentHeight} / ÃÑ {currentTotalSlotCount}Ä­",
-                this
-            );
+            ClearOfflineTestLevel();
         }
 #endif
     }

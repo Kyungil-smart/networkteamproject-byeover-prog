@@ -6,8 +6,9 @@ using DeadZone.Core;
 namespace DeadZone.Systems
 {
     /// <summary>
-    /// 6개 시설 타입의 추상 베이스.
-    /// 구체 서브클래스(Workbench, CommStation, Gym, Stash, Kitchen, Bed)가 OnLevelChanged를 오버라이드한다.
+    /// 하우징 시설의 추상 베이스입니다.
+    /// 공통 레벨 상태, 업그레이드 요청, 시설 업그레이드 이벤트 발행을 담당합니다.
+    /// 개별 시설 효과는 서브클래스 또는 별도 시설 전용 컴포넌트에서 처리합니다.
     /// </summary>
     public abstract class FacilityBase : NetworkBehaviour
     {
@@ -22,7 +23,11 @@ namespace DeadZone.Systems
         public override void OnNetworkSpawn()
         {
             CurrentLevel.OnValueChanged += HandleLevelChanged;
-            if (IsServer) HandleLevelChanged(0, CurrentLevel.Value);
+
+            if (IsServer)
+            {
+                HandleLevelChanged(0, CurrentLevel.Value);
+            }
         }
 
         public override void OnNetworkDespawn()
@@ -30,28 +35,40 @@ namespace DeadZone.Systems
             CurrentLevel.OnValueChanged -= HandleLevelChanged;
         }
 
-        private void HandleLevelChanged(int oldLv, int newLv)
+        private void HandleLevelChanged(int oldLevel, int newLevel)
         {
-            OnLevelChanged(newLv);
-            if (IsServer)
+            OnLevelChanged(newLevel);
+
+            if (!IsServer)
             {
-                EventBus.Publish(new FacilityUpgradedEvent
-                {
-                    facilityType = Type,
-                    newLevel = newLv,
-                });
+                return;
             }
+
+            EventBus.Publish(new FacilityUpgradedEvent
+            {
+                facilityType = Type,
+                newLevel = newLevel,
+            });
         }
 
         protected abstract void OnLevelChanged(int newLevel);
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void TryUpgradeServerRpc()
         {
-            if (facilityData == null) return;
-            int next = CurrentLevel.Value + 1;
-            if (next > facilityData.levels.Length) return;
-            CurrentLevel.Value = next;
+            if (facilityData == null)
+            {
+                return;
+            }
+
+            int nextLevel = CurrentLevel.Value + 1;
+
+            if (nextLevel > facilityData.levels.Length)
+            {
+                return;
+            }
+
+            CurrentLevel.Value = nextLevel;
         }
 
         public FacilityLevel GetCurrentLevelData()

@@ -349,11 +349,11 @@ GameObject:
   m_Component:
   - component: {fileID: 282399469866014205}
   - component: {fileID: 1177132468069299514}
-  - component: {fileID: 6599439477937216433}
-  - component: {fileID: 7412137273866707385}
-  - component: {fileID: 4158634543931283108}
-  - component: {fileID: 7877681482343599258}
-  - component: {fileID: 4738211411931963119}
+  - component: {fileID: 421658865964765913}
+  - component: {fileID: 3997882662603147267}
+  - component: {fileID: 4894502700569586040}
+  - component: {fileID: 5628834917599583512}
+  - component: {fileID: 5169494588828250710}
   m_Layer: 0
   m_Name: Health
   m_TagString: Untagged
@@ -393,19 +393,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 3547638774
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 4277157340
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &6599439477937216433
+--- !u!114 &421658865964765913
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -414,9 +414,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7842257146226231233}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 89d1515914d15f94da6d8275d9e3ede1, type: 3}
+  m_Script: {fileID: 11500000, guid: 715b17089699d934184421c7e873019d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Workbench
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.GymFacility
   ShowTopMostFoldoutHeaderGroup: 1
   facilityData: {fileID: 11400000, guid: 0d4782a6ac6c72f42ab36827b8cbfc79, type: 2}
   interactDistance: 2.5
@@ -425,7 +425,63 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
---- !u!114 &7412137273866707385
+  logLevelChanged: 1
+--- !u!114 &3997882662603147267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7842257146226231233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0182d1478b1859340ab1bb658d823c00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.GymUpgradeController
+  ShowTopMostFoldoutHeaderGroup: 1
+  gymFacility: {fileID: 421658865964765913}
+  gymFacilityData: {fileID: 11400000, guid: 0d4782a6ac6c72f42ab36827b8cbfc79, type: 2}
+  carryWeightBonusController: {fileID: 4894502700569586040}
+  useTestInventory: 1
+  allowOfflineTestUpgrade: 1
+  testInventory: {fileID: 5169494588828250710}
+  logUpgradeResult: 1
+--- !u!114 &4894502700569586040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7842257146226231233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b885154d3d68a64f86fca4d22135e2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.GymCarryWeightBonusController
+  gymFacility: {fileID: 421658865964765913}
+  bonusStartLevel: 2
+  carryWeightBonusPerLevel: 7.5
+  currentGymLevel: 1
+  currentCarryWeightBonusKg: 0
+  logBonusChanged: 1
+--- !u!114 &5628834917599583512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7842257146226231233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d057ebe87cc5ea24482ee3af9e273824, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.GymCarryWeightBonusTestReceiver
+  baseCarryWeightKg: 60
+  currentGymLevel: 1
+  currentCarryWeightBonusKg: 0
+  currentMaxCarryWeightKg: 60
+  logBonusReceived: 1
+--- !u!114 &5169494588828250710
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -438,70 +494,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.WorkbenchTestInventory
   startItems:
-  - item: {fileID: 11400000, guid: d332c1e70bea65e44928063dee194070, type: 2}
+  - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: 87f44ca48190d194685a6abe75f897f2, type: 2}
+  - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: d2e6249cfc98c0644ae487c33ab7b888, type: 2}
+  - item: {fileID: 11400000, guid: fb39cbbad24212c4db9c4e2476051643, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: 8da928dea7cc2c6499bd0acc540abd9a, type: 2}
+  - item: {fileID: 11400000, guid: 920d06dc601dcaf47895d1989f2968d6, type: 2}
     amount: 99
   logInventoryChange: 1
---- !u!114 &4158634543931283108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7842257146226231233}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e82c18b3baf0111458c4ee93f33f6a93, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.GymHealthBonusController
-  gymFacility: {fileID: 6599439477937216433}
-  bonusStartLevel: 2
-  healthBonusPerLevel: 5
-  logBonusChanged: 1
---- !u!114 &7877681482343599258
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7842257146226231233}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9731f4627f195e4793b69b303253b25, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.GymHealthBonusTestReceiver
-  healthBonusController: {fileID: 4158634543931283108}
-  baseMaxHealth: 100
-  fillHealthWhenMaxHealthChanged: 1
-  currentGymLevel: 1
-  currentHealthBonus: 0
-  currentMaxHealth: 100
-  currentHealth: 100
-  logHealthChanged: 1
---- !u!114 &4738211411931963119
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7842257146226231233}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0182d1478b1859340ab1bb658d823c00, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.GymUpgradeController
-  ShowTopMostFoldoutHeaderGroup: 1
-  gymFacility: {fileID: 6599439477937216433}
-  gymFacilityData: {fileID: 11400000, guid: 0d4782a6ac6c72f42ab36827b8cbfc79, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
-  testInventory: {fileID: 7412137273866707385}
-  logUpgradeResult: 1
 --- !u!1 &8062897291976564412
 GameObject:
   m_ObjectHideFlags: 0

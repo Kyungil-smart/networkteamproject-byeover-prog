@@ -22,4 +22,4 @@ MonoBehaviour:
     amount: 4
   craftTimeSeconds: 5
   requiredFacilityLevel: 4
-  requiredTier: 3
+  requiredTier: 1

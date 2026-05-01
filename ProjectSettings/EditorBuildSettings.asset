@@ -14,8 +14,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/HJO/HJO_IngameHUD.unity
     guid: 1898623e41cba7d4d933ff23e40be9c8
-    path: Assets/Scenes/Game_Scene.unity
-    guid: e187a1ee92c27e0468c4fd87c74ff375
+  - enabled: 1
+    path: Assets/Scenes/JGM/JGM_HideOut.unity
+    guid: 4e7e1738d09db5e4295e6ab63b49f2c7
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
