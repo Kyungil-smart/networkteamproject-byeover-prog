@@ -226,6 +226,55 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -6134721087433513817, guid: 3870dc6a9de81f644b7629246e44bcdf, type: 3}
+--- !u!1 &5749484849292170134
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7961735358469023154}
+  - component: {fileID: 58839541293021615}
+  m_Layer: 0
+  m_Name: CameraPoint_Gym
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7961735358469023154
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5749484849292170134}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.0010367609, y: 0.94803077, z: -0.318177, w: 0.0001900623}
+  m_LocalPosition: {x: 3.1567342, y: 6.095921, z: 8.434277}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 282399469866014205}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &58839541293021615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5749484849292170134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b16251ad350c97b48ba5377512955926, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.Hideout.HideoutCameraTarget
+  targetId: Gym
+  displayName: "\uD5EC\uC2A4\uC7A5"
+  cameraPoint: {fileID: 7961735358469023154}
+  linkedPanel: {fileID: 0}
+  canSelect: 1
 --- !u!1 &7552482322127653799
 GameObject:
   m_ObjectHideFlags: 0
@@ -378,6 +427,7 @@ Transform:
   - {fileID: 3308360827647078271}
   - {fileID: 7170889511967543581}
   - {fileID: 8065689580070437246}
+  - {fileID: 7961735358469023154}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1177132468069299514
