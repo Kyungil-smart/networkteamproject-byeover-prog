@@ -34,9 +34,11 @@ namespace DeadZone.Network
         private FirebaseFirestore db;
         private FirebaseAuthManager authManager;
         private PlayerCloudData currentData;
+        private string loadedFirebaseUid = string.Empty;
 
         public PlayerCloudData CurrentData => currentData;
         public bool HasLoadedData => currentData != null;
+        public string LoadedFirebaseUid => loadedFirebaseUid;
 
         private void Awake()
         {
@@ -92,12 +94,16 @@ namespace DeadZone.Network
 
         private async void OnAuthSignedIn(AuthSignedInEvent e)
         {
+            currentData = null;
+            loadedFirebaseUid = string.Empty;
+            
             await LoadAsync();
         }
 
         private void OnAuthSignedOut(AuthSignedOutEvent e)
         {
             currentData = null;
+            loadedFirebaseUid = string.Empty;
         }
 
         private async void OnPlayerDied(PlayerDiedEvent e)
@@ -156,6 +162,8 @@ namespace DeadZone.Network
                     await UploadAsync();  // 신규 유저는 즉시 기본 데이터 기록
                 }
 
+                loadedFirebaseUid = uid;
+                
                 EventBus.Publish(new CloudSaveLoadedEvent
                 {
                     firebaseUid = uid,
@@ -166,6 +174,7 @@ namespace DeadZone.Network
             }
             catch (Exception ex)
             {
+                loadedFirebaseUid = string.Empty;
                 Debug.LogError($"[CloudSaveSystem] Load failed: {ex}");
                 return null;
             }
