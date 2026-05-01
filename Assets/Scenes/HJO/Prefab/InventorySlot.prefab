@@ -93,7 +93,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &7389439036179027595
 RectTransform:
   m_ObjectHideFlags: 0
@@ -141,7 +141,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: 12
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -150,8 +150,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -168,13 +168,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 10
-  m_fontSizeBase: 10
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -446,7 +446,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &260625966467817443
 RectTransform:
   m_ObjectHideFlags: 0
@@ -567,6 +567,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.InventorySlotUI
   slotIndex: 0
+  slotKind: 0
+  autoDetectSlotKind: 1
   rarityBackground: {fileID: 8283551577381727871}
   iconImage: {fileID: 3853849250016192489}
   stackCountText: {fileID: 6085752872913061045}
@@ -576,6 +578,10 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
+  tooltipUI: {fileID: 5859353161496624836, guid: 7735c6b6bce39844db52f508a086c8ce, type: 3}
+  currentItemData: {fileID: 0}
+  currentStackCount: 0
+  debugTooltipEvents: 1
 --- !u!1 &6653699007851972635
 GameObject:
   m_ObjectHideFlags: 0
@@ -593,7 +599,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8966328296243897212
 RectTransform:
   m_ObjectHideFlags: 0
