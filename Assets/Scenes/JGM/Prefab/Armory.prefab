@@ -2416,6 +2416,7 @@ Transform:
   - {fileID: 6107769589622207216}
   - {fileID: 7353944971034256580}
   - {fileID: 1710993556237706917}
+  - {fileID: 1022611643957929641}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &4722736229308527912
@@ -2994,6 +2995,55 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 43443953052719932, guid: 5a763297e2dd13d4e8fd7b31cb637eaa, type: 2}
+--- !u!1 &6844757254938297412
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1022611643957929641}
+  - component: {fileID: 8120551616247072477}
+  m_Layer: 0
+  m_Name: CameraPoint_Workbench
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1022611643957929641
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6844757254938297412}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.3153048, y: 0.011572929, z: -0.0041835597, w: -0.9489107}
+  m_LocalPosition: {x: 0.027604043, y: 2.0248828, z: -0.9944224}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7463687311512214474}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8120551616247072477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6844757254938297412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b16251ad350c97b48ba5377512955926, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.Hideout.HideoutCameraTarget
+  targetId: Workbench
+  displayName: "\uC791\uC5C5\uB300"
+  cameraPoint: {fileID: 1022611643957929641}
+  linkedPanel: {fileID: 0}
+  canSelect: 1
 --- !u!1 &7126975055183465261
 GameObject:
   m_ObjectHideFlags: 0
