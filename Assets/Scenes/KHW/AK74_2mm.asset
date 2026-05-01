@@ -12,21 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a9487b101f97d74299616679f4b16c7, type: 3}
   m_Name: AK74_2mm
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.AmmoDataSO
-  itemID: 
-  displayName: 
-  description: 
+  itemID: AK74_2mm_a
+  displayName: "AK74 2mm \uCD1D\uC54C"
+  description: "AK74 2mm \uCD1D\uC54C"
   icon: {fileID: 0}
-  category: 0
-  rarity: 0
+  category: 1
+  rarity: 1
+  isValuable: 0
   gridSize: {x: 1, y: 1}
-  maxStackSize: 1
-  weightKg: 0.1
-  baseSellPrice: 0
-  worldPrefab: {fileID: 0}
+  maxStackSize: 10
+  weightKg: 3
+  baseSellPrice: 23
+  worldPrefab: {fileID: 2134417702333145172, guid: 10f0ee45a5741564db4927002f50bed0, type: 3}
   caliber: 0
-  grade: 0
+  grade: 1
   penetration: 1
-  damageMultiplier: 1
-  priceMultiplier: 1
+  damageMultiplier: 5
+  priceMultiplier: 10
   velocityMultiplier: 1
   dragCoefficient: 0.002

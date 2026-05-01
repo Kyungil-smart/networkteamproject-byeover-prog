@@ -17,6 +17,15 @@ MonoBehaviour:
     weight: 60
     countRange: {x: 15, y: 30}
   - item: {fileID: 11400000, guid: 67e515b19b1845f4ea8d7fdeac09db10, type: 2}
-    weight: 70
-    countRange: {x: 20, y: 30}
+    weight: 40
+    countRange: {x: 1, y: 4}
+  - item: {fileID: 11400000, guid: f0eafc5b65c4be44bb377cfe7a1db3e2, type: 2}
+    weight: 20
+    countRange: {x: 1, y: 5}
+  - item: {fileID: 11400000, guid: 96301405cf740ff4fb84bd2219a3320f, type: 2}
+    weight: 50
+    countRange: {x: 1, y: 3}
+  - item: {fileID: 11400000, guid: 0cebd73f4b947b24db3c065432a0c9fe, type: 2}
+    weight: 20
+    countRange: {x: 1, y: 3}
   lockedZoneMultiplier: 1.5
