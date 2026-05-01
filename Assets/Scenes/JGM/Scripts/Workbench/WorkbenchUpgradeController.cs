@@ -3,45 +3,46 @@ using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Systems;
 
-namespace DeadZone.Systems
+namespace DeadZone.Systems.Housing
 {
     /// <summary>
-    /// ÀÛ¾÷´ë ¾÷±×·¹ÀÌµå Àç·á °Ë»ç, Àç·á ¼Ò¸ğ, ½Ã¼³ ·¹º§ Áõ°¡¸¦ ´ã´çÇÕ´Ï´Ù.
-    /// Facilities.csÀÇ Workbench´Â ¼öÁ¤ÇÏÁö ¾Ê°í, ÀÛ¾÷´ë ¾÷±×·¹ÀÌµå ±â´É¸¸ º°µµ ÄÁÆ®·Ñ·¯·Î ºĞ¸®ÇÕ´Ï´Ù.
+    /// ì‘ì—…ëŒ€ ì—…ê·¸ë ˆì´ë“œ ìš”ì²­ì„ ì²˜ë¦¬í•©ë‹ˆë‹¤.
+    /// ì¬ë£Œ ê²€ì‚¬, ì¬ë£Œ ì†Œëª¨, ë ˆë²¨ ë³€ê²½ë§Œ ë‹´ë‹¹í•˜ê³  ì œì‘ ê°€ëŠ¥ ë“±ê¸‰ ê³„ì‚°ì€ WorkbenchUnlockStateControllerê°€ ë‹´ë‹¹í•©ë‹ˆë‹¤.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Workbench))]
     public class WorkbenchUpgradeController : NetworkBehaviour
     {
-        [Header("ÀÛ¾÷´ë")]
+        [Header("ì‘ì—…ëŒ€")]
         [SerializeField]
-        [Tooltip("¾÷±×·¹ÀÌµåÇÒ Workbench ½Ã¼³ÀÔ´Ï´Ù. ºñ¿öµÎ¸é °°Àº ¿ÀºêÁ§Æ®¿¡¼­ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [Tooltip("ì—…ê·¸ë ˆì´ë“œí•  ì‘ì—…ëŒ€ ì‹œì„¤ì…ë‹ˆë‹¤. ë¹„ì›Œë‘ë©´ ê°™ì€ ì˜¤ë¸Œì íŠ¸ì—ì„œ ìë™ìœ¼ë¡œ ì°¾ìŠµë‹ˆë‹¤.")]
         private Workbench workbench;
 
         [SerializeField]
-        [Tooltip("Workbench¿¡ ¿¬°áµÈ °Í°ú °°Àº Workbench_Facility SO¸¦ ³Ö½À´Ï´Ù.")]
+        [Tooltip("ì‘ì—…ëŒ€ ì—…ê·¸ë ˆì´ë“œ ì¬ë£Œê°€ ë“¤ì–´ ìˆëŠ” Workbench_Facility SOì…ë‹ˆë‹¤.")]
         private FacilityDataSO workbenchFacilityData;
 
-        [Header("Å×½ºÆ® ÀÎº¥Åä¸®")]
+        [Header("í…ŒìŠ¤íŠ¸ ì¸ë²¤í† ë¦¬")]
         [SerializeField]
-        [Tooltip("Ã¼Å©ÇÏ¸é ½ÇÁ¦ Player ÀÎº¥Åä¸® ´ë½Å WorkbenchTestInventory·Î ¾÷±×·¹ÀÌµå¸¦ Å×½ºÆ®ÇÕ´Ï´Ù.")]
+        [Tooltip("ì‹¤ì œ í”Œë ˆì´ì–´ ì¸ë²¤í† ë¦¬ ëŒ€ì‹  WorkbenchTestInventoryë¡œ ì—…ê·¸ë ˆì´ë“œë¥¼ í…ŒìŠ¤íŠ¸í•©ë‹ˆë‹¤.")]
         private bool useTestInventory = true;
 
         [SerializeField]
-        [Tooltip("¿¡µğÅÍ Å×½ºÆ® Áß Host ¾øÀÌ ÀÛ¾÷´ë ·¹º§ º¯°æÀ» Çã¿ëÇÒÁö ¿©ºÎÀÔ´Ï´Ù.")]
+        [Tooltip("ë„¤íŠ¸ì›Œí¬ Host ì‹¤í–‰ ì „ì—ë„ ì—ë””í„° í…ŒìŠ¤íŠ¸ë¡œ ë ˆë²¨ ë³€ê²½ì„ í—ˆìš©í•©ë‹ˆë‹¤.")]
         private bool allowOfflineTestUpgrade = true;
 
         [SerializeField]
-        [Tooltip("ÇÃ·¹ÀÌ¾î ÀÎº¥Åä¸® ¿Ï¼º Àü±îÁö »ç¿ëÇÒ Å×½ºÆ®¿ë ÀÎº¥Åä¸®ÀÔ´Ï´Ù.")]
+        [Tooltip("UIì™€ í”Œë ˆì´ì–´ ì¸ë²¤í† ë¦¬ ì™„ì„± ì „ê¹Œì§€ ì‚¬ìš©í•  í…ŒìŠ¤íŠ¸ìš© ì¸ë²¤í† ë¦¬ì…ë‹ˆë‹¤.")]
         private WorkbenchTestInventory testInventory;
 
-        [Header("·Î±×")]
+        [Header("ë¡œê·¸")]
         [SerializeField]
-        [Tooltip("¾÷±×·¹ÀÌµå ¼º°ø/½ÇÆĞ ·Î±×¸¦ Console¿¡ Ãâ·ÂÇÒÁö ¿©ºÎÀÔ´Ï´Ù.")]
+        [Tooltip("ì—…ê·¸ë ˆì´ë“œ ì„±ê³µê³¼ ì‹¤íŒ¨ ì‚¬ìœ ë¥¼ Consoleì— ì¶œë ¥í•©ë‹ˆë‹¤.")]
         private bool logUpgradeResult = true;
 
-        private readonly List<ItemRequirement> consumedMaterials = new List<ItemRequirement>();
+        private readonly List<ItemRequirement> consumedMaterials = new();
 
         private void Reset()
         {
@@ -88,7 +89,7 @@ namespace DeadZone.Systems
 
             if (!TryGetRequesterInventory(requesterClientId, out IInventory inventory))
             {
-                LogWarning($"¾÷±×·¹ÀÌµå¸¦ ¿äÃ»ÇÑ ÇÃ·¹ÀÌ¾îÀÇ ÀÎº¥Åä¸®¸¦ Ã£Áö ¸øÇß½À´Ï´Ù. ClientId: {requesterClientId}");
+                LogWarning($"ì—…ê·¸ë ˆì´ë“œë¥¼ ìš”ì²­í•œ í”Œë ˆì´ì–´ì˜ ì¸ë²¤í† ë¦¬ë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. ClientId: {requesterClientId}");
                 return;
             }
 
@@ -113,13 +114,13 @@ namespace DeadZone.Systems
         {
             if (inventory == null)
             {
-                LogWarning("¾÷±×·¹ÀÌµå¿¡ »ç¿ëÇÒ ÀÎº¥Åä¸®°¡ ¾ø½À´Ï´Ù.");
+                LogWarning("ì—…ê·¸ë ˆì´ë“œì— ì‚¬ìš©í•  ì¸ë²¤í† ë¦¬ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             if (workbench == null)
             {
-                LogWarning("Workbench°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+                LogWarning("Workbench ì»´í¬ë„ŒíŠ¸ê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");
                 return false;
             }
 
@@ -128,33 +129,34 @@ namespace DeadZone.Systems
 
             if (!HasAllMaterials(inventory, nextLevelData))
             {
-                LogWarning($"ÀÛ¾÷´ë Lv.{nextLevelData.level} ¾÷±×·¹ÀÌµå Àç·á°¡ ºÎÁ·ÇÕ´Ï´Ù.");
+                LogWarning($"ì‘ì—…ëŒ€ Lv.{nextLevelData.level} ì—…ê·¸ë ˆì´ë“œ ì¬ë£Œê°€ ë¶€ì¡±í•©ë‹ˆë‹¤.");
+                LogRequiredMaterials(inventory, nextLevelData);
                 return false;
             }
 
             if (!CanApplyUpgradeLevel())
             {
-                LogWarning("ÇöÀç ½ÇÇà »óÅÂ¿¡¼­´Â ÀÛ¾÷´ë ·¹º§À» º¯°æÇÒ ¼ö ¾ø½À´Ï´Ù. Host ½ÇÇà ¶Ç´Â Offline Test Çã¿ë ¿©ºÎ¸¦ È®ÀÎÇÏ¼¼¿ä.");
+                LogWarning("í˜„ì¬ ì‹¤í–‰ ìƒíƒœì—ì„œëŠ” ì‘ì—…ëŒ€ ë ˆë²¨ì„ ë³€ê²½í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. Host ì‹¤í–‰ ë˜ëŠ” Offline Test í—ˆìš© ì—¬ë¶€ë¥¼ í™•ì¸í•˜ì„¸ìš”.");
                 return false;
             }
 
             if (!ConsumeAllMaterials(inventory, nextLevelData))
             {
-                LogWarning($"ÀÛ¾÷´ë Lv.{nextLevelData.level} ¾÷±×·¹ÀÌµå Àç·á ¼Ò¸ğ¿¡ ½ÇÆĞÇß½À´Ï´Ù.");
+                LogWarning($"ì‘ì—…ëŒ€ Lv.{nextLevelData.level} ì—…ê·¸ë ˆì´ë“œ ì¬ë£Œ ì†Œëª¨ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             if (!ApplyUpgradeLevel(nextLevelData.level))
             {
                 RestoreConsumedMaterials(inventory);
-                LogWarning("ÀÛ¾÷´ë ·¹º§ Àû¿ë¿¡ ½ÇÆĞÇß½À´Ï´Ù. ¼Ò¸ğÇÑ Àç·á¸¦ µÇµ¹·È½À´Ï´Ù.");
+                LogWarning("ì‘ì—…ëŒ€ ë ˆë²¨ ì ìš©ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤. ì†Œëª¨í•œ ì¬ë£Œë¥¼ ë˜ëŒë ¸ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             consumedMaterials.Clear();
 
             if (logUpgradeResult)
-                Debug.Log($"[WorkbenchUpgradeController] ÀÛ¾÷´ë ¾÷±×·¹ÀÌµå ¼º°ø: Lv.{nextLevelData.level}", this);
+                Debug.Log($"[WorkbenchUpgradeController] ì‘ì—…ëŒ€ ì—…ê·¸ë ˆì´ë“œ ì„±ê³µ: Lv.{nextLevelData.level}", this);
 
             return true;
         }
@@ -165,28 +167,33 @@ namespace DeadZone.Systems
 
             if (workbench == null)
             {
-                LogWarning("Workbench°¡ ¾ø½À´Ï´Ù.");
+                LogWarning("Workbench ì»´í¬ë„ŒíŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             if (workbenchFacilityData == null)
             {
-                LogWarning("Workbench_Facility SO°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+                LogWarning("Workbench_Facility SOê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");
+                return false;
+            }
+
+            if (workbenchFacilityData.type != FacilityType.Workbench)
+            {
+                LogWarning($"ì—°ê²°ëœ FacilityDataSO íƒ€ì…ì´ Workbenchê°€ ì•„ë‹™ë‹ˆë‹¤. í˜„ì¬ íƒ€ì…: {workbenchFacilityData.type}");
                 return false;
             }
 
             if (workbenchFacilityData.levels == null || workbenchFacilityData.levels.Length == 0)
             {
-                LogWarning("Workbench_Facility SO¿¡ ·¹º§ µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+                LogWarning("Workbench_Facility SOì— ë ˆë²¨ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
-            int currentLevel = workbench.CurrentLevel.Value;
-            int nextLevel = currentLevel + 1;
+            int nextLevel = workbench.CurrentLevel.Value + 1;
 
             if (nextLevel > workbenchFacilityData.levels.Length)
             {
-                LogWarning("ÀÛ¾÷´ë°¡ ÀÌ¹Ì ÃÖ´ë ·¹º§ÀÔ´Ï´Ù.");
+                LogWarning("ì‘ì—…ëŒ€ê°€ ì´ë¯¸ ìµœëŒ€ ë ˆë²¨ì…ë‹ˆë‹¤.");
                 return false;
             }
 
@@ -194,7 +201,7 @@ namespace DeadZone.Systems
 
             if (nextLevelData == null)
             {
-                LogWarning($"ÀÛ¾÷´ë Lv.{nextLevel} µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+                LogWarning($"ì‘ì—…ëŒ€ Lv.{nextLevel} ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
@@ -203,10 +210,7 @@ namespace DeadZone.Systems
 
         private bool HasAllMaterials(IInventory inventory, FacilityLevel levelData)
         {
-            if (inventory == null)
-                return false;
-
-            if (levelData == null)
+            if (inventory == null || levelData == null)
                 return false;
 
             if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
@@ -235,10 +239,7 @@ namespace DeadZone.Systems
         {
             consumedMaterials.Clear();
 
-            if (inventory == null)
-                return false;
-
-            if (levelData == null)
+            if (inventory == null || levelData == null)
                 return false;
 
             if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
@@ -248,13 +249,7 @@ namespace DeadZone.Systems
             {
                 ItemRequirement material = levelData.upgradeMaterials[i];
 
-                if (material.item == null)
-                {
-                    RestoreConsumedMaterials(inventory);
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(material.item.itemID))
+                if (material.item == null || string.IsNullOrWhiteSpace(material.item.itemID))
                 {
                     RestoreConsumedMaterials(inventory);
                     return false;
@@ -297,62 +292,25 @@ namespace DeadZone.Systems
             consumedMaterials.Clear();
         }
 
-        private bool ApplyUpgradeLevel(int nextLevel)
+        private bool CanApplyUpgradeLevel()
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+                return IsServer;
+
+            return allowOfflineTestUpgrade;
+        }
+
+        private bool ApplyUpgradeLevel(int newLevel)
         {
             if (workbench == null)
                 return false;
 
-            if (IsServer)
-            {
-                workbench.CurrentLevel.Value = nextLevel;
-                return true;
-            }
-
-#if UNITY_EDITOR
-            if (CanUseOfflineTestUpgrade())
-            {
-                workbench.CurrentLevel.Value = nextLevel;
-
-                if (logUpgradeResult)
-                {
-                    Debug.Log(
-                        $"[WorkbenchUpgradeController] ¿ÀÇÁ¶óÀÎ Å×½ºÆ® ¸ğµå·Î ÀÛ¾÷´ë ·¹º§À» º¯°æÇß½À´Ï´Ù. Lv.{nextLevel}",
-                        this
-                    );
-                }
-
-                return true;
-            }
-#endif
-
-            LogWarning("ÀÛ¾÷´ë ·¹º§ º¯°æÀº ¼­¹ö¿¡¼­¸¸ °¡´ÉÇÕ´Ï´Ù. Host ¸ğµå·Î ½ÇÇàÇß´ÂÁö È®ÀÎÇÏ¼¼¿ä.");
-            return false;
-        }
-
-        private bool CanApplyUpgradeLevel()
-        {
-            if (IsServer)
-                return true;
-
-#if UNITY_EDITOR
-            return CanUseOfflineTestUpgrade();
-#else
-            return false;
-#endif
-        }
-
-#if UNITY_EDITOR
-        private bool CanUseOfflineTestUpgrade()
-        {
-            if (!allowOfflineTestUpgrade)
+            if (!CanApplyUpgradeLevel())
                 return false;
 
-            if (NetworkManager.Singleton == null)
-                return true;
-
-            return !NetworkManager.Singleton.IsListening;
+            workbench.CurrentLevel.Value = newLevel;
+            return true;
         }
-#endif
 
         private bool TryGetRequesterInventory(ulong requesterClientId, out IInventory inventory)
         {
@@ -371,6 +329,28 @@ namespace DeadZone.Systems
             return inventory != null;
         }
 
+        private void LogRequiredMaterials(IInventory inventory, FacilityLevel levelData)
+        {
+            if (!logUpgradeResult || inventory == null || levelData == null || levelData.upgradeMaterials == null)
+                return;
+
+            for (int i = 0; i < levelData.upgradeMaterials.Count; i++)
+            {
+                ItemRequirement material = levelData.upgradeMaterials[i];
+
+                if (material.item == null)
+                {
+                    Debug.LogWarning("[WorkbenchUpgradeController] í•„ìš” ì¬ë£Œ ë°ì´í„°ê°€ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤.", this);
+                    continue;
+                }
+
+                string itemId = material.item.itemID;
+                int requiredAmount = Mathf.Max(1, material.amount);
+
+                Debug.LogWarning($"[WorkbenchUpgradeController] í•„ìš” ì¬ë£Œ: {material.item.displayName}({itemId}) í•„ìš” {requiredAmount}ê°œ / ì¶©ì¡± ì—¬ë¶€: {inventory.HasItem(itemId, requiredAmount)}", this);
+            }
+        }
+
         private void LogWarning(string message)
         {
             if (!logUpgradeResult)
@@ -380,25 +360,12 @@ namespace DeadZone.Systems
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("µğ¹ö±× ¾÷±×·¹ÀÌµå °¡´É ¿©ºÎ È®ÀÎ")]
-        private void DebugCanUpgrade()
-        {
-            if (!Application.isPlaying)
-            {
-                LogWarning("ÇÃ·¹ÀÌ Áß¿¡¸¸ ¾÷±×·¹ÀÌµå Å×½ºÆ®¸¦ ½ÇÇàÇÒ ¼ö ÀÖ½À´Ï´Ù.");
-                return;
-            }
-
-            bool canUpgrade = CanUpgradeWithInventory(testInventory);
-            Debug.Log($"[WorkbenchUpgradeController] ¾÷±×·¹ÀÌµå °¡´É ¿©ºÎ: {canUpgrade}", this);
-        }
-
-        [ContextMenu("µğ¹ö±× ¾÷±×·¹ÀÌµå ½ÇÇà")]
+        [ContextMenu("ë””ë²„ê·¸ ì—…ê·¸ë ˆì´ë“œ ì‹¤í–‰")]
         private void DebugUpgrade()
         {
             if (!Application.isPlaying)
             {
-                LogWarning("ÇÃ·¹ÀÌ Áß¿¡¸¸ ¾÷±×·¹ÀÌµå Å×½ºÆ®¸¦ ½ÇÇàÇÒ ¼ö ÀÖ½À´Ï´Ù.");
+                Debug.LogWarning("[WorkbenchUpgradeController] í”Œë ˆì´ ì¤‘ì—ë§Œ ì—…ê·¸ë ˆì´ë“œ í…ŒìŠ¤íŠ¸ë¥¼ ì‹¤í–‰í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.", this);
                 return;
             }
 

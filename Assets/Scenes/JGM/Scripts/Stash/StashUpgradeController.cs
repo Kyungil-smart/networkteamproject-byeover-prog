@@ -3,45 +3,52 @@ using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Systems;
 
-namespace DeadZone.Systems
+namespace DeadZone.Systems.Housing
 {
     /// <summary>
-    /// º¸°üÇÔ ¾÷±×·¹ÀÌµå Àç·á °Ë»ç, Àç·á ¼Ò¸ğ, ½Ã¼³ ·¹º§ Áõ°¡¸¦ ´ã´çÇÕ´Ï´Ù.
-    /// Facilities.csÀÇ StashFacility Å¬·¡½º´Â ¼öÁ¤ÇÏÁö ¾Ê°í, FacilityBase¿Í Stash_Facility µ¥ÀÌÅÍ ±âÁØÀ¸·Î µ¿ÀÛÇÕ´Ï´Ù.
+    /// ë³´ê´€í•¨ ì—…ê·¸ë ˆì´ë“œ ìš”ì²­, ì¬ë£Œ ê²€ì‚¬, ì¬ë£Œ ì†Œëª¨, ë ˆë²¨ ì¦ê°€ë¥¼ ë‹´ë‹¹í•©ë‹ˆë‹¤.
+    /// ì‹¤ì œ Player Inventoryê°€ ì™„ì„±ë˜ê¸° ì „ê¹Œì§€ëŠ” WorkbenchTestInventoryë¥¼ IInventory ëŒ€ì²´ êµ¬í˜„ìœ¼ë¡œ ì‚¬ìš©í•©ë‹ˆë‹¤.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(FacilityBase))]
-    public class StashUpgradeController : NetworkBehaviour
+    public sealed class StashUpgradeController : NetworkBehaviour
     {
-        [Header("º¸°üÇÔ ½Ã¼³")]
+        [Header("ë³´ê´€í•¨ ì‹œì„¤")]
         [SerializeField]
-        [Tooltip("¾÷±×·¹ÀÌµåÇÒ º¸°üÇÔ ½Ã¼³ÀÔ´Ï´Ù. ºñ¿öµÎ¸é °°Àº ¿ÀºêÁ§Æ®ÀÇ FacilityBase¸¦ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [Tooltip("ì—…ê·¸ë ˆì´ë“œí•  ë³´ê´€í•¨ ì‹œì„¤ì…ë‹ˆë‹¤. ë¹„ì›Œë‘ë©´ ê°™ì€ ì˜¤ë¸Œì íŠ¸ì—ì„œ FacilityBaseë¥¼ ìë™ìœ¼ë¡œ ì°¾ìŠµë‹ˆë‹¤.")]
         private FacilityBase stashFacility;
 
         [SerializeField]
-        [Tooltip("º¸°üÇÔ ½Ã¼³¿¡ ¿¬°áµÈ °Í°ú °°Àº Stash_Facility SO¸¦ ³Ö½À´Ï´Ù.")]
+        [Tooltip("ë³´ê´€í•¨ ì—…ê·¸ë ˆì´ë“œ ì¬ë£Œê°€ ë“¤ì–´ ìˆëŠ” Stash_Facility SOì…ë‹ˆë‹¤.")]
         private FacilityDataSO stashFacilityData;
 
-        [Header("Å×½ºÆ® ÀÎº¥Åä¸®")]
         [SerializeField]
-        [Tooltip("Ã¼Å©ÇÏ¸é ½ÇÁ¦ Player ÀÎº¥Åä¸® ´ë½Å WorkbenchTestInventory·Î ¾÷±×·¹ÀÌµå¸¦ Å×½ºÆ®ÇÕ´Ï´Ù.")]
+        [Tooltip("ë³´ê´€í•¨ ë ˆë²¨ ë³€ê²½ í›„ ìŠ¤íƒœì‰¬ í¬ê¸°ë¥¼ ë‹¤ì‹œ ê³„ì‚°í•  ì»¨íŠ¸ë¡¤ëŸ¬ì…ë‹ˆë‹¤.")]
+        private StashSizeController sizeController;
+
+        [Header("í…ŒìŠ¤íŠ¸ ì¸ë²¤í† ë¦¬")]
+        [SerializeField]
+        [Tooltip("ì²´í¬í•˜ë©´ ì‹¤ì œ Player Inventory ëŒ€ì‹  WorkbenchTestInventoryë¡œ ì—…ê·¸ë ˆì´ë“œë¥¼ í…ŒìŠ¤íŠ¸í•©ë‹ˆë‹¤.")]
         private bool useTestInventory = true;
 
         [SerializeField]
-        [Tooltip("¿¡µğÅÍ Å×½ºÆ® Áß Host ¾øÀÌ º¸°üÇÔ ·¹º§ º¯°æÀ» Çã¿ëÇÒÁö ¿©ºÎÀÔ´Ï´Ù.")]
+        [Tooltip("Network Host ì‹¤í–‰ ì—†ì´ë„ í…ŒìŠ¤íŠ¸ìš©ìœ¼ë¡œ ë ˆë²¨ ë³€ê²½ì„ í—ˆìš©í• ì§€ ì—¬ë¶€ì…ë‹ˆë‹¤.")]
         private bool allowOfflineTestUpgrade = true;
 
         [SerializeField]
-        [Tooltip("ÇÃ·¹ÀÌ¾î ÀÎº¥Åä¸® ¿Ï¼º Àü±îÁö »ç¿ëÇÒ Å×½ºÆ®¿ë ÀÎº¥Åä¸®ÀÔ´Ï´Ù.")]
+        [Tooltip("Player Inventory ì™„ì„± ì „ê¹Œì§€ ì‚¬ìš©í•  í…ŒìŠ¤íŠ¸ìš© ì¸ë²¤í† ë¦¬ì…ë‹ˆë‹¤.")]
         private WorkbenchTestInventory testInventory;
 
-        [Header("·Î±×")]
+        [Header("ë¡œê·¸")]
         [SerializeField]
-        [Tooltip("¾÷±×·¹ÀÌµå ¼º°ø/½ÇÆĞ ·Î±×¸¦ Console¿¡ Ãâ·ÂÇÒÁö ¿©ºÎÀÔ´Ï´Ù.")]
+        [Tooltip("ì—…ê·¸ë ˆì´ë“œ ì„±ê³µê³¼ ì‹¤íŒ¨ ë¡œê·¸ë¥¼ Consoleì— ì¶œë ¥í• ì§€ ì—¬ë¶€ì…ë‹ˆë‹¤.")]
         private bool logUpgradeResult = true;
 
         private readonly List<ItemRequirement> consumedMaterials = new List<ItemRequirement>();
+
+        private bool useOfflineCurrentLevel;
+        private int offlineCurrentLevel = 1;
 
         private void Reset()
         {
@@ -62,6 +69,9 @@ namespace DeadZone.Systems
         {
             if (stashFacility == null)
                 stashFacility = GetComponent<FacilityBase>();
+
+            if (sizeController == null)
+                sizeController = GetComponent<StashSizeController>();
 
             if (testInventory == null)
                 testInventory = GetComponent<WorkbenchTestInventory>();
@@ -88,7 +98,7 @@ namespace DeadZone.Systems
 
             if (!TryGetRequesterInventory(requesterClientId, out IInventory inventory))
             {
-                LogWarning($"¾÷±×·¹ÀÌµå¸¦ ¿äÃ»ÇÑ ÇÃ·¹ÀÌ¾îÀÇ ÀÎº¥Åä¸®¸¦ Ã£Áö ¸øÇß½À´Ï´Ù. ClientId: {requesterClientId}");
+                LogWarning($"ì—…ê·¸ë ˆì´ë“œë¥¼ ìš”ì²­í•œ í”Œë ˆì´ì–´ì˜ ì¸ë²¤í† ë¦¬ë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. ClientId: {requesterClientId}");
                 return;
             }
 
@@ -116,7 +126,7 @@ namespace DeadZone.Systems
         {
             if (inventory == null)
             {
-                LogWarning("¾÷±×·¹ÀÌµå¿¡ »ç¿ëÇÒ ÀÎº¥Åä¸®°¡ ¾ø½À´Ï´Ù.");
+                LogWarning("ì—…ê·¸ë ˆì´ë“œì— ì‚¬ìš©í•  ì¸ë²¤í† ë¦¬ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
@@ -128,33 +138,35 @@ namespace DeadZone.Systems
 
             if (!HasAllMaterials(inventory, nextLevelData))
             {
-                LogWarning($"º¸°üÇÔ Lv.{nextLevelData.level} ¾÷±×·¹ÀÌµå Àç·á°¡ ºÎÁ·ÇÕ´Ï´Ù.");
+                LogWarning($"ë³´ê´€í•¨ Lv.{nextLevelData.level} ì—…ê·¸ë ˆì´ë“œ ì¬ë£Œê°€ ë¶€ì¡±í•©ë‹ˆë‹¤.");
+                PrintRequiredMaterials(nextLevelData, inventory);
                 return false;
             }
 
             if (!CanApplyUpgradeLevel())
             {
-                LogWarning("ÇöÀç ½ÇÇà »óÅÂ¿¡¼­´Â º¸°üÇÔ ·¹º§À» º¯°æÇÒ ¼ö ¾ø½À´Ï´Ù. Host ½ÇÇà ¶Ç´Â Offline Test Çã¿ë ¿©ºÎ¸¦ È®ÀÎÇÏ¼¼¿ä.");
+                LogWarning("í˜„ì¬ ì‹¤í–‰ ìƒíƒœì—ì„œëŠ” ë³´ê´€í•¨ ë ˆë²¨ì„ ë³€ê²½í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. Host ì‹¤í–‰ ë˜ëŠ” Offline Test í—ˆìš© ì—¬ë¶€ë¥¼ í™•ì¸í•˜ì„¸ìš”.");
                 return false;
             }
 
             if (!ConsumeAllMaterials(inventory, nextLevelData))
             {
-                LogWarning($"º¸°üÇÔ Lv.{nextLevelData.level} ¾÷±×·¹ÀÌµå Àç·á ¼Ò¸ğ¿¡ ½ÇÆĞÇß½À´Ï´Ù.");
+                LogWarning($"ë³´ê´€í•¨ Lv.{nextLevelData.level} ì—…ê·¸ë ˆì´ë“œ ì¬ë£Œ ì†Œëª¨ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             if (!ApplyUpgradeLevel(nextLevelData.level))
             {
                 RestoreConsumedMaterials(inventory);
-                LogWarning("º¸°üÇÔ ·¹º§ Àû¿ë¿¡ ½ÇÆĞÇß½À´Ï´Ù. ¼Ò¸ğÇÑ Àç·á¸¦ µÇµ¹·È½À´Ï´Ù.");
+                LogWarning("ë³´ê´€í•¨ ë ˆë²¨ ì ìš©ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤. ì†Œëª¨í•œ ì¬ë£Œë¥¼ ë˜ëŒë ¸ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             consumedMaterials.Clear();
+            sizeController?.RefreshSize(true);
 
             if (logUpgradeResult)
-                Debug.Log($"[StashUpgradeController] º¸°üÇÔ ¾÷±×·¹ÀÌµå ¼º°ø: Lv.{nextLevelData.level}", this);
+                Debug.Log($"[StashUpgradeController] ë³´ê´€í•¨ ì—…ê·¸ë ˆì´ë“œ ì„±ê³µ: Lv.{nextLevelData.level}", this);
 
             return true;
         }
@@ -163,19 +175,25 @@ namespace DeadZone.Systems
         {
             if (stashFacility == null)
             {
-                LogWarning("FacilityBase°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+                LogWarning("FacilityBaseê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");
+                return false;
+            }
+
+            if (stashFacility.Type != FacilityType.Stash)
+            {
+                LogWarning($"ì—°ê²°ëœ ì‹œì„¤ íƒ€ì…ì´ Stashê°€ ì•„ë‹™ë‹ˆë‹¤. í˜„ì¬ íƒ€ì…: {stashFacility.Type}");
                 return false;
             }
 
             if (stashFacilityData == null)
             {
-                LogWarning("Stash_Facility SO°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+                LogWarning("Stash_Facility SOê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");
                 return false;
             }
 
-            if (stashFacility.Type != stashFacilityData.type)
+            if (stashFacilityData.type != FacilityType.Stash)
             {
-                LogWarning($"½Ã¼³ ÄÄÆ÷³ÍÆ® Å¸ÀÔ°ú Stash_Facility SO Å¸ÀÔÀÌ ´Ù¸¨´Ï´Ù. ½Ã¼³: {stashFacility.Type}, SO: {stashFacilityData.type}");
+                LogWarning($"Stash_Facility SOì˜ íƒ€ì…ì´ Stashê°€ ì•„ë‹™ë‹ˆë‹¤. í˜„ì¬ íƒ€ì…: {stashFacilityData.type}");
                 return false;
             }
 
@@ -186,30 +204,21 @@ namespace DeadZone.Systems
         {
             nextLevelData = null;
 
-            if (stashFacility == null)
-            {
-                LogWarning("º¸°üÇÔ ½Ã¼³ÀÌ ¾ø½À´Ï´Ù.");
+            if (stashFacility == null || stashFacilityData == null)
                 return false;
-            }
-
-            if (stashFacilityData == null)
-            {
-                LogWarning("Stash_Facility SO°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
-                return false;
-            }
 
             if (stashFacilityData.levels == null || stashFacilityData.levels.Length == 0)
             {
-                LogWarning("Stash_Facility SO¿¡ ·¹º§ µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+                LogWarning("Stash_Facility SOì— ë ˆë²¨ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
-            int currentLevel = stashFacility.CurrentLevel.Value;
+            int currentLevel = GetCurrentStashLevel();
             int nextLevel = currentLevel + 1;
 
             if (nextLevel > stashFacilityData.levels.Length)
             {
-                LogWarning("º¸°üÇÔÀÌ ÀÌ¹Ì ÃÖ´ë ·¹º§ÀÔ´Ï´Ù.");
+                LogWarning("ë³´ê´€í•¨ì´ ì´ë¯¸ ìµœëŒ€ ë ˆë²¨ì…ë‹ˆë‹¤.");
                 return false;
             }
 
@@ -217,19 +226,40 @@ namespace DeadZone.Systems
 
             if (nextLevelData == null)
             {
-                LogWarning($"º¸°üÇÔ Lv.{nextLevel} µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+                LogWarning($"ë³´ê´€í•¨ Lv.{nextLevel} ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             return true;
         }
 
+        private int GetCurrentStashLevel()
+        {
+            if (ShouldUseOfflineLevel())
+            {
+                if (!useOfflineCurrentLevel)
+                {
+                    offlineCurrentLevel = GetSafeCurrentLevel();
+                    useOfflineCurrentLevel = true;
+                }
+
+                return Mathf.Max(1, offlineCurrentLevel);
+            }
+
+            return GetSafeCurrentLevel();
+        }
+
+        private int GetSafeCurrentLevel()
+        {
+            if (stashFacility == null)
+                return 1;
+
+            return Mathf.Max(1, stashFacility.CurrentLevel.Value);
+        }
+
         private bool HasAllMaterials(IInventory inventory, FacilityLevel levelData)
         {
-            if (inventory == null)
-                return false;
-
-            if (levelData == null)
+            if (inventory == null || levelData == null)
                 return false;
 
             if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
@@ -258,12 +288,6 @@ namespace DeadZone.Systems
         {
             consumedMaterials.Clear();
 
-            if (inventory == null)
-                return false;
-
-            if (levelData == null)
-                return false;
-
             if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
                 return true;
 
@@ -271,13 +295,7 @@ namespace DeadZone.Systems
             {
                 ItemRequirement material = levelData.upgradeMaterials[i];
 
-                if (material.item == null)
-                {
-                    RestoreConsumedMaterials(inventory);
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(material.item.itemID))
+                if (material.item == null || string.IsNullOrWhiteSpace(material.item.itemID))
                 {
                     RestoreConsumedMaterials(inventory);
                     return false;
@@ -294,7 +312,7 @@ namespace DeadZone.Systems
                 consumedMaterials.Add(new ItemRequirement
                 {
                     item = material.item,
-                    amount = amount
+                    amount = amount,
                 });
             }
 
@@ -310,88 +328,91 @@ namespace DeadZone.Systems
             {
                 ItemRequirement material = consumedMaterials[i];
 
-                if (material.item == null)
+                if (material.item == null || material.amount <= 0)
                     continue;
 
-                int amount = Mathf.Max(1, material.amount);
-                inventory.TryAddItem(material.item, amount);
+                inventory.TryAddItem(material.item, material.amount);
             }
 
             consumedMaterials.Clear();
         }
 
-        private bool ApplyUpgradeLevel(int nextLevel)
+        private bool CanApplyUpgradeLevel()
         {
             if (stashFacility == null)
                 return false;
 
-            if (IsServer)
-            {
-                stashFacility.CurrentLevel.Value = nextLevel;
-                return true;
-            }
+            if (!stashFacility.IsSpawned)
+                return allowOfflineTestUpgrade;
 
-#if UNITY_EDITOR
-            if (CanUseOfflineTestUpgrade())
-            {
-                stashFacility.CurrentLevel.Value = nextLevel;
-
-                if (logUpgradeResult)
-                {
-                    Debug.Log(
-                        $"[StashUpgradeController] ¿ÀÇÁ¶óÀÎ Å×½ºÆ® ¸ğµå·Î º¸°üÇÔ ·¹º§À» º¯°æÇß½À´Ï´Ù. Lv.{nextLevel}",
-                        this
-                    );
-                }
-
-                return true;
-            }
-#endif
-
-            LogWarning("º¸°üÇÔ ·¹º§ º¯°æÀº ¼­¹ö¿¡¼­¸¸ °¡´ÉÇÕ´Ï´Ù. Host ¸ğµå·Î ½ÇÇàÇß´ÂÁö È®ÀÎÇÏ¼¼¿ä.");
-            return false;
+            return IsServer;
         }
 
-        private bool CanApplyUpgradeLevel()
+        private bool ApplyUpgradeLevel(int nextLevel)
         {
-            if (IsServer)
-                return true;
-
-#if UNITY_EDITOR
-            return CanUseOfflineTestUpgrade();
-#else
-            return false;
-#endif
-        }
-
-#if UNITY_EDITOR
-        private bool CanUseOfflineTestUpgrade()
-        {
-            if (!allowOfflineTestUpgrade)
+            if (!CanApplyUpgradeLevel())
                 return false;
 
-            if (NetworkManager.Singleton == null)
+            if (!stashFacility.IsSpawned)
+            {
+                offlineCurrentLevel = Mathf.Clamp(nextLevel, 1, 4);
+                useOfflineCurrentLevel = true;
+                sizeController?.SetOfflineTestLevel(offlineCurrentLevel);
                 return true;
+            }
 
-            return !NetworkManager.Singleton.IsListening;
+            stashFacility.CurrentLevel.Value = nextLevel;
+            return true;
         }
-#endif
 
-        private bool TryGetRequesterInventory(ulong requesterClientId, out IInventory inventory)
+        private bool ShouldUseOfflineLevel()
+        {
+            return allowOfflineTestUpgrade && stashFacility != null && !stashFacility.IsSpawned;
+        }
+
+        private bool TryGetRequesterInventory(ulong clientId, out IInventory inventory)
         {
             inventory = null;
 
             if (NetworkManager.Singleton == null)
                 return false;
 
-            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(requesterClientId, out NetworkClient client))
+            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out NetworkClient client))
                 return false;
 
             if (client.PlayerObject == null)
                 return false;
 
-            inventory = client.PlayerObject.GetComponent<IInventory>();
-            return inventory != null;
+            return client.PlayerObject.TryGetComponent(out inventory);
+        }
+
+        private void PrintRequiredMaterials(FacilityLevel levelData, IInventory inventory)
+        {
+            if (!logUpgradeResult)
+                return;
+
+            if (levelData == null || levelData.upgradeMaterials == null)
+                return;
+
+            for (int i = 0; i < levelData.upgradeMaterials.Count; i++)
+            {
+                ItemRequirement material = levelData.upgradeMaterials[i];
+
+                if (material.item == null)
+                    continue;
+
+                int requiredAmount = Mathf.Max(1, material.amount);
+                int currentAmount = 0;
+
+                if (inventory is WorkbenchTestInventory test)
+                    currentAmount = test.GetItemCount(material.item.itemID);
+
+                Debug.Log(
+                    $"[StashUpgradeController] í•„ìš” ì¬ë£Œ: {material.item.displayName}({material.item.itemID}) " +
+                    $"í•„ìš” {requiredAmount}ê°œ / í˜„ì¬ {currentAmount}ê°œ",
+                    this
+                );
+            }
         }
 
         private void LogWarning(string message)
@@ -403,29 +424,29 @@ namespace DeadZone.Systems
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("µğ¹ö±× ¾÷±×·¹ÀÌµå °¡´É ¿©ºÎ È®ÀÎ")]
-        private void DebugCanUpgrade()
-        {
-            if (!Application.isPlaying)
-            {
-                LogWarning("ÇÃ·¹ÀÌ Áß¿¡¸¸ ¾÷±×·¹ÀÌµå Å×½ºÆ®¸¦ ½ÇÇàÇÒ ¼ö ÀÖ½À´Ï´Ù.");
-                return;
-            }
-
-            bool canUpgrade = CanUpgradeWithInventory(testInventory);
-            Debug.Log($"[StashUpgradeController] ¾÷±×·¹ÀÌµå °¡´É ¿©ºÎ: {canUpgrade}", this);
-        }
-
-        [ContextMenu("µğ¹ö±× ¾÷±×·¹ÀÌµå ½ÇÇà")]
+        [ContextMenu("ë””ë²„ê·¸ ì—…ê·¸ë ˆì´ë“œ ì‹¤í–‰")]
         private void DebugUpgrade()
         {
             if (!Application.isPlaying)
             {
-                LogWarning("ÇÃ·¹ÀÌ Áß¿¡¸¸ ¾÷±×·¹ÀÌµå Å×½ºÆ®¸¦ ½ÇÇàÇÒ ¼ö ÀÖ½À´Ï´Ù.");
+                Debug.LogWarning("[StashUpgradeController] Play Modeì—ì„œë§Œ í…ŒìŠ¤íŠ¸í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             RequestUpgrade();
+        }
+
+        [ContextMenu("ì—…ê·¸ë ˆì´ë“œ ê°€ëŠ¥ ì—¬ë¶€ ì¶œë ¥")]
+        private void DebugCanUpgrade()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[StashUpgradeController] Play Modeì—ì„œë§Œ í…ŒìŠ¤íŠ¸í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.", this);
+                return;
+            }
+
+            bool canUpgrade = useTestInventory && CanUpgradeWithInventory(testInventory);
+            Debug.Log($"[StashUpgradeController] ì—…ê·¸ë ˆì´ë“œ ê°€ëŠ¥ ì—¬ë¶€: {canUpgrade}", this);
         }
 #endif
     }

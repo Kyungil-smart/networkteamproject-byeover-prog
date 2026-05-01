@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a76fa1bc15c51334c952056447bc4f3f, type: 3}
+  m_Name: Communications_LevelConfig
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.CommunicationsLevelConfigSO
+  levels:
+  - level: 1
+    unlockedQuestStartId: Q1
+    unlockedQuestEndId: Q2
+    requiredCompletedQuestId: 
+    experienceBonusPercent: 0
+    detectionResistancePercent: 0
+    traderDiscountPercent: 0
+  - level: 2
+    unlockedQuestStartId: Q3
+    unlockedQuestEndId: Q4
+    requiredCompletedQuestId: Q2
+    experienceBonusPercent: 10
+    detectionResistancePercent: 5
+    traderDiscountPercent: 0
+  - level: 3
+    unlockedQuestStartId: Q5
+    unlockedQuestEndId: Q6
+    requiredCompletedQuestId: Q4
+    experienceBonusPercent: 20
+    detectionResistancePercent: 10
+    traderDiscountPercent: 5
+  - level: 4
+    unlockedQuestStartId: Q7
+    unlockedQuestEndId: Q8
+    requiredCompletedQuestId: Q6
+    experienceBonusPercent: 30
+    detectionResistancePercent: 15
+    traderDiscountPercent: 10

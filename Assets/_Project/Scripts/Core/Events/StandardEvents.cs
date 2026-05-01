@@ -7,7 +7,7 @@ namespace DeadZone.Core
 {
     public enum BodyPart : byte { Head, Torso, Limb }
     public enum EnemyTier : byte { T1 = 1, T2, T3, T4, T5 }
-    public enum FacilityType : byte { Workbench, CommStation, Gym, Stash, Kitchen, Bed }
+    public enum FacilityType : byte { Workbench, CommStation, Gym, Stash, Kitchen, Bed, Medical }
     public enum ObjectiveType : byte { Kill, Collect, Reach }
     public enum PlayerState : byte { Alive, Knocked, Dead }
     public enum ReviveResult : byte { Completed, Cancelled, Interrupted }

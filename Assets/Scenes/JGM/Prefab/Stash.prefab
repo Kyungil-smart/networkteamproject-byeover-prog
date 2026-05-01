@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4830655025851933363
+--- !u!1 &8698842384374440694
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,127 +8,13 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4828418234973495267}
-  - component: {fileID: 4861536289583755601}
-  - component: {fileID: 4854217091815027133}
-  - component: {fileID: 4893725813349828839}
-  m_Layer: 0
-  m_Name: SM_Prop_Generator_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4828418234973495267
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830655025851933363}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3737060524621592450}
-  m_LocalEulerAnglesHint: {x: 0, y: 270, z: 0}
---- !u!33 &4861536289583755601
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830655025851933363}
-  m_Mesh: {fileID: 4300000, guid: 095edcbcc8bbd4246b3ebf8dde09015a, type: 3}
---- !u!23 &4854217091815027133
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830655025851933363}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: a74066172cf19cd4bacae3c6600a7217, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 0
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &4893725813349828839
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4830655025851933363}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 43948092597004698, guid: ceec4c0688be0944185e7f8ccc73832e, type: 2}
---- !u!1 &8488628628835884113
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3737060524621592450}
-  - component: {fileID: 5347836220561261174}
-  - component: {fileID: 3867109894294557349}
-  - component: {fileID: 8019270583812671941}
-  - component: {fileID: 3735789869395504731}
-  - component: {fileID: 678364137189295275}
-  - component: {fileID: 3582191509644750548}
-  - component: {fileID: 5973565434703364917}
+  - component: {fileID: 5125936178318125542}
+  - component: {fileID: 144952815795682549}
+  - component: {fileID: 6602269074832965524}
+  - component: {fileID: 506838422534627626}
+  - component: {fileID: 129609515790951192}
+  - component: {fileID: 4487419235903560086}
+  - component: {fileID: 7520460325944493794}
   m_Layer: 0
   m_Name: Stash
   m_TagString: Untagged
@@ -136,80 +22,59 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3737060524621592450
+--- !u!4 &5125936178318125542
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
+  m_GameObject: {fileID: 8698842384374440694}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 19.685066, y: 0.11901665, z: -27.771902}
-  m_LocalScale: {x: 4, y: 4, z: 4}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 14.79, y: 2.88, z: -28.5}
+  m_LocalScale: {x: 6, y: 6, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4828418234973495267}
+  - {fileID: 3393747679637841757}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
---- !u!65 &5347836220561261174
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.6231325, y: 0.5015733, z: 0.8430392}
-  m_Center: {x: 0.0013112128, y: 0.331779, z: -0.00017158687}
---- !u!114 &3867109894294557349
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &144952815795682549
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
+  m_GameObject: {fileID: 8698842384374440694}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2198536272
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 1116271343
+  InScenePlacedSourceGlobalObjectIdHash: 2279848007
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &8019270583812671941
+--- !u!114 &6602269074832965524
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
+  m_GameObject: {fileID: 8698842384374440694}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 89d1515914d15f94da6d8275d9e3ede1, type: 3}
+  m_Script: {fileID: 11500000, guid: 126a44d86c7e1ce4aa5a42c717a2307c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Workbench
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.StashHousingFacility
   ShowTopMostFoldoutHeaderGroup: 1
   facilityData: {fileID: 11400000, guid: 0cae5472576c1cc47840a83c92555be7, type: 2}
   interactDistance: 2.5
@@ -218,94 +83,164 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
---- !u!114 &3735789869395504731
+  logLevelChanged: 1
+--- !u!114 &506838422534627626
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
+  m_GameObject: {fileID: 8698842384374440694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4951251088468cb49b378a5847d48829, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.StashUpgradeController
+  ShowTopMostFoldoutHeaderGroup: 1
+  stashFacility: {fileID: 6602269074832965524}
+  stashFacilityData: {fileID: 11400000, guid: 0cae5472576c1cc47840a83c92555be7, type: 2}
+  sizeController: {fileID: 129609515790951192}
+  useTestInventory: 1
+  allowOfflineTestUpgrade: 1
+  testInventory: {fileID: 7520460325944493794}
+  logUpgradeResult: 1
+--- !u!114 &129609515790951192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8698842384374440694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e4732abd9bc19f408ed01c631de08f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.StashSizeController
+  stashFacility: {fileID: 6602269074832965524}
+  sizeRules:
+  - level: 1
+    columns: 8
+    rows: 6
+  - level: 2
+    columns: 10
+    rows: 8
+  - level: 3
+    columns: 12
+    rows: 9
+  - level: 4
+    columns: 14
+    rows: 10
+  - level: 5
+    columns: 1
+    rows: 1
+  - level: 6
+    columns: 1
+    rows: 1
+  useOfflineTestLevel: 0
+  offlineTestLevel: 1
+  currentStashLevel: 1
+  currentColumns: 8
+  currentRows: 6
+  currentTotalSlots: 48
+  logSizeChanged: 1
+--- !u!114 &4487419235903560086
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8698842384374440694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d9152e1270bd314bafa67dc07f799cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.StashStorageTestController
+  currentStashLevel: 1
+  currentColumns: 8
+  currentRows: 6
+  totalSlots: 48
+  usedSlots: 0
+  freeSlots: 48
+  logSizeReceived: 1
+--- !u!114 &7520460325944493794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8698842384374440694}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.WorkbenchTestInventory
   startItems:
-  - item: {fileID: 11400000, guid: f81fe9af2c05da2438cf6b6cd3678123, type: 2}
+  - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: 87f44ca48190d194685a6abe75f897f2, type: 2}
+  - item: {fileID: 11400000, guid: ae53ef8d4d0ad924db3a8746d034c4e6, type: 2}
     amount: 99
-  - item: {fileID: 11400000, guid: 0a9e2f60b9f77a54784bc8834da9eaa7, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 03fafc6ba56f5a84183e99c498efa87b, type: 2}
+  - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
     amount: 99
   logInventoryChange: 1
---- !u!114 &678364137189295275
-MonoBehaviour:
+--- !u!1001 &3393299415529393481
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5125936178318125542}
+    m_Modifications:
+    - target: {fileID: 1588381071799560, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_Name
+      value: SM_Prop_Crate_Medical_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.00018119812
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.4725802
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0000104904175
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+--- !u!4 &3393747679637841757 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4055409609746964, guid: 538bd2dae55dac44f942fd3ed7c2a334, type: 3}
+  m_PrefabInstance: {fileID: 3393299415529393481}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e4732abd9bc19f408ed01c631de08f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.StashSizeController
-  stashFacility: {fileID: 8019270583812671941}
-  level1Width: 8
-  level1Height: 6
-  level2Width: 10
-  level2Height: 8
-  level3Width: 12
-  level3Height: 9
-  level4Width: 14
-  level4Height: 10
-  currentStashLevel: 1
-  currentWidth: 8
-  currentHeight: 6
-  currentTotalSlotCount: 48
-  logSizeChanged: 1
---- !u!114 &3582191509644750548
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4951251088468cb49b378a5847d48829, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.StashUpgradeController
-  ShowTopMostFoldoutHeaderGroup: 1
-  stashFacility: {fileID: 8019270583812671941}
-  stashFacilityData: {fileID: 11400000, guid: 0cae5472576c1cc47840a83c92555be7, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
-  testInventory: {fileID: 3735789869395504731}
-  logUpgradeResult: 1
---- !u!114 &5973565434703364917
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8488628628835884113}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d9152e1270bd314bafa67dc07f799cc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.StashStorageTestController
-  stashSizeController: {fileID: 678364137189295275}
-  testX: 0
-  testY: 0
-  testItemWidth: 1
-  testItemHeight: 1
-  currentStashLevel: 1
-  currentWidth: 0
-  currentHeight: 0
-  currentTotalSlotCount: 0
-  lastCoordinateInside: 0
-  lastItemAreaInside: 0
-  logTestResult: 1
