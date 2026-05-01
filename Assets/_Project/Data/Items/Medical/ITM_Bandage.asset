@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Bandage
   displayName: "\uBD95\uB300"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 274807c39806452408ce0cdb9b0a2c9c, type: 3}
   category: 5
   rarity: 0
   isValuable: 0

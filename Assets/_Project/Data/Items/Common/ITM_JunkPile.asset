@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: JunkPile
   displayName: "\uC7A1\uB3D9\uC0AC\uB2C8"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 0177f42e489366a46b2decf94d7406c4, type: 3}
   category: 8
   rarity: 0
   isValuable: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: MetalScrap
   displayName: "\uAE08\uC18D \uC870\uAC01"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 08ba085e6e9775844a2f0c0c74761f7f, type: 3}
   category: 8
   rarity: 0
   isValuable: 0

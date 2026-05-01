@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: MedicalSupplies
   displayName: "\uC758\uB8CC\uC6A9\uD488"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 7b0cd661086dc7549a13e17eb26c58eb, type: 3}
   category: 5
   rarity: 0
   isValuable: 0

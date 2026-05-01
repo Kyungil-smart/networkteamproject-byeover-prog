@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: WoodScrap
   displayName: "\uB098\uBB34 \uC870\uAC01"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e8a1204bf43176e4e98bb4a31dbdae55, type: 3}
   category: 8
   rarity: 0
   isValuable: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Ammo_AP
   displayName: "AP \uD0C4\uC57D"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: afa8963bc4f74274f8e1416a0f449054, type: 3}
   category: 1
   rarity: 2
   isValuable: 0

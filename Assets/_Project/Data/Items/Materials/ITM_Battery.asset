@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Battery
   displayName: "\uAC74\uC804\uC9C0"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 71802763c53c7784cb6b8c3d5959b0f4, type: 3}
   category: 8
   rarity: 1
   isValuable: 0

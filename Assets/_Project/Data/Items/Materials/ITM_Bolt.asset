@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Bolt
   displayName: "\uBCFC\uD2B8"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b87c7790b40a38d41937c0c7c3218f01, type: 3}
   category: 8
   rarity: 0
   isValuable: 0
