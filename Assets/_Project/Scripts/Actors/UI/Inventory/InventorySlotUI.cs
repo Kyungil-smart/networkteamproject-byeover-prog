@@ -56,6 +56,10 @@ namespace DeadZone.Actors.UI
         [SerializeField] private TMP_Text stackCountText;
 
         [BoxGroup("UI 연결")]
+        [Tooltip("장비 슬롯이 비어 있을 때만 표시되는 기본 슬롯 아이콘입니다.")]
+        [SerializeField] private GameObject emptySlotIcon;
+
+        [BoxGroup("UI 연결")]
         [Tooltip("슬롯이 잠겨 있을 때 슬롯 콘텐츠 위에 표시되는 오버레이입니다.")]
         [SerializeField] private GameObject lockOverlay;
 
@@ -73,6 +77,21 @@ namespace DeadZone.Actors.UI
 
         [BoxGroup("희귀도 배경")]
         [SerializeField] private Sprite legendaryBackground;
+
+        [BoxGroup("희귀도 색상")]
+        [SerializeField] private Color commonColor = new Color(0.42f, 0.42f, 0.42f, 0.75f);
+
+        [BoxGroup("희귀도 색상")]
+        [SerializeField] private Color uncommonColor = new Color(0.16f, 0.62f, 0.26f, 0.8f);
+
+        [BoxGroup("희귀도 색상")]
+        [SerializeField] private Color rareColor = new Color(0.16f, 0.38f, 0.88f, 0.8f);
+
+        [BoxGroup("희귀도 색상")]
+        [SerializeField] private Color epicColor = new Color(0.62f, 0.25f, 0.86f, 0.8f);
+
+        [BoxGroup("희귀도 색상")]
+        [SerializeField] private Color legendaryColor = new Color(0.95f, 0.55f, 0.12f, 0.85f);
 
         [BoxGroup("툴팁")]
         [Tooltip("아이템이 들어있는 슬롯에 마우스를 올렸을 때 표시할 툴팁 UI입니다.")]
@@ -154,6 +173,7 @@ namespace DeadZone.Actors.UI
             currentStackCount = Mathf.Clamp(stackCount, 1, GetMaxStack(itemData));
 
             SetItem(itemData.icon, ToInventoryRarity(itemData.rarity), currentStackCount);
+            SetEmptySlotIconVisible(false);
         }
 
         public void SetItem(Sprite icon, InventoryItemRarity rarity, int stackCount)
@@ -161,6 +181,7 @@ namespace DeadZone.Actors.UI
             SetRarityBackground(rarity);
             SetIcon(icon);
             SetStackCount(stackCount);
+            SetEmptySlotIconVisible(icon == null || stackCount <= 0);
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -241,7 +262,8 @@ namespace DeadZone.Actors.UI
             if (rarityBackground != null)
             {
                 rarityBackground.sprite = null;
-                rarityBackground.color = Color.white;
+                rarityBackground.color = Color.clear;
+                rarityBackground.enabled = false;
                 rarityBackground.gameObject.SetActive(false);
             }
 
@@ -257,6 +279,8 @@ namespace DeadZone.Actors.UI
                 stackCountText.text = string.Empty;
                 stackCountText.gameObject.SetActive(false);
             }
+
+            SetEmptySlotIconVisible(true);
         }
 
         public void SetLocked(bool locked)
@@ -383,11 +407,17 @@ namespace DeadZone.Actors.UI
 
         private void AutoBindReferences()
         {
+            if (rarityBackground == null)
+                rarityBackground = FindImageReference("rarity", "grade", "background", "bg");
+
             if (iconImage == null)
                 iconImage = FindImageReference("icon", "item");
 
             if (stackCountText == null)
                 stackCountText = GetComponentInChildren<TMP_Text>(true);
+
+            if (emptySlotIcon == null)
+                emptySlotIcon = FindEmptySlotIcon();
         }
 
         private Image FindImageReference(params string[] nameTokens)
@@ -411,6 +441,33 @@ namespace DeadZone.Actors.UI
             {
                 if (image != null && image.gameObject != gameObject)
                     return image;
+            }
+
+            return null;
+        }
+
+        private GameObject FindEmptySlotIcon()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+
+            foreach (Image image in images)
+            {
+                if (image == null || image == iconImage || image == rarityBackground)
+                    continue;
+
+                GameObject imageObject = image.gameObject;
+                if (imageObject == gameObject || imageObject == lockOverlay)
+                    continue;
+
+                if (lockOverlay != null && imageObject.transform.IsChildOf(lockOverlay.transform))
+                    continue;
+
+                string lowerName = imageObject.name.ToLowerInvariant();
+                if (lowerName.Contains("lock") || lowerName.Contains("background") || lowerName.Contains("rarity"))
+                    continue;
+
+                if (lowerName.StartsWith("icon_") && !lowerName.Contains("item"))
+                    return imageObject;
             }
 
             return null;
@@ -479,6 +536,14 @@ namespace DeadZone.Actors.UI
             iconImage.gameObject.SetActive(icon != null);
         }
 
+        private void SetEmptySlotIconVisible(bool visible)
+        {
+            if (emptySlotIcon == null || emptySlotIcon == gameObject)
+                return;
+
+            emptySlotIcon.SetActive(visible);
+        }
+
         private void SetStackCount(int stackCount)
         {
             if (stackCountText == null)
@@ -501,9 +566,10 @@ namespace DeadZone.Actors.UI
             Sprite backgroundSprite = GetRarityBackgroundSprite(rarity);
 
             rarityBackground.sprite = backgroundSprite;
-            rarityBackground.color = Color.white;
-            rarityBackground.enabled = backgroundSprite != null;
-            rarityBackground.gameObject.SetActive(backgroundSprite != null);
+            rarityBackground.color = GetRarityBackgroundColor(rarity);
+            rarityBackground.enabled = true;
+            rarityBackground.raycastTarget = false;
+            rarityBackground.gameObject.SetActive(true);
         }
 
         private Sprite GetRarityBackgroundSprite(InventoryItemRarity rarity)
@@ -516,6 +582,19 @@ namespace DeadZone.Actors.UI
                 InventoryItemRarity.Epic => epicBackground,
                 InventoryItemRarity.Legendary => legendaryBackground,
                 _ => commonBackground
+            };
+        }
+
+        private Color GetRarityBackgroundColor(InventoryItemRarity rarity)
+        {
+            return rarity switch
+            {
+                InventoryItemRarity.Common => commonColor,
+                InventoryItemRarity.Uncommon => uncommonColor,
+                InventoryItemRarity.Rare => rareColor,
+                InventoryItemRarity.Epic => epicColor,
+                InventoryItemRarity.Legendary => legendaryColor,
+                _ => commonColor
             };
         }
 
@@ -532,6 +611,9 @@ namespace DeadZone.Actors.UI
 
             if (iconImage != null)
                 iconImage.raycastTarget = false;
+
+            if (rarityBackground != null)
+                rarityBackground.raycastTarget = false;
 
             if (stackCountText != null)
                 stackCountText.raycastTarget = false;
