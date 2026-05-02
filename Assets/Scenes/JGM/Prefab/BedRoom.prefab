@@ -851,7 +851,7 @@ GameObject:
   - component: {fileID: 119757964268783116}
   - component: {fileID: 7705020447314507683}
   - component: {fileID: 1865281707586526212}
-  - component: {fileID: 7857714539043695530}
+  - component: {fileID: 6094836927977103942}
   - component: {fileID: 5263794072917651275}
   - component: {fileID: 233433782093380479}
   - component: {fileID: 1397583136002488613}
@@ -945,7 +945,7 @@ MonoBehaviour:
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
   logLevelChanged: 1
---- !u!114 &7857714539043695530
+--- !u!114 &6094836927977103942
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -954,13 +954,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 3401417150104233646}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a20bff00ff2bbd948a61032c5cd465bb, type: 3}
+  m_Script: {fileID: 11500000, guid: be73bad030365224bb7908c0aadf96fc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.BedUpgradeController
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
-  bedFacility: {fileID: 1865281707586526212}
-  bedFacilityData: {fileID: 11400000, guid: e972e27fb347ffc488b5fbd17588dcf5, type: 2}
-  staminaBonusController: {fileID: 5263794072917651275}
+  targetFacility: {fileID: 1865281707586526212}
+  facilityData: {fileID: 11400000, guid: e972e27fb347ffc488b5fbd17588dcf5, type: 2}
   useTestInventory: 1
   allowOfflineTestUpgrade: 1
   testInventory: {fileID: 1397583136002488613}

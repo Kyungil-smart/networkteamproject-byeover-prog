@@ -7,8 +7,8 @@ using DeadZone.Systems;
 namespace DeadZone.Systems.Housing
 {
     /// <summary>
-    /// 작업대에서 사용할 제작 레시피 목록과 레벨 제한을 관리합니다.
-    /// 실제 재료 검사와 제작 결과 지급은 WorkbenchCraftingController가 담당합니다.
+    /// 작업대 제작 레시피 목록과 레벨 제한을 관리합니다.
+    /// 실제 재료 검사와 결과 지급은 WorkbenchCraftingController가 담당합니다.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Workbench))]
@@ -23,6 +23,11 @@ namespace DeadZone.Systems.Housing
         [SerializeField]
         [Tooltip("이 작업대에서 사용할 수 있는 전체 제작 레시피 목록입니다.")]
         private List<RecipeSO> recipes = new();
+
+        [Header("로그")]
+        [SerializeField]
+        [Tooltip("레시피 데이터 문제를 Console에 출력합니다.")]
+        private bool logRecipeValidation = true;
 
         private readonly List<RecipeSO> cachedUnlockedRecipes = new();
 
@@ -107,13 +112,25 @@ namespace DeadZone.Systems.Housing
                 return false;
             }
 
-            if (recipe.result == null)
+            if (string.IsNullOrWhiteSpace(recipe.recipeID))
             {
-                failReason = "레시피 결과 아이템이 비어 있습니다.";
+                failReason = "recipeID가 비어 있는 레시피가 있습니다.";
                 return false;
             }
 
-            if (recipe.result.category == ItemCategory.Valuable)
+            if (recipe.result == null)
+            {
+                failReason = $"레시피 결과 아이템이 비어 있습니다. RecipeID: {recipe.recipeID}";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(recipe.result.itemID))
+            {
+                failReason = $"레시피 결과 아이템의 itemID가 비어 있습니다. RecipeID: {recipe.recipeID}";
+                return false;
+            }
+
+            if (IsValuableResult(recipe.result))
             {
                 failReason = "귀중품은 작업대에서 제작할 수 없습니다.";
                 return false;
@@ -187,15 +204,78 @@ namespace DeadZone.Systems.Housing
             {
                 case RarityTier.Common:
                     return 1;
+
                 case RarityTier.Uncommon:
                     return 2;
+
                 case RarityTier.Rare:
                     return 3;
+
                 case RarityTier.Epic:
                     return 4;
+
+                case RarityTier.Legendary:
+                    return 4;
+
                 default:
                     return 1;
             }
         }
+
+        private static bool IsValuableResult(ItemDataSO item)
+        {
+            if (item == null)
+                return false;
+
+            return item.category == ItemCategory.Valuable || item.isValuable;
+        }
+
+#if UNITY_EDITOR
+        [ContextMenu("디버그 레시피 검증")]
+        private void DebugValidateRecipes()
+        {
+            if (recipes == null || recipes.Count == 0)
+            {
+                Debug.LogWarning("[WorkbenchRecipeCatalog] 등록된 레시피가 없습니다.", this);
+                return;
+            }
+
+            HashSet<string> usedRecipeIds = new();
+
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                RecipeSO recipe = recipes[i];
+
+                if (recipe == null)
+                {
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] 비어 있는 레시피 슬롯이 있습니다. Index: {i}", this);
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(recipe.recipeID))
+                {
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] recipeID가 비어 있습니다. Index: {i}", this);
+                    continue;
+                }
+
+                if (!usedRecipeIds.Add(recipe.recipeID))
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] 중복 recipeID가 있습니다: {recipe.recipeID}", this);
+
+                if (recipe.result == null)
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] 결과 아이템이 비어 있습니다. RecipeID: {recipe.recipeID}", this);
+
+                if (CanUseRecipe(recipe, out string failReason))
+                {
+                    if (logRecipeValidation)
+                        Debug.Log($"[WorkbenchRecipeCatalog] 사용 가능 레시피: {recipe.recipeID}", this);
+                }
+                else
+                {
+                    if (logRecipeValidation)
+                        Debug.Log($"[WorkbenchRecipeCatalog] 현재 사용 불가 레시피: {recipe.recipeID} / 사유: {failReason}", this);
+                }
+            }
+        }
+#endif
     }
 }

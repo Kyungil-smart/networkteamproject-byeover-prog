@@ -60,7 +60,7 @@ GameObject:
   - component: {fileID: 2415893806792476549}
   - component: {fileID: 7026512893391676798}
   - component: {fileID: 4493161800847847200}
-  - component: {fileID: 615246254226651655}
+  - component: {fileID: 957480142103406482}
   - component: {fileID: 681311236479050772}
   - component: {fileID: 8198312432828582917}
   - component: {fileID: 3545674678178965027}
@@ -149,7 +149,7 @@ MonoBehaviour:
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
   logLevelChanged: 1
---- !u!114 &615246254226651655
+--- !u!114 &957480142103406482
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -158,13 +158,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7876965717257492438}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96155e15f0c296e4fa4e0919652adf12, type: 3}
+  m_Script: {fileID: 11500000, guid: be73bad030365224bb7908c0aadf96fc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.KitchenUpgradeController
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
-  kitchenFacility: {fileID: 4493161800847847200}
-  kitchenFacilityData: {fileID: 11400000, guid: 61c3433f50afa274f90ed52576bddff2, type: 2}
-  staminaBonusController: {fileID: 681311236479050772}
+  targetFacility: {fileID: 4493161800847847200}
+  facilityData: {fileID: 11400000, guid: 61c3433f50afa274f90ed52576bddff2, type: 2}
   useTestInventory: 1
   allowOfflineTestUpgrade: 1
   testInventory: {fileID: 3545674678178965027}

@@ -399,10 +399,9 @@ GameObject:
   - component: {fileID: 282399469866014205}
   - component: {fileID: 1177132468069299514}
   - component: {fileID: 421658865964765913}
-  - component: {fileID: 3997882662603147267}
   - component: {fileID: 4894502700569586040}
-  - component: {fileID: 5628834917599583512}
   - component: {fileID: 5169494588828250710}
+  - component: {fileID: 293751491093716710}
   m_Layer: 0
   m_Name: Health
   m_TagString: Untagged
@@ -476,26 +475,6 @@ MonoBehaviour:
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
   logLevelChanged: 1
---- !u!114 &3997882662603147267
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7842257146226231233}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0182d1478b1859340ab1bb658d823c00, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.GymUpgradeController
-  ShowTopMostFoldoutHeaderGroup: 1
-  gymFacility: {fileID: 421658865964765913}
-  gymFacilityData: {fileID: 11400000, guid: 0d4782a6ac6c72f42ab36827b8cbfc79, type: 2}
-  carryWeightBonusController: {fileID: 4894502700569586040}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
-  testInventory: {fileID: 5169494588828250710}
-  logUpgradeResult: 1
 --- !u!114 &4894502700569586040
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -514,23 +493,6 @@ MonoBehaviour:
   currentGymLevel: 1
   currentCarryWeightBonusKg: 0
   logBonusChanged: 1
---- !u!114 &5628834917599583512
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7842257146226231233}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d057ebe87cc5ea24482ee3af9e273824, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.GymCarryWeightBonusTestReceiver
-  baseCarryWeightKg: 60
-  currentGymLevel: 1
-  currentCarryWeightBonusKg: 0
-  currentMaxCarryWeightKg: 60
-  logBonusReceived: 1
 --- !u!114 &5169494588828250710
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -553,6 +515,25 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 920d06dc601dcaf47895d1989f2968d6, type: 2}
     amount: 99
   logInventoryChange: 1
+--- !u!114 &293751491093716710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7842257146226231233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be73bad030365224bb7908c0aadf96fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
+  ShowTopMostFoldoutHeaderGroup: 1
+  targetFacility: {fileID: 421658865964765913}
+  facilityData: {fileID: 11400000, guid: 0d4782a6ac6c72f42ab36827b8cbfc79, type: 2}
+  useTestInventory: 1
+  allowOfflineTestUpgrade: 1
+  testInventory: {fileID: 5169494588828250710}
+  logUpgradeResult: 1
 --- !u!1 &8062897291976564412
 GameObject:
   m_ObjectHideFlags: 0
