@@ -25,13 +25,14 @@ namespace DeadZone.Actors.UI
         [Header("Scroll")]
         [SerializeField] private bool autoConfigureScroll = true;
         [SerializeField] private bool createScrollStructureIfMissing = true;
+        [SerializeField] private bool hideRootImageWithoutSprite = true;
         [SerializeField] private float scrollSensitivity = 35f;
 
         [Header("Grid")]
         [SerializeField] private Vector2 cellSize = new Vector2(100f, 100f);
         [SerializeField] private Vector2 spacing = new Vector2(10f, 10f);
-        [SerializeField] private int fixedColumnCount = 2;
-        [SerializeField] private TextAnchor childAlignment = TextAnchor.UpperCenter;
+        [SerializeField] private int fixedColumnCount = 4;
+        [SerializeField] private TextAnchor childAlignment = TextAnchor.UpperLeft;
 
         [Header("Slots")]
         [SerializeField] private List<InventorySlotUI> bagSlots = new List<InventorySlotUI>();
@@ -106,8 +107,11 @@ namespace DeadZone.Actors.UI
             if (contentRoot != null)
                 LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
 
-            if (scrollRect != null)
-                scrollRect.verticalNormalizedPosition = 1f;
+            if (viewport != null)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(viewport);
+
+            Canvas.ForceUpdateCanvases();
+            ResetScrollToTop();
         }
 
         private void AutoBindReferences()
@@ -118,17 +122,35 @@ namespace DeadZone.Actors.UI
             if (scrollRect == null)
                 scrollRect = GetComponent<ScrollRect>();
 
+            if (scrollRect == null)
+                scrollRect = GetComponentInChildren<ScrollRect>(true);
+
+            if (scrollRect == null)
+                scrollRect = GetComponentInParent<ScrollRect>(true);
+
             if (viewport == null && scrollRect != null)
                 viewport = scrollRect.viewport;
+
+            if (viewport == null && scrollRect != null)
+                viewport = FindNamedRectTransform(scrollRect.transform, "Viewport");
 
             if (contentRoot == null && scrollRect != null)
                 contentRoot = scrollRect.content;
 
-            if (viewport == null)
-                viewport = FindDirectChildRect("Viewport");
+            if (contentRoot == null || contentRoot == transform)
+                contentRoot = FindContentRoot();
 
-            if (contentRoot == null && viewport != null)
-                contentRoot = FindDirectChildRect(viewport, "Content");
+            if (viewport == null && contentRoot != null && contentRoot.parent is RectTransform parentRect)
+                viewport = parentRect;
+
+            if (scrollRect == null && createScrollStructureIfMissing && viewport != null && viewport.parent is RectTransform scrollRoot)
+                scrollRect = scrollRoot.GetComponent<ScrollRect>() ?? scrollRoot.gameObject.AddComponent<ScrollRect>();
+
+            if (scrollRect != null && scrollRect.content == null && contentRoot != null)
+                scrollRect.content = contentRoot;
+
+            if (scrollRect != null && scrollRect.viewport == null && viewport != null)
+                scrollRect.viewport = viewport;
 
             if (tooltipUI == null)
                 tooltipUI = GetComponentInParent<ItemTooltipUI>(true);
@@ -145,6 +167,7 @@ namespace DeadZone.Actors.UI
             if (createScrollStructureIfMissing)
                 EnsureScrollStructure();
 
+            ConfigureViewportRect();
             ConfigureScrollRect();
             ConfigureGridLayout();
         }
@@ -210,6 +233,20 @@ namespace DeadZone.Actors.UI
             scrollRect.movementType = ScrollRect.MovementType.Clamped;
             scrollRect.scrollSensitivity = scrollSensitivity;
 
+            HideUnusedRootImage();
+        }
+
+        private void ConfigureViewportRect()
+        {
+            if (viewport == null)
+                return;
+
+            viewport.anchorMin = Vector2.zero;
+            viewport.anchorMax = Vector2.one;
+            viewport.pivot = new Vector2(0.5f, 0.5f);
+            viewport.anchoredPosition = Vector2.zero;
+            viewport.sizeDelta = Vector2.zero;
+
             if (viewport.GetComponent<RectMask2D>() == null && viewport.GetComponent<Mask>() == null)
                 viewport.gameObject.AddComponent<RectMask2D>();
 
@@ -219,6 +256,17 @@ namespace DeadZone.Actors.UI
 
             viewportImage.color = new Color(1f, 1f, 1f, 0f);
             viewportImage.raycastTarget = true;
+        }
+
+        private void HideUnusedRootImage()
+        {
+            if (!hideRootImageWithoutSprite || scrollRect == null)
+                return;
+
+            Image rootImage = scrollRect.GetComponent<Image>();
+
+            if (rootImage != null && rootImage.sprite == null)
+                rootImage.enabled = false;
         }
 
         private void ConfigureGridLayout()
@@ -244,9 +292,16 @@ namespace DeadZone.Actors.UI
             gridLayout.constraintCount = fixedColumnCount;
 
             contentRoot.anchorMin = new Vector2(0f, 1f);
-            contentRoot.anchorMax = new Vector2(1f, 1f);
-            contentRoot.pivot = new Vector2(0.5f, 1f);
+            contentRoot.anchorMax = new Vector2(0f, 1f);
+            contentRoot.pivot = new Vector2(0f, 1f);
             contentRoot.anchoredPosition = Vector2.zero;
+
+            ContentSizeFitter contentSizeFitter = contentRoot.GetComponent<ContentSizeFitter>();
+            if (contentSizeFitter == null)
+                contentSizeFitter = contentRoot.gameObject.AddComponent<ContentSizeFitter>();
+
+            contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
         }
 
         private void RebuildSlotCache()
@@ -274,9 +329,22 @@ namespace DeadZone.Actors.UI
 
             int slotCount = Mathf.Max(1, bagSlots.Count);
             int rows = Mathf.CeilToInt(slotCount / (float)Mathf.Max(1, fixedColumnCount));
+            float width = fixedColumnCount * cellSize.x + Mathf.Max(0, fixedColumnCount - 1) * spacing.x;
             float height = rows * cellSize.y + Mathf.Max(0, rows - 1) * spacing.y;
 
+            contentRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
             contentRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+            contentRoot.anchoredPosition = Vector2.zero;
+        }
+
+        private void ResetScrollToTop()
+        {
+            if (scrollRect == null || contentRoot == null)
+                return;
+
+            scrollRect.StopMovement();
+            scrollRect.velocity = Vector2.zero;
+            scrollRect.verticalNormalizedPosition = 1f;
             contentRoot.anchoredPosition = Vector2.zero;
         }
 
@@ -330,6 +398,48 @@ namespace DeadZone.Actors.UI
                 }
 
                 current = current.parent;
+            }
+
+            return null;
+        }
+
+        private RectTransform FindContentRoot()
+        {
+            if (scrollRect != null && scrollRect.content != null && scrollRect.content != transform)
+                return scrollRect.content;
+
+            if (viewport != null)
+            {
+                RectTransform viewportContent = FindNamedRectTransform(viewport, "Content");
+                if (viewportContent != null && viewportContent != transform)
+                    return viewportContent;
+            }
+
+            RectTransform namedContent = FindNamedRectTransform(transform, "Content");
+            if (namedContent != null && namedContent != transform)
+                return namedContent;
+
+            GridLayoutGroup[] gridLayoutGroups = GetComponentsInChildren<GridLayoutGroup>(true);
+            for (int i = 0; i < gridLayoutGroups.Length; i++)
+            {
+                if (gridLayoutGroups[i] != null && gridLayoutGroups[i].transform != transform)
+                    return gridLayoutGroups[i].transform as RectTransform;
+            }
+
+            return null;
+        }
+
+        private static RectTransform FindNamedRectTransform(Transform root, string objectName)
+        {
+            if (root == null)
+                return null;
+
+            RectTransform[] rectTransforms = root.GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < rectTransforms.Length; i++)
+            {
+                RectTransform rectTransform = rectTransforms[i];
+                if (rectTransform != null && rectTransform.name == objectName)
+                    return rectTransform;
             }
 
             return null;

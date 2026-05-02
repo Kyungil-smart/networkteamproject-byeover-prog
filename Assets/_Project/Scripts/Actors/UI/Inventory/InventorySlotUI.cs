@@ -56,6 +56,10 @@ namespace DeadZone.Actors.UI
         [SerializeField] private TMP_Text stackCountText;
 
         [BoxGroup("UI 연결")]
+        [Tooltip("장비 슬롯이 비어 있을 때만 표시되는 기본 슬롯 아이콘입니다.")]
+        [SerializeField] private GameObject emptySlotIcon;
+
+        [BoxGroup("UI 연결")]
         [Tooltip("슬롯이 잠겨 있을 때 슬롯 콘텐츠 위에 표시되는 오버레이입니다.")]
         [SerializeField] private GameObject lockOverlay;
 
@@ -169,6 +173,7 @@ namespace DeadZone.Actors.UI
             currentStackCount = Mathf.Clamp(stackCount, 1, GetMaxStack(itemData));
 
             SetItem(itemData.icon, ToInventoryRarity(itemData.rarity), currentStackCount);
+            SetEmptySlotIconVisible(false);
         }
 
         public void SetItem(Sprite icon, InventoryItemRarity rarity, int stackCount)
@@ -176,6 +181,7 @@ namespace DeadZone.Actors.UI
             SetRarityBackground(rarity);
             SetIcon(icon);
             SetStackCount(stackCount);
+            SetEmptySlotIconVisible(icon == null || stackCount <= 0);
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -273,6 +279,8 @@ namespace DeadZone.Actors.UI
                 stackCountText.text = string.Empty;
                 stackCountText.gameObject.SetActive(false);
             }
+
+            SetEmptySlotIconVisible(true);
         }
 
         public void SetLocked(bool locked)
@@ -407,6 +415,9 @@ namespace DeadZone.Actors.UI
 
             if (stackCountText == null)
                 stackCountText = GetComponentInChildren<TMP_Text>(true);
+
+            if (emptySlotIcon == null)
+                emptySlotIcon = FindEmptySlotIcon();
         }
 
         private Image FindImageReference(params string[] nameTokens)
@@ -430,6 +441,33 @@ namespace DeadZone.Actors.UI
             {
                 if (image != null && image.gameObject != gameObject)
                     return image;
+            }
+
+            return null;
+        }
+
+        private GameObject FindEmptySlotIcon()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+
+            foreach (Image image in images)
+            {
+                if (image == null || image == iconImage || image == rarityBackground)
+                    continue;
+
+                GameObject imageObject = image.gameObject;
+                if (imageObject == gameObject || imageObject == lockOverlay)
+                    continue;
+
+                if (lockOverlay != null && imageObject.transform.IsChildOf(lockOverlay.transform))
+                    continue;
+
+                string lowerName = imageObject.name.ToLowerInvariant();
+                if (lowerName.Contains("lock") || lowerName.Contains("background") || lowerName.Contains("rarity"))
+                    continue;
+
+                if (lowerName.StartsWith("icon_") && !lowerName.Contains("item"))
+                    return imageObject;
             }
 
             return null;
@@ -496,6 +534,14 @@ namespace DeadZone.Actors.UI
             iconImage.sprite = icon;
             iconImage.enabled = icon != null;
             iconImage.gameObject.SetActive(icon != null);
+        }
+
+        private void SetEmptySlotIconVisible(bool visible)
+        {
+            if (emptySlotIcon == null || emptySlotIcon == gameObject)
+                return;
+
+            emptySlotIcon.SetActive(visible);
         }
 
         private void SetStackCount(int stackCount)
