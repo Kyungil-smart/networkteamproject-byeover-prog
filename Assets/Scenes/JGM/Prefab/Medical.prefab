@@ -60,7 +60,7 @@ GameObject:
   - component: {fileID: 4253389064780370229}
   - component: {fileID: 4480464675854138241}
   - component: {fileID: 3086114983628980632}
-  - component: {fileID: 5331783468912830052}
+  - component: {fileID: 6581813395650083706}
   - component: {fileID: 7579209493807396316}
   - component: {fileID: 8001554402563951254}
   - component: {fileID: 6408456575538618649}
@@ -151,7 +151,7 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
---- !u!114 &5331783468912830052
+--- !u!114 &6581813395650083706
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -160,16 +160,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 4316018118837729639}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ace6215b7ee9301499e4166dad8b18c1, type: 3}
+  m_Script: {fileID: 11500000, guid: be73bad030365224bb7908c0aadf96fc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.MedicalUpgradeController
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
-  medicalFacility: {fileID: 3086114983628980632}
-  medicalFacilityData: {fileID: 11400000, guid: 9d21d640925c46a4e99b689e856ae15e, type: 2}
+  targetFacility: {fileID: 3086114983628980632}
+  facilityData: {fileID: 11400000, guid: 9d21d640925c46a4e99b689e856ae15e, type: 2}
   useTestInventory: 1
   allowOfflineTestUpgrade: 1
   testInventory: {fileID: 6408456575538618649}
-  healthBonusController: {fileID: 7579209493807396316}
   logUpgradeResult: 1
 --- !u!114 &7579209493807396316
 MonoBehaviour:
