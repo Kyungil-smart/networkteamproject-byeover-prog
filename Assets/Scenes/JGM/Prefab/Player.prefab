@@ -3041,8 +3041,9 @@ GameObject:
   - component: {fileID: 8210396605123983334}
   - component: {fileID: 2224597425123872731}
   - component: {fileID: 2614679287589250141}
-  - component: {fileID: 3887608982642680273}
-  - component: {fileID: 6077075102310808928}
+  - component: {fileID: 6935085028629981516}
+  - component: {fileID: 4260008715252334417}
+  - component: {fileID: 7076519258675018630}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -3130,7 +3131,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2955963632
+  GlobalObjectIdHash: 3365319497
   InScenePlacedSourceGlobalObjectIdHash: 146189795
   DeferredDespawnTick: 0
   Ownership: 1
@@ -3219,6 +3220,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHealthSystem
   ShowTopMostFoldoutHeaderGroup: 1
   maxHP: 100
+  housingMaxHpBonus: 0
+  fillHpWhenMaxHpIncreased: 1
   knockedMaxHP: 100
   bleedoutSeconds: 60
   bleedoutDamagePerSecond: 1.5
@@ -3258,6 +3261,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerStaminaSystem
   ShowTopMostFoldoutHeaderGroup: 1
   maxStamina: 100
+  housingMaxStaminaBonus: 0
+  fillStaminaWhenMaxStaminaIncreased: 1
   regenPerSecond: 8
   regenDelaySeconds: 1.5
 --- !u!114 &8210396605123983334
@@ -3267,7 +3272,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8718230562560161913}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7ea9f4b67d0dc64591ab82a3dc85d0e, type: 3}
   m_Name: 
@@ -3329,7 +3334,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerStateMachine
   ShowTopMostFoldoutHeaderGroup: 1
---- !u!114 &3887608982642680273
+--- !u!114 &6935085028629981516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8718230562560161913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af725fbcc18e649428b48be927095973, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHousingBonusReceiver
+  ShowTopMostFoldoutHeaderGroup: 1
+  healthSystem: {fileID: 5034137757600062690}
+  staminaSystem: {fileID: 9185953409126241225}
+  carryWeightSystem: {fileID: 7076519258675018630}
+  fillHpWhenMaxHpIncreased: 1
+  fillStaminaWhenMaxStaminaIncreased: 1
+  logBonusChanged: 1
+--- !u!114 &4260008715252334417
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3346,7 +3370,7 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
---- !u!114 &6077075102310808928
+--- !u!114 &7076519258675018630
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3355,536 +3379,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 8718230562560161913}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab701e91d68700e468d9b8f2d14b5cbf, type: 3}
+  m_Script: {fileID: 11500000, guid: 7b49ed507c4f5a544bb39a48d357ca83, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EquipmentSlots
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerCarryWeightSystem
   ShowTopMostFoldoutHeaderGroup: 1
-  Primary1State:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-  Primary2State:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-  SecondaryState:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-  HeadSlotId:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0016:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0032:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0048: 0
-        byte0049: 0
-        byte0050: 0
-        byte0051: 0
-        byte0052: 0
-        byte0053: 0
-        byte0054: 0
-        byte0055: 0
-        byte0056: 0
-        byte0057: 0
-        byte0058: 0
-        byte0059: 0
-        byte0060: 0
-        byte0061: 0
-  TorsoSlotId:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0016:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0032:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0048: 0
-        byte0049: 0
-        byte0050: 0
-        byte0051: 0
-        byte0052: 0
-        byte0053: 0
-        byte0054: 0
-        byte0055: 0
-        byte0056: 0
-        byte0057: 0
-        byte0058: 0
-        byte0059: 0
-        byte0060: 0
-        byte0061: 0
-  Primary1Id:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0016:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0032:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0048: 0
-        byte0049: 0
-        byte0050: 0
-        byte0051: 0
-        byte0052: 0
-        byte0053: 0
-        byte0054: 0
-        byte0055: 0
-        byte0056: 0
-        byte0057: 0
-        byte0058: 0
-        byte0059: 0
-        byte0060: 0
-        byte0061: 0
-  Primary2Id:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0016:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0032:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0048: 0
-        byte0049: 0
-        byte0050: 0
-        byte0051: 0
-        byte0052: 0
-        byte0053: 0
-        byte0054: 0
-        byte0055: 0
-        byte0056: 0
-        byte0057: 0
-        byte0058: 0
-        byte0059: 0
-        byte0060: 0
-        byte0061: 0
-  SecondaryId:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0016:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0032:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0048: 0
-        byte0049: 0
-        byte0050: 0
-        byte0051: 0
-        byte0052: 0
-        byte0053: 0
-        byte0054: 0
-        byte0055: 0
-        byte0056: 0
-        byte0057: 0
-        byte0058: 0
-        byte0059: 0
-        byte0060: 0
-        byte0061: 0
-  MeleeId:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0016:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0032:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0048: 0
-        byte0049: 0
-        byte0050: 0
-        byte0051: 0
-        byte0052: 0
-        byte0053: 0
-        byte0054: 0
-        byte0055: 0
-        byte0056: 0
-        byte0057: 0
-        byte0058: 0
-        byte0059: 0
-        byte0060: 0
-        byte0061: 0
-  CurrentEquipped:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0016:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        offset0032:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0048: 0
-        byte0049: 0
-        byte0050: 0
-        byte0051: 0
-        byte0052: 0
-        byte0053: 0
-        byte0054: 0
-        byte0055: 0
-        byte0056: 0
-        byte0057: 0
-        byte0058: 0
-        byte0059: 0
-        byte0060: 0
-        byte0061: 0
-  HelmetDurability:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 0
-  ArmorDurability:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 0
+  gridInventory: {fileID: 4260008715252334417}
+  baseMaxCarryWeightKg: 60
+  housingCarryWeightBonusKg: 0
+  currentWeightKg: 0
+  currentMaxCarryWeightKg: 60
+  isOverWeight: 0
+  logWeightChanged: 1
 --- !u!1 &8891958178260265517
 GameObject:
   m_ObjectHideFlags: 0

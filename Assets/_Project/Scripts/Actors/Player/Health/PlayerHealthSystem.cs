@@ -1,5 +1,4 @@
-﻿using System;
-using Unity.Netcode;
+﻿using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -14,37 +13,37 @@ namespace DeadZone.Actors
     /// <remarks>
     /// 서버 권위. 상태 전환은 서버에서만 일어난다.
     /// 모든 클라이언트는 NetworkVariable과 EventBus를 통해 상태를 수신한다.
-    /// IArmored는 EquipmentSlots가 구현 — DamageSystem은 장비를 별도로 질의하여
-    /// 관심사를 분리한다.
+    /// 하우징 보너스는 기본 maxHP를 직접 덮어쓰지 않고 별도 보너스로 합산한다.
     /// </remarks>
     public class PlayerHealthSystem : NetworkBehaviour, IDamageable, IRevivable, IRecoverable
     {
         [Header("====생존 상태 설정====")]
-        [Tooltip("Alive 상태에서 사용하는 최대체력" +
-                 "\n서버가 네트워크 스폰 시 CurrentHP를 이 값으로 초기화")]
+        [Tooltip("Alive 상태에서 사용하는 기본 최대 체력입니다.\n하우징 보너스는 이 값을 직접 바꾸지 않고 별도 보너스로 더합니다.")]
         [SerializeField, Min(1f)] private float maxHP = 100f;
 
+        [Header("====하우징 보너스====")]
+        [Tooltip("의료 시설 등 하우징 효과로 증가한 최대 체력 보너스입니다. 런타임에서 PlayerHousingBonusReceiver가 갱신합니다.")]
+        [SerializeField, Min(0f)] private float housingMaxHpBonus;
+
+        [Tooltip("최대 체력이 증가할 때 현재 체력도 증가분만큼 같이 회복할지 여부입니다.")]
+        [SerializeField] private bool fillHpWhenMaxHpIncreased = true;
+
         [Header("====기절 상태 설정(PUBG-style)====")]
-        [Tooltip("HP가 0 이하가 되어 Knocked 상태로 전환될 때 KnockedHP에 설정되는 최대 기절 체력" +
-                 "\n이 값이 0이 되면 Dead 상태로 전환")]
+        [Tooltip("HP가 0 이하가 되어 Knocked 상태로 전환될 때 KnockedHP에 설정되는 최대 기절 체력\n이 값이 0이 되면 Dead 상태로 전환")]
         [SerializeField, Min(1f)] private float knockedMaxHP = 100f;
-        
-        [Tooltip("Knocked 상태에서 Dead 상태로 전환되기까지 허용되는 최대 시간" +
-                 "\n이 시간이 0이 되면 Dead 상태로 전환")]
+
+        [Tooltip("Knocked 상태에서 Dead 상태로 전환되기까지 허용되는 최대 시간\n이 시간이 0이 되면 Dead 상태로 전환")]
         [SerializeField] private float bleedoutSeconds = 60f;
-        
-        [Tooltip("Knocked 상태에서 초당 감소하는 KnockedHP 양" +
-                 "\n부활 중이 아닐 때만 적용되며, KnockedHP가 0이 되면 Dead 상태로 전환")]
+
+        [Tooltip("Knocked 상태에서 초당 감소하는 KnockedHP 양\n부활 중이 아닐 때만 적용되며, KnockedHP가 0이 되면 Dead 상태로 전환")]
         [SerializeField] private float bleedoutDamagePerSecond = 1.5f;
-        
+
         [Header("====부활 설정====")]
-        [Tooltip("부활 완료 시 CurrentHP에 설정되는 체력" +
-                 "\nKnocked 상태에서 Alive 상태로 복귀할 때의 시작 체력")]
+        [Tooltip("부활 완료 시 CurrentHP에 설정되는 체력\nKnocked 상태에서 Alive 상태로 복귀할 때의 시작 체력")]
         [SerializeField] private float reviveHpAmount = 30f;
 
         [Header("====사망 처리====")]
-        [Tooltip("Dead 상태로 전환될 때 서버에서 생성할 시체 프리팹" +
-                 "\n인벤토리 이전을 위해 NetworkObject, PlayerCorpse, CorpseInventory 구성이 필요")]
+        [Tooltip("Dead 상태로 전환될 때 서버에서 생성할 시체 프리팹\n인벤토리 이전을 위해 NetworkObject, PlayerCorpse, CorpseInventory 구성이 필요")]
         [SerializeField] private GameObject corpsePrefab;
 
         public NetworkVariable<float> CurrentHP = new(100f);
@@ -53,8 +52,11 @@ namespace DeadZone.Actors
         public NetworkVariable<PlayerState> State = new(PlayerState.Alive);
 
         private RollSystem rollSystem;
-        
-        public float MaxHP => maxHP;
+
+        public float BaseMaxHP => maxHP;
+        public float HousingMaxHpBonus => housingMaxHpBonus;
+        public float MaxHP => Mathf.Max(1f, maxHP + housingMaxHpBonus);
+
         public bool IsAlive => State.Value == PlayerState.Alive;
         public bool IsKnocked => State.Value == PlayerState.Knocked;
         public bool IsDead => State.Value == PlayerState.Dead;
@@ -69,11 +71,23 @@ namespace DeadZone.Actors
             rollSystem = GetComponent<RollSystem>();
         }
 
+        private void OnValidate()
+        {
+            if (maxHP < 1f)
+                maxHP = 1f;
+
+            if (housingMaxHpBonus < 0f)
+                housingMaxHpBonus = 0f;
+
+            if (knockedMaxHP < 1f)
+                knockedMaxHP = 1f;
+        }
+
         public override void OnNetworkSpawn()
         {
             if (IsServer)
             {
-                CurrentHP.Value = maxHP;
+                CurrentHP.Value = MaxHP;
                 KnockedHP.Value = 0f;
                 BleedoutRemaining.Value = 0f;
                 State.Value = PlayerState.Alive;
@@ -113,59 +127,139 @@ namespace DeadZone.Actors
 
         public void ApplyDamage(int damage, ulong attackerClientId, HitInfo hit)
         {
-            if (IsDead) return;
-            
+            if (IsDead)
+                return;
+
             // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
             // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
             // if (IsSpawned && !IsServer) return;
 
-            if (ShouldIgnoreDamage()) return;
-            
+            if (ShouldIgnoreDamage())
+                return;
+
             if (IsAlive)
             {
                 CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
-                if (CurrentHP.Value <= 0f) TransitionToKnocked(attackerClientId);
+
+                if (CurrentHP.Value <= 0f)
+                    TransitionToKnocked(attackerClientId);
             }
             else if (IsKnocked)
             {
                 KnockedHP.Value = Mathf.Max(0f, KnockedHP.Value - damage);
-                if (KnockedHP.Value <= 0f) TransitionToDead(attackerClientId);
+
+                if (KnockedHP.Value <= 0f)
+                    TransitionToDead(attackerClientId);
             }
         }
 
         public void ApplyDamage(int damage, ulong attackerClientId, Vector3 hit)
         {
-            if (!IsServer || IsDead) return;
+            if (!IsServer || IsDead)
+                return;
 
-            if (ShouldIgnoreDamage()) return;
+            if (ShouldIgnoreDamage())
+                return;
 
             if (IsAlive)
             {
                 CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
-                if (CurrentHP.Value <= 0f) TransitionToKnocked(attackerClientId);
+
+                if (CurrentHP.Value <= 0f)
+                    TransitionToKnocked(attackerClientId);
             }
             else if (IsKnocked)
             {
                 KnockedHP.Value = Mathf.Max(0f, KnockedHP.Value - damage);
-                if (KnockedHP.Value <= 0f) TransitionToDead(attackerClientId);
+
+                if (KnockedHP.Value <= 0f)
+                    TransitionToDead(attackerClientId);
             }
         }
 
         private bool ShouldIgnoreDamage()
         {
-            if (!IsAlive) return false;
+            if (!IsAlive)
+                return false;
 
             return rollSystem != null && rollSystem.IsDamageImmune;
         }
+
         public void Heal(float amount)
         {
-            if (!IsAlive) return;
-            
+            if (!IsAlive)
+                return;
+
             // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
             // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
             // if (IsSpawned && !IsServer) return;
-            
-            CurrentHP.Value = Mathf.Min(maxHP, CurrentHP.Value + amount);
+
+            CurrentHP.Value = Mathf.Min(MaxHP, CurrentHP.Value + amount);
+        }
+
+        /// <summary>
+        /// 하우징 시설에서 계산된 최대 체력 보너스를 적용합니다.
+        /// Medical 시설 보너스는 PlayerHousingBonusReceiver를 통해 이 메서드로 들어옵니다.
+        /// </summary>
+        public void ApplyHousingMaxHpBonus(float bonus)
+        {
+            ApplyHousingMaxHpBonus(bonus, fillHpWhenMaxHpIncreased);
+        }
+
+        /// <summary>
+        /// 하우징 최대 체력 보너스를 적용합니다.
+        /// 서버 스폰 상태에서는 서버에서만 값이 바뀌어야 합니다.
+        /// </summary>
+        public void ApplyHousingMaxHpBonus(float bonus, bool fillIncreasedAmount)
+        {
+            if (IsSpawned && !IsServer)
+                return;
+
+            float nextBonus = Mathf.Max(0f, bonus);
+
+            if (Mathf.Approximately(housingMaxHpBonus, nextBonus))
+                return;
+
+            float previousMaxHp = MaxHP;
+            float previousCurrentHp = CurrentHP.Value;
+
+            housingMaxHpBonus = nextBonus;
+
+            if (IsAlive)
+            {
+                float increasedAmount = Mathf.Max(0f, MaxHP - previousMaxHp);
+
+                if (fillIncreasedAmount && increasedAmount > 0f)
+                {
+                    CurrentHP.Value = Mathf.Min(MaxHP, CurrentHP.Value + increasedAmount);
+                }
+                else if (CurrentHP.Value > MaxHP)
+                {
+                    CurrentHP.Value = MaxHP;
+                }
+            }
+            else if (CurrentHP.Value > MaxHP)
+            {
+                CurrentHP.Value = MaxHP;
+            }
+
+            bool hpValueChanged = !Mathf.Approximately(previousCurrentHp, CurrentHP.Value);
+
+            if (!IsSpawned || !hpValueChanged)
+                BroadcastHpChanged(previousCurrentHp, CurrentHP.Value);
+
+            Debug.Log(
+                $"[PlayerHealthSystem] 하우징 최대 체력 보너스 적용\n" +
+                $"기본 최대 체력: {maxHP:0.##}\n" +
+                $"보너스: +{housingMaxHpBonus:0.##}\n" +
+                $"최종 최대 체력: {MaxHP:0.##}",
+                this
+            );
+        }
+
+        public void ResetHousingMaxHpBonus()
+        {
+            ApplyHousingMaxHpBonus(0f, false);
         }
 
         private void TransitionToKnocked(ulong attackerClientId)
@@ -173,7 +267,7 @@ namespace DeadZone.Actors
             // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
             // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
             // if (IsSpawned && !IsServer) return;
-            
+
             KnockedHP.Value = knockedMaxHP;
             BleedoutRemaining.Value = bleedoutSeconds;
             State.Value = PlayerState.Knocked;
@@ -192,7 +286,7 @@ namespace DeadZone.Actors
             // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
             // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
             // if (IsSpawned && !IsServer) return;
-            
+
             KnockedHP.Value = 0f;
             BleedoutRemaining.Value = 0f;
             State.Value = PlayerState.Dead;
@@ -208,53 +302,69 @@ namespace DeadZone.Actors
 
         private void SpawnCorpse()
         {
-            if (!IsServer || corpsePrefab == null) return;
+            if (!IsServer || corpsePrefab == null)
+                return;
 
             var corpseGO = Instantiate(corpsePrefab, GetCorpsePosition(), GetCorpseRotation());
             var corpseNetObj = corpseGO.GetComponent<NetworkObject>();
+
             if (corpseNetObj == null)
             {
                 Debug.LogError("[PlayerHealthSystem] corpsePrefab missing NetworkObject");
                 Destroy(corpseGO);
                 return;
             }
-            corpseNetObj.Spawn(destroyWithScene: true);
 
+            corpseNetObj.Spawn(destroyWithScene: true);
             TransferInventoryToCorpse(corpseGO);
         }
 
         public void OnReviveBegin(ulong reviverClientId)
         {
-            if (!IsServer || !CanBeRevived) return;
+            if (!IsServer || !CanBeRevived)
+                return;
+
             isBeingRevived = true;
             this.reviverClientId = reviverClientId;
         }
 
         public void OnReviveCancel()
         {
-            if (!IsServer) return;
+            if (!IsServer)
+                return;
+
             isBeingRevived = false;
             reviverClientId = 0;
         }
 
         public void OnReviveComplete(ulong reviverClientId)
         {
-            if (!IsServer || !CanBeRevived) return;
+            if (!IsServer || !CanBeRevived)
+                return;
+
             isBeingRevived = false;
             this.reviverClientId = 0;
 
-            CurrentHP.Value = reviveHpAmount;
+            CurrentHP.Value = Mathf.Min(MaxHP, reviveHpAmount);
             KnockedHP.Value = 0f;
             BleedoutRemaining.Value = 0f;
             State.Value = PlayerState.Alive;
         }
 
-        public Vector3 GetCorpsePosition() => transform.position;
-        public Quaternion GetCorpseRotation() => transform.rotation;
+        public Vector3 GetCorpsePosition()
+        {
+            return transform.position;
+        }
+
+        public Quaternion GetCorpseRotation()
+        {
+            return transform.rotation;
+        }
 
         public void TransferInventoryToCorpse(GameObject corpse)
         {
-            if (!IsServer || corpse == null) return;
+            if (!IsServer || corpse == null)
+                return;
 
             var corpseInv = corpse.GetComponent<DeadZone.Actors.CorpseInventory>();
             var corpseScript = corpse.GetComponent<DeadZone.Actors.PlayerCorpse>();
@@ -265,6 +375,7 @@ namespace DeadZone.Actors
             {
                 corpseInv.PopulateFromPlayer(sourceInv, sourceEquip);
             }
+
             if (corpseScript != null)
             {
                 corpseScript.InitializeServer(OwnerClientId, $"Player {OwnerClientId}");
@@ -277,6 +388,7 @@ namespace DeadZone.Actors
                     sourceInv.ServerGrid.RemoveAt(sourceInv.ServerGrid.Count - 1);
                 }
             }
+
             if (sourceEquip != null)
             {
                 sourceEquip.HeadSlotId.Value = "";
@@ -320,5 +432,19 @@ namespace DeadZone.Actors
                 newState = newState,
             });
         }
+
+#if UNITY_EDITOR
+        [ContextMenu("테스트 하우징 체력 보너스 +15 적용")]
+        private void DebugApplyHousingHpBonus()
+        {
+            ApplyHousingMaxHpBonus(15f, true);
+        }
+
+        [ContextMenu("테스트 하우징 체력 보너스 초기화")]
+        private void DebugResetHousingHpBonus()
+        {
+            ResetHousingMaxHpBonus();
+        }
+#endif
     }
 }
