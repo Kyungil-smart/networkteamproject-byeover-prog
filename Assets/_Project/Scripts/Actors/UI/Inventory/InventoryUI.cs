@@ -82,6 +82,7 @@ namespace DeadZone.Actors.UI
             }
 
             inventoryRoot.SetActive(true);
+            CursorStateController.PushUiOwner(this);
             ResolveTooltipUI();
             EnsureDropSlots();
             AssignTooltipToSlots();
@@ -97,6 +98,7 @@ namespace DeadZone.Actors.UI
                 itemTooltipUI.Hide();
 
             inventoryRoot.SetActive(false);
+            CursorStateController.PopUiOwner(this);
         }
 
         public void Toggle()

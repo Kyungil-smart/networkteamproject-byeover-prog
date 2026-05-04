@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 using DeadZone.Core;
+using DeadZone.Actors.UI;
 using DeadZone.InputActions;
 
 namespace DeadZone.Actors
@@ -370,6 +371,8 @@ namespace DeadZone.Actors
         public void OnPause(InputAction.CallbackContext context)
         {
             if (!CanProcessInput || !context.performed) return;
+
+            CursorStateController.ToggleUiOwner(this);
         }
     }
 }
