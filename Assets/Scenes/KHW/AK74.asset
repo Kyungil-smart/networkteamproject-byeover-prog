@@ -14,20 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: AK74_01
   displayName: 
-  description: 
+  description: asd
   icon: {fileID: 0}
   category: 0
-  rarity: 0
+  rarity: 3
+  isValuable: 0
   gridSize: {x: 1, y: 1}
-  maxStackSize: 1
-  weightKg: 0.1
-  baseSellPrice: 0
+  maxStackSize: 3
+  weightKg: 15
+  baseSellPrice: 12
   worldPrefab: {fileID: 0}
   weaponCategory: 0
   damage: 30
   fireRate: 10
   magSize: 30
-  engageRange: {x: 0, y: 100}
+  engageRange: {x: 23, y: 34}
   ammoType: 0
   availableModes: 
   muzzleVelocity: 900

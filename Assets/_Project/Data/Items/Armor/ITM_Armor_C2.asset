@@ -19,7 +19,7 @@ MonoBehaviour:
   category: 2
   rarity: 0
   isValuable: 0
-  gridSize: {x: 2, y: 3}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 2.5
   baseSellPrice: 2500

@@ -12,18 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f010173fe70edd41a5315be8988a8e6, type: 3}
   m_Name: "\uBC29\uD0C4\uC870\uB07C"
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ArmorDataSO
-  itemID: 
-  displayName: 
-  description: 
+  itemID: erf
+  displayName: fsd
+  description: gfsd
   icon: {fileID: 0}
-  category: 0
-  rarity: 0
+  category: 2
+  rarity: 3
+  isValuable: 0
   gridSize: {x: 1, y: 1}
-  maxStackSize: 1
-  weightKg: 0.1
-  baseSellPrice: 0
+  maxStackSize: 2
+  weightKg: 20
+  baseSellPrice: 25
   worldPrefab: {fileID: 0}
-  armorClass: 1
+  armorClass: 3
   maxDurability: 50
   moveSpeedPenalty: 0
   blockChance: 0.1
