@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a9487b101f97d74299616679f4b16c7, type: 3}
+  m_Name: Ammo_Handgun_AP
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.AmmoDataSO
+  itemID: Ammo_Handgun_AP
+  displayName: "\uAD8C\uCD1D AP \uD0C4\uC57D"
+  description: 
+  icon: {fileID: 0}
+  category: 1
+  rarity: 2
+  isValuable: 0
+  gridSize: {x: 1, y: 1}
+  maxStackSize: 60
+  weightKg: 0.1
+  baseSellPrice: 1200
+  worldPrefab: {fileID: 0}
+  caliber: 2
+  grade: 2
+  penetration: 4
+  damageMultiplier: 0.8
+  priceMultiplier: 4
+  velocityMultiplier: 1.1
+  dragCoefficient: 0.002
