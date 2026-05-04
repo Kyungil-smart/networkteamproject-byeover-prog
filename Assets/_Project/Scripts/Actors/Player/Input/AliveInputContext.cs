@@ -41,7 +41,23 @@ namespace DeadZone.Actors
             this.mousePos = mousePos;
         }
 
-        public void OnFire() => shooting?.TryFire(mousePos);
+        /// <summary>
+        /// 사격 입력 상태를 사격 시스템으로 전달한다.
+        /// 클릭이 시작된 프레임에는 단발 사격을 먼저 시도하고, 이후 버튼이 유지되는 동안에는 Full 지원 무기만 연사 사격을 시도한다.
+        /// </summary>
+        public void OnFireInput(bool pressedThisFrame, bool held, Vector2 mousePos)
+        {
+            if (pressedThisFrame)
+            {
+                shooting?.TryFire(mousePos);
+                return;
+            }
+
+            if (held)
+            {
+                shooting?.TryFullAutoFire(mousePos);
+            }
+        }
         public void OnAim(bool down) => ads?.SetADS(down);
         public void OnReload() => reload?.TryReload();
         public void OnInteract() => interaction?.TryInteract();
