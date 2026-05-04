@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d08d12c5cb63506429f308ff7ff1d220, type: 3}
+  m_Name: Weapon_SK74
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
+  itemID: Weapon_SK74
+  displayName: SK-74
+  description: 
+  icon: {fileID: 0}
+  category: 0
+  rarity: 2
+  isValuable: 0
+  gridSize: {x: 1, y: 4}
+  maxStackSize: 1
+  weightKg: 0.1
+  baseSellPrice: 12000
+  worldPrefab: {fileID: 0}
+  weaponCategory: 0
+  damage: 38
+  fireRate: 10
+  magSize: 30
+  engageRange: {x: 30, y: 180}
+  ammoType: 0
+  availableModes: 0100
+  muzzleVelocity: 900
+  projectilePrefab: {fileID: 0}
+  muzzleFlashOffset: 0.2
+  adsTransitionTime: 0.2
+  spreadAngle: {x: 0.6, y: 4}
+  spreadRecovery: 9
+  maxDurability: 100
