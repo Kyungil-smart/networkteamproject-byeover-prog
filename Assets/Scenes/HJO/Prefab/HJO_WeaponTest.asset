@@ -17,8 +17,8 @@ MonoBehaviour:
   description: 
   icon: {fileID: 21300000, guid: d3a4fa2df9145154dbee5698b72d7209, type: 3}
   category: 0
-  rarity: 2
-  isValuable: 0
+  rarity: 3
+  isValuable: 1
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.1
