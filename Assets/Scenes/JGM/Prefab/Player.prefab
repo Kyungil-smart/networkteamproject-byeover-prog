@@ -3044,6 +3044,7 @@ GameObject:
   - component: {fileID: 6935085028629981516}
   - component: {fileID: 4260008715252334417}
   - component: {fileID: 7076519258675018630}
+  - component: {fileID: 3963644342252435484}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -3272,7 +3273,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8718230562560161913}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7ea9f4b67d0dc64591ab82a3dc85d0e, type: 3}
   m_Name: 
@@ -3390,6 +3391,22 @@ MonoBehaviour:
   currentMaxCarryWeightKg: 60
   isOverWeight: 0
   logWeightChanged: 1
+--- !u!114 &3963644342252435484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8718230562560161913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ba59929ec8f44c448f5f148b2d9ccd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.GridInventoryDebugItemAdder
+  gridInventory: {fileID: 4260008715252334417}
+  testItem: {fileID: 11400000, guid: 0df0dedc48d93ea47b75ba37f2cf5fda, type: 2}
+  amount: 5
+  logResult: 1
 --- !u!1 &8891958178260265517
 GameObject:
   m_ObjectHideFlags: 0

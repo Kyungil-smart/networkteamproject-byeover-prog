@@ -50,6 +50,7 @@ namespace DeadZone.Actors
 
         private IItemDatabase itemDatabase;
         private bool subscribedToInventory;
+        private bool hasWarnedMissingItemDatabase;
 
         public float BaseMaxCarryWeightKg => baseMaxCarryWeightKg;
         public float HousingCarryWeightBonusKg => housingCarryWeightBonusKg;
@@ -76,7 +77,6 @@ namespace DeadZone.Actors
         private void Awake()
         {
             FindRequiredComponents();
-            ResolveItemDatabase();
             RefreshMaxCarryWeight(false);
         }
 
@@ -95,7 +95,6 @@ namespace DeadZone.Actors
         private void OnEnable()
         {
             TrySubscribeInventory();
-            RecalculateCurrentWeight(true);
         }
 
         private void OnDisable()
@@ -107,7 +106,6 @@ namespace DeadZone.Actors
         {
             base.OnNetworkSpawn();
 
-            ResolveItemDatabase();
             TrySubscribeInventory();
             RecalculateCurrentWeight(true);
         }
@@ -124,18 +122,31 @@ namespace DeadZone.Actors
                 gridInventory = GetComponent<GridInventory>();
         }
 
-        private void ResolveItemDatabase()
+        private bool ResolveItemDatabase(bool logWarning)
         {
+            if (itemDatabase != null)
+                return true;
+
             itemDatabase = ServiceLocator.Get<IItemDatabase>();
 
-            if (itemDatabase == null && logWeightChanged)
+            if (itemDatabase != null)
             {
+                hasWarnedMissingItemDatabase = false;
+                return true;
+            }
+
+            if (logWarning && logWeightChanged && !hasWarnedMissingItemDatabase)
+            {
+                hasWarnedMissingItemDatabase = true;
+
                 Debug.LogWarning(
                     "[PlayerCarryWeightSystem] IItemDatabase를 찾지 못했습니다. " +
-                    "현재 무게 계산은 ItemDataSO를 찾을 수 있을 때만 정상 동작합니다.",
+                    "현재 씬의 ItemDatabase 오브젝트 활성화 여부와 Awake 등록 여부를 확인하세요.",
                     this
                 );
             }
+
+            return false;
         }
 
         private void TrySubscribeInventory()
@@ -211,8 +222,8 @@ namespace DeadZone.Actors
             if (!ShouldTrackThisPlayer())
                 return;
 
-            if (itemDatabase == null)
-                ResolveItemDatabase();
+            if (!ResolveItemDatabase(true))
+                return;
 
             float oldWeight = currentWeightKg;
             float oldMax = currentMaxCarryWeightKg;
@@ -249,7 +260,7 @@ namespace DeadZone.Actors
             if (gridInventory == null || gridInventory.ServerGrid == null)
                 return 0f;
 
-            if (itemDatabase == null)
+            if (!ResolveItemDatabase(true))
                 return 0f;
 
             float totalWeight = 0f;
