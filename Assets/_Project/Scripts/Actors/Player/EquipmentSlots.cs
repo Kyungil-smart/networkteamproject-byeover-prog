@@ -7,6 +7,30 @@ using DeadZone.Systems;
 
 namespace DeadZone.Actors
 {
+    public enum WeaponAmmoChangeReason : byte
+    {
+        // 변경 사유가 지정되지 않았을 때 사용한다.
+        Unknown,
+
+        // 발사로 인해 현재 탄창 수량이 감소했을 때 사용한다.
+        Fired,
+
+        // 일반 장전으로 현재 탄창 수량이 증가했을 때 사용한다.
+        Reloaded,
+
+        // 장착 탄약의 등급이 변경되면서 탄약 ID 또는 탄창 수량이 바뀌었을 때 사용한다.
+        AmmoGradeChanged,
+
+        // 무기를 슬롯에 장착하면서 초기 탄약 상태가 설정되었을 때 사용한다.
+        Equipped,
+
+        // 무기를 슬롯에서 해제하면서 탄약 상태가 비워졌을 때 사용한다.
+        Unequipped,
+
+        // 서버 상태를 기준으로 클라이언트 표시 정보를 다시 맞췄을 때 사용한다.
+        Synced
+    }
+
     
     public class EquipmentSlots : NetworkBehaviour, IArmored
     {
@@ -75,6 +99,55 @@ namespace DeadZone.Actors
         public AmmoDataSO CurrentAmmoData
             => Lookup<AmmoDataSO>(CurrentWeaponState.loadedAmmoId.ToString());
 
+        /// <summary>
+        /// 현재 장착된 무기가 어느 무기 슬롯에 해당하는지 확인한다.
+        /// 장전과 발사처럼 현재 무기의 탄창 상태를 변경해야 하는 코드에서 공통 기준으로 사용한다.
+        /// </summary>
+        public bool TryGetCurrentWeaponSlot(out WeaponSlot slot)
+        {
+            FixedString64Bytes curId = CurrentEquipped.Value;
+
+            if (curId == Primary1Id.Value)
+            {
+                slot = WeaponSlot.Primary1;
+                return true;
+            }
+
+            if (curId == Primary2Id.Value)
+            {
+                slot = WeaponSlot.Primary2;
+                return true;
+            }
+
+            if (curId == SecondaryId.Value)
+            {
+                slot = WeaponSlot.Secondary;
+                return true;
+            }
+
+            slot = WeaponSlot.None;
+            return false;
+        }
+
+        /// <summary>
+        /// 현재 장착 무기의 WeaponState를 서버 권한으로 갱신한다.
+        /// 탄창 수량이나 장착 탄약 ID 변경은 이 함수를 통해 처리해 WeaponAmmoChangedEvent 발행을 보장한다.
+        /// </summary>
+        public bool TryApplyCurrentWeaponState(
+            WeaponState nextState,
+            WeaponAmmoChangeReason reason)
+        {
+            if (!IsServer) return false;
+            if (!TryGetCurrentWeaponSlot(out WeaponSlot slot)) return false;
+
+            WeaponDataSO weapon = CurrentWeaponData;
+            if (weapon != null)
+                nextState.currentAmmo = Mathf.Clamp(nextState.currentAmmo, 0, weapon.magSize);
+
+            SetWeaponState(slot, nextState, reason);
+            return true;
+        }
+
         // ----------- IArmored -----------
 
         public HelmetDataSO GetEquippedHelmet()
@@ -103,22 +176,89 @@ namespace DeadZone.Actors
         public void ConsumeCurrentWeaponAmmo()
         {
             if (!IsServer) return;
+            if (!TryGetCurrentWeaponSlot(out WeaponSlot slot)) return;
 
-            FixedString64Bytes curId = CurrentEquipped.Value;
+            WeaponState state = GetWeaponState(slot);
+            if (state.currentAmmo <= 0) return;
 
-            if (curId == Primary1Id.Value)
-                Primary1State.Value = DecreaseAmmo(Primary1State.Value);
-            else if (curId == Primary2Id.Value)
-                Primary2State.Value = DecreaseAmmo(Primary2State.Value);
-            else if (curId == SecondaryId.Value)
-                SecondaryState.Value = DecreaseAmmo(SecondaryState.Value);
+            state.currentAmmo--;
+            SetWeaponState(slot, state, WeaponAmmoChangeReason.Fired);
         }
 
-        private WeaponState DecreaseAmmo(WeaponState state)
+        /// <summary>
+        /// 지정한 무기 슬롯의 현재 WeaponState를 반환한다.
+        /// 슬롯별 NetworkVariable 접근을 한곳에 모아 탄약 변경 로직이 같은 기준을 사용하게 한다.
+        /// </summary>
+        private WeaponState GetWeaponState(WeaponSlot slot)
         {
-            if (state.currentAmmo > 0) state.currentAmmo--;
-            return state;
+            return slot switch
+            {
+                WeaponSlot.Primary1 => Primary1State.Value,
+                WeaponSlot.Primary2 => Primary2State.Value,
+                WeaponSlot.Secondary => SecondaryState.Value,
+                _ => default
+            };
         }
+
+        /// <summary>
+        /// 지정한 무기 슬롯의 WeaponState를 변경하고 탄약 변경 이벤트를 발행한다.
+        /// 발사, 일반 장전, 탄종 변경 장전 모두 이 함수로 들어와 변경 전/후 정보가 누락되지 않게 한다.
+        /// </summary>
+        private void SetWeaponState(
+            WeaponSlot slot,
+            WeaponState nextState,
+            WeaponAmmoChangeReason reason)
+        {
+            WeaponState previousState = GetWeaponState(slot);
+
+            switch (slot)
+            {
+                case WeaponSlot.Primary1:
+                    Primary1State.Value = nextState;
+                    break;
+                case WeaponSlot.Primary2:
+                    Primary2State.Value = nextState;
+                    break;
+                case WeaponSlot.Secondary:
+                    SecondaryState.Value = nextState;
+                    break;
+                default:
+                    return;
+            }
+
+            PublishWeaponAmmoChanged(slot, previousState, nextState, reason);
+        }
+
+        /// <summary>
+        /// WeaponState 변경 전후 정보를 WeaponAmmoChangedEvent로 발행한다.
+        /// UI와 관전 표시가 어느 플레이어의 어느 무기 탄약이 어떻게 바뀌었는지 알 수 있게 한다.
+        /// </summary>
+        private void PublishWeaponAmmoChanged(
+            WeaponSlot slot,
+            WeaponState previousState,
+            WeaponState nextState,
+            WeaponAmmoChangeReason reason)
+        {
+            WeaponDataSO weapon = CurrentWeaponData;
+            AmmoDataSO previousAmmo = Lookup<AmmoDataSO>(previousState.loadedAmmoId.ToString());
+            AmmoDataSO nextAmmo = Lookup<AmmoDataSO>(nextState.loadedAmmoId.ToString());
+
+            EventBus.Publish(new WeaponAmmoChangedEvent
+            {
+                clientId = OwnerClientId,
+                weaponId = CurrentEquipped.Value,
+                weaponSlot = (byte)slot,
+                beforeAmmoId = previousState.loadedAmmoId,
+                afterAmmoId = nextState.loadedAmmoId,
+                beforeGrade = previousAmmo != null ? previousAmmo.grade : default,
+                afterGrade = nextAmmo != null ? nextAmmo.grade : default,
+                beforeAmmo = previousState.currentAmmo,
+                afterAmmo = nextState.currentAmmo,
+                maxAmmo = weapon != null ? weapon.magSize : 0,
+                reason = (byte)reason
+            });
+        }
+
         // 임시 슬롯 업데이트함수 
         public void UpdateSlot(WeaponSlot slot, string itemId, WeaponState state)
         {
