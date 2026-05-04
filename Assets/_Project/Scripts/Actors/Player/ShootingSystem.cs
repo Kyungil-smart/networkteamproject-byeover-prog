@@ -80,6 +80,33 @@ namespace DeadZone.Actors
                 weapon.itemID
             );
         }
+
+        /// <summary>
+        /// 버튼을 누르고 있는 동안 Full 모드를 지원하는 현재 무기만 연사 발사를 시도한다.
+        /// 실제 발사 간격은 TryFire 내부의 nextFireAllowed 검사로 제한된다.
+        /// </summary>
+        public void TryFullAutoFire(Vector2 mousePos)
+        {
+            if (!CurrentWeaponSupportsFull()) return;
+
+            TryFire(mousePos);
+        }
+
+        private bool CurrentWeaponSupportsFull()
+        {
+            var weapon = equipment?.GetCurrentWeapon();
+            if (weapon?.availableModes == null) return false;
+
+            for (int i = 0; i < weapon.availableModes.Length; i++)
+            {
+                if (weapon.availableModes[i] == FireMode.Full)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         
         private AimResult AnalyzeAim(Vector2 screenPos)
         {

@@ -11,7 +11,7 @@ namespace DeadZone.Actors
     {
         void Tick(Vector2 move, Vector2 look, Vector2 mousePos);
 
-        void OnFire();
+        void OnFireInput(bool pressedThisFrame, bool held, Vector2 mousePos);
         void OnAim(bool down);
         void OnReload();
         void OnInteract();
