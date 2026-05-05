@@ -15,11 +15,11 @@ namespace DeadZone.Actors.UI
 
         [BoxGroup("가방 설정")]
         [Tooltip("현재 가방 레벨입니다.")]
-        [Range(1, 3)]
-        [SerializeField] private int bagLevel = 1;
+        [Range(0, 4)]
+        [SerializeField] private int bagLevel;
 
         [BoxGroup("가방 슬롯")]
-        [Tooltip("가방 슬롯 20개를 순서대로 넣으세요.")]
+        [Tooltip("가방 슬롯 40개를 '순서'대로 넣으세요.")]
         [SerializeField] private List<InventorySlotUI> bagSlots = new();
 
         [BoxGroup("툴팁")]
@@ -179,7 +179,7 @@ namespace DeadZone.Actors.UI
 
         public void SetBagLevel(int level)
         {
-            bagLevel = Mathf.Clamp(level, 1, 3);
+            bagLevel = Mathf.Clamp(level, 0, 4);
             RefreshBagSlots();
         }
 
@@ -325,6 +325,13 @@ namespace DeadZone.Actors.UI
         }
 
         [BoxGroup("디버그")]
+        [Button("가방 기본")]
+        private void TestBagLevel0()
+        {
+            SetBagLevel(0);
+        }
+
+        [BoxGroup("디버그")]
         [Button("가방 1레벨")]
         private void TestBagLevel1()
         {
@@ -343,6 +350,13 @@ namespace DeadZone.Actors.UI
         private void TestBagLevel3()
         {
             SetBagLevel(3);
+        }
+
+        [BoxGroup("디버그")]
+        [Button("가방 4레벨")]
+        private void TestBagLevel4()
+        {
+            SetBagLevel(4);
         }
 
         private void ClearAssignedSlots()
@@ -569,12 +583,14 @@ namespace DeadZone.Actors.UI
 
         private int GetCapacityByBagLevel(int level)
         {
-            return level switch
+            return Mathf.Clamp(level, 0, 4) switch
             {
-                1 => 10,
-                2 => 15,
-                3 => 20,
-                _ => 10
+                0 => 20,
+                1 => 25,
+                2 => 30,
+                3 => 35,
+                4 => 40,
+                _ => 20
             };
         }
     }

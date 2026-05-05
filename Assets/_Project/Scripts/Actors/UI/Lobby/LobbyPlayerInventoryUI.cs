@@ -16,11 +16,13 @@ namespace DeadZone.Actors.UI
         [SerializeField] private ItemTooltipUI tooltipUI;
 
         [Header("Bag Level")]
-        [Range(1, 3)]
-        [SerializeField] private int bagLevel = 1;
-        [SerializeField] private int level1Capacity = 10;
-        [SerializeField] private int level2Capacity = 15;
-        [SerializeField] private int level3Capacity = 20;
+        [Range(0, 4)]
+        [SerializeField] private int bagLevel;
+        [SerializeField] private int baseCapacity = 20;
+        [SerializeField] private int level1Capacity = 25;
+        [SerializeField] private int level2Capacity = 30;
+        [SerializeField] private int level3Capacity = 35;
+        [SerializeField] private int level4Capacity = 40;
 
         [Header("Scroll")]
         [SerializeField] private bool autoConfigureScroll = true;
@@ -58,10 +60,12 @@ namespace DeadZone.Actors.UI
 
         private void OnValidate()
         {
-            bagLevel = Mathf.Clamp(bagLevel, 1, 3);
-            level1Capacity = Mathf.Max(1, level1Capacity);
+            bagLevel = Mathf.Clamp(bagLevel, 0, 4);
+            baseCapacity = Mathf.Max(1, baseCapacity);
+            level1Capacity = Mathf.Max(baseCapacity, level1Capacity);
             level2Capacity = Mathf.Max(level1Capacity, level2Capacity);
             level3Capacity = Mathf.Max(level2Capacity, level3Capacity);
+            level4Capacity = Mathf.Max(level3Capacity, level4Capacity);
             fixedColumnCount = Mathf.Max(1, fixedColumnCount);
             scrollSensitivity = Mathf.Max(1f, scrollSensitivity);
 
@@ -75,7 +79,7 @@ namespace DeadZone.Actors.UI
 
         public void SetBagLevel(int level)
         {
-            bagLevel = Mathf.Clamp(level, 1, 3);
+            bagLevel = Mathf.Clamp(level, 0, 4);
             RefreshSlots();
         }
 
@@ -350,12 +354,14 @@ namespace DeadZone.Actors.UI
 
         private int GetCapacityByBagLevel(int level)
         {
-            return Mathf.Clamp(level, 1, 3) switch
+            return Mathf.Clamp(level, 0, 4) switch
             {
+                0 => baseCapacity,
                 1 => level1Capacity,
                 2 => level2Capacity,
                 3 => level3Capacity,
-                _ => level1Capacity
+                4 => level4Capacity,
+                _ => baseCapacity
             };
         }
 
