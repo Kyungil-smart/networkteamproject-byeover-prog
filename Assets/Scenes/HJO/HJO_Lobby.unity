@@ -9177,6 +9177,7 @@ GameObject:
   - component: {fileID: 202085238}
   - component: {fileID: 202085240}
   - component: {fileID: 202085239}
+  - component: {fileID: 202085241}
   m_Layer: 5
   m_Name: PartySlot_1(host)
   m_TagString: Untagged
@@ -9245,6 +9246,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 202085237}
   m_CullTransparentMesh: 1
+--- !u!114 &202085241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 202085237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd1f85206460e7c428ec09444e45b10b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyPartySlotUI
+  emptyRoot: {fileID: 0}
+  filledRoot: {fileID: 0}
+  playerNameText: {fileID: 473430447}
+  hostText: {fileID: 168625880}
+  readyText: {fileID: 1381782727}
+  readyButton: {fileID: 3415110}
+  notReadyLabel: "\uC900\uBE44"
+  readyLabel: "\uC900\uBE44 \uC644\uB8CC"
+  hostLabel: "\uBC29\uC7A5"
 --- !u!1 &202379681
 GameObject:
   m_ObjectHideFlags: 0
@@ -34249,6 +34271,7 @@ GameObject:
   - component: {fileID: 700195936}
   - component: {fileID: 700195938}
   - component: {fileID: 700195937}
+  - component: {fileID: 700195939}
   m_Layer: 5
   m_Name: PartySlot_4
   m_TagString: Untagged
@@ -34315,6 +34338,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 700195935}
   m_CullTransparentMesh: 1
+--- !u!114 &700195939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700195935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd1f85206460e7c428ec09444e45b10b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyPartySlotUI
+  emptyRoot: {fileID: 54573364}
+  filledRoot: {fileID: 510470820}
+  playerNameText: {fileID: 1142718643}
+  hostText: {fileID: 0}
+  readyText: {fileID: 2029032284}
+  readyButton: {fileID: 481138440}
+  notReadyLabel: "\uC900\uBE44"
+  readyLabel: "\uC900\uBE44 \uC644\uB8CC"
+  hostLabel: "\uBC29\uC7A5"
 --- !u!1 &700480927
 GameObject:
   m_ObjectHideFlags: 0
@@ -83347,6 +83391,73 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1696038739}
   m_CullTransparentMesh: 1
+--- !u!1 &1696538372
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1696538373}
+  - component: {fileID: 1696538375}
+  - component: {fileID: 1696538374}
+  m_Layer: 0
+  m_Name: LobbyPartyBinding
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1696538373
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1696538372}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1956492219}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1696538374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1696538372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3cc8325aace3b641b8898ee271b5bd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyPartyView
+  slots:
+  - {fileID: 202085241}
+  - {fileID: 1849627244}
+  - {fileID: 1931471853}
+  - {fileID: 700195939}
+--- !u!114 &1696538375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1696538372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5529d1f5fa73ef54a8ee1c468b6e57d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyPartyController
+  lobbyState: {fileID: 1780229061}
+  partyView: {fileID: 1696538374}
+  fallbackDisplayName: Player
+  maxDisplayNameCharacters: 20
+  logDebug: 0
 --- !u!1 &1698034159
 GameObject:
   m_ObjectHideFlags: 0
@@ -86437,6 +86548,81 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1778998989}
   m_CullTransparentMesh: 1
+--- !u!1 &1780229058
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1780229060}
+  - component: {fileID: 1780229059}
+  - component: {fileID: 1780229061}
+  m_Layer: 0
+  m_Name: LobbyNetworkState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1780229059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1780229058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2058565130
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!4 &1780229060
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1780229058}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1780229061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1780229058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8a1413f3ea73794d807548ef5efc880, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Network.NetworkLobbyState
+  ShowTopMostFoldoutHeaderGroup: 1
+  maxPlayers: 4
+  fallbackDisplayName: Player
+  maxDisplayNameCharacters: 20
+  logDebug: 1
 --- !u!1 &1780639760
 GameObject:
   m_ObjectHideFlags: 0
@@ -89854,6 +90040,7 @@ GameObject:
   - component: {fileID: 1849627241}
   - component: {fileID: 1849627243}
   - component: {fileID: 1849627242}
+  - component: {fileID: 1849627244}
   m_Layer: 5
   m_Name: PartySlot_2
   m_TagString: Untagged
@@ -89920,6 +90107,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1849627240}
   m_CullTransparentMesh: 1
+--- !u!114 &1849627244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1849627240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd1f85206460e7c428ec09444e45b10b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyPartySlotUI
+  emptyRoot: {fileID: 1547358509}
+  filledRoot: {fileID: 2119265340}
+  playerNameText: {fileID: 1280188580}
+  hostText: {fileID: 0}
+  readyText: {fileID: 930161568}
+  readyButton: {fileID: 2002351966}
+  notReadyLabel: "\uC900\uBE44"
+  readyLabel: "\uC900\uBE44 \uC644\uB8CC"
+  hostLabel: "\uBC29\uC7A5"
 --- !u!1 &1850871700
 GameObject:
   m_ObjectHideFlags: 0
@@ -93253,6 +93461,7 @@ GameObject:
   - component: {fileID: 1931471850}
   - component: {fileID: 1931471852}
   - component: {fileID: 1931471851}
+  - component: {fileID: 1931471853}
   m_Layer: 5
   m_Name: PartySlot_3
   m_TagString: Untagged
@@ -93319,6 +93528,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1931471849}
   m_CullTransparentMesh: 1
+--- !u!114 &1931471853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1931471849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd1f85206460e7c428ec09444e45b10b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyPartySlotUI
+  emptyRoot: {fileID: 545482224}
+  filledRoot: {fileID: 1465580709}
+  playerNameText: {fileID: 1708282147}
+  hostText: {fileID: 0}
+  readyText: {fileID: 1811036897}
+  readyButton: {fileID: 1667091817}
+  notReadyLabel: "\uC900\uBE44"
+  readyLabel: "\uC900\uBE44 \uC644\uB8CC"
+  hostLabel: "\uBC29\uC7A5"
 --- !u!1 &1939428809
 GameObject:
   m_ObjectHideFlags: 0
@@ -94704,7 +94934,8 @@ Transform:
   m_LocalPosition: {x: 975.7121, y: 391.54156, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1696538373}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1957024850
@@ -105514,3 +105745,4 @@ SceneRoots:
   - {fileID: 1641974391}
   - {fileID: 672972563}
   - {fileID: 134677652}
+  - {fileID: 1780229060}
