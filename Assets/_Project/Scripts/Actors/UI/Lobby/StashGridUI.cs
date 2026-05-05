@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using DeadZone.Core;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +22,10 @@ namespace DeadZone.Actors.UI
         [SerializeField] private InventorySlotUI slotPrefab;
 
         [SerializeField] private ItemTooltipUI tooltipUI;
+
+        [SerializeField] private TMP_Text levelText;
+
+        [SerializeField] private TMP_Text slotCountText;
 
         [Title("스크롤 설정")]
         [SerializeField] private ScrollRect scrollRect;
@@ -117,6 +122,7 @@ namespace DeadZone.Actors.UI
             ApplyContentSize(targetCount);
 
             activeSlotCount = targetCount;
+            RefreshStatusText();
 
             Canvas.ForceUpdateCanvases();
             if (contentRoot != null)
@@ -252,6 +258,12 @@ namespace DeadZone.Actors.UI
 
             if (tooltipUI == null)
                 tooltipUI = GetComponentInParent<ItemTooltipUI>(true);
+
+            if (levelText == null)
+                levelText = FindNamedText(transform, "Text_Level");
+
+            if (slotCountText == null)
+                slotCountText = FindNamedText(transform, "Text_SlotCount");
         }
 
         private void ApplyGridSettings()
@@ -403,6 +415,15 @@ namespace DeadZone.Actors.UI
             contentRoot.anchoredPosition = Vector2.zero;
         }
 
+        private void RefreshStatusText()
+        {
+            if (levelText != null)
+                levelText.text = $"Lv.{stashLevel}";
+
+            if (slotCountText != null)
+                slotCountText.text = $"({activeSlotCount}\uCE78)";
+        }
+
         private RectOffset CreatePadding()
         {
             return new RectOffset(
@@ -449,6 +470,22 @@ namespace DeadZone.Actors.UI
                 RectTransform rectTransform = rectTransforms[i];
                 if (rectTransform != null && rectTransform.name == objectName)
                     return rectTransform;
+            }
+
+            return null;
+        }
+
+        private static TMP_Text FindNamedText(Transform root, string objectName)
+        {
+            if (root == null)
+                return null;
+
+            TMP_Text[] texts = root.GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                TMP_Text text = texts[i];
+                if (text != null && text.name == objectName)
+                    return text;
             }
 
             return null;

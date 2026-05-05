@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,7 +11,6 @@ namespace DeadZone.Actors.UI
         [SerializeField] private RectTransform viewport;
         [SerializeField] private RectTransform contentRoot;
         [SerializeField] private ScrollRect scrollRect;
-        [SerializeField] private TMP_Text slotCountText;
         [SerializeField] private ItemTooltipUI tooltipUI;
 
         [Header("Bag Level")]
@@ -102,9 +100,6 @@ namespace DeadZone.Actors.UI
                 slot.SetLocked(i >= unlockedCount);
             }
 
-            if (slotCountText != null)
-                slotCountText.text = $"({unlockedCount}\uCE78)";
-
             ApplyContentSize();
             Canvas.ForceUpdateCanvases();
 
@@ -158,9 +153,6 @@ namespace DeadZone.Actors.UI
 
             if (tooltipUI == null)
                 tooltipUI = GetComponentInParent<ItemTooltipUI>(true);
-
-            if (slotCountText == null)
-                slotCountText = FindSlotCountText();
         }
 
         private void ConfigureScrollAndGrid()
@@ -384,26 +376,6 @@ namespace DeadZone.Actors.UI
 
                 if (child != null && child.name == objectName)
                     return child;
-            }
-
-            return null;
-        }
-
-        private TMP_Text FindSlotCountText()
-        {
-            Transform current = transform.parent;
-
-            while (current != null)
-            {
-                TMP_Text[] texts = current.GetComponentsInChildren<TMP_Text>(true);
-
-                for (int i = 0; i < texts.Length; i++)
-                {
-                    if (texts[i] != null && texts[i].name == "Text_SlotCount")
-                        return texts[i];
-                }
-
-                current = current.parent;
             }
 
             return null;
