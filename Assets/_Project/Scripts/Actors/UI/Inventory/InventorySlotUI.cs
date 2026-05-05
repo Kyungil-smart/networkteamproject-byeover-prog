@@ -1,4 +1,5 @@
 ﻿using DeadZone.Core;
+using DeadZone.Actors;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -313,6 +314,12 @@ namespace DeadZone.Actors.UI
 
             if (!HasItem)
             {
+                if (!TrySyncEquipmentSlotAfterDrop(this, sourceItem) ||
+                    !TrySyncEquipmentSlotAfterDrop(source, null))
+                {
+                    return false;
+                }
+
                 SetItem(sourceItem, sourceCount);
                 source.ClearItem();
                 return true;
@@ -347,9 +354,68 @@ namespace DeadZone.Actors.UI
                 return false;
             }
 
+            if (!TrySyncEquipmentSlotAfterDrop(this, sourceItem) ||
+                !TrySyncEquipmentSlotAfterDrop(source, targetItem))
+            {
+                return false;
+            }
+
             SetItem(sourceItem, sourceCount);
             source.SetItem(targetItem, targetCount);
             return true;
+        }
+
+        private static bool TrySyncEquipmentSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)
+        {
+            if (slot == null || !slot.TryGetWeaponSlot(out WeaponSlot weaponSlot))
+                return true;
+
+            InventoryUI inventoryUI = slot.GetComponentInParent<InventoryUI>(true);
+            if (inventoryUI == null)
+            {
+                Debug.LogWarning($"[InventorySlotUI] {slot.name} 장비 슬롯을 처리할 InventoryUI를 찾지 못했습니다.", slot);
+                return false;
+            }
+
+            if (nextItem == null)
+                return inventoryUI.TryClearWeaponSlot(weaponSlot);
+
+            if (nextItem is not WeaponDataSO weaponData)
+            {
+                Debug.LogWarning($"[InventorySlotUI] {slot.name} 장비 슬롯에는 WeaponDataSO만 서버 장착할 수 있습니다.", slot);
+                return false;
+            }
+
+            return inventoryUI.TryEquipWeaponSlot(weaponSlot, weaponData);
+        }
+
+        private bool TryGetWeaponSlot(out WeaponSlot weaponSlot)
+        {
+            string path = GetHierarchyPath(transform).ToLowerInvariant();
+            string objectName = name.ToLowerInvariant();
+
+            if (slotKind == InventorySlotKind.EquipmentSecondaryWeapon)
+            {
+                weaponSlot = WeaponSlot.Secondary;
+                return true;
+            }
+
+            if (slotKind == InventorySlotKind.EquipmentMeleeWeapon)
+            {
+                weaponSlot = WeaponSlot.Melee;
+                return true;
+            }
+
+            if (slotKind == InventorySlotKind.EquipmentPrimaryWeapon)
+            {
+                weaponSlot = path.Contains("primary2") || objectName.Contains("primary2") || objectName.Contains("_2")
+                    ? WeaponSlot.Primary2
+                    : WeaponSlot.Primary1;
+                return true;
+            }
+
+            weaponSlot = WeaponSlot.None;
+            return false;
         }
 
         private bool CanAccept(ItemDataSO itemData)

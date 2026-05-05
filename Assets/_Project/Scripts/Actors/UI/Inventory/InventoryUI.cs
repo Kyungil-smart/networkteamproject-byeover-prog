@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using DeadZone.Actors;
 using DeadZone.Core;
+using Unity.Collections;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -27,6 +29,25 @@ namespace DeadZone.Actors.UI
         [BoxGroup("드래그 앤 드롭")]
         [Tooltip("EquipmentPanel/QuickSlotPanel 하위 슬롯에 InventorySlotUI가 없으면 Play 시 자동으로 추가합니다.")]
         [SerializeField] private bool autoCreateDropSlots = true;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("플레이어에 붙은 KHWEquipmentSlotsBridge입니다. 비워두면 Owner 플레이어에서 자동 탐색합니다.")]
+        [SerializeField] private KHWEquipmentSlotsBridge equipmentSlotsBridge;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("브릿지가 없을 때 Host 테스트용으로만 사용하는 EquipmentSlots입니다. 클라이언트 권한 장착은 브릿지를 사용하세요.")]
+        [SerializeField] private EquipmentSlots equipmentSlots;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("장착 직후 기능 테스트용으로 탄창을 채웁니다. 실제 탄약 인벤토리 연동 전까지 발사 검증에 사용합니다.")]
+        [SerializeField] private bool fillMagazineOnEquip = true;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("테스트용 기본 장착 탄약입니다. 비워도 WeaponDataSO만으로 발사 이벤트와 투사체 생성은 동작합니다.")]
+        [SerializeField] private AmmoDataSO defaultLoadedAmmo;
+
+        private bool warnedMissingEquipmentBridge;
+        private bool warnedUnsupportedClear;
 
         [BoxGroup("ItemDataSO 테스트")]
         [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
@@ -82,6 +103,7 @@ namespace DeadZone.Actors.UI
             }
 
             inventoryRoot.SetActive(true);
+            CursorStateController.PushUiOwner(this);
             ResolveTooltipUI();
             EnsureDropSlots();
             AssignTooltipToSlots();
@@ -97,6 +119,7 @@ namespace DeadZone.Actors.UI
                 itemTooltipUI.Hide();
 
             inventoryRoot.SetActive(false);
+            CursorStateController.PopUiOwner(this);
         }
 
         public void Toggle()
@@ -105,6 +128,53 @@ namespace DeadZone.Actors.UI
                 Close();
             else
                 Open();
+        }
+
+        public bool TryEquipWeaponSlot(WeaponSlot weaponSlot, WeaponDataSO weaponData)
+        {
+            if (weaponData == null)
+                return TryClearWeaponSlot(weaponSlot);
+
+            FixedString64Bytes ammoId = defaultLoadedAmmo != null ? defaultLoadedAmmo.itemID : "";
+            int ammoCount = fillMagazineOnEquip ? Mathf.Max(0, weaponData.magSize) : 0;
+
+            if (ResolveEquipmentSlotsBridge())
+            {
+                equipmentSlotsBridge.EquipItemServerRpc(
+                    new FixedString64Bytes(weaponData.itemID),
+                    weaponSlot,
+                    ammoId,
+                    (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
+
+                return true;
+            }
+
+            if (ResolveEquipmentSlots() && equipmentSlots.IsServer)
+            {
+                WeaponState state = new()
+                {
+                    loadedAmmoId = ammoId,
+                    currentAmmo = ammoCount
+                };
+
+                equipmentSlots.UpdateSlot(weaponSlot, weaponData.itemID, state);
+                return true;
+            }
+
+            WarnMissingEquipmentBridgeOnce();
+            return false;
+        }
+
+        public bool TryClearWeaponSlot(WeaponSlot weaponSlot)
+        {
+            if (ResolveEquipmentSlots() && equipmentSlots.IsServer)
+            {
+                equipmentSlots.UpdateSlot(weaponSlot, string.Empty, default);
+                return true;
+            }
+
+            WarnUnsupportedClearOnce();
+            return false;
         }
 
         public void SetBagLevel(int level)
@@ -409,6 +479,78 @@ namespace DeadZone.Actors.UI
 
             if (itemTooltipUI == null)
                 Debug.LogWarning("[InventoryUI] ItemTooltipUI를 찾지 못했습니다. 씬의 Tooltip 오브젝트를 InventoryUI.itemTooltipUI에 연결하세요.", this);
+        }
+
+        private bool ResolveEquipmentSlots()
+        {
+            if (equipmentSlots != null)
+                return true;
+
+            EquipmentSlots[] candidates = FindObjectsByType<EquipmentSlots>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlots candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                {
+                    equipmentSlots = candidate;
+                    return true;
+                }
+            }
+
+            foreach (EquipmentSlots candidate in candidates)
+            {
+                if (candidate != null)
+                {
+                    equipmentSlots = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ResolveEquipmentSlotsBridge()
+        {
+            if (equipmentSlotsBridge != null)
+                return true;
+
+            KHWEquipmentSlotsBridge[] candidates = FindObjectsByType<KHWEquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (KHWEquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                {
+                    equipmentSlotsBridge = candidate;
+                    return true;
+                }
+            }
+
+            foreach (KHWEquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null)
+                {
+                    equipmentSlotsBridge = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void WarnMissingEquipmentBridgeOnce()
+        {
+            if (warnedMissingEquipmentBridge)
+                return;
+
+            warnedMissingEquipmentBridge = true;
+            Debug.LogWarning("[InventoryUI] KHWEquipmentSlotsBridge를 찾지 못했습니다. 클라이언트 장비 장착 동기화를 위해 PlayerPrefab에 브릿지를 붙이고 InventoryUI에 연결하세요.", this);
+        }
+
+        private void WarnUnsupportedClearOnce()
+        {
+            if (warnedUnsupportedClear)
+                return;
+
+            warnedUnsupportedClear = true;
+            Debug.LogWarning("[InventoryUI] 현재 기존 브릿지에는 무기 슬롯 해제 ServerRpc가 없어 클라이언트에서 장비 해제를 서버에 반영할 수 없습니다. 필요하면 UI 외 스크립트 수정 승인이 필요합니다.", this);
         }
 
         private ItemDataSO GetRandomTestItem()

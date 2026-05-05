@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 using DeadZone.Core;
+using DeadZone.Actors.UI;
 using DeadZone.InputActions;
 
 namespace DeadZone.Actors
