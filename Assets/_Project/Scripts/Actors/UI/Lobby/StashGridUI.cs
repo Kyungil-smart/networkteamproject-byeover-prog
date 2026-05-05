@@ -397,7 +397,10 @@ namespace DeadZone.Actors.UI
                 slot.gameObject.SetActive(active);
 
                 if (active)
+                {
+                    slot.CopyRarityBackgroundSpritesFrom(slotPrefab);
                     slot.PrepareDropSlot(tooltipUI, i);
+                }
             }
         }
 
@@ -504,14 +507,17 @@ namespace DeadZone.Actors.UI
 
             ClearActiveSlots();
 
-            int targetCount = Mathf.Min(count, activeSlotCount, slots.Count);
+            int targetCount = Mathf.Min(count, activeSlotCount, slots.Count, validItems.Count);
             for (int i = 0; i < targetCount; i++)
             {
                 InventorySlotUI slot = slots[i];
                 if (slot == null)
                     continue;
 
-                ItemDataSO itemData = validItems[Random.Range(0, validItems.Count)];
+                int itemIndex = Random.Range(0, validItems.Count);
+                ItemDataSO itemData = validItems[itemIndex];
+                validItems.RemoveAt(itemIndex);
+
                 int stackCount = GetRandomStackCount(itemData);
                 slot.SetItem(itemData, stackCount);
             }
@@ -520,12 +526,26 @@ namespace DeadZone.Actors.UI
         private List<ItemDataSO> GetValidTestItems()
         {
             List<ItemDataSO> validItems = new List<ItemDataSO>();
+            HashSet<ItemDataSO> addedItems = new HashSet<ItemDataSO>();
+            HashSet<string> addedItemIds = new HashSet<string>();
 
             for (int i = 0; i < testItemPool.Count; i++)
             {
                 ItemDataSO itemData = testItemPool[i];
-                if (itemData != null)
-                    validItems.Add(itemData);
+                if (itemData == null)
+                    continue;
+
+                if (!string.IsNullOrWhiteSpace(itemData.itemID))
+                {
+                    if (!addedItemIds.Add(itemData.itemID))
+                        continue;
+                }
+                else if (!addedItems.Add(itemData))
+                {
+                    continue;
+                }
+
+                validItems.Add(itemData);
             }
 
             return validItems;

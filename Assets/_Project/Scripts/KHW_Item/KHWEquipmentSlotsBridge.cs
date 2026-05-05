@@ -46,6 +46,17 @@ public class KHWEquipmentSlotsBridge : NetworkBehaviour
         }
     }
 
+    public bool CanEquipItem(string itemId)
+    {
+        if (autoFindOnAwake && equipmentSlots == null)
+            equipmentSlots = GetComponent<EquipmentSlots>();
+
+        if (equipmentSlots == null || scriptObjectPool == null)
+            return false;
+
+        return scriptObjectPool.Lookup(itemId) != null;
+    }
+
     public void EquipByItemIdFromButton(string itemId)
     {
         // [KHW 추가 기능]

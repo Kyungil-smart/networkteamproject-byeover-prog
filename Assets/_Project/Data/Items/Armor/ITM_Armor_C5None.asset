@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
-  m_Name: ITM_Armor_C5
+  m_Name: ITM_Armor_C5None
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Armor_C5
   displayName: "5 \uD074\uB798\uC2A4 \uC544\uBA38"
