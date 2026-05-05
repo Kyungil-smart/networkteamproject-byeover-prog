@@ -118,6 +118,43 @@ namespace DeadZone.Network
 
             LogDebug($"Ready 상태 변경. ClientId={senderClientId}, Ready={ready}");
         }
+
+        /// <summary>
+        /// Map A 탈출 여부 변경 요청입니다. 실제 변경 대상은 SenderClientId 기준으로 서버가 결정합니다.
+        /// 현재는 로비/테스트 UI에서 B맵 잠금 검증을 확인하기 위해 사용합니다.
+        /// </summary>
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        public void SetMapAEscapedServerRpc(bool hasEscaped, RpcParams rpcParams = default)
+        {
+            if (!IsServer) return;
+
+            SetMapAEscapedServer(rpcParams.Receive.SenderClientId, hasEscaped);
+        }
+
+        public void SetMapAEscapedServer(ulong clientId, bool hasEscaped)
+        {
+            if (!IsServer) return;
+
+            int index = FindPlayerIndex(clientId);
+
+            if (index < 0)
+            {
+                Debug.LogWarning(
+                    $"[NetworkLobbyState] 미등록 client의 Map A 탈출 상태 요청입니다. " +
+                    $"fallback 등록 후 처리합니다. ClientId={clientId}", this);
+
+                EnsurePlayerExistsServer(clientId);
+                index = FindPlayerIndex(clientId);
+            }
+
+            if (index < 0) return;
+
+            LobbyPlayerState state = players[index];
+            state.HasEscapedMapA = hasEscaped;
+            players[index] = state;
+
+            LogDebug($"Map A 탈출 상태 변경. ClientId={clientId}, HasEscapedMapA={hasEscaped}");
+        }
         
         /// <summary>
         /// 특정 client의 로비 상태를 조회
@@ -179,7 +216,8 @@ namespace DeadZone.Network
                 ClientId = clientId,
                 DisplayName = ToFixedDisplayName(fallbackDisplayName),
                 IsHost = clientId == NetworkManager.ServerClientId,
-                IsReady = false
+                IsReady = false,
+                HasEscapedMapA = false
             });
 
             LogDebug($"플레이어 등록. ClientId={clientId}");
