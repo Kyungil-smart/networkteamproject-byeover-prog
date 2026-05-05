@@ -13,4 +13,32 @@ MonoBehaviour:
   m_Name: Kitchen_Facility
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.FacilityDataSO
   type: 4
-  levels: []
+  levels:
+  - level: 1
+    upgradeMaterials: []
+    effectDescription: "\uC8FC\uBC29 Lv.1 / \uCD5C\uB300 \uC2A4\uD14C\uBBF8\uB108
+      \uBCF4\uB108\uC2A4 +0"
+  - level: 2
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
+      amount: 5
+    - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
+      amount: 5
+    effectDescription: "\uC8FC\uBC29 Lv.2 / \uCD5C\uB300 \uC2A4\uD14C\uBBF8\uB108
+      \uBCF4\uB108\uC2A4 +5"
+  - level: 3
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
+      amount: 10
+    - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
+      amount: 10
+    - item: {fileID: 11400000, guid: 62bfb5be1f6350342aac4c5a39528dd9, type: 2}
+      amount: 1
+    effectDescription: "\uC8FC\uBC29 Lv.3 / \uCD5C\uB300 \uC2A4\uD14C\uBBF8\uB108
+      \uBCF4\uB108\uC2A4 +10"
+  - level: 4
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 767b74ff11969224e8c3e739ffb9f6d2, type: 2}
+      amount: 1
+    effectDescription: "\uC8FC\uBC29 Lv.4 / \uCD5C\uB300 \uC2A4\uD14C\uBBF8\uB108
+      \uBCF4\uB108\uC2A4 +15"

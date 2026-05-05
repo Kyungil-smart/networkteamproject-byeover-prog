@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Trowel
   displayName: "\uBAA8\uC885\uC0BD"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 1c9cf13d023a9cb4bbb2a7edb1158391, type: 3}
   category: 9
   rarity: 1
   isValuable: 0

@@ -32,6 +32,7 @@ namespace DeadZone.Network
     public class ProfileData
     {
         [FirestoreProperty] public string email { get; set; } = "";
+        [FirestoreProperty] public string displayName { get; set; } = "";
         [FirestoreProperty] public long createdAtUnix { get; set; }      // Unix timestamp (초)
         [FirestoreProperty] public long lastPlayedAtUnix { get; set; }
         [FirestoreProperty] public long totalPlayTimeSec { get; set; }

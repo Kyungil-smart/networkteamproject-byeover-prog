@@ -52,7 +52,14 @@ namespace DeadZone.Network
         [ServerRpc(RequireOwnership = false)]
         public void StartRaidServerRpc(string sceneName)
         {
+            StartRaidOnServer(sceneName);
+        }
+
+        public void StartRaidOnServer(string sceneName)
+        {
+            if (!IsServer) return;
             if (string.IsNullOrEmpty(sceneName)) return;
+
             RaidTimeRemaining.Value = raidTimeLimit;
             NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         }

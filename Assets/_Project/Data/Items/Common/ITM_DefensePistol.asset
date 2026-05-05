@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: DefensePistol
   displayName: "\uD638\uC2E0\uC6A9 \uAD8C\uCD1D"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6cf255a94a7a1eb40aac686d0f49c52a, type: 3}
   category: 0
   rarity: 0
   isValuable: 0

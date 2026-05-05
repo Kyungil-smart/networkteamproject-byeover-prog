@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a440bdd4a2fb31f42a2f8ee769edf7e9, type: 3}
+  m_Name: Medical_Facility
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.FacilityDataSO
+  type: 6
+  levels:
+  - level: 1
+    upgradeMaterials: []
+    effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +5"
+  - level: 2
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
+      amount: 10
+    effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +5"
+  - level: 3
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
+      amount: 20
+    effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +5"
+  - level: 4
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: dafe881ee30592d4da6053db2bcf0ff4, type: 2}
+      amount: 1
+    effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +5"

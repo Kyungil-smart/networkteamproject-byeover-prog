@@ -1,4 +1,5 @@
-﻿using Unity.Netcode;
+﻿using Sirenix.OdinInspector;
+using Unity.Netcode;
 using UnityEngine;
 
 
@@ -121,6 +122,11 @@ namespace DeadZone.Actors
                 moveInput = Vector2.zero;
                 isSprinting = false;
             }
+        }
+
+        public void SetMovementReference(Transform reference)
+        {
+            movementReference = reference;
         }
         
         private Vector3 GetMoveDirection()

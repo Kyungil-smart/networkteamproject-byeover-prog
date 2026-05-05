@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: GunParts
   displayName: "\uCD1D\uAE30 \uBD80\uD488"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c3d0ecc292e78184a935472ec8e15dd0, type: 3}
   category: 8
   rarity: 1
   isValuable: 0

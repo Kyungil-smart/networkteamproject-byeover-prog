@@ -17,6 +17,7 @@ namespace DeadZone.Network
     public class FirebaseAuthManager : MonoBehaviour
     {
         private FirebaseAuth auth;
+        private string lastKnownUid = string.Empty;
 
         public FirebaseUser CurrentUser => auth?.CurrentUser;
         public string CurrentUid => CurrentUser?.UserId ?? string.Empty;
@@ -63,15 +64,13 @@ namespace DeadZone.Network
         {
             if (auth.CurrentUser != null)
             {
-                EventBus.Publish(new AuthSignedInEvent
-                {
-                    firebaseUid = auth.CurrentUser.UserId,
-                    email = auth.CurrentUser.Email ?? string.Empty,
-                });
+                lastKnownUid = auth.CurrentUser.UserId;
+                Debug.Log("[FirebaseAuthManager] FirebaseAuth signed-in state detected. Waiting for explicit login flow.");
             }
             else
             {
-                EventBus.Publish(new AuthSignedOutEvent { firebaseUid = string.Empty });
+                EventBus.Publish(new AuthSignedOutEvent { firebaseUid = lastKnownUid });
+                lastKnownUid = string.Empty;
             }
         }
 
@@ -89,6 +88,7 @@ namespace DeadZone.Network
             try
             {
                 var result = await auth.CreateUserWithEmailAndPasswordAsync(email, password);
+                PublishSignedInEvent(result.User);
                 return result.User;
             }
             catch (Exception e)
@@ -112,6 +112,7 @@ namespace DeadZone.Network
             try
             {
                 var result = await auth.SignInWithEmailAndPasswordAsync(email, password);
+                PublishSignedInEvent(result.User);
                 return result.User;
             }
             catch (Exception e)
@@ -125,6 +126,19 @@ namespace DeadZone.Network
         {
             if (auth == null) return;
             auth.SignOut();
+        }
+
+        private void PublishSignedInEvent(FirebaseUser user)
+        {
+            if (user == null) return;
+
+            lastKnownUid = user.UserId;
+
+            EventBus.Publish(new AuthSignedInEvent
+            {
+                firebaseUid = user.UserId,
+                email = user.Email ?? string.Empty,
+            });
         }
     }
 }

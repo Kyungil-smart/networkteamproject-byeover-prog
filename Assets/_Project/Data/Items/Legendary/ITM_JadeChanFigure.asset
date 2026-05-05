@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: JadeChanFigure
   displayName: "JADE\uCA29 \uD53C\uADDC\uC5B4"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 596a12531d9869146b9d394a39f7106f, type: 3}
   category: 7
   rarity: 4
   isValuable: 1

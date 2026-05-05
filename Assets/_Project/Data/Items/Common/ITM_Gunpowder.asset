@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Gunpowder
   displayName: "\uD654\uC57D"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 36bc7837e2d13d84ab7779a140651a72, type: 3}
   category: 8
   rarity: 0
   isValuable: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Helmet_C4
   displayName: "4 \uD074\uB798\uC2A4 \uD5EC\uBA67"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cb041a8ed50de7340a3c63f64b9b5586, type: 3}
   category: 3
   rarity: 2
   isValuable: 0

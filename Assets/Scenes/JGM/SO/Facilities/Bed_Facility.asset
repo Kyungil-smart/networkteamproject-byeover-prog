@@ -13,4 +13,26 @@ MonoBehaviour:
   m_Name: Bed_Facility
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.FacilityDataSO
   type: 5
-  levels: []
+  levels:
+  - level: 1
+    upgradeMaterials: []
+    effectDescription: "\uAE30\uBCF8 \uCE68\uB300"
+  - level: 2
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
+      amount: 5
+    - item: {fileID: 11400000, guid: 228f7cdc946b06042960e1f6445bde2e, type: 2}
+      amount: 5
+    effectDescription: "\uCD5C\uB300 \uC2A4\uD0DC\uBBF8\uB108 +5"
+  - level: 3
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
+      amount: 10
+    - item: {fileID: 11400000, guid: 228f7cdc946b06042960e1f6445bde2e, type: 2}
+      amount: 15
+    effectDescription: "\uCD5C\uB300 \uC2A4\uD0DC\uBBF8\uB108 +10"
+  - level: 4
+    upgradeMaterials:
+    - item: {fileID: 11400000, guid: be884a024d1ace14487ad8ca2af8974c, type: 2}
+      amount: 1
+    effectDescription: "\uCD5C\uB300 \uC2A4\uD0DC\uBBF8\uB108 +15"

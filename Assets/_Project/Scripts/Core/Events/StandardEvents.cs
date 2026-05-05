@@ -7,7 +7,7 @@ namespace DeadZone.Core
 {
     public enum BodyPart : byte { Head, Torso, Limb }
     public enum EnemyTier : byte { T1 = 1, T2, T3, T4, T5 }
-    public enum FacilityType : byte { Workbench, CommStation, Gym, Stash, Kitchen, Bed }
+    public enum FacilityType : byte { Workbench, CommStation, Gym, Stash, Kitchen, Bed, Medical }
     public enum ObjectiveType : byte { Kill, Collect, Reach }
     public enum PlayerState : byte { Alive, Knocked, Dead }
     public enum ReviveResult : byte { Completed, Cancelled, Interrupted }
@@ -56,6 +56,80 @@ namespace DeadZone.Core
         public float maxDurability;
         public Vector3 origin;
         public float loudness;
+    }
+
+    // 장전 상태가 시작되거나 종료될 때 발행된다.
+    public struct ReloadStateChangedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes weaponId;
+        public FixedString64Bytes ammoId;
+        public AmmoGrade grade;
+        public bool isReloading;
+        public float duration;
+    }
+
+    // 장전이 정상 완료되어 탄창 상태가 갱신된 뒤 발행된다.
+    public struct ReloadCompletedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes weaponId;
+        public FixedString64Bytes ammoId;
+        public AmmoGrade grade;
+        public int currentAmmo;
+        public int maxAmmo;
+    }
+
+    // 장전이 실패하거나 진행 중 취소되었을 때 발행된다.
+    // reason은 ReloadSystem 쪽 ReloadCancelReason 값을 byte로 전달한다.
+    public struct ReloadCancelledEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes weaponId;
+        public byte reason;
+    }
+
+    // 다른 시스템이 현재 장전을 중단시키고 싶을 때 발행한다.
+    // reason은 ReloadSystem 쪽 ReloadCancelReason 값을 byte로 전달한다.
+    public struct ReloadCancelRequestedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes weaponId;
+        public byte reason;
+    }
+
+    // 현재 무기의 탄종 Grade 변경을 요청할 때 발행된다.
+    public struct AmmoGradeChangeRequestedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes weaponId;
+        public FixedString64Bytes targetAmmoId;
+        public AmmoGrade targetGrade;
+    }
+
+    // 장전 시간이 끝난 뒤 GridInventory에 실제 장전 처리를 요청할 때 발행된다.
+    public struct ReloadExecuteRequestedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public bool changeGrade;
+        public AmmoGrade targetGrade;
+    }
+
+    // 무기 탄창 수량 또는 장착 탄약 ID가 변경된 뒤 발행된다.
+    // reason은 EquipmentSlots 쪽 WeaponAmmoChangeReason 값을 byte로 전달한다.
+    public struct WeaponAmmoChangedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes weaponId;
+        public byte weaponSlot;
+        public FixedString64Bytes beforeAmmoId;
+        public FixedString64Bytes afterAmmoId;
+        public AmmoGrade beforeGrade;
+        public AmmoGrade afterGrade;
+        public int beforeAmmo;
+        public int afterAmmo;
+        public int maxAmmo;
+        public byte reason;
     }
 
     public struct ItemLootedEvent : IGameEvent

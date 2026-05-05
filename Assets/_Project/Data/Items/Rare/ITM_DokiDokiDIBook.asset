@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: DokiDokiDIBook
   displayName: "\uB450\uADFC\uB450\uADFC \uC758\uC874\uC131 \uC8FC\uC785"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 0be120e7df92dbb4e9bf4eb2cee3d324, type: 3}
   category: 7
   rarity: 2
   isValuable: 1

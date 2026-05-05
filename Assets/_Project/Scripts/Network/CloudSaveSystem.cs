@@ -30,13 +30,16 @@ namespace DeadZone.Network
     public class CloudSaveSystem : MonoBehaviour
     {
         private const string UsersCollection = "users";
+        private const bool DisableFirestorePersistence = true;
 
         private FirebaseFirestore db;
         private FirebaseAuthManager authManager;
         private PlayerCloudData currentData;
+        private string loadedFirebaseUid = string.Empty;
 
         public PlayerCloudData CurrentData => currentData;
         public bool HasLoadedData => currentData != null;
+        public string LoadedFirebaseUid => loadedFirebaseUid;
 
         private void Awake()
         {
@@ -49,8 +52,6 @@ namespace DeadZone.Network
             EventBus.Subscribe<AuthSignedOutEvent>(OnAuthSignedOut);
             EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
             EventBus.Subscribe<SceneChangedEvent>(OnSceneChanged);
-
-            TryAttachFirestore();
         }
 
         private void OnDestroy()
@@ -67,23 +68,68 @@ namespace DeadZone.Network
         {
             // 동기 대기. 3초 타임아웃 초과 시 포기하고 앱 종료.
             if (!HasLoadedData || authManager == null || !authManager.IsSignedIn) return;
+            if (loadedFirebaseUid != authManager.CurrentUid) return;
 
             var uploadTask = UploadAsync();
             uploadTask.Wait(TimeSpan.FromSeconds(3));
         }
 
-        private void TryAttachFirestore()
+        private bool TryEnsureFirestoreReady()
         {
+            if (db != null)
+            {
+                return true;
+            }
+
             var bootstrap = ServiceLocator.Get<FirebaseBootstrap>();
             if (bootstrap == null || !bootstrap.IsReady)
             {
-                Invoke(nameof(TryAttachFirestore), 0.1f);
-                return;
+                Debug.LogWarning("[CloudSaveSystem] Firestore attach skipped: FirebaseBootstrap is not ready");
+                return false;
             }
 
-            db = FirebaseFirestore.DefaultInstance;
-            authManager = ServiceLocator.Get<FirebaseAuthManager>();
-            Debug.Log("[CloudSaveSystem] Attached to Firestore");
+            try
+            {
+                Debug.Log("[CloudSaveSystem] Preparing Firestore instance");
+
+                FirebaseFirestore firestore = FirebaseFirestore.DefaultInstance;
+                Debug.Log("[CloudSaveSystem] FirebaseFirestore.DefaultInstance acquired");
+
+                if (DisableFirestorePersistence)
+                {
+                    Debug.Log("[CloudSaveSystem] Disabling Firestore persistence before first read/write");
+                    firestore.Settings.PersistenceEnabled = false;
+                    Debug.Log("[CloudSaveSystem] Firestore persistence disabled");
+                }
+
+                db = firestore;
+                Debug.Log("[CloudSaveSystem] Attached to Firestore after Firebase sign-in");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                db = null;
+                Debug.LogError($"[CloudSaveSystem] Firestore attach failed: {ex}");
+                return false;
+            }
+        }
+
+        private bool TryGetSignedInAuth(out string uid, out string email)
+        {
+            uid = string.Empty;
+            email = string.Empty;
+
+            authManager ??= ServiceLocator.Get<FirebaseAuthManager>();
+
+            if (authManager == null || !authManager.IsSignedIn)
+            {
+                return false;
+            }
+
+            uid = authManager.CurrentUid;
+            email = authManager.CurrentEmail;
+
+            return !string.IsNullOrWhiteSpace(uid);
         }
 
         // =================================================================
@@ -92,17 +138,29 @@ namespace DeadZone.Network
 
         private async void OnAuthSignedIn(AuthSignedInEvent e)
         {
+            currentData = null;
+            loadedFirebaseUid = string.Empty;
+
+            string signedInUid = e.firebaseUid.ToString();
+            if (string.IsNullOrWhiteSpace(signedInUid))
+            {
+                Debug.LogWarning("[CloudSaveSystem] AuthSignedInEvent uid is empty. Cloud Save load skipped.");
+                return;
+            }
+
             await LoadAsync();
         }
 
         private void OnAuthSignedOut(AuthSignedOutEvent e)
         {
             currentData = null;
+            loadedFirebaseUid = string.Empty;
         }
 
         private async void OnPlayerDied(PlayerDiedEvent e)
         {
             // 본인이 죽었을 때만 업로드
+            if (!HasLoadedData || string.IsNullOrWhiteSpace(loadedFirebaseUid)) return;
             if (NetworkManager.Singleton == null) return;
             if (e.victimClientId != NetworkManager.Singleton.LocalClientId) return;
 
@@ -115,6 +173,7 @@ namespace DeadZone.Network
             // Hideout 복귀 시 업로드
             if (e.sceneName != "Hideout") return;
             if (!HasLoadedData) return;
+            if (string.IsNullOrWhiteSpace(loadedFirebaseUid)) return;
 
             Debug.Log("[CloudSaveSystem] Returned to Hideout -> upload");
             await UploadAsync();
@@ -129,19 +188,27 @@ namespace DeadZone.Network
         /// </summary>
         public async Task<PlayerCloudData> LoadAsync()
         {
-            if (db == null || authManager == null || !authManager.IsSignedIn)
+            if (!TryGetSignedInAuth(out string uid, out string email))
             {
                 Debug.LogWarning("[CloudSaveSystem] Cannot load: not ready or not signed in");
                 return null;
             }
 
-            string uid = authManager.CurrentUid;
+            if (!TryEnsureFirestoreReady())
+            {
+                Debug.LogWarning("[CloudSaveSystem] Cannot load: Firestore is not ready");
+                return null;
+            }
+
             bool isNew = false;
 
             try
             {
+                Debug.Log($"[CloudSaveSystem] Preparing Firestore document reference users/{uid}");
                 var doc = db.Collection(UsersCollection).Document(uid);
+                Debug.Log($"[CloudSaveSystem] Requesting Firestore document snapshot users/{uid}");
                 var snapshot = await doc.GetSnapshotAsync();
+                Debug.Log($"[CloudSaveSystem] Firestore document load completed. Exists={snapshot.Exists}");
 
                 if (snapshot.Exists)
                 {
@@ -151,11 +218,21 @@ namespace DeadZone.Network
                 }
                 else
                 {
-                    currentData = NewPlayerData(uid, authManager.CurrentEmail);
+                    currentData = NewPlayerData(uid, email);
                     isNew = true;
-                    await UploadAsync();  // 신규 유저는 즉시 기본 데이터 기록
+                    loadedFirebaseUid = uid;
+
+                    bool uploaded = await UploadAsync();  // 신규 유저는 즉시 기본 데이터 기록
+                    if (!uploaded)
+                    {
+                        currentData = null;
+                        loadedFirebaseUid = string.Empty;
+                        return null;
+                    }
                 }
 
+                loadedFirebaseUid = uid;
+                
                 EventBus.Publish(new CloudSaveLoadedEvent
                 {
                     firebaseUid = uid,
@@ -166,6 +243,7 @@ namespace DeadZone.Network
             }
             catch (Exception ex)
             {
+                loadedFirebaseUid = string.Empty;
                 Debug.LogError($"[CloudSaveSystem] Load failed: {ex}");
                 return null;
             }
@@ -180,18 +258,29 @@ namespace DeadZone.Network
         /// </summary>
         public async Task<bool> UploadAsync()
         {
-            if (db == null || authManager == null || !authManager.IsSignedIn)
+            if (!TryGetSignedInAuth(out string uid, out _))
             {
                 Debug.LogWarning("[CloudSaveSystem] Cannot upload: not ready or not signed in");
                 return false;
             }
+
+            if (!TryEnsureFirestoreReady())
+            {
+                Debug.LogWarning("[CloudSaveSystem] Cannot upload: Firestore is not ready");
+                return false;
+            }
+
             if (currentData == null)
             {
                 Debug.LogWarning("[CloudSaveSystem] Cannot upload: currentData null (not loaded)");
                 return false;
             }
 
-            string uid = authManager.CurrentUid;
+            if (loadedFirebaseUid != uid)
+            {
+                Debug.LogWarning("[CloudSaveSystem] Cannot upload: loaded data does not match current Firebase user");
+                return false;
+            }
 
             try
             {

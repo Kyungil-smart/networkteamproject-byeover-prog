@@ -13,15 +13,13 @@ MonoBehaviour:
   m_Name: Recipe_ArmorClass5
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.RecipeSO
   recipeID: recipe_armor_class_5
-  result: {fileID: 11400000, guid: fb409c3126248464b83768725f517dc8, type: 2}
+  result: {fileID: 11400000, guid: 605e66098567a8a408815c91cf2271b4, type: 2}
   resultCount: 1
   ingredients:
-  - item: {fileID: 11400000, guid: 72cb311868bdf204bb0ee90b9df7c405, type: 2}
-    amount: 8
-  - item: {fileID: 11400000, guid: 0a9e2f60b9f77a54784bc8834da9eaa7, type: 2}
-    amount: 3
-  - item: {fileID: 11400000, guid: 418c8937adb4bb34ab14c881b6409919, type: 2}
-    amount: 2
+  - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
+    amount: 15
+  - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
+    amount: 15
   craftTimeSeconds: 5
   requiredFacilityLevel: 3
   requiredTier: 2

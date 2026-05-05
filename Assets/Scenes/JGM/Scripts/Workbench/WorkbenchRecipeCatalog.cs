@@ -2,45 +2,37 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Systems;
 
-namespace DeadZone.Systems
+namespace DeadZone.Systems.Housing
 {
-    // ÀÛ¾÷´ë¿¡¼­ »ç¿ëÇÒ ·¹½ÃÇÇ ¸ñ·Ï°ú ·¹º§ Á¦ÇÑÀ» °ü¸®ÇÕ´Ï´Ù.
-    // ½ÇÁ¦ Á¦ÀÛ, Àç·á ¼Ò¸ğ, UI Ç¥½Ã´Â ´Ù¸¥ ½ºÅ©¸³Æ®°¡ ´ã´çÇÕ´Ï´Ù.
-  
+    /// <summary>
+    /// ì‘ì—…ëŒ€ ì œì‘ ë ˆì‹œí”¼ ëª©ë¡ê³¼ ë ˆë²¨ ì œí•œì„ ê´€ë¦¬í•©ë‹ˆë‹¤.
+    /// ì‹¤ì œ ì¬ë£Œ ê²€ì‚¬ì™€ ê²°ê³¼ ì§€ê¸‰ì€ WorkbenchCraftingControllerê°€ ë‹´ë‹¹í•©ë‹ˆë‹¤.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Workbench))]
     public class WorkbenchRecipeCatalog : MonoBehaviour
     {
-        [Header("ÀÛ¾÷´ë")]
+        [Header("ì‘ì—…ëŒ€")]
         [SerializeField]
-        [Tooltip("·¹½ÃÇÇ ·¹º§ Á¦ÇÑÀ» È®ÀÎÇÒ Workbench ½Ã¼³ÀÔ´Ï´Ù. ºñ¿öµÎ¸é °°Àº ¿ÀºêÁ§Æ®¿¡¼­ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [Tooltip("ë ˆì‹œí”¼ ë ˆë²¨ ì œí•œì„ í™•ì¸í•  ì‘ì—…ëŒ€ì…ë‹ˆë‹¤. ë¹„ì›Œë‘ë©´ ê°™ì€ ì˜¤ë¸Œì íŠ¸ì—ì„œ ìë™ìœ¼ë¡œ ì°¾ìŠµë‹ˆë‹¤.")]
         private Workbench workbench;
 
-        [Header("·¹½ÃÇÇ ¸ñ·Ï")]
+        [Header("ë ˆì‹œí”¼ ëª©ë¡")]
         [SerializeField]
-        [Tooltip("ÀÌ ÀÛ¾÷´ë¿¡¼­ »ç¿ëÇÒ ¼ö ÀÖ´Â ÀüÃ¼ Á¦ÀÛ ·¹½ÃÇÇ ¸ñ·ÏÀÔ´Ï´Ù.")]
+        [Tooltip("ì´ ì‘ì—…ëŒ€ì—ì„œ ì‚¬ìš©í•  ìˆ˜ ìˆëŠ” ì „ì²´ ì œì‘ ë ˆì‹œí”¼ ëª©ë¡ì…ë‹ˆë‹¤.")]
         private List<RecipeSO> recipes = new();
 
-        [Header("Á¦ÀÛ ±ÔÄ¢")]
+        [Header("ë¡œê·¸")]
         [SerializeField]
-        [Tooltip("±ÍÁßÇ° Ä«Å×°í¸® ¾ÆÀÌÅÛ Á¦ÀÛÀ» Çã¿ëÇÒÁö ¿©ºÎÀÔ´Ï´Ù. ±âº»°ªÀº falseÀÔ´Ï´Ù.")]
-        private bool allowValuableCrafting = false;
+        [Tooltip("ë ˆì‹œí”¼ ë°ì´í„° ë¬¸ì œë¥¼ Consoleì— ì¶œë ¥í•©ë‹ˆë‹¤.")]
+        private bool logRecipeValidation = true;
 
         private readonly List<RecipeSO> cachedUnlockedRecipes = new();
 
         public Workbench Workbench => workbench;
-
-        public int CurrentWorkbenchLevel
-        {
-            get
-            {
-                if (workbench == null)
-                    return 0;
-
-                return workbench.CurrentLevel.Value;
-            }
-        }
+        public int CurrentWorkbenchLevel => workbench != null ? workbench.CurrentLevel.Value : 0;
 
         private void Reset()
         {
@@ -92,7 +84,7 @@ namespace DeadZone.Systems
             {
                 RecipeSO recipe = recipes[i];
 
-                if (CanUseRecipe(recipe))
+                if (CanUseRecipe(recipe, out _))
                     cachedUnlockedRecipes.Add(recipe);
             }
 
@@ -101,19 +93,58 @@ namespace DeadZone.Systems
 
         public bool CanUseRecipe(RecipeSO recipe)
         {
+            return CanUseRecipe(recipe, out _);
+        }
+
+        public bool CanUseRecipe(RecipeSO recipe, out string failReason)
+        {
+            failReason = string.Empty;
+
             if (recipe == null)
+            {
+                failReason = "ë ˆì‹œí”¼ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.";
                 return false;
+            }
 
             if (workbench == null)
+            {
+                failReason = "Workbench ì»´í¬ë„ŒíŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤.";
                 return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(recipe.recipeID))
+            {
+                failReason = "recipeIDê°€ ë¹„ì–´ ìˆëŠ” ë ˆì‹œí”¼ê°€ ìˆìŠµë‹ˆë‹¤.";
+                return false;
+            }
 
             if (recipe.result == null)
+            {
+                failReason = $"ë ˆì‹œí”¼ ê²°ê³¼ ì•„ì´í…œì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤. RecipeID: {recipe.recipeID}";
                 return false;
+            }
 
-            if (!allowValuableCrafting && recipe.result.category == ItemCategory.Valuable)
+            if (string.IsNullOrWhiteSpace(recipe.result.itemID))
+            {
+                failReason = $"ë ˆì‹œí”¼ ê²°ê³¼ ì•„ì´í…œì˜ itemIDê°€ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤. RecipeID: {recipe.recipeID}";
                 return false;
+            }
 
-            return CurrentWorkbenchLevel >= recipe.requiredFacilityLevel;
+            if (IsValuableResult(recipe.result))
+            {
+                failReason = "ê·€ì¤‘í’ˆì€ ì‘ì—…ëŒ€ì—ì„œ ì œì‘í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.";
+                return false;
+            }
+
+            int requiredLevel = GetRequiredWorkbenchLevel(recipe);
+
+            if (CurrentWorkbenchLevel < requiredLevel)
+            {
+                failReason = $"ì‘ì—…ëŒ€ Lv.{requiredLevel} ì´ìƒì´ í•„ìš”í•©ë‹ˆë‹¤. í˜„ì¬ Lv.{CurrentWorkbenchLevel}";
+                return false;
+            }
+
+            return true;
         }
 
         public bool TryGetRecipe(string recipeId, out RecipeSO recipe)
@@ -143,12 +174,108 @@ namespace DeadZone.Systems
             return false;
         }
 
-        public bool TryGetUnlockedRecipe(string recipeId, out RecipeSO recipe)
+        public bool TryGetUnlockedRecipe(string recipeId, out RecipeSO recipe, out string failReason)
         {
+            recipe = null;
+            failReason = string.Empty;
+
             if (!TryGetRecipe(recipeId, out recipe))
+            {
+                failReason = $"ë ˆì‹œí”¼ë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. RecipeID: {recipeId}";
+                return false;
+            }
+
+            return CanUseRecipe(recipe, out failReason);
+        }
+
+        public int GetRequiredWorkbenchLevel(RecipeSO recipe)
+        {
+            if (recipe == null)
+                return 1;
+
+            int levelByRecipe = Mathf.Clamp(recipe.requiredFacilityLevel, 1, 4);
+            int levelByRarity = GetRequiredLevelByRarity(recipe.requiredTier);
+            return Mathf.Max(levelByRecipe, levelByRarity);
+        }
+
+        private static int GetRequiredLevelByRarity(RarityTier rarity)
+        {
+            switch (rarity)
+            {
+                case RarityTier.Common:
+                    return 1;
+
+                case RarityTier.Uncommon:
+                    return 2;
+
+                case RarityTier.Rare:
+                    return 3;
+
+                case RarityTier.Epic:
+                    return 4;
+
+                case RarityTier.Legendary:
+                    return 4;
+
+                default:
+                    return 1;
+            }
+        }
+
+        private static bool IsValuableResult(ItemDataSO item)
+        {
+            if (item == null)
                 return false;
 
-            return CanUseRecipe(recipe);
+            return item.category == ItemCategory.Valuable || item.isValuable;
         }
+
+#if UNITY_EDITOR
+        [ContextMenu("ë””ë²„ê·¸ ë ˆì‹œí”¼ ê²€ì¦")]
+        private void DebugValidateRecipes()
+        {
+            if (recipes == null || recipes.Count == 0)
+            {
+                Debug.LogWarning("[WorkbenchRecipeCatalog] ë“±ë¡ëœ ë ˆì‹œí”¼ê°€ ì—†ìŠµë‹ˆë‹¤.", this);
+                return;
+            }
+
+            HashSet<string> usedRecipeIds = new();
+
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                RecipeSO recipe = recipes[i];
+
+                if (recipe == null)
+                {
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] ë¹„ì–´ ìˆëŠ” ë ˆì‹œí”¼ ìŠ¬ë¡¯ì´ ìˆìŠµë‹ˆë‹¤. Index: {i}", this);
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(recipe.recipeID))
+                {
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] recipeIDê°€ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤. Index: {i}", this);
+                    continue;
+                }
+
+                if (!usedRecipeIds.Add(recipe.recipeID))
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] ì¤‘ë³µ recipeIDê°€ ìˆìŠµë‹ˆë‹¤: {recipe.recipeID}", this);
+
+                if (recipe.result == null)
+                    Debug.LogWarning($"[WorkbenchRecipeCatalog] ê²°ê³¼ ì•„ì´í…œì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤. RecipeID: {recipe.recipeID}", this);
+
+                if (CanUseRecipe(recipe, out string failReason))
+                {
+                    if (logRecipeValidation)
+                        Debug.Log($"[WorkbenchRecipeCatalog] ì‚¬ìš© ê°€ëŠ¥ ë ˆì‹œí”¼: {recipe.recipeID}", this);
+                }
+                else
+                {
+                    if (logRecipeValidation)
+                        Debug.Log($"[WorkbenchRecipeCatalog] í˜„ì¬ ì‚¬ìš© ë¶ˆê°€ ë ˆì‹œí”¼: {recipe.recipeID} / ì‚¬ìœ : {failReason}", this);
+                }
+            }
+        }
+#endif
     }
 }
