@@ -3097,6 +3097,7 @@ GameObject:
   - component: {fileID: 1350870821827260250}
   - component: {fileID: 4804247100134611311}
   - component: {fileID: 8133617694873195914}
+  - component: {fileID: 6728513792519004208}
   m_Layer: 5
   m_Name: Popup_Setting
   m_TagString: Untagged
@@ -3191,6 +3192,19 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 131063
+--- !u!114 &6728513792519004208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7392058866433119634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f99534af9d248b4894b241c41af036d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.SettingPopupUI
+  closeButton: {fileID: 5525747475611119317}
 --- !u!1 &7583907808079766034
 GameObject:
   m_ObjectHideFlags: 0

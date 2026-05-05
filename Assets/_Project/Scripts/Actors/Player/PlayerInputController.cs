@@ -371,8 +371,6 @@ namespace DeadZone.Actors
         public void OnPause(InputAction.CallbackContext context)
         {
             if (!CanProcessInput || !context.performed) return;
-
-            CursorStateController.ToggleUiOwner(this);
         }
     }
 }
