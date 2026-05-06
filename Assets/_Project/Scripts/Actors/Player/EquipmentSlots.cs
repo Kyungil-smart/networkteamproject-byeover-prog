@@ -264,6 +264,8 @@ namespace DeadZone.Actors
         {
             if (!IsServer) return;
 
+            Debug.Log($"[EquipmentSlots] UpdateSlot: owner={OwnerClientId}, slot={slot}, itemID={itemId}, ammo={state.currentAmmo}", this);
+
             switch (slot)
             {
                 case WeaponSlot.Primary1:
@@ -278,12 +280,37 @@ namespace DeadZone.Actors
                     SecondaryId.Value = itemId;
                     SecondaryState.Value = state;
                     break;
+                case WeaponSlot.Melee:
+                    MeleeId.Value = itemId;
+                    break;
             }
             
             if (CurrentEquipped.Value.Length == 0)
             {
                 CurrentEquipped.Value = itemId;
             }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void EquipWeaponSlotServerRpc(
+            FixedString64Bytes itemId,
+            WeaponSlot slot,
+            FixedString64Bytes loadedAmmoId,
+            ushort currentAmmo)
+        {
+            WeaponState state = new()
+            {
+                loadedAmmoId = loadedAmmoId,
+                currentAmmo = currentAmmo
+            };
+
+            UpdateSlot(slot, itemId.ToString(), state);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void ClearWeaponSlotServerRpc(WeaponSlot slot)
+        {
+            UpdateSlot(slot, string.Empty, default);
         }
 
         // ----------- 장착 ServerRpc -----------

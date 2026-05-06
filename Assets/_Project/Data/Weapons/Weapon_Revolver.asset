@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Weapon_Revolver
   displayName: "\uB9AC\uBCFC\uBC84"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: d481fb88a11f7bd4d82e49815d2b22cd, type: 3}
   category: 0
   rarity: 1
   isValuable: 0

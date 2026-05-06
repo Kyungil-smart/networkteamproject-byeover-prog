@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Weapon_PumpSG
   displayName: "\uD38C\uD504 \uC0F7\uAC74"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 5f3ca7f909d70e8458fab046c82cbe05, type: 3}
   category: 0
   rarity: 1
   isValuable: 0

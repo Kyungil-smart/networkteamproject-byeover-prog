@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Weapon_Glock17
   displayName: "\uAE00\uB77D-17"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ca3ef69234cf565499d359eea6cee8ee, type: 3}
   category: 0
   rarity: 0
   isValuable: 0
