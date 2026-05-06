@@ -2,6 +2,7 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 #if ODIN_INSPECTOR
 using Sirenix.OdinInspector;
@@ -24,7 +25,8 @@ namespace DeadZone.Network
         [SerializeField] private string mapBSceneName = "Stage2";
 
         [Header("==== 싱글/테스트 ====")]
-        [SerializeField] private bool offlineHasEscapedMapA;
+        [FormerlySerializedAs("offlineHasEscapedMapA")]
+        [SerializeField] private bool offlineHasUnlockedMapB;
 
         [Header("==== 디버그 ====")]
         [SerializeField] private bool logDebug;
@@ -184,7 +186,7 @@ namespace DeadZone.Network
             switch (map)
             {
                 case LobbyRaidMap.MapA:
-                    reason = "Map A 선택 가능";
+                    reason = "MapA 선택 가능";
                     return true;
 
                 case LobbyRaidMap.MapB:
@@ -205,10 +207,10 @@ namespace DeadZone.Network
         {
             if (!IsNetworkSessionActive())
             {
-                reason = offlineHasEscapedMapA
-                    ? "Map B 선택 가능"
-                    : "Map A를 1회 이상 탈출해야 Map B를 선택할 수 있습니다.";
-                return offlineHasEscapedMapA;
+                reason = offlineHasUnlockedMapB
+                    ? "MapB 선택 가능"
+                    : "MapB가 해금되어 있어야 선택할 수 있습니다.";
+                return offlineHasUnlockedMapB;
             }
 
             ResolveReferences();
@@ -221,14 +223,14 @@ namespace DeadZone.Network
 
             for (int i = 0; i < lobbyState.Players.Count; i++)
             {
-                if (!lobbyState.Players[i].HasEscapedMapA)
+                if (!lobbyState.Players[i].HasUnlockedMapB)
                 {
-                    reason = "현재 파티원 모두가 Map A를 1회 이상 탈출해야 Map B를 선택할 수 있습니다.";
+                    reason = "현재 파티원 모두가 MapB를 해금해야 선택할 수 있습니다.";
                     return false;
                 }
             }
 
-            reason = "Map B 선택 가능";
+            reason = "MapB 선택 가능";
             return true;
         }
 
@@ -247,7 +249,7 @@ namespace DeadZone.Network
         {
             if (!IsNetworkSessionActive())
             {
-                offlineHasEscapedMapA = true;
+                offlineHasUnlockedMapB = true;
                 return;
             }
 
@@ -258,7 +260,7 @@ namespace DeadZone.Network
                 Unity.Netcode.NetworkManager.Singleton != null &&
                 Unity.Netcode.NetworkManager.Singleton.IsClient)
             {
-                lobbyState.SetMapAEscapedServerRpc(true);
+                lobbyState.SubmitMapBUnlockStateServerRpc(true);
             }
         }
 
