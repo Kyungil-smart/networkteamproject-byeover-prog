@@ -5,10 +5,8 @@ using DeadZone.Core;
 
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// 하우징 시설 효과 이벤트를 받아 플레이어 능력치 시스템에 반영합니다.
-    /// 하우징 시스템이 PlayerHealthSystem, PlayerStaminaSystem, PlayerCarryWeightSystem, UI를 직접 참조하지 않게 만드는 중간 수신자입니다.
-    /// </summary>
+    // 하우징 시설 효과 이벤트를 받아 플레이어 능력치 시스템에 반영
+    // 하우징 시스템이 PlayerHealthSystem, PlayerStaminaSystem, PlayerCarryWeightSystem, UI를 직접 참조하지 않게 만드는 중간 수신자
     [DisallowMultipleComponent]
     public sealed class PlayerHousingBonusReceiver : NetworkBehaviour
     {
