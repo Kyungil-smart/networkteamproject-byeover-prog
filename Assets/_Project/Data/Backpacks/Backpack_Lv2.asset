@@ -15,7 +15,7 @@ MonoBehaviour:
   itemID: Backpack_Lv2
   displayName: "Lv2 \uAC00\uBC29"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ec847dcf7898afe408079478da2b79f5, type: 3}
   category: 2
   rarity: 1
   isValuable: 0
