@@ -14,13 +14,15 @@ namespace DeadZone.Actors.UI
     /// </summary>
     public class LobbyPartyController : MonoBehaviour
     {
+        private const string MapBUnlockZoneId = "MapB_All";
+
         [Header("==== 연결 ====")]
         [Tooltip("HJO_Lobby 씬의 LobbyNetworkState 오브젝트에 붙은 NetworkLobbyState")]
         [SerializeField] private NetworkLobbyState lobbyState;
 
         [Tooltip("4개 파티 슬롯을 표시하는 View")]
         [SerializeField] private LobbyPartyView partyView;
-        
+
         [Header("==== 표시 이름 ====")]
         [Tooltip("Cloud Save 표시 이름을 찾지 못했을 때 사용할 기본 이름")]
         [SerializeField] private string fallbackDisplayName = "Player";
@@ -31,7 +33,7 @@ namespace DeadZone.Actors.UI
         [Header("==== 디버그 ====")]
         [Tooltip("파티/Ready 연결 흐름 로그를 출력할지 여부입니다.")]
         [SerializeField] private bool logDebug = false;
-        
+
         private readonly List<LobbyPlayerState> sortedPlayers = new();
         private readonly List<LobbyPartySlotViewData> slotViewDataBuffer = new();
 
@@ -42,16 +44,26 @@ namespace DeadZone.Actors.UI
         private string lastSubmittedDisplayName = string.Empty;
         private NetworkLobbyState lastSubmittedLobbyState;
 
+        private bool hasSubmittedMapBUnlockState;
+        private bool lastSubmittedMapBUnlockState;
+        private NetworkLobbyState lastSubmittedMapBUnlockLobbyState;
+
         private bool isPlayersListSubscribed;
-        private void Awake() => ResolveReferences();
+
+        private void Awake()
+        {
+            ResolveReferences();
+        }
 
         private void OnEnable()
         {
+            EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+
             ResolveReferences();
             BindView();
             BindLobbyState();
             RefreshView();
-            TrySubmitLocalPlayerInfo();
+            TrySubmitLobbyPlayerState();
         }
 
         private void Start()
@@ -60,15 +72,17 @@ namespace DeadZone.Actors.UI
             BindView();
             BindLobbyState();
             RefreshView();
-            TrySubmitLocalPlayerInfo();
+            TrySubmitLobbyPlayerState();
         }
-        
+
         private void OnDisable()
         {
+            EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+
             UnbindLobbyState();
             UnbindView();
         }
-        
+
         /// <summary>
         /// View에서 올라온 Ready 클릭 요청을 서버 RPC로 전달합니다.
         /// </summary>
@@ -79,10 +93,11 @@ namespace DeadZone.Actors.UI
 
             lobbyState.SetReadyServerRpc(desiredReady);
         }
-        
+
         private void ResolveReferences()
         {
-            if (partyView == null) partyView = GetComponent<LobbyPartyView>();
+            if (partyView == null)
+                partyView = GetComponent<LobbyPartyView>();
         }
 
         private void BindView()
@@ -94,21 +109,21 @@ namespace DeadZone.Actors.UI
             subscribedPartyView = partyView;
             subscribedPartyView.ReadyClicked += HandleReadyClicked;
         }
-        
+
         private void UnbindView()
         {
-            if (subscribedPartyView == null)  return;
-            
+            if (subscribedPartyView == null) return;
+
             subscribedPartyView.ReadyClicked -= HandleReadyClicked;
             subscribedPartyView = null;
         }
-        
+
         private void BindLobbyState()
         {
             if (lobbyState == null || subscribedLobbyState == lobbyState) return;
 
             if (subscribedLobbyState != null && subscribedLobbyState != lobbyState)
-                ResetLocalInfoSubmission();
+                ResetLobbyPlayerStateSubmission();
 
             UnbindLobbyState();
 
@@ -116,22 +131,22 @@ namespace DeadZone.Actors.UI
             subscribedLobbyState.NetworkSpawned += HandleLobbyStateSpawned;
             subscribedLobbyState.NetworkDespawned += HandleLobbyStateDespawned;
 
-            // NetworkList 변경 이벤트는 NetworkObject Spawn 이후 구독
-            // 이미 Spawn된 상태에서 늦게 바인딩되는 경우 현재 상태도 즉시 반영
+            // NetworkList 변경 이벤트는 NetworkObject Spawn 이후 구독합니다.
+            // 이미 Spawn된 상태에서 늦게 바인딩되는 경우 현재 상태도 즉시 반영합니다.
             if (subscribedLobbyState.IsSpawned)
             {
                 SubscribePlayersList();
                 RefreshView();
-                TrySubmitLocalPlayerInfo();
+                TrySubmitLobbyPlayerState();
             }
             else
             {
                 RefreshView();
             }
         }
-        
+
         /// <summary>
-        /// NetworkLobbyState가 Spawn된 뒤 Players 목록 변경 이벤트를 구독
+        /// NetworkLobbyState가 Spawn된 뒤 Players 목록 변경 이벤트를 구독합니다.
         /// </summary>
         private void SubscribePlayersList()
         {
@@ -150,7 +165,7 @@ namespace DeadZone.Actors.UI
         }
 
         /// <summary>
-        /// Players 목록 변경 이벤트 구독을 해제
+        /// Players 목록 변경 이벤트 구독을 해제합니다.
         /// </summary>
         private void UnsubscribePlayersList()
         {
@@ -164,7 +179,7 @@ namespace DeadZone.Actors.UI
 
             isPlayersListSubscribed = false;
         }
-        
+
         private void UnbindLobbyState()
         {
             if (subscribedLobbyState == null) return;
@@ -176,32 +191,39 @@ namespace DeadZone.Actors.UI
 
             subscribedLobbyState = null;
         }
-        
+
         private void HandleLobbyStateSpawned()
         {
             LogDebug("NetworkLobbyState 스폰 완료.");
 
             SubscribePlayersList();
             RefreshView();
-            TrySubmitLocalPlayerInfo();
+            TrySubmitLobbyPlayerState();
         }
-        
+
         private void HandleLobbyStateDespawned()
         {
             LogDebug("NetworkLobbyState 디스폰 완료.");
 
             UnsubscribePlayersList();
-            ResetLocalInfoSubmission();
+            ResetLobbyPlayerStateSubmission();
 
-            if (partyView != null) partyView.RenderEmpty();
+            if (partyView != null)
+                partyView.RenderEmpty();
         }
-        
+
         private void HandlePlayersChanged(NetworkListEvent<LobbyPlayerState> changeEvent)
         {
             LogDebug($"플레이어 목록 변경 감지. 변경종류={changeEvent.Type}, 인덱스={changeEvent.Index}");
             RefreshView();
         }
-        
+
+        private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
+        {
+            // Cloud Save 로드 이후 표시 이름과 MapB 해금 상태를 다시 제출합니다.
+            TrySubmitLobbyPlayerState();
+        }
+
         /// <summary>
         /// NetworkList 상태를 UI 표시용 ViewData로 변환해 View에 전달합니다.
         /// </summary>
@@ -223,7 +245,7 @@ namespace DeadZone.Actors.UI
             BuildSlotViewData(localClientId, partyView.SlotCount);
             partyView.Render(slotViewDataBuffer);
         }
-        
+
         private void BuildSortedPlayerBuffer()
         {
             sortedPlayers.Clear();
@@ -241,10 +263,11 @@ namespace DeadZone.Actors.UI
 
             sortedPlayers.Sort(CompareLobbyPlayersForDisplay);
         }
-        
+
         private int CompareLobbyPlayersForDisplay(LobbyPlayerState a, LobbyPlayerState b)
         {
-            if (a.IsHost != b.IsHost) return a.IsHost ? -1 : 1;
+            if (a.IsHost != b.IsHost)
+                return a.IsHost ? -1 : 1;
 
             return a.ClientId.CompareTo(b.ClientId);
         }
@@ -275,8 +298,14 @@ namespace DeadZone.Actors.UI
             }
         }
 
+        private void TrySubmitLobbyPlayerState()
+        {
+            TrySubmitLocalPlayerInfo();
+            TrySubmitMapBUnlockState();
+        }
+
         /// <summary>
-        /// Cloud Save 표시 이름을 서버에 제출
+        /// Cloud Save 표시 이름을 서버에 제출합니다.
         /// </summary>
         private void TrySubmitLocalPlayerInfo()
         {
@@ -285,8 +314,8 @@ namespace DeadZone.Actors.UI
 
             string displayName = ResolveLocalDisplayName();
 
-            if (hasSubmittedLocalInfo 
-                && lastSubmittedLobbyState == lobbyState 
+            if (hasSubmittedLocalInfo
+                && lastSubmittedLobbyState == lobbyState
                 && lastSubmittedDisplayName == displayName)
             {
                 return;
@@ -298,9 +327,36 @@ namespace DeadZone.Actors.UI
             lastSubmittedDisplayName = displayName;
             lastSubmittedLobbyState = lobbyState;
 
-            LogDebug($"로컬 플레이어 정보 제출 완료. 표시이름={displayName}");
+            LogDebug($"로비 플레이어 정보 제출 완료. 표시이름={displayName}");
         }
-        
+
+        /// <summary>
+        /// 로드된 Cloud Save 진행도에서 MapB 접근 여부를 계산해 서버에 제출합니다.
+        /// </summary>
+        private void TrySubmitMapBUnlockState()
+        {
+            if (lobbyState == null || !lobbyState.IsSpawned) return;
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient) return;
+
+            if (!TryResolveMapBUnlockStateFromCloudSave(out bool hasUnlockedMapB))
+                return;
+
+            if (hasSubmittedMapBUnlockState
+                && lastSubmittedMapBUnlockLobbyState == lobbyState
+                && lastSubmittedMapBUnlockState == hasUnlockedMapB)
+            {
+                return;
+            }
+
+            lobbyState.SubmitMapBUnlockStateServerRpc(hasUnlockedMapB);
+
+            hasSubmittedMapBUnlockState = true;
+            lastSubmittedMapBUnlockState = hasUnlockedMapB;
+            lastSubmittedMapBUnlockLobbyState = lobbyState;
+
+            LogDebug($"MapB 해금 상태 제출 완료. HasUnlockedMapB={hasUnlockedMapB}");
+        }
+
         private string ResolveLocalDisplayName()
         {
             CloudSaveSystem cloudSave = ServiceLocator.Get<CloudSaveSystem>();
@@ -317,6 +373,28 @@ namespace DeadZone.Actors.UI
             return SanitizeDisplayName(fallbackDisplayName);
         }
 
+        private bool TryResolveMapBUnlockStateFromCloudSave(out bool hasUnlockedMapB)
+        {
+            hasUnlockedMapB = false;
+
+            CloudSaveSystem cloudSave = ServiceLocator.Get<CloudSaveSystem>();
+
+            if (cloudSave == null || !cloudSave.HasLoadedData)
+                return false;
+
+            PlayerCloudData currentData = cloudSave.CurrentData;
+
+            if (currentData == null ||
+                currentData.progress == null ||
+                currentData.progress.unlockedZones == null)
+            {
+                return false;
+            }
+
+            hasUnlockedMapB = currentData.progress.unlockedZones.Contains(MapBUnlockZoneId);
+            return true;
+        }
+
         private string SanitizeDisplayName(string value)
         {
             string fallback = string.IsNullOrWhiteSpace(fallbackDisplayName)
@@ -329,20 +407,24 @@ namespace DeadZone.Actors.UI
 
             if (string.IsNullOrWhiteSpace(sanitized))
                 sanitized = "Player";
-            
+
             if (sanitized.Length > maxDisplayNameCharacters)
                 sanitized = sanitized.Substring(0, maxDisplayNameCharacters);
 
             return sanitized;
         }
 
-        private void ResetLocalInfoSubmission()
+        private void ResetLobbyPlayerStateSubmission()
         {
             hasSubmittedLocalInfo = false;
             lastSubmittedDisplayName = string.Empty;
             lastSubmittedLobbyState = null;
+
+            hasSubmittedMapBUnlockState = false;
+            lastSubmittedMapBUnlockState = false;
+            lastSubmittedMapBUnlockLobbyState = null;
         }
-        
+
         private void LogDebug(string msg)
         {
             if (!logDebug) return;
