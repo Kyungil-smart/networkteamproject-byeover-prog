@@ -11,8 +11,8 @@ using Sirenix.OdinInspector;
 namespace DeadZone.Network
 {
     /// <summary>
-    /// 로비의 맵 선택 상태와 레이드 시작 검증을 서버 권위로 처리합니다.
-    /// 맵 선택 상태는 로비에서 동기화하고, 실제 씬 전환은 별도 시작 흐름에서 수행합니다.
+    /// 로비의 맵 선택 상태와 레이드 시작 가능 조건을 서버 권위 기준으로 판단합니다.
+    /// 실제 씬 전환은 레이드 시작 흐름에서 별도로 처리합니다.
     /// </summary>
     public class LobbyRaidStartController : NetworkBehaviour
     {
@@ -161,14 +161,34 @@ namespace DeadZone.Network
         {
             LobbyRaidMap map = SelectedMap;
 
+            if (!IsNetworkSessionActive())
+            {
+                reason = "네트워크 로비가 시작된 뒤 출격할 수 있습니다.";
+                return false;
+            }
+
+            ResolveReferences();
+
+            if (lobbyState == null || lobbyState.Players == null || lobbyState.Players.Count == 0)
+            {
+                reason = "로비 파티 정보를 확인할 수 없습니다.";
+                return false;
+            }
+
+            int partyCount = lobbyState.Players.Count;
+
+            if (partyCount < 1 || partyCount > 4)
+            {
+                reason = "파티 인원은 1명 이상 4명 이하여야 합니다.";
+                return false;
+            }
+
             if (!CanSelectMap(map, out reason))
                 return false;
 
-            int partyCount = GetPartyCount();
-
-            if (partyCount >= 2 && !AreAllPlayersReady())
+            if (!AreAllPlayersReady())
             {
-                reason = "파티원이 2명 이상이면 모든 플레이어가 준비 완료 상태여야 합니다.";
+                reason = "모든 파티원이 준비 완료 상태여야 합니다.";
                 return false;
             }
 
