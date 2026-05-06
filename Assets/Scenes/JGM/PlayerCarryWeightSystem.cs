@@ -6,11 +6,9 @@ using DeadZone.Systems;
 
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// 플레이어의 현재 소지 무게와 최대 소지 무게를 계산합니다.
-    /// GridInventory의 ServerGrid를 읽고, ItemDataSO.weightKg와 stackCount를 기준으로 현재 무게를 계산합니다.
-    /// Gym 하우징 보너스는 최대 소지 무게에 더합니다.
-    /// </summary>
+    // 플레이어의 현재 소지 무게와 최대 소지 무게를 계산
+    // GridInventory의 ServerGrid를 읽고, ItemDataSO.weightKg와 stackCount를 기준으로 현재 무게를 계산
+    // Gym 하우징 보너스는 최대 소지 무게에 더함
     [DisallowMultipleComponent]
     [RequireComponent(typeof(GridInventory))]
     public sealed class PlayerCarryWeightSystem : NetworkBehaviour

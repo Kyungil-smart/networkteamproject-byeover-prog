@@ -1969,7 +1969,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 354922505
-  InScenePlacedSourceGlobalObjectIdHash: 1951298065
+  InScenePlacedSourceGlobalObjectIdHash: 2516409520
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
@@ -2038,6 +2038,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5141c3d2456da8448aa022406645a4b0, type: 2}
   - {fileID: 11400000, guid: adf9e09668fae7d469f2f90473f23c07, type: 2}
   - {fileID: 11400000, guid: b862eb5d5d3a28e4981430dd77c67bc4, type: 2}
+  - {fileID: 11400000, guid: 5c568dbd90b381d42a43ec2f4b6b3a4b, type: 2}
+  - {fileID: 11400000, guid: efe32216fe48abb448bef01e3ff57ffe, type: 2}
+  - {fileID: 11400000, guid: f266b1383b15bc9429c192830585842b, type: 2}
+  - {fileID: 11400000, guid: 85d761e30f12bbc47a4839971574ae45, type: 2}
+  - {fileID: 11400000, guid: 2bf424526c6b6c54c9378f53a4373798, type: 2}
+  - {fileID: 11400000, guid: 7624ad90643102944b232b9a548de9d2, type: 2}
+  - {fileID: 11400000, guid: ca229cc45b69d9d44b2fb72c260a0fa4, type: 2}
+  - {fileID: 11400000, guid: cf260d7218bd54c4d84fa8aa8a09a255, type: 2}
   logRecipeValidation: 1
 --- !u!114 &5239330490307464279
 MonoBehaviour:
@@ -2099,6 +2107,14 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
     amount: 99
   - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
+    amount: 99
+  - item: {fileID: 11400000, guid: d1bef906214968245aa2782265ea3f2c, type: 2}
+    amount: 99
+  - item: {fileID: 11400000, guid: 3f26f68f6f0f19a4bbaf942bed6f42a7, type: 2}
+    amount: 99
+  - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
+    amount: 99
+  - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
     amount: 99
   logInventoryChange: 1
 --- !u!1 &4740044872790155516
