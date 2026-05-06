@@ -15429,7 +15429,7 @@ MonoBehaviour:
   btnReadyName: Btn_Ready
   btnStartName: Btn_Raid start
   iconLockName: Icon_Lock
-  textStatusName: Text_Map_B
+  textStatusName: Text_RedyMessge
   logDebug: 0
 --- !u!1 &296657632
 GameObject:
@@ -88139,7 +88139,7 @@ MonoBehaviour:
   maxPlayers: 4
   fallbackDisplayName: Player
   maxDisplayNameCharacters: 20
-  logDebug: 1
+  logDebug: 0
 --- !u!114 &1780229062
 MonoBehaviour:
   m_ObjectHideFlags: 0
