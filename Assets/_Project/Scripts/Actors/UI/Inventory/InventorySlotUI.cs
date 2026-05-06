@@ -2,7 +2,6 @@
 using DeadZone.Actors;
 using Sirenix.OdinInspector;
 using TMPro;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -411,14 +410,14 @@ namespace DeadZone.Actors.UI
             if (weaponData == null)
                 return TryClearWeaponSlot(weaponSlot, context);
 
-            FixedString64Bytes ammoId = "";
+            Unity.Collections.FixedString64Bytes ammoId = "";
             int ammoCount = Mathf.Max(0, weaponData.magSize);
 
             KHWEquipmentSlotsBridge bridge = ResolveEquipmentSlotsBridge(weaponData.itemID);
             if (bridge != null && bridge.IsSpawned)
             {
                 bridge.EquipItemServerRpc(
-                    new FixedString64Bytes(weaponData.itemID),
+                    new Unity.Collections.FixedString64Bytes(weaponData.itemID),
                     weaponSlot,
                     ammoId,
                     (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
@@ -442,7 +441,7 @@ namespace DeadZone.Actors.UI
             if (equipmentSlots != null && equipmentSlots.IsSpawned)
             {
                 equipmentSlots.EquipWeaponSlotServerRpc(
-                    new FixedString64Bytes(weaponData.itemID),
+                    new Unity.Collections.FixedString64Bytes(weaponData.itemID),
                     weaponSlot,
                     ammoId,
                     (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));

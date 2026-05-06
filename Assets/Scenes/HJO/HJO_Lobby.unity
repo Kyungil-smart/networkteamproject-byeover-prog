@@ -257,7 +257,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6227545
 RectTransform:
   m_ObjectHideFlags: 0
@@ -554,11 +554,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -1246,11 +1241,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -1498,11 +1488,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -1991,11 +1976,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -2476,11 +2456,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -2671,7 +2646,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -2849,11 +2824,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -3207,7 +3177,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &71291668
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3650,11 +3620,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -3821,7 +3786,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &84145507
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4068,7 +4033,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &89092723
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4713,7 +4678,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -4810,7 +4775,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &105570663
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5004,13 +4969,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 112055534}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -5167,7 +5132,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -5557,11 +5522,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -6000,7 +5960,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -6593,11 +6553,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -6627,7 +6582,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &143034890
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7361,14 +7316,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: 4e24d655c799602448d81ec563b9e836, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &158544984
 CanvasRenderer:
@@ -7575,13 +7525,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 164336700}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7753,7 +7703,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -7890,7 +7840,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -8604,11 +8554,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -8998,11 +8943,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -9325,11 +9265,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -9988,13 +9923,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 213084789}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -10036,7 +9971,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &214726612
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10443,7 +10378,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &221043705
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10786,11 +10721,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -12203,7 +12133,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -12713,7 +12643,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -12837,7 +12767,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 245829597}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -12850,7 +12780,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 1011bfc7dc9afae49beeced3393ca8a5, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -13810,11 +13740,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -13871,7 +13796,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 265461550}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -13884,7 +13809,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 2ff137aaaf893ad4ea6edf34bb3a02e8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -14158,13 +14083,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 269754303}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -14321,7 +14246,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -15116,7 +15041,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -15736,14 +15661,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: 55d88d64a6a89874d804d6abb8f1b259, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &296708803
 CanvasRenderer:
@@ -15770,7 +15690,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &296960651
 RectTransform:
   m_ObjectHideFlags: 0
@@ -16197,7 +16117,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &302791315
 RectTransform:
   m_ObjectHideFlags: 0
@@ -17452,7 +17372,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -17851,7 +17771,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &348104647
 RectTransform:
   m_ObjectHideFlags: 0
@@ -17953,13 +17873,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 349385883}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -18307,11 +18227,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -18574,11 +18489,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -19514,7 +19424,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &370647651
 RectTransform:
   m_ObjectHideFlags: 0
@@ -19911,7 +19821,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -20259,11 +20169,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -20333,7 +20238,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -20899,11 +20804,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -21673,7 +21573,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &409959493
 RectTransform:
   m_ObjectHideFlags: 0
@@ -21788,7 +21688,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -21885,7 +21785,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &413791927
 RectTransform:
   m_ObjectHideFlags: 0
@@ -22329,7 +22229,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -22563,7 +22463,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -23541,7 +23441,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &437898133
 RectTransform:
   m_ObjectHideFlags: 0
@@ -23697,11 +23597,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -23963,11 +23858,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -24078,11 +23968,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -24477,7 +24362,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 920d06dc601dcaf47895d1989f2968d6, type: 2}
   - {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
   - {fileID: 11400000, guid: 920d06dc601dcaf47895d1989f2968d6, type: 2}
+  - {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
+  - {fileID: 11400000, guid: acaeced2401f4c94aa9c5b0f96448f7c, type: 2}
+  - {fileID: 11400000, guid: 363c51f67a4232e4d89851c21fbb210d, type: 2}
+  - {fileID: 11400000, guid: 381e9d5acb344e340a16f41c70da1e7c, type: 2}
+  - {fileID: 11400000, guid: 221ad9a7ee08a15428420833772a6315, type: 2}
   randomizeStackCount: 1
+  logSlotCacheOnRefresh: 1
   activeSlotCount: 50
   slots:
   - {fileID: 1751644011}
@@ -24744,7 +24635,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -25677,13 +25568,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 480698858}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -25886,7 +25777,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -26023,7 +25914,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -26305,13 +26196,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 491042808}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -26509,11 +26400,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -26805,11 +26691,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -26995,11 +26876,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -28785,11 +28661,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -28846,13 +28717,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 540139669}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -29285,11 +29156,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -29475,11 +29341,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -29536,13 +29397,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 556098756}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -29792,11 +29653,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -30048,11 +29904,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -30266,7 +30117,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 584041424}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -30279,7 +30130,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 6fd0b649401ca5b419a5ebf5df170c0f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -30673,11 +30524,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -31245,11 +31091,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -31360,11 +31201,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -31710,13 +31546,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 612752337}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -31935,13 +31771,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 617568174}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -32064,11 +31900,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -32363,7 +32194,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 634415222}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -32376,7 +32207,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 6c6dbd5886f08fa438fb58cb1d1fcde1, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -32579,7 +32410,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 637773702}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -32592,7 +32423,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 0177f42e489366a46b2decf94d7406c4, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -33046,7 +32877,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -34083,11 +33914,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -34368,11 +34194,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -34483,11 +34304,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -35246,13 +35062,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 698584696}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -35539,14 +35355,34 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3853849250016192489, guid: 25c50ed69bb5b1747a020b304b8dd191, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: cb041a8ed50de7340a3c63f64b9b5586, type: 3}
+    - target: {fileID: 3853849250016192489, guid: 25c50ed69bb5b1747a020b304b8dd191, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4813538012826608278, guid: 25c50ed69bb5b1747a020b304b8dd191, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5965860915078216196, guid: 25c50ed69bb5b1747a020b304b8dd191, type: 3}
       propertyPath: m_Name
-      value: InventorySlot
+      value: InventorySlot_000
+      objectReference: {fileID: 0}
+    - target: {fileID: 5965860915078216196, guid: 25c50ed69bb5b1747a020b304b8dd191, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6085752872913061045, guid: 25c50ed69bb5b1747a020b304b8dd191, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8283551577381727871, guid: 25c50ed69bb5b1747a020b304b8dd191, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: e34302783f9e67f41a6bda21f27059ee, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -35869,7 +35705,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &705049024
 RectTransform:
   m_ObjectHideFlags: 0
@@ -35909,7 +35745,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: e34302783f9e67f41a6bda21f27059ee, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -36059,7 +35895,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -36536,13 +36372,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 721393978}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -36687,13 +36523,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 722909745}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -37781,11 +37617,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -38387,7 +38218,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &761052071
 RectTransform:
   m_ObjectHideFlags: 0
@@ -38427,7 +38258,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 2
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -38564,7 +38395,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -39356,11 +39187,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -39688,11 +39514,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -40541,7 +40362,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &809372584
 RectTransform:
   m_ObjectHideFlags: 0
@@ -40971,13 +40792,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 823196760}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -42057,7 +41878,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &841259924
 RectTransform:
   m_ObjectHideFlags: 0
@@ -42097,7 +41918,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 2743fdba0d51a7841bad1b79ccf98c2d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -42249,13 +42070,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 846017150}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -43368,7 +43189,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &873352353
 RectTransform:
   m_ObjectHideFlags: 0
@@ -43661,11 +43482,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -43810,7 +43626,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -43907,7 +43723,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &876955156
 RectTransform:
   m_ObjectHideFlags: 0
@@ -43947,7 +43763,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -44153,11 +43969,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -44383,7 +44194,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &889898273
 RectTransform:
   m_ObjectHideFlags: 0
@@ -44702,13 +44513,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 896184198}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -44790,7 +44601,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -45331,7 +45142,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -47424,13 +47235,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 947994479}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -48732,11 +48543,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -48922,11 +48728,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -49174,11 +48975,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -49779,13 +49575,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1009260353}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -50506,13 +50302,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1031326857}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -50657,13 +50453,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1032649325}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -50861,14 +50657,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: ab8c8f3ca56ea2a4d96e145572acfcee, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &1035208004
 CanvasRenderer:
@@ -51859,13 +51650,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1052802307}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -52084,7 +51875,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -52332,7 +52123,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1069093296
 RectTransform:
   m_ObjectHideFlags: 0
@@ -52372,7 +52163,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: e34302783f9e67f41a6bda21f27059ee, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -54207,11 +53998,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -54498,11 +54284,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -54750,11 +54531,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -55006,11 +54782,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -55121,11 +54892,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -55236,11 +55002,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -55426,11 +55187,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -55741,7 +55497,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -55994,11 +55750,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -57668,7 +57419,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1160737839
 RectTransform:
   m_ObjectHideFlags: 0
@@ -57824,11 +57575,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -58523,11 +58269,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -58584,13 +58325,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1180031775}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -58872,7 +58613,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1192374305
 RectTransform:
   m_ObjectHideFlags: 0
@@ -58912,7 +58653,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 27
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -59009,7 +58750,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1192694734
 RectTransform:
   m_ObjectHideFlags: 0
@@ -60229,11 +59970,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -60747,11 +60483,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -61477,7 +61208,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1239429425
 RectTransform:
   m_ObjectHideFlags: 0
@@ -61517,7 +61248,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: e34302783f9e67f41a6bda21f27059ee, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -61552,7 +61283,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1246322970
 RectTransform:
   m_ObjectHideFlags: 0
@@ -62619,11 +62350,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -62768,7 +62494,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -63021,11 +62747,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -63095,7 +62816,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -63426,11 +63147,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -63628,13 +63344,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1272102537}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -64063,11 +63779,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -64391,14 +64102,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
+  currentStackCount: 2
   debugTooltipEvents: 1
 --- !u!222 &1282714270
 CanvasRenderer:
@@ -65043,7 +64749,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1301918516
 RectTransform:
   m_ObjectHideFlags: 0
@@ -65083,7 +64789,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -65158,9 +64864,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'LV.1
-
-'
+  m_text: Lv.1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -65564,14 +65268,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: 363c51f67a4232e4d89851c21fbb210d, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &1307042183
 CanvasRenderer:
@@ -65769,11 +65468,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -66162,11 +65856,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -66196,7 +65885,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1321041070
 RectTransform:
   m_ObjectHideFlags: 0
@@ -66352,11 +66041,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -66617,7 +66301,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1329110044
 RectTransform:
   m_ObjectHideFlags: 0
@@ -66931,13 +66615,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1334107891}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -67060,11 +66744,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -67466,7 +67145,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1340329301
 RectTransform:
   m_ObjectHideFlags: 0
@@ -67506,7 +67185,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -67859,7 +67538,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -68917,13 +68596,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1377949219}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -69624,11 +69303,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -69814,11 +69488,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -71514,14 +71183,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: f0407c7472e66944aa9839a4b46d5a6e, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &1432895450
 CanvasRenderer:
@@ -72129,7 +71793,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1438213607}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -72142,7 +71806,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 777b949ae1003a244a4291ed1bbc340b, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -72424,7 +72088,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1442067643
 RectTransform:
   m_ObjectHideFlags: 0
@@ -72580,11 +72244,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -73245,7 +72904,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -74339,11 +73998,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -74801,7 +74455,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -75228,7 +74882,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1502099389
 RectTransform:
   m_ObjectHideFlags: 0
@@ -75495,7 +75149,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1511105415}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -75508,7 +75162,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 6df29a860e6103b489d3b18fb77c00a0, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -75783,7 +75437,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1521458858
 RectTransform:
   m_ObjectHideFlags: 0
@@ -76151,14 +75805,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: 49003bfdf4611d44abb76490c0358bb0, type: 2}
+  currentStackCount: 27
   debugTooltipEvents: 1
 --- !u!222 &1522690389
 CanvasRenderer:
@@ -76915,7 +76564,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1541228182
 RectTransform:
   m_ObjectHideFlags: 0
@@ -76955,7 +76604,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: e34302783f9e67f41a6bda21f27059ee, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -77198,7 +76847,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1547458259
 RectTransform:
   m_ObjectHideFlags: 0
@@ -77976,14 +77625,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &1572997385
 CanvasRenderer:
@@ -78371,13 +78015,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1579228654}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -78500,14 +78144,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: 381e9d5acb344e340a16f41c70da1e7c, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &1580480468
 CanvasRenderer:
@@ -78615,11 +78254,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -79181,13 +78815,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1597031597}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -79256,7 +78890,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1599261165}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -79269,7 +78903,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 31469ff931e0b0f4180f02305074755c, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -79331,13 +78965,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1600787735}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -79406,7 +79040,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1602267502}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -79419,7 +79053,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 06289091d2a5f6b419914f4774fbae4d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -79700,11 +79334,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -79815,11 +79444,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -80218,13 +79842,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1617386911}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -80932,13 +80556,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1627065499}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -81215,7 +80839,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -81776,7 +81400,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -82163,7 +81787,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1651938467
 RectTransform:
   m_ObjectHideFlags: 0
@@ -84297,11 +83921,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -84331,7 +83950,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1683253734
 RectTransform:
   m_ObjectHideFlags: 0
@@ -84371,7 +83990,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: e34302783f9e67f41a6bda21f27059ee, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -84487,11 +84106,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -84596,7 +84210,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1687073256
 RectTransform:
   m_ObjectHideFlags: 0
@@ -84889,11 +84503,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -85026,13 +84635,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1691700460}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -85164,7 +84773,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1696038740
 RectTransform:
   m_ObjectHideFlags: 0
@@ -85421,7 +85030,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -86319,11 +85928,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -86726,7 +86330,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -87388,7 +86992,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -87782,11 +87386,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -89916,7 +89515,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -90051,13 +89650,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1813793598}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -90533,11 +90132,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -90799,11 +90393,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -91014,7 +90603,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -91709,11 +91298,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -92407,7 +91991,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1861184266}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -92420,7 +92004,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 951a6807753b3a04ea3585cfdb170f5a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -92455,7 +92039,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1862239783
 RectTransform:
   m_ObjectHideFlags: 0
@@ -92985,13 +92569,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1881531902}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -93073,7 +92657,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -93251,11 +92835,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -93366,11 +92945,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -93839,7 +93413,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1895569229
 RectTransform:
   m_ObjectHideFlags: 0
@@ -93879,7 +93453,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -93989,7 +93563,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1900295503
 RectTransform:
   m_ObjectHideFlags: 0
@@ -94104,7 +93678,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -94560,11 +94134,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -94736,7 +94305,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1913444292
 RectTransform:
   m_ObjectHideFlags: 0
@@ -95104,11 +94673,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -95178,7 +94742,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -95302,13 +94866,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1926926562}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -96232,11 +95796,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -96446,13 +96005,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1948555979}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -96740,11 +96299,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -96855,11 +96409,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -97470,11 +97019,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -97504,7 +97048,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1966323878
 RectTransform:
   m_ObjectHideFlags: 0
@@ -98376,7 +97920,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1987081350
 RectTransform:
   m_ObjectHideFlags: 0
@@ -100341,11 +99885,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -101224,7 +100763,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -101620,11 +101159,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -101735,11 +101269,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -103072,11 +102601,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -103414,11 +102938,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -103448,7 +102967,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2069525172
 RectTransform:
   m_ObjectHideFlags: 0
@@ -103550,13 +103069,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2071314500}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -103770,7 +103289,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2074941678
 RectTransform:
   m_ObjectHideFlags: 0
@@ -104254,11 +103773,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -104369,11 +103883,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -104518,7 +104027,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2079179087
 RectTransform:
   m_ObjectHideFlags: 0
@@ -104674,11 +104183,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -104961,14 +104465,9 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
-  currentItemData: {fileID: 0}
-  currentStackCount: 0
+  currentItemData: {fileID: 11400000, guid: acaeced2401f4c94aa9c5b0f96448f7c, type: 2}
+  currentStackCount: 1
   debugTooltipEvents: 1
 --- !u!222 &2084502858
 CanvasRenderer:
@@ -105076,11 +104575,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -105150,7 +104644,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -105287,7 +104781,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -105790,7 +105284,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -106168,13 +105662,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2105323160}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -106449,11 +105943,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -106483,7 +105972,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2115940052
 RectTransform:
   m_ObjectHideFlags: 0
@@ -106598,7 +106087,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
   m_sharedMaterial: {fileID: 9173188355865384543, guid: c62abe7565efbe14598cc6a87db484d1, type: 2}
@@ -106851,11 +106340,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -107121,11 +106605,6 @@ MonoBehaviour:
   rareBackground: {fileID: 21300000, guid: a6cc4a82894bde64284ac209b3f2fc2c, type: 3}
   epicBackground: {fileID: 21300000, guid: 5e987d767022a0a4ead68d29c715eac0, type: 3}
   legendaryBackground: {fileID: 21300000, guid: e4625b9605d61ce4a8c66636f94ccf48, type: 3}
-  commonColor: {r: 0.42, g: 0.42, b: 0.42, a: 0.75}
-  uncommonColor: {r: 0.16, g: 0.62, b: 0.26, a: 0.8}
-  rareColor: {r: 0.16, g: 0.38, b: 0.88, a: 0.8}
-  epicColor: {r: 0.62, g: 0.25, b: 0.86, a: 0.8}
-  legendaryColor: {r: 0.95, g: 0.55, b: 0.12, a: 0.85}
   tooltipUI: {fileID: 1253568159}
   currentItemData: {fileID: 0}
   currentStackCount: 0
@@ -107258,13 +106737,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2127402669}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
