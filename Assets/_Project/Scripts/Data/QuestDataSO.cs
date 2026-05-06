@@ -40,5 +40,9 @@ namespace DeadZone.Core
         [Header("Flow")]
         public string unlockZoneID;
         public string prerequisiteQuestID;
+
+        [Header("Side Quest")]
+        [Tooltip("true면 사이드 퀘스트 (Q2-1, Q3-1). 메인 진행의 선행 조건이 아님.")]
+        public bool isSideQuest;
     }
 }

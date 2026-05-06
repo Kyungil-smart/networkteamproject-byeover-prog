@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 488feee288201d1468c9397d30a52b8c, type: 3}
+  m_Name: Enemy_T1
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.EnemyStatsSO
+  displayName: "T1 \uC878\uBCD1"
+  tier: 1
+  faction: 0
+  isBoss: 0
+  maxHP: 80
+  defaultArmor: {fileID: 11400000, guid: 2491ced61abc6a14aa9877fa3ce8327a, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: 383b228f5316ed5459f0c624b4786842, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 2aa57e8b45d61c046b22e54b97afaebf, type: 2}
+  penetrationModifier: 0
+  damageMultiplier: 0.5
+  fireInterval: 1.2
+  burstSize: 2
+  burstRestDelay: 1
+  spreadAngleMin: 2
+  spreadAngleMax: 6
+  rangeSpreadMultiplier: 2
+  maxEffectiveRange: 25
+  visionRange: 30
+  fov: 110
+  hearingRange: 15
+  reactionTime: 1.5
+  moveSpeed: 3.5
+  preferredRangeMin: 5
+  preferredRangeMax: 20
+  canCallReinforcements: 0
+  canThrowGrenades: 0
+  grenadeCooldown: 0

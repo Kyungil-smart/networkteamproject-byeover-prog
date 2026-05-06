@@ -6,10 +6,6 @@ using DeadZone.Systems;
 
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// v1.1 §8 — 명중률 기반 탄퍼짐 + 점사 페이싱.
-    /// 서버 전용. DamageSystem을 직접 호출 (ServerRpc 없음).
-    /// </summary>
     public class EnemyShooter : NetworkBehaviour
     {
         [Header("Refs")]
@@ -32,49 +28,69 @@ namespace DeadZone.Actors
 
             var so = stats.StatsSO;
             Vector3 baseDir = (target.position - muzzle.position).normalized;
-
-            float effective = so.accuracy;
             float dist = Vector3.Distance(transform.position, target.position);
-            if (dist > so.maxEffectiveRange) effective *= 0.7f;
 
-            float spreadDeg = (1f - effective) * 4.6f;
+            // ── 탄퍼짐 계산 (SO 슬라이더 값 직접 사용) ──
+            float distRatio = Mathf.Clamp01(dist / so.maxEffectiveRange);
+            float spreadDeg = Mathf.Lerp(so.spreadAngleMin, so.spreadAngleMax, distRatio);
+            if (dist > so.maxEffectiveRange)
+                spreadDeg *= so.rangeSpreadMultiplier;
+
             Vector3 spreadDir = Quaternion.Euler(
                 Random.Range(-1f, 1f) * spreadDeg,
                 Random.Range(-1f, 1f) * spreadDeg,
                 0) * baseDir;
 
+            // ── 발사 이벤트 ──
             EventBus.Publish(new WeaponFiredEvent
             {
                 shooterClientId = DamageSystem.AI_SHOOTER_ID,
-                weaponId = so.defaultWeapon != null ? (Unity.Collections.FixedString64Bytes)so.defaultWeapon.itemID : default,
+                weaponId = so.defaultWeapon != null
+                    ? (Unity.Collections.FixedString64Bytes)so.defaultWeapon.itemID
+                    : default,
                 origin = muzzle.position,
                 loudness = 1f,
             });
 
-            if (Physics.Raycast(muzzle.position, spreadDir, out RaycastHit hit, so.maxEffectiveRange, hitMask))
+            // ── 레이캐스트 판정 ──
+            if (Physics.Raycast(muzzle.position, spreadDir, out RaycastHit hit,
+                    so.maxEffectiveRange * 1.2f, hitMask))
             {
-                var zone = hit.collider.GetComponent<DeadZone.Actors.HitZone>();
-                if (zone != null)
+                var zone = hit.collider.GetComponent<HitZone>();
+                if (zone != null && so.defaultAmmo != null && so.defaultWeapon != null)
                 {
                     var hitInfo = new HitInfo
                     {
-                        victim = zone.GetComponentInParent<NetworkObject>()?.gameObject,
-                        zone = zone.ZoneType,
-                        hitPoint = hit.point,
+                        victim    = zone.GetComponentInParent<NetworkObject>()?.gameObject,
+                        zone      = zone.ZoneType,
+                        hitPoint  = hit.point,
                         hitNormal = hit.normal,
-                        distance = hit.distance,
+                        distance  = hit.distance,
                     };
+
                     var damageSystem = ServiceLocator.Get<DamageSystem>();
-                    if (damageSystem != null && so.defaultWeapon != null)
+                    if (damageSystem != null)
                     {
-                        var defaultAmmo = ScriptableObject.CreateInstance<AmmoDataSO>();
-                        defaultAmmo.penetration = 2;
-                        defaultAmmo.damageMultiplier = 1f;
-                        // 탄환 방식으로 수정 필요 damageSystem.ApplyDamage(hitInfo, defaultAmmo, so.defaultWeapon, DamageSystem.AI_SHOOTER_ID);
+                        var victim = hitInfo.victim?.GetComponent<IDamageable>();
+                        if (victim != null)
+                        {
+                            var netObj = hitInfo.victim.GetComponent<NetworkObject>();
+                            var projectileData = new ProjectileData
+                            {
+                                ShooterId   = DamageSystem.AI_SHOOTER_ID,
+                                BaseDamage  = Mathf.RoundToInt(so.defaultWeapon.damage * so.damageMultiplier),
+                                Penetration = so.defaultAmmo.penetration + so.penetrationModifier,
+                                TargetNetId = netObj != null ? netObj.NetworkObjectId : 0,
+                                WasHeadAim  = hitInfo.zone == BodyPart.Head,
+                                Range       = hitInfo.distance
+                            };
+                            damageSystem.ApplyDamage(victim, hitInfo.hitPoint, projectileData);
+                        }
                     }
                 }
             }
 
+            // ── 점사 타이밍 ──
             burstCount++;
             if (burstCount >= so.burstSize)
             {

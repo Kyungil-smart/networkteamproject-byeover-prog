@@ -1,15 +1,15 @@
 ﻿using Unity.Netcode;
 using UnityEngine;
 
-
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// v1.1 §7.2 — obstacleMask는 Door + Environment + ViewBlocker 레이어를 포함해야 한다.
-    /// Door BoxCollider가 활성화(닫힘)되면 Raycast를 막아서 AI가 플레이어를 볼 수 없다.
+    /// v2.0 — visionRange/fov를 SO에서 읽어 티어별 자동 적용.
+    /// obstacleMask는 Door + Environment + ViewBlocker 레이어를 포함해야 한다.
     /// </summary>
     public class EnemyVision : NetworkBehaviour
     {
+        [Header("Inspector 기본값 (SO 있으면 SO 값으로 덮어씀)")]
         [SerializeField] private float fov = 110f;
         [SerializeField] private float visionRange = 30f;
         [SerializeField] private LayerMask obstacleMask;
@@ -19,6 +19,19 @@ namespace DeadZone.Actors
 
         private float nextCheckTime;
         private Transform cachedTarget;
+
+        public override void OnNetworkSpawn()
+        {
+            if (!IsServer) return;
+
+            // SO에서 visionRange, fov 읽기
+            var stats = GetComponent<EnemyStats>();
+            if (stats != null && stats.StatsSO != null)
+            {
+                visionRange = stats.StatsSO.visionRange;
+                fov = stats.StatsSO.fov;
+            }
+        }
 
         public bool TryGetVisibleTarget(out Transform target)
         {
@@ -48,7 +61,9 @@ namespace DeadZone.Actors
         public bool CanSee(Transform candidate)
         {
             if (candidate == null) return false;
-            Vector3 origin = eyeTransform != null ? eyeTransform.position : transform.position + Vector3.up * 1.6f;
+            Vector3 origin = eyeTransform != null
+                ? eyeTransform.position
+                : transform.position + Vector3.up * 1.6f;
             Vector3 dir = candidate.position - origin;
             float dist = dir.magnitude;
             if (dist > visionRange) return false;
