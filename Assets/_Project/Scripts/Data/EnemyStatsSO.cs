@@ -16,6 +16,9 @@ namespace DeadZone.Core
         public Faction faction = Faction.Scavenger;
         public bool isBoss;
 
+        [Tooltip("퀘스트 Kill objective 매칭용 식별자 (빈값이면 tier 기반 매칭만 가능)")]
+        public string enemyId = "";
+
         [Header("━━━ 체력 & 방어 ━━━")]
         [Range(50f, 2000f)]
         public float maxHP = 80f;
@@ -98,5 +101,28 @@ namespace DeadZone.Core
 
         [Range(5f, 60f)]
         public float grenadeCooldown = 25f;
+
+        [Header("━━━ 사망 드랍 ━━━")]
+        [Tooltip("장착 무기/탄약/아머를 시체에 드랍할지")]
+        public bool dropEquippedGear = true;
+
+        [Tooltip("추가 루팅 테이블 (의료품, 귀중품 등). null이면 장비만 드랍")]
+        public LootTableSO extraLootTable;
+
+        [Tooltip("추가 루팅 수량 (extraLootTable에서 RollOne × N)")]
+        [Range(0, 5)]
+        public int extraLootCount = 1;
+
+        [Header("━━━ 시체 ━━━")]
+        [Tooltip("사망 시 스폰할 시체 프리팹. null이면 범용 EnemyCorpse 프리팹 사용")]
+        public GameObject corpsePrefab;
+
+        [Tooltip("시체 아이템이 있을 때 소멸 시간 (초)")]
+        [Range(30f, 300f)]
+        public float corpseDespawnTime = 120f;
+
+        [Tooltip("시체가 비었을 때 소멸 시간 (초)")]
+        [Range(10f, 60f)]
+        public float corpseDespawnWhenEmpty = 30f;
     }
 }

@@ -373,7 +373,8 @@ namespace DeadZone.Editor
                 2.0f, 6.0f, 2.0f, 25f,
                 30f, 110f, 15f, 1.5f,
                 5f, 20f,
-                false, false, 0f);
+                false, false, 5f,
+                "Enemy_Zone1_Any", 0);
 
             count += CreateEnemy(folder, "Enemy_T2", "T2 정규",
                 EnemyTier.T2, Faction.Conscript, false,
@@ -383,7 +384,8 @@ namespace DeadZone.Editor
                 1.5f, 4.5f, 1.8f, 35f,
                 50f, 110f, 20f, 1.0f,
                 8f, 30f,
-                false, false, 0f);
+                false, false, 5f,
+                "Enemy_Zone1_Any", 1);
 
             count += CreateEnemy(folder, "Enemy_T3", "T3 베테랑",
                 EnemyTier.T3, Faction.Conscript, false,
@@ -393,7 +395,8 @@ namespace DeadZone.Editor
                 0.8f, 3.0f, 1.5f, 60f,
                 70f, 110f, 25f, 0.7f,
                 15f, 50f,
-                true, true, 25f);
+                true, true, 25f,
+                "", 1);
 
             count += CreateEnemy(folder, "Enemy_T4", "T4 엘리트",
                 EnemyTier.T4, Faction.Cerberus, false,
@@ -403,7 +406,8 @@ namespace DeadZone.Editor
                 0.5f, 2.0f, 1.3f, 80f,
                 90f, 110f, 30f, 0.5f,
                 20f, 70f,
-                true, true, 20f);
+                true, true, 20f,
+                "", 2);
 
             count += CreateEnemy(folder, "Enemy_T5", "T5 보스급",
                 EnemyTier.T5, Faction.Cerberus, false,
@@ -413,11 +417,12 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 30f, 90f,
-                true, true, 15f);
+                true, true, 15f,
+                "", 2);
 
             // ── Stage 1 보스 5종 ──
 
-            // 창고 보스: 표준형 입문 보스
+            // 창고 보스 (Q3 Kill target)
             count += CreateEnemy(folder, "Boss_S1_01", "창고 보스",
                 EnemyTier.T5, Faction.Conscript, true,
                 500f, 5.0f, "Armor_C4", "Weapon_SK74", "Ammo_AR_BP",
@@ -426,9 +431,10 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 80f,
                 100f, 110f, 35f, 0.3f,
                 25f, 70f,
-                true, true, 15f);
+                true, true, 15f,
+                "Boss_Warehouse", 3);
 
-            // 군사 막사 보스: 수류탄 특화 (grenadeCooldown=10)
+            // 군사 막사 보스 (Q4 Kill target, grenadeCooldown=10)
             count += CreateEnemy(folder, "Boss_S1_02", "군사 막사 보스",
                 EnemyTier.T5, Faction.Conscript, true,
                 400f, 5.0f, "Armor_C4", "Weapon_SK74", "Ammo_AR_BP",
@@ -437,9 +443,10 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 80f,
                 100f, 110f, 35f, 0.3f,
                 25f, 70f,
-                true, true, 10f);
+                true, true, 10f,
+                "Boss_MilitaryBase", 3);
 
-            // 제재소 보스: 고아머 탱킹형
+            // 제재소 보스 (Q3-1 Kill target)
             count += CreateEnemy(folder, "Boss_S1_03", "제재소 보스",
                 EnemyTier.T5, Faction.Cerberus, true,
                 600f, 5.0f, "Armor_C5", "Weapon_F2", "Ammo_AR_AP",
@@ -448,9 +455,10 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 90f,
                 110f, 110f, 35f, 0.3f,
                 20f, 60f,
-                true, true, 15f);
+                true, true, 15f,
+                "Boss_Sawmill", 3);
 
-            // 숲 보스: 스나이퍼 (단발, 장거리, 아머 없음)
+            // 숲 보스 (Q2-1 Kill target, 스나이퍼)
             count += CreateEnemy(folder, "Boss_S1_04", "숲 보스",
                 EnemyTier.T5, Faction.Conscript, true,
                 300f, 4.5f, null, "Weapon_BoltSR", "Ammo_Sniper_AP",
@@ -459,9 +467,10 @@ namespace DeadZone.Editor
                 0.1f, 0.5f, 1.2f, 200f,
                 150f, 110f, 30f, 0.3f,
                 80f, 180f,
-                false, false, 0f);
+                false, false, 5f,
+                "Boss_Forest_Sniper", 2);
 
-            // 발전시설 보스: 가장 약한 보스
+            // 발전시설 보스 (Q2 Kill target)
             count += CreateEnemy(folder, "Boss_S1_05", "발전시설 보스",
                 EnemyTier.T5, Faction.Conscript, true,
                 300f, 4.5f, "Armor_C3", "Weapon_MB7", "Ammo_SMG_BP",
@@ -470,11 +479,12 @@ namespace DeadZone.Editor
                 0.4f, 1.5f, 1.3f, 70f,
                 100f, 110f, 30f, 0.3f,
                 15f, 60f,
-                true, true, 20f);
+                true, true, 20f,
+                "Boss_PowerPlant", 2);
 
-            // ── Stage 2 보스 3종 ──
+            // ── Stage 2 보스 3종 (Q6 Kill target — 3종 공유 ID) ──
 
-            // 보스 2-1: 맵B 표준 보스
+            // 보스 2-1
             count += CreateEnemy(folder, "Boss_S2_01", "보스 2-1",
                 EnemyTier.T5, Faction.Cerberus, true,
                 600f, 5.5f, "Armor_C5", "Weapon_F2", "Ammo_AR_AP",
@@ -483,9 +493,10 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 25f, 80f,
-                true, true, 15f);
+                true, true, 15f,
+                "Boss_Stage2_All", 3);
 
-            // 보스 2-2: 단독 최강 (HP 1000, C6, 관통 유지)
+            // 보스 2-2 (HP 1000, C6)
             count += CreateEnemy(folder, "Boss_S2_02", "보스 2-2",
                 EnemyTier.T5, Faction.Cerberus, true,
                 1000f, 6.0f, "Armor_C6", "Weapon_F2", "Ammo_AR_AP",
@@ -494,9 +505,10 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 30f, 90f,
-                true, true, 12f);
+                true, true, 12f,
+                "Boss_Stage2_All", 4);
 
-            // 보스 2-3: 항구 보스
+            // 보스 2-3
             count += CreateEnemy(folder, "Boss_S2_03", "보스 2-3",
                 EnemyTier.T5, Faction.Cerberus, true,
                 800f, 5.5f, "Armor_C5", "Weapon_F2", "Ammo_AR_AP",
@@ -505,7 +517,8 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 25f, 80f,
-                true, true, 15f);
+                true, true, 15f,
+                "Boss_Stage2_All", 3);
 
             return count;
         }
@@ -520,7 +533,8 @@ namespace DeadZone.Editor
             float spMin, float spMax, float rangeMult, float maxRange,
             float vision, float fov, float hearing, float reaction,
             float prefMin, float prefMax,
-            bool canReinforce, bool canGrenade, float grenadeCd)
+            bool canReinforce, bool canGrenade, float grenadeCd,
+            string enemyId = "", int extraLootCount = 1)
         {
             string path = $"{folder}/{file}.asset";
             if (AssetDatabase.LoadAssetAtPath<EnemyStatsSO>(path) != null)
@@ -536,6 +550,7 @@ namespace DeadZone.Editor
             so.tier        = tier;
             so.faction     = faction;
             so.isBoss      = isBoss;
+            so.enemyId     = enemyId;
 
             // 체력 & 방어
             so.maxHP        = hp;
@@ -579,6 +594,11 @@ namespace DeadZone.Editor
             so.canCallReinforcements = canReinforce;
             so.canThrowGrenades      = canGrenade;
             so.grenadeCooldown       = grenadeCd;
+
+            // 사망 드랍
+            so.dropEquippedGear = true;
+            so.extraLootCount   = extraLootCount;
+            // extraLootTable / corpsePrefab은 Inspector에서 수동 할당 (SO 자산이 아직 없을 수 있음)
 
             // 참조 경고
             if (so.defaultWeapon == null)

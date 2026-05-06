@@ -33,8 +33,8 @@ namespace DeadZone.Actors.UI
         [SerializeField] private bool autoCreateDropSlots = true;
 
         [BoxGroup("장비 연동")]
-        [Tooltip("플레이어에 붙은 KHWEquipmentSlotsBridge입니다. 비워두면 Owner 플레이어에서 자동 탐색합니다.")]
-        [SerializeField] private KHWEquipmentSlotsBridge equipmentSlotsBridge;
+        [Tooltip("플레이어에 붙은 EquipmentSlotsBridge입니다. 비워두면 Owner 플레이어에서 자동 탐색합니다.")]
+        [SerializeField] private EquipmentSlotsBridge equipmentSlotsBridge;
 
         [BoxGroup("장비 연동")]
         [Tooltip("브릿지가 없을 때 Host 테스트용으로만 사용하는 EquipmentSlots입니다. 클라이언트 권한 장착은 브릿지를 사용하세요.")]
@@ -586,8 +586,8 @@ namespace DeadZone.Actors.UI
             if (equipmentSlotsBridge != null)
                 return true;
 
-            KHWEquipmentSlotsBridge[] candidates = FindObjectsByType<KHWEquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (KHWEquipmentSlotsBridge candidate in candidates)
+            EquipmentSlotsBridge[] candidates = FindObjectsByType<EquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlotsBridge candidate in candidates)
             {
                 if (candidate != null && candidate.IsOwner)
                 {
@@ -596,7 +596,7 @@ namespace DeadZone.Actors.UI
                 }
             }
 
-            foreach (KHWEquipmentSlotsBridge candidate in candidates)
+            foreach (EquipmentSlotsBridge candidate in candidates)
             {
                 if (candidate != null)
                 {
@@ -614,7 +614,7 @@ namespace DeadZone.Actors.UI
                 return;
 
             warnedMissingEquipmentBridge = true;
-            Debug.LogWarning("[InventoryUI] KHWEquipmentSlotsBridge를 찾지 못했습니다. 클라이언트 장비 장착 동기화를 위해 PlayerPrefab에 브릿지를 붙이고 InventoryUI에 연결하세요.", this);
+            Debug.LogWarning("[InventoryUI] EquipmentSlotsBridge를 찾지 못했습니다. 클라이언트 장비 장착 동기화를 위해 PlayerPrefab에 브릿지를 붙이고 InventoryUI에 연결하세요.", this);
         }
 
         private void WarnUnsupportedClearOnce()

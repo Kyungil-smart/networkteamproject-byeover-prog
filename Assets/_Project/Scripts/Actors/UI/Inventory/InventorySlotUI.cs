@@ -413,7 +413,7 @@ namespace DeadZone.Actors.UI
             Unity.Collections.FixedString64Bytes ammoId = "";
             int ammoCount = Mathf.Max(0, weaponData.magSize);
 
-            KHWEquipmentSlotsBridge bridge = ResolveEquipmentSlotsBridge(weaponData.itemID);
+            EquipmentSlotsBridge bridge = ResolveEquipmentSlotsBridge(weaponData.itemID);
             if (bridge != null && bridge.IsSpawned)
             {
                 bridge.EquipItemServerRpc(
@@ -472,16 +472,16 @@ namespace DeadZone.Actors.UI
             return true;
         }
 
-        private static KHWEquipmentSlotsBridge ResolveEquipmentSlotsBridge(string itemId)
+        private static EquipmentSlotsBridge ResolveEquipmentSlotsBridge(string itemId)
         {
-            KHWEquipmentSlotsBridge[] candidates = FindObjectsByType<KHWEquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (KHWEquipmentSlotsBridge candidate in candidates)
+            EquipmentSlotsBridge[] candidates = FindObjectsByType<EquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlotsBridge candidate in candidates)
             {
                 if (candidate != null && candidate.IsOwner && candidate.CanEquipItem(itemId))
                     return candidate;
             }
 
-            foreach (KHWEquipmentSlotsBridge candidate in candidates)
+            foreach (EquipmentSlotsBridge candidate in candidates)
             {
                 if (candidate != null && candidate.CanEquipItem(itemId))
                     return candidate;
