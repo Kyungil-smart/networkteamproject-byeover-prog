@@ -10,8 +10,8 @@ using Sirenix.OdinInspector;
 namespace DeadZone.Network
 {
     /// <summary>
-    /// 로비 맵 선택과 레이드 시작 검증을 서버 권위로 처리합니다.
-    /// UI는 이 컴포넌트를 호출만 하고 네트워크 동기화 대상에 포함하지 않습니다.
+    /// 로비의 맵 선택 상태와 레이드 시작 검증을 서버 권위로 처리합니다.
+    /// 맵 선택 상태는 로비에서 동기화하고, 실제 씬 전환은 별도 시작 흐름에서 수행합니다.
     /// </summary>
     public class LobbyRaidStartController : NetworkBehaviour
     {
@@ -57,15 +57,22 @@ namespace DeadZone.Network
 
         public void SelectMap(LobbyRaidMap map)
         {
-            if (!CanSelectMap(map, out string reason))
+            if (IsNetworkSessionActive())
             {
-                LogDebug(reason);
+                if (Unity.Netcode.NetworkManager.Singleton == null ||
+                    !Unity.Netcode.NetworkManager.Singleton.IsHost)
+                {
+                    LogDebug("맵 선택은 Host만 변경할 수 있습니다.");
+                    return;
+                }
+
+                SelectMapServerRpc(map);
                 return;
             }
 
-            if (IsNetworkSessionActive())
+            if (!CanSelectMap(map, out string reason))
             {
-                SelectMapServerRpc(map);
+                LogDebug(reason);
                 return;
             }
 
@@ -75,9 +82,18 @@ namespace DeadZone.Network
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-        public void SelectMapServerRpc(LobbyRaidMap map)
+        public void SelectMapServerRpc(LobbyRaidMap map, RpcParams rpcParams = default)
         {
             if (!IsServer) return;
+
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+            if (!IsHostClient(senderClientId))
+            {
+                LogDebug($"Host가 아닌 Client의 맵 선택 요청을 무시합니다. ClientId={senderClientId}");
+                return;
+            }
+
             if (!CanSelectMap(map, out string reason))
             {
                 LogDebug(reason);
@@ -127,8 +143,11 @@ namespace DeadZone.Network
                 return;
             }
 
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
-                NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            if (Unity.Netcode.NetworkManager.Singleton != null &&
+                Unity.Netcode.NetworkManager.Singleton.SceneManager != null)
+            {
+                Unity.Netcode.NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            }
         }
 
         public bool CanStartRaid()
@@ -167,8 +186,10 @@ namespace DeadZone.Network
                 case LobbyRaidMap.MapA:
                     reason = "Map A 선택 가능";
                     return true;
+
                 case LobbyRaidMap.MapB:
                     return CanEnterMapB(out reason);
+
                 default:
                     reason = "알 수 없는 맵입니다.";
                     return false;
@@ -232,8 +253,13 @@ namespace DeadZone.Network
 
             ResolveReferences();
 
-            if (lobbyState != null && lobbyState.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient)
+            if (lobbyState != null &&
+                lobbyState.IsSpawned &&
+                Unity.Netcode.NetworkManager.Singleton != null &&
+                Unity.Netcode.NetworkManager.Singleton.IsClient)
+            {
                 lobbyState.SetMapAEscapedServerRpc(true);
+            }
         }
 
 #if ODIN_INSPECTOR
@@ -283,7 +309,13 @@ namespace DeadZone.Network
 
         private bool IsNetworkSessionActive()
         {
-            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+            return Unity.Netcode.NetworkManager.Singleton != null &&
+                   Unity.Netcode.NetworkManager.Singleton.IsListening;
+        }
+
+        private bool IsHostClient(ulong clientId)
+        {
+            return clientId == Unity.Netcode.NetworkManager.ServerClientId;
         }
 
         private void HandleSelectedMapChanged(LobbyRaidMap previous, LobbyRaidMap current)
