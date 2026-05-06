@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using DeadZone.Systems.Quests;
 using DeadZone.Core;
 
 namespace DeadZone.Systems

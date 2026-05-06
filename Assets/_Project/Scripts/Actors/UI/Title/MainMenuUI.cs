@@ -14,6 +14,9 @@ namespace DeadZone.Actors.UI
     /// </summary>
     public sealed class MainMenuUI : MonoBehaviour
     {
+        private const string SettingsPopupName = "Popup_Setting";
+        private const string SettingsCloseButtonName = "Btn_CloseSetting";
+
         [Header("Main Buttons")]
         [SerializeField] private Button gameStartButton;
         [SerializeField] private Button settingsButton;
@@ -39,6 +42,7 @@ namespace DeadZone.Actors.UI
 
         private void Awake()
         {
+            ResolveSettingsPopupReferences();
             CloseAllPopups();
         }
 
@@ -55,6 +59,7 @@ namespace DeadZone.Actors.UI
 
         private void OnEnable()
         {
+            ResolveSettingsPopupReferences();
             BindButtons();
         }
 
@@ -65,6 +70,8 @@ namespace DeadZone.Actors.UI
 
         private void BindButtons()
         {
+            UnbindButtons();
+
             if (gameStartButton != null)
                 gameStartButton.onClick.AddListener(OnClickGameStart);
 
@@ -74,8 +81,7 @@ namespace DeadZone.Actors.UI
             if (quitButton != null)
                 quitButton.onClick.AddListener(OnClickQuit);
 
-            if (settingsCloseButton != null)
-                settingsCloseButton.onClick.AddListener(CloseSettingsPopup);
+            BindSettingsCloseButton();
 
             if (quitYesButton != null)
                 quitYesButton.onClick.AddListener(QuitGame);
@@ -120,11 +126,21 @@ namespace DeadZone.Actors.UI
 
         private void OnClickSettings()
         {
+            ResolveSettingsPopupReferences();
             CloseQuitConfirmPopup();
             CloseLoginPanel();
 
             if (settingsPopup != null)
+            {
+                EnsureSettingsPopupScale();
                 settingsPopup.SetActive(true);
+                ResolveSettingsPopupReferences();
+                BindSettingsCloseButton();
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenuUI] Popup_Setting was not found. Assign settingsPopup in the inspector.", this);
+            }
         }
 
         private void OnClickQuit()
@@ -182,8 +198,84 @@ namespace DeadZone.Actors.UI
 
         private void CloseSettingsPopup()
         {
+            ResolveSettingsPopupReferences();
+
             if (settingsPopup != null)
                 settingsPopup.SetActive(false);
+            else
+                Debug.LogWarning("[MainMenuUI] Cannot close settings popup because Popup_Setting was not found.", this);
+        }
+
+        private void BindSettingsCloseButton()
+        {
+            if (settingsCloseButton == null)
+                return;
+
+            settingsCloseButton.onClick.RemoveListener(CloseSettingsPopup);
+            settingsCloseButton.onClick.AddListener(CloseSettingsPopup);
+        }
+
+        private void EnsureSettingsPopupScale()
+        {
+            if (settingsPopup == null)
+                return;
+
+            Transform popupTransform = settingsPopup.transform;
+            if (popupTransform.localScale == Vector3.zero)
+                popupTransform.localScale = Vector3.one;
+        }
+
+        private void ResolveSettingsPopupReferences()
+        {
+            if (settingsPopup == null)
+            {
+                GameObject popup = FindSceneObjectByName(SettingsPopupName);
+                if (popup != null)
+                    settingsPopup = popup;
+            }
+
+            if (settingsCloseButton != null)
+                return;
+
+            Transform popupTransform = settingsPopup != null ? settingsPopup.transform : transform;
+            Transform closeButtonTransform = FindChildByName(popupTransform, SettingsCloseButtonName);
+            if (closeButtonTransform != null)
+                settingsCloseButton = closeButtonTransform.GetComponent<Button>();
+
+            if (settingsCloseButton == null)
+            {
+                Debug.LogWarning(
+                    "[MainMenuUI] Btn_CloseSetting Button was not found. Assign settingsCloseButton in the inspector.",
+                    this);
+            }
+        }
+
+        private static Transform FindChildByName(Transform root, string childName)
+        {
+            if (root == null)
+                return null;
+
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (children[i].name == childName)
+                    return children[i];
+            }
+
+            return null;
+        }
+
+        private static GameObject FindSceneObjectByName(string objectName)
+        {
+            GameObject[] objects = Resources.FindObjectsOfTypeAll<GameObject>();
+            for (int i = 0; i < objects.Length; i++)
+            {
+                GameObject candidate = objects[i];
+                if (candidate.name == objectName && candidate.scene.IsValid())
+                    return candidate;
+            }
+
+            return null;
         }
 
         private void CloseQuitConfirmPopup()

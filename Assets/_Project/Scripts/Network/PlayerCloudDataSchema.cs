@@ -4,15 +4,6 @@ using Firebase.Firestore;
 
 namespace DeadZone.Network
 {
-    /// <summary>
-    /// Firestore users/{uid} 문서에 저장되는 개인 데이터 스키마.
-    /// Firebase Firestore SDK가 [FirestoreData] 속성을 읽어 자동 직렬화한다.
-    ///
-    /// 주의:
-    ///  - 클래스는 public 이어야 하고, 파라미터 없는 public 생성자 필요
-    ///  - [FirestoreProperty] 이름이 Firestore 문서의 필드명이 된다
-    ///  - 변경 시 기존 유저 데이터 호환 주의 (schemaVersion 으로 마이그레이션)
-    /// </summary>
     [FirestoreData]
     public class PlayerCloudData
     {
@@ -24,8 +15,8 @@ namespace DeadZone.Network
         [FirestoreProperty] public FacilitiesData facilities { get; set; } = new FacilitiesData();
         [FirestoreProperty] public List<InsuranceEntry> insurance { get; set; } = new List<InsuranceEntry>();
 
-        /// <summary>스키마 버전. 향후 마이그레이션 대비.</summary>
-        [FirestoreProperty] public int schemaVersion { get; set; } = 1;
+        /// <summary>스키마 버전. v1→v2: questObjectives 추가.</summary>
+        [FirestoreProperty] public int schemaVersion { get; set; } = 2;
     }
 
     [FirestoreData]
@@ -45,6 +36,24 @@ namespace DeadZone.Network
         [FirestoreProperty] public List<string> personalActiveQuestIds { get; set; } = new List<string>();
         [FirestoreProperty] public List<string> personalCompletedQuestIds { get; set; } = new List<string>();
         [FirestoreProperty] public List<string> unlockedZones { get; set; } = new List<string>();
+        
+        [FirestoreProperty] public List<QuestObjectiveProgress> questObjectives { get; set; } = new List<QuestObjectiveProgress>();
+    }
+    
+    [FirestoreData]
+    public class QuestObjectiveProgress
+    {
+        /// <summary>어느 퀘스트의 objective인지 (Q1, Q2-1, Q6 등).</summary>
+        [FirestoreProperty] public string questId { get; set; } = "";
+
+        /// <summary>QuestDataSO.objectives의 targetID와 동일 (Enemy_Zone1_Any, Boss_Stage2_All 등).</summary>
+        [FirestoreProperty] public string targetId { get; set; } = "";
+
+        /// <summary>현재까지 달성한 수량.</summary>
+        [FirestoreProperty] public int current { get; set; }
+
+        /// <summary>목표 수량 (QuestDataSO.objectives.requiredCount 복사본).</summary>
+        [FirestoreProperty] public int required { get; set; }
     }
 
     [FirestoreData]
@@ -111,15 +120,7 @@ namespace DeadZone.Network
         [FirestoreProperty] public int stackCount { get; set; }
         [FirestoreProperty] public int currentDurability { get; set; }
     }
-
-
-    // =====================================================================
-    // sessions/{hostUid} 문서 - 호스트 방의 공유 데이터
-    // 팀장 결정: 퀘스트는 "둘 다: 개인+공유 플래그 별도"
-    //   - 개인 퀘스트 진행도 → PlayerCloudData.progress.personalXxx
-    //   - 공유 퀘스트 플래그 → SessionCloudData.sharedXxx (아래)
-    // =====================================================================
-
+    
     [FirestoreData]
     public class SessionCloudData
     {

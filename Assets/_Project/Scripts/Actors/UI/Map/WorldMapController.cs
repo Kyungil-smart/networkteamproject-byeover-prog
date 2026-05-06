@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 
 using DeadZone.Core;
 using DeadZone.InputActions;
+using DeadZone.Actors.UI;
 
 // 작성자 : 홍정옥
 // 기능 : M키 전체 맵 UI 표시/숨김, 퀘스트 클리어에 따른 맵 구역 잠금/해금 표시
@@ -177,6 +178,7 @@ namespace DeadZone.Actors
             if (worldMapUI != null)
                 worldMapUI.SetActive(true);
 
+            CursorStateController.PushUiOwner(this);
             RefreshAllAreaLocks();
             UIFeedbackTester.Play(onOpenFeedback, this, "전체 맵 열기");
         }
@@ -190,6 +192,7 @@ namespace DeadZone.Actors
             if (worldMapUI != null)
                 worldMapUI.SetActive(false);
 
+            CursorStateController.PopUiOwner(this);
             UIFeedbackTester.Play(onCloseFeedback, this, "전체 맵 닫기");
         }
         

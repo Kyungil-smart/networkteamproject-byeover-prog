@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Armor_C1
   displayName: "1 \uD074\uB798\uC2A4 \uC544\uBA38"
-  description: 
+  description: "\uAE30\uBCF8\uC801\uC778 \uBC29\uD0C4\uBCF5 \uC785\uB2C8\uB2E4."
   icon: {fileID: 0}
   category: 2
   rarity: 0
   isValuable: 0
-  gridSize: {x: 2, y: 3}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 1.5
   baseSellPrice: 1000

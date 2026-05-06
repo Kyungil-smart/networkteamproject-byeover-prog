@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 using DeadZone.Core;
+using DeadZone.Actors.UI;
 using DeadZone.InputActions;
 
 namespace DeadZone.Actors
@@ -44,6 +45,8 @@ namespace DeadZone.Actors
         private Vector2 moveInput;
         private Vector2 lookScreenPosition;
         private Vector2 lookDirection = Vector2.up;
+        private bool fireHeld;
+        private bool firePressedThisFrame;
         
         private void Awake()
         {
@@ -111,6 +114,10 @@ namespace DeadZone.Actors
             UpdateLookDirectionFromMousePosition();
 
             currentContext.Tick(moveInput, lookDirection, lookScreenPosition);
+            currentContext.OnFireInput(firePressedThisFrame, fireHeld, lookScreenPosition);
+
+            // 클릭 시작 입력은 한 프레임짜리 신호이므로 같은 프레임의 사격 처리 후 바로 해제한다.
+            firePressedThisFrame = false;
         }
 
         public void SetInputCamera(Camera cam)
@@ -161,6 +168,8 @@ namespace DeadZone.Actors
             lookScreenPosition = Vector2.zero;
             
             lookDirection = Vector2.up;
+            fireHeld = false;
+            firePressedThisFrame = false;
         }
 
         private void ReadContinuousInput()
@@ -225,8 +234,18 @@ namespace DeadZone.Actors
         
         public void OnFire(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed) return;
-            currentContext?.OnFire();
+            if (!CanProcessInput) return;
+
+            if (context.performed)
+            {
+                // 클릭이 시작된 프레임과 버튼 유지 상태를 분리해 단발/연사를 같은 경로에서 처리한다.
+                fireHeld = true;
+                firePressedThisFrame = true;
+            }
+            else if (context.canceled)
+            {
+                fireHeld = false;
+            }
         }
 
         public void OnAim(InputAction.CallbackContext context)

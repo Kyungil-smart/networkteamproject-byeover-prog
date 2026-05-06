@@ -22,7 +22,7 @@ namespace DeadZone.Actors
             if (spectator != null) spectator.SetFreeCamInput(move, look);
         }
 
-        public void OnFire() { }
+        public void OnFireInput(bool pressedThisFrame, bool held, Vector2 mousePos) { }
         public void OnAim(bool down) { }
         public void OnReload() { }
         public void OnInteract() { }

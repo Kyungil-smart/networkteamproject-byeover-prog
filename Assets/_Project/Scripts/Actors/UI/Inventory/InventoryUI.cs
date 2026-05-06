@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using DeadZone.Actors;
 using DeadZone.Core;
+using Unity.Collections;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -7,17 +9,19 @@ namespace DeadZone.Actors.UI
 {
     public class InventoryUI : MonoBehaviour
     {
+        public static InventoryUI ActiveInstance { get; private set; }
+
         [BoxGroup("루트")]
         [Tooltip("InventoryVisibleRoot입니다. Inventory와 QuickSlotPanel 구조는 이 루트 아래에서 유지합니다.")]
         [SerializeField] private GameObject inventoryRoot;
 
         [BoxGroup("가방 설정")]
         [Tooltip("현재 가방 레벨입니다.")]
-        [Range(1, 3)]
-        [SerializeField] private int bagLevel = 1;
+        [Range(0, 4)]
+        [SerializeField] private int bagLevel;
 
         [BoxGroup("가방 슬롯")]
-        [Tooltip("가방 슬롯 20개를 순서대로 넣으세요.")]
+        [Tooltip("가방 슬롯 40개를 '순서'대로 넣으세요.")]
         [SerializeField] private List<InventorySlotUI> bagSlots = new();
 
         [BoxGroup("툴팁")]
@@ -28,6 +32,29 @@ namespace DeadZone.Actors.UI
         [Tooltip("EquipmentPanel/QuickSlotPanel 하위 슬롯에 InventorySlotUI가 없으면 Play 시 자동으로 추가합니다.")]
         [SerializeField] private bool autoCreateDropSlots = true;
 
+        [BoxGroup("장비 연동")]
+        [Tooltip("플레이어에 붙은 EquipmentSlotsBridge입니다. 비워두면 Owner 플레이어에서 자동 탐색합니다.")]
+        [SerializeField] private EquipmentSlotsBridge equipmentSlotsBridge;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("브릿지가 없을 때 Host 테스트용으로만 사용하는 EquipmentSlots입니다. 클라이언트 권한 장착은 브릿지를 사용하세요.")]
+        [SerializeField] private EquipmentSlots equipmentSlots;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("장착 직후 기능 테스트용으로 탄창을 채웁니다. 실제 탄약 인벤토리 연동 전까지 발사 검증에 사용합니다.")]
+        [SerializeField] private bool fillMagazineOnEquip = true;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("테스트용 기본 장착 탄약입니다. 비워도 WeaponDataSO만으로 발사 이벤트와 투사체 생성은 동작합니다.")]
+        [SerializeField] private AmmoDataSO defaultLoadedAmmo;
+
+        [BoxGroup("장비 연동")]
+        [Tooltip("무기 장착 요청이 어느 경로로 처리되는지 콘솔에 출력합니다.")]
+        [SerializeField] private bool debugWeaponEquipEvents = true;
+
+        private bool warnedMissingEquipmentBridge;
+        private bool warnedUnsupportedClear;
+
         [BoxGroup("ItemDataSO 테스트")]
         [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
         [SerializeField] private List<ItemDataSO> testItemPool = new();
@@ -36,12 +63,24 @@ namespace DeadZone.Actors.UI
 
         private void Awake()
         {
+            ActiveInstance = this;
             ResolveTooltipUI();
             EnsureDropSlots();
             InitializeSlots();
             RefreshBagSlots();
 
             Close();
+        }
+
+        private void OnEnable()
+        {
+            ActiveInstance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (ActiveInstance == this)
+                ActiveInstance = null;
         }
 
         private void OnValidate()
@@ -68,7 +107,7 @@ namespace DeadZone.Actors.UI
                 if (bagSlots[i] == null)
                     continue;
 
-                bagSlots[i].PrepareDropSlot(itemTooltipUI, i);
+                bagSlots[i].PrepareDropSlot(itemTooltipUI, i, this);
                 bagSlots[i].Initialize(i);
             }
         }
@@ -82,6 +121,7 @@ namespace DeadZone.Actors.UI
             }
 
             inventoryRoot.SetActive(true);
+            CursorStateController.PushUiOwner(this);
             ResolveTooltipUI();
             EnsureDropSlots();
             AssignTooltipToSlots();
@@ -97,6 +137,7 @@ namespace DeadZone.Actors.UI
                 itemTooltipUI.Hide();
 
             inventoryRoot.SetActive(false);
+            CursorStateController.PopUiOwner(this);
         }
 
         public void Toggle()
@@ -107,9 +148,97 @@ namespace DeadZone.Actors.UI
                 Open();
         }
 
+        public bool TryEquipWeaponSlot(WeaponSlot weaponSlot, WeaponDataSO weaponData)
+        {
+            if (weaponData == null)
+                return TryClearWeaponSlot(weaponSlot);
+
+            FixedString64Bytes ammoId = defaultLoadedAmmo != null ? defaultLoadedAmmo.itemID : "";
+            int ammoCount = fillMagazineOnEquip ? Mathf.Max(0, weaponData.magSize) : 0;
+
+            if (ResolveEquipmentSlotsBridge() && equipmentSlotsBridge.CanEquipItem(weaponData.itemID))
+            {
+                if (debugWeaponEquipEvents)
+                    Debug.Log($"[InventoryUI] 브릿지 경로로 무기 장착 요청: slot={weaponSlot}, itemID={weaponData.itemID}, ammo={ammoCount}", this);
+
+                equipmentSlotsBridge.EquipItemServerRpc(
+                    new FixedString64Bytes(weaponData.itemID),
+                    weaponSlot,
+                    ammoId,
+                    (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
+
+                return true;
+            }
+
+            if (ResolveEquipmentSlots() && equipmentSlots.IsServer)
+            {
+                WeaponState state = new()
+                {
+                    loadedAmmoId = ammoId,
+                    currentAmmo = ammoCount
+                };
+
+                if (debugWeaponEquipEvents)
+                    Debug.Log($"[InventoryUI] 서버 직접 경로로 무기 장착: slot={weaponSlot}, itemID={weaponData.itemID}, ammo={ammoCount}, equipment={equipmentSlots.name}", this);
+
+                equipmentSlots.UpdateSlot(weaponSlot, weaponData.itemID, state);
+                return true;
+            }
+
+            if (ResolveEquipmentSlots() && equipmentSlots.IsSpawned)
+            {
+                if (debugWeaponEquipEvents)
+                    Debug.Log($"[InventoryUI] EquipmentSlots ServerRpc 경로로 무기 장착 요청: slot={weaponSlot}, itemID={weaponData.itemID}, ammo={ammoCount}, equipment={equipmentSlots.name}", this);
+
+                equipmentSlots.EquipWeaponSlotServerRpc(
+                    new FixedString64Bytes(weaponData.itemID),
+                    weaponSlot,
+                    ammoId,
+                    (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
+
+                return true;
+            }
+
+            WarnMissingEquipmentBridgeOnce();
+            if (debugWeaponEquipEvents)
+                Debug.LogWarning($"[InventoryUI] 무기 장착 실패: EquipmentSlots를 찾지 못했거나 아직 Spawn되지 않았습니다. slot={weaponSlot}, itemID={weaponData.itemID}", this);
+
+            return false;
+        }
+
+        public bool TryClearWeaponSlot(WeaponSlot weaponSlot)
+        {
+            if (ResolveEquipmentSlots() && equipmentSlots.IsServer)
+            {
+                equipmentSlots.UpdateSlot(weaponSlot, string.Empty, default);
+                return true;
+            }
+
+            if (ResolveEquipmentSlots() && equipmentSlots.IsSpawned)
+            {
+                equipmentSlots.ClearWeaponSlotServerRpc(weaponSlot);
+                return true;
+            }
+
+            WarnUnsupportedClearOnce();
+            return false;
+        }
+
+        public bool OwnsSlot(InventorySlotUI slot)
+        {
+            if (slot == null)
+                return false;
+
+            Transform slotTransform = slot.transform;
+            if (slotTransform.IsChildOf(transform))
+                return true;
+
+            return inventoryRoot != null && slotTransform.IsChildOf(inventoryRoot.transform);
+        }
+
         public void SetBagLevel(int level)
         {
-            bagLevel = Mathf.Clamp(level, 1, 3);
+            bagLevel = Mathf.Clamp(level, 0, 4);
             RefreshBagSlots();
         }
 
@@ -255,6 +384,13 @@ namespace DeadZone.Actors.UI
         }
 
         [BoxGroup("디버그")]
+        [Button("가방 기본")]
+        private void TestBagLevel0()
+        {
+            SetBagLevel(0);
+        }
+
+        [BoxGroup("디버그")]
         [Button("가방 1레벨")]
         private void TestBagLevel1()
         {
@@ -275,6 +411,13 @@ namespace DeadZone.Actors.UI
             SetBagLevel(3);
         }
 
+        [BoxGroup("디버그")]
+        [Button("가방 4레벨")]
+        private void TestBagLevel4()
+        {
+            SetBagLevel(4);
+        }
+
         private void ClearAssignedSlots()
         {
             foreach (InventorySlotUI slot in bagSlots)
@@ -293,7 +436,7 @@ namespace DeadZone.Actors.UI
                 if (slot == null)
                     continue;
 
-                slot.PrepareDropSlot(itemTooltipUI);
+                slot.PrepareDropSlot(itemTooltipUI, inventoryUI: this);
             }
         }
 
@@ -329,7 +472,7 @@ namespace DeadZone.Actors.UI
                 if (slot == null)
                     slot = child.gameObject.AddComponent<InventorySlotUI>();
 
-                slot.PrepareDropSlot(itemTooltipUI, index);
+                slot.PrepareDropSlot(itemTooltipUI, index, this);
                 index++;
             }
 
@@ -337,7 +480,7 @@ namespace DeadZone.Actors.UI
                 return;
 
             foreach (InventorySlotUI slot in panel.GetComponentsInChildren<InventorySlotUI>(true))
-                slot.PrepareDropSlot(itemTooltipUI);
+                slot.PrepareDropSlot(itemTooltipUI, inventoryUI: this);
         }
 
         private static bool IsDropSlotCandidate(Transform child, Transform panel)
@@ -411,6 +554,78 @@ namespace DeadZone.Actors.UI
                 Debug.LogWarning("[InventoryUI] ItemTooltipUI를 찾지 못했습니다. 씬의 Tooltip 오브젝트를 InventoryUI.itemTooltipUI에 연결하세요.", this);
         }
 
+        private bool ResolveEquipmentSlots()
+        {
+            if (equipmentSlots != null)
+                return true;
+
+            EquipmentSlots[] candidates = FindObjectsByType<EquipmentSlots>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlots candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                {
+                    equipmentSlots = candidate;
+                    return true;
+                }
+            }
+
+            foreach (EquipmentSlots candidate in candidates)
+            {
+                if (candidate != null)
+                {
+                    equipmentSlots = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ResolveEquipmentSlotsBridge()
+        {
+            if (equipmentSlotsBridge != null)
+                return true;
+
+            EquipmentSlotsBridge[] candidates = FindObjectsByType<EquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                {
+                    equipmentSlotsBridge = candidate;
+                    return true;
+                }
+            }
+
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null)
+                {
+                    equipmentSlotsBridge = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void WarnMissingEquipmentBridgeOnce()
+        {
+            if (warnedMissingEquipmentBridge)
+                return;
+
+            warnedMissingEquipmentBridge = true;
+            Debug.LogWarning("[InventoryUI] EquipmentSlotsBridge를 찾지 못했습니다. 클라이언트 장비 장착 동기화를 위해 PlayerPrefab에 브릿지를 붙이고 InventoryUI에 연결하세요.", this);
+        }
+
+        private void WarnUnsupportedClearOnce()
+        {
+            if (warnedUnsupportedClear)
+                return;
+
+            warnedUnsupportedClear = true;
+            Debug.LogWarning("[InventoryUI] 현재 기존 브릿지에는 무기 슬롯 해제 ServerRpc가 없어 클라이언트에서 장비 해제를 서버에 반영할 수 없습니다. 필요하면 UI 외 스크립트 수정 승인이 필요합니다.", this);
+        }
+
         private ItemDataSO GetRandomTestItem()
         {
             return testItemPool[Random.Range(0, testItemPool.Count)];
@@ -427,12 +642,14 @@ namespace DeadZone.Actors.UI
 
         private int GetCapacityByBagLevel(int level)
         {
-            return level switch
+            return Mathf.Clamp(level, 0, 4) switch
             {
-                1 => 10,
-                2 => 15,
-                3 => 20,
-                _ => 10
+                0 => 20,
+                1 => 25,
+                2 => 30,
+                3 => 35,
+                4 => 40,
+                _ => 20
             };
         }
     }

@@ -23,6 +23,14 @@ namespace DeadZone.Actors
         [SerializeField] private LayerMask groundMask;
         [SerializeField] private float maxRange = 600f;
 
+        [Header("Shotgun")]
+        [Tooltip("샷건 1회 사격 시 동시에 생성할 투사체 수")]
+        [SerializeField, Min(1)] private int shotgunProjectileCount = 25;
+        [Tooltip("샷건 투사체가 퍼질 전체 각도")]
+        [SerializeField, Range(0f, 180f)] private float shotgunSpreadAngle = 120f;
+        [Tooltip("샷건 투사체마다 더해지는 무작위 각도 오차")]
+        [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 3f;
+
         private EquipmentSlots equipment;
         private float nextFireAllowed;
         private float currentSpreadAngle;
@@ -79,6 +87,33 @@ namespace DeadZone.Actors
                 result.isHeadAim, 
                 weapon.itemID
             );
+        }
+
+        /// <summary>
+        /// 버튼을 누르고 있는 동안 Full 모드를 지원하는 현재 무기만 연사 발사를 시도한다.
+        /// 실제 발사 간격은 TryFire 내부의 nextFireAllowed 검사로 제한된다.
+        /// </summary>
+        public void TryFullAutoFire(Vector2 mousePos)
+        {
+            if (!CurrentWeaponSupportsFull()) return;
+
+            TryFire(mousePos);
+        }
+
+        private bool CurrentWeaponSupportsFull()
+        {
+            var weapon = equipment?.GetCurrentWeapon();
+            if (weapon?.availableModes == null) return false;
+
+            for (int i = 0; i < weapon.availableModes.Length; i++)
+            {
+                if (weapon.availableModes[i] == FireMode.Full)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
         
         private AimResult AnalyzeAim(Vector2 screenPos)
@@ -169,7 +204,14 @@ namespace DeadZone.Actors
             ProjectileData pData = CreateProjectileData(rpc.Receive.SenderClientId, tId, head, weapon, ammo);
     
             // 4. 투사체 생성 시 계산된 탄속 전달
-            SpawnProjectile(pData, target, weapon, finalVelocity);
+            if (weapon.weaponCategory == WeaponCategory.Shotgun)
+            {
+                SpawnShotgunProjectiles(pData, target, weapon, finalVelocity);
+            }
+            else
+            {
+                SpawnProjectile(pData, target, weapon, finalVelocity);
+            }
 
             // 5. 이벤트 발행
             PublishFireEvent(rpc.Receive.SenderClientId, weaponId);
@@ -202,12 +244,49 @@ namespace DeadZone.Actors
         {
             Vector3 spawnPos = muzzleTransform.position;
             Vector3 fireDir = ApplySpread((target - spawnPos).normalized, w);
-            Debug.Log("FireDir: " + fireDir);
+
+            SpawnProjectileWithDirection(pData, w, fireDir, velocity);
+        }
+
+        /// <summary>
+        /// 샷건 사격 시 여러 개의 투사체를 지정된 각도 범위 안에서 같은 프레임에 생성한다.
+        /// 각 투사체는 전체 산포각 안에 균등하게 배치하고, 작은 랜덤 오차를 더해 매 사격마다 자연스러운 편차를 만든다.
+        /// </summary>
+        private void SpawnShotgunProjectiles(ProjectileData pData, Vector3 target,
+            WeaponDataSO w, float velocity)
+        {
+            Vector3 spawnPos = muzzleTransform.position;
+            Vector3 baseDir = (target - spawnPos).normalized;
+            int projectileCount = Mathf.Max(1, shotgunProjectileCount);
+            float halfAngle = shotgunSpreadAngle * 0.5f;
+
+            for (int i = 0; i < projectileCount; i++)
+            {
+                float normalizedIndex = projectileCount == 1
+                    ? 0.5f
+                    : i / (float)(projectileCount - 1);
+                float baseYaw = Mathf.Lerp(-halfAngle, halfAngle, normalizedIndex);
+                float jitter = Random.Range(-shotgunPelletAngleJitter, shotgunPelletAngleJitter);
+                float yaw = Mathf.Clamp(baseYaw + jitter, -halfAngle, halfAngle);
+                Vector3 pelletDir = Quaternion.AngleAxis(yaw, Vector3.up) * baseDir;
+
+                SpawnProjectileWithDirection(pData, w, pelletDir.normalized, velocity);
+            }
+        }
+
+        /// <summary>
+        /// 계산된 발사 방향을 기준으로 실제 투사체 오브젝트를 생성하고 네트워크에 등록한다.
+        /// 일반 발사와 산탄 발사가 같은 생성 절차를 공유하기 위해 사용한다.
+        /// </summary>
+        private void SpawnProjectileWithDirection(ProjectileData pData,
+            WeaponDataSO w, Vector3 fireDir, float velocity)
+        {
+            Vector3 spawnPos = muzzleTransform.position;
 
             // 탄환 프리팹 생성 및 방향 설정
-            GameObject bullet = Instantiate(w.projectilePrefab, spawnPos, 
+            GameObject bullet = Instantiate(w.projectilePrefab, spawnPos,
                 Quaternion.LookRotation(fireDir));
-    
+
             var netObj = bullet.GetComponent<NetworkObject>();
             netObj.Spawn(true);
 
