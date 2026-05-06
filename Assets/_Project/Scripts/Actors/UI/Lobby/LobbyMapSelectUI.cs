@@ -53,7 +53,6 @@ namespace DeadZone.Actors.UI
         private bool hasWarnedInvalidStatusText;
 
         private const string HostOnlyMapSelectionMessage = "맵 선택은 Host만 변경할 수 있습니다.";
-        private const string RaidStartReadyMessage = "출격 준비가 완료되었습니다.";
 
         private void Awake()
         {
@@ -169,7 +168,8 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            SetStatus(RaidStartReadyMessage);
+            SetStatus("출격을 시작합니다.");
+            raidStartController.StartRaid();
             Refresh();
         }
 

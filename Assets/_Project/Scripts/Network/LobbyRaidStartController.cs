@@ -12,7 +12,7 @@ namespace DeadZone.Network
 {
     /// <summary>
     /// 로비의 맵 선택 상태와 레이드 시작 가능 조건을 서버 권위 기준으로 판단합니다.
-    /// 실제 씬 전환은 레이드 시작 흐름에서 별도로 처리합니다.
+    /// 실제 씬 전환은 서버의 NetworkSceneManager를 통해 처리합니다.
     /// </summary>
     public class LobbyRaidStartController : NetworkBehaviour
     {
@@ -21,8 +21,8 @@ namespace DeadZone.Network
         [SerializeField] private NetworkGameManager gameManager;
 
         [Header("==== 맵 씬 이름 ====")]
-        [SerializeField] private string mapASceneName = "LSH_Game_Scene";
-        [SerializeField] private string mapBSceneName = "Stage2";
+        [SerializeField] private string mapASceneName = "Game_Stage_1";
+        [SerializeField] private string mapBSceneName = "Game_Stage_2";
 
         [Header("==== 싱글/테스트 ====")]
         [FormerlySerializedAs("offlineHasEscapedMapA")]
@@ -107,48 +107,52 @@ namespace DeadZone.Network
 
         public void StartRaid()
         {
+            if (!IsNetworkSessionActive())
+            {
+                LogDebug("네트워크 로비가 시작된 뒤 출격할 수 있습니다.");
+                return;
+            }
+
             if (!CanStartRaid(out string reason))
             {
                 LogDebug(reason);
                 return;
             }
 
-            if (IsNetworkSessionActive())
-            {
-                StartRaidServerRpc();
-                return;
-            }
-
-            SceneManager.LoadScene(GetSceneName(offlineSelectedMap), LoadSceneMode.Single);
+            StartRaidServerRpc();
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-        public void StartRaidServerRpc()
+        public void StartRaidServerRpc(RpcParams rpcParams = default)
         {
             if (!IsServer) return;
-            if (hasRaidStartRequested) return;
 
-            if (!CanStartRaid(out string reason))
+            if (hasRaidStartRequested)
             {
-                Debug.LogWarning($"[LobbyRaidStartController] 레이드 시작 실패: {reason}", this);
+                Debug.LogWarning("[LobbyRaidStartController] 이미 레이드 시작 요청이 처리 중입니다.", this);
+                return;
+            }
+
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+            if (!CanRequestRaidStart(senderClientId, out string reason))
+            {
+                Debug.LogWarning($"[LobbyRaidStartController] 레이드 시작 요청 거부: {reason}", this);
+                return;
+            }
+
+            if (!TryGetSelectedRaidSceneName(out string sceneName, out reason))
+            {
+                Debug.LogWarning($"[LobbyRaidStartController] 레이드 씬 확인 실패: {reason}", this);
                 return;
             }
 
             hasRaidStartRequested = true;
-            string sceneName = GetSceneName(selectedMap.Value);
 
-            ResolveReferences();
-
-            if (gameManager != null)
+            if (!TryLoadSelectedRaidScene(sceneName, out reason))
             {
-                gameManager.StartRaidOnServer(sceneName);
-                return;
-            }
-
-            if (Unity.Netcode.NetworkManager.Singleton != null &&
-                Unity.Netcode.NetworkManager.Singleton.SceneManager != null)
-            {
-                Unity.Netcode.NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+                hasRaidStartRequested = false;
+                Debug.LogWarning($"[LobbyRaidStartController] 레이드 씬 로드 실패: {reason}", this);
             }
         }
 
@@ -164,6 +168,12 @@ namespace DeadZone.Network
             if (!IsNetworkSessionActive())
             {
                 reason = "네트워크 로비가 시작된 뒤 출격할 수 있습니다.";
+                return false;
+            }
+
+            if (hasRaidStartRequested)
+            {
+                reason = "이미 출격을 시작했습니다.";
                 return false;
             }
 
@@ -256,7 +266,17 @@ namespace DeadZone.Network
 
         public string GetSceneName(LobbyRaidMap map)
         {
-            return map == LobbyRaidMap.MapB ? mapBSceneName : mapASceneName;
+            switch (map)
+            {
+                case LobbyRaidMap.MapA:
+                    return mapASceneName;
+
+                case LobbyRaidMap.MapB:
+                    return mapBSceneName;
+
+                default:
+                    return string.Empty;
+            }
         }
 
         public string GetStatusMessage()
@@ -317,6 +337,74 @@ namespace DeadZone.Network
                     return false;
             }
 
+            return true;
+        }
+
+        private bool CanRequestRaidStart(ulong senderClientId, out string reason)
+        {
+            if (!IsServer)
+            {
+                reason = "서버에서만 출격을 시작할 수 있습니다.";
+                return false;
+            }
+
+            if (!IsHostClient(senderClientId))
+            {
+                reason = $"Host가 아닌 Client의 출격 요청입니다. ClientId={senderClientId}";
+                return false;
+            }
+
+            if (!CanStartRaid(out reason))
+                return false;
+
+            reason = "출격 요청 가능";
+            return true;
+        }
+
+        private bool TryGetSelectedRaidSceneName(out string sceneName, out string reason)
+        {
+            sceneName = GetSceneName(selectedMap.Value);
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                reason = $"선택된 맵의 씬 이름이 비어 있습니다. Map={selectedMap.Value}";
+                return false;
+            }
+
+            reason = "레이드 씬 확인 완료";
+            return true;
+        }
+
+        private bool TryLoadSelectedRaidScene(string sceneName, out string reason)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                reason = "로드할 씬 이름이 비어 있습니다.";
+                return false;
+            }
+
+            if (Unity.Netcode.NetworkManager.Singleton == null)
+            {
+                reason = "NetworkManager.Singleton을 찾을 수 없습니다.";
+                return false;
+            }
+
+            if (Unity.Netcode.NetworkManager.Singleton.SceneManager == null)
+            {
+                reason = "NetworkSceneManager를 찾을 수 없습니다.";
+                return false;
+            }
+
+            SceneEventProgressStatus status =
+                Unity.Netcode.NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+
+            if (status != SceneEventProgressStatus.Started)
+            {
+                reason = $"NetworkSceneManager.LoadScene을 시작하지 못했습니다. Status={status}";
+                return false;
+            }
+
+            reason = $"레이드 씬 로드를 시작했습니다. Scene={sceneName}";
             return true;
         }
 
