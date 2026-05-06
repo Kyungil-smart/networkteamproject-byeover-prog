@@ -5,9 +5,11 @@ using DeadZone.Core;
 
 namespace DeadZone.Editor
 {
+  
     public static class SOBulkGenerator
     {
-        
+     
+
         [MenuItem("DeadZone/Data/Generate All SO Assets", priority = 100)]
         public static void GenerateAll()
         {
@@ -16,6 +18,7 @@ namespace DeadZone.Editor
             created += GenerateAmmo();
             created += GenerateArmor();
             created += GenerateHelmets();
+            created += GenerateBackpacks();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -65,7 +68,17 @@ namespace DeadZone.Editor
             AssetDatabase.Refresh();
             Debug.Log($"[SOGen] HelmetDataSO {n}개 생성 완료");
         }
+
+        [MenuItem("DeadZone/Data/Generate Backpacks Only")]
+        public static void GenBackpacksMenu()
+        {
+            int n = GenerateBackpacks();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[SOGen] BackpackDataSO {n}개 생성 완료");
+        }
         
+
         static int GenerateWeapons()
         {
             string folder = "Assets/_Project/Data/Weapons";
@@ -133,6 +146,7 @@ namespace DeadZone.Editor
             return count;
         }
         
+
         static int GenerateAmmo()
         {
             string folder = "Assets/_Project/Data/Ammo";
@@ -195,7 +209,7 @@ namespace DeadZone.Editor
 
             return count;
         }
-        
+
         static int GenerateArmor()
         {
             string folder = "Assets/_Project/Data/Armor";
@@ -241,7 +255,7 @@ namespace DeadZone.Editor
 
             return count;
         }
-
+        
         static int GenerateHelmets()
         {
             string folder = "Assets/_Project/Data/Helmets";
@@ -278,6 +292,49 @@ namespace DeadZone.Editor
                 SetBaseFields(so, h.id, h.name,
                     ItemCategory.Armor, (RarityTier)h.rarity,
                     Vector2Int.one, 1, h.price);
+
+                AssetDatabase.CreateAsset(so, path);
+                count++;
+            }
+
+            return count;
+        }
+
+        static int GenerateBackpacks()
+        {
+            string folder = "Assets/_Project/Data/Backpacks";
+            EnsureFolder(folder);
+            int count = 0;
+
+            var list = new (string file, string id, string name,
+                int level, int slots, float weight,
+                int rarity, int price)[]
+            {
+                //                file              id                name         lv  slots weight rarity  price
+                ("Backpack_Lv1", "Backpack_Lv1", "Lv1 가방",         1,   5,  10f,   0,  2000),
+                ("Backpack_Lv2", "Backpack_Lv2", "Lv2 가방",         2,  10,  15f,   1,  8000),
+                ("Backpack_Lv3", "Backpack_Lv3", "Lv3 가방",         3,  15,  20f,   2, 20000),
+                ("Backpack_Lv4", "Backpack_Lv4", "Lv4 가방",         4,  20,  25f,   3, 50000),
+            };
+
+            foreach (var b in list)
+            {
+                string path = $"{folder}/{b.file}.asset";
+                if (AssetDatabase.LoadAssetAtPath<BackpackDataSO>(path) != null)
+                {
+                    Debug.Log($"[SOGen] SKIP (이미 존재): {path}");
+                    continue;
+                }
+
+                var so = ScriptableObject.CreateInstance<BackpackDataSO>();
+
+                so.backpackLevel      = b.level;
+                so.extraSlots         = b.slots;
+                so.extraWeightCapacity = b.weight;
+
+                SetBaseFields(so, b.id, b.name,
+                    ItemCategory.Armor, (RarityTier)b.rarity,
+                    Vector2Int.one, 1, b.price);
 
                 AssetDatabase.CreateAsset(so, path);
                 count++;
