@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d08d12c5cb63506429f308ff7ff1d220, type: 3}
+  m_Name: Weapon_F2
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
+  itemID: Weapon_F2
+  displayName: F2
+  description: 
+  icon: {fileID: 0}
+  category: 0
+  rarity: 3
+  isValuable: 0
+  gridSize: {x: 1, y: 1}
+  maxStackSize: 1
+  weightKg: 0.1
+  baseSellPrice: 45000
+  worldPrefab: {fileID: 0}
+  weaponCategory: 0
+  damage: 42
+  fireRate: 14
+  magSize: 25
+  engageRange: {x: 30, y: 250}
+  ammoType: 0
+  availableModes: 0100
+  muzzleVelocity: 950
+  projectilePrefab: {fileID: 0}
+  muzzleFlashOffset: 0.2
+  adsTransitionTime: 0.2
+  spreadAngle: {x: 0.4, y: 2.8}
+  spreadRecovery: 11
+  maxDurability: 100
