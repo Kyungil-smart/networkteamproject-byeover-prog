@@ -45,7 +45,7 @@ namespace DeadZone.Actors.UI
         [Header("====씬 이동====")]
         [Tooltip("로그인과 Cloud Save 로드가 끝난 뒤 이동할 로비 씬 이름" +
                  "\nBuild Settings에 등록되어 있어야 합니다.")]
-        [SerializeField] private string lobbySceneName = "HJO_Lobby";
+        [SerializeField] private string lobbySceneName = "Lobby";
         
         [Header("====대기 시간====")]
         [Tooltip("Cloud Save 로드 이벤트를 기다릴 최대 시간(ms)" +
