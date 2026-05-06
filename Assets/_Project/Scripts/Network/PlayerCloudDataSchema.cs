@@ -36,8 +36,8 @@ namespace DeadZone.Network
         [FirestoreProperty] public List<string> personalActiveQuestIds { get; set; } = new List<string>();
         [FirestoreProperty] public List<string> personalCompletedQuestIds { get; set; } = new List<string>();
         [FirestoreProperty] public List<string> unlockedZones { get; set; } = new List<string>();
-        
         [FirestoreProperty] public List<QuestObjectiveProgress> questObjectives { get; set; } = new List<QuestObjectiveProgress>();
+        [FirestoreProperty] public List<string> pendingCompletionIds { get; set; } = new List<string>();
     }
     
     [FirestoreData]
@@ -120,7 +120,6 @@ namespace DeadZone.Network
         [FirestoreProperty] public int stackCount { get; set; }
         [FirestoreProperty] public int currentDurability { get; set; }
     }
-    
     [FirestoreData]
     public class SessionCloudData
     {
