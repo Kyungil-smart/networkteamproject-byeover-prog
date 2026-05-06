@@ -5,8 +5,11 @@ using DeadZone.Core;
 
 namespace DeadZone.Editor
 {
+  
     public static class SOBulkGenerator
     {
+     
+
         [MenuItem("DeadZone/Data/Generate All SO Assets", priority = 100)]
         public static void GenerateAll()
         {
@@ -14,6 +17,8 @@ namespace DeadZone.Editor
             created += GenerateWeapons();
             created += GenerateAmmo();
             created += GenerateArmor();
+            created += GenerateHelmets();
+            created += GenerateBackpacks();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -26,7 +31,7 @@ namespace DeadZone.Editor
                 "OK");
         }
 
-        // ═══════════ 개별 메뉴 (필요 시) ═══════════
+        // ═══════════ 개별 메뉴 ═══════════
 
         [MenuItem("DeadZone/Data/Generate Weapons Only")]
         public static void GenWeaponsMenu()
@@ -55,9 +60,24 @@ namespace DeadZone.Editor
             Debug.Log($"[SOGen] ArmorDataSO {n}개 생성 완료");
         }
 
-        // ══════════════════════════════════════════════════
-        //  WEAPON DATA (10종) — GDD §4.1 + §4.2
-        // ══════════════════════════════════════════════════
+        [MenuItem("DeadZone/Data/Generate Helmets Only")]
+        public static void GenHelmetsMenu()
+        {
+            int n = GenerateHelmets();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[SOGen] HelmetDataSO {n}개 생성 완료");
+        }
+
+        [MenuItem("DeadZone/Data/Generate Backpacks Only")]
+        public static void GenBackpacksMenu()
+        {
+            int n = GenerateBackpacks();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[SOGen] BackpackDataSO {n}개 생성 완료");
+        }
+        
 
         static int GenerateWeapons()
         {
@@ -65,23 +85,29 @@ namespace DeadZone.Editor
             EnsureFolder(folder);
             int count = 0;
 
-            // 구조체로 가독성 확보
+            //                    file                id                  name           cat                      dmg   rate  mag  rngMin rngMax ammo               modes                              vel    flash  ads   spMin spMax spRec  dur   rarity price
             var list = new (string file, string id, string name, WeaponCategory cat,
                 float dmg, float rate, int mag, float rngMin, float rngMax,
                 AmmoType ammo, FireMode[] modes, float vel, float flash, float ads,
                 float spMin, float spMax, float spRec, float dur,
-                int rarity, int gx, int gy, int price)[]
+                int rarity, int price)[]
             {
-                ("Weapon_Glock17",     "Weapon_Glock17",     "글락-17",       WeaponCategory.Handgun, 20f,  8f,  17,  0f,  30f,  AmmoType.Handgun, new[]{FireMode.Semi},                360f, 0.2f, 0.15f, 1.0f, 4.0f, 12f, 100f, 0, 1,2,  1500),
-                ("Weapon_DesertEagle", "Weapon_DesertEagle", "데저트 이글",   WeaponCategory.Handgun, 55f,  3f,   7,  0f,  40f,  AmmoType.Handgun, new[]{FireMode.Semi},                470f, 0.2f, 0.20f, 1.5f, 6.0f,  8f, 100f, 2, 1,2, 12000),
-                ("Weapon_Revolver",    "Weapon_Revolver",    "리볼버",        WeaponCategory.Handgun, 48f,  3f,   6,  0f,  35f,  AmmoType.Handgun, new[]{FireMode.Semi},                450f, 0.2f, 0.20f, 1.0f, 5.0f, 10f, 100f, 1, 1,2,  5000),
-                ("Weapon_MP5",         "Weapon_MP5",         "MP5",           WeaponCategory.SMG,     24f, 13f,  30,  0f,  60f,  AmmoType.SMG,     new[]{FireMode.Full,FireMode.Semi},  400f, 0.2f, 0.18f, 0.8f, 4.0f, 10f, 100f, 0, 1,3,  3000),
-                ("Weapon_MP7",         "Weapon_MP7",         "MP7",           WeaponCategory.SMG,     22f, 15f,  40,  0f,  80f,  AmmoType.SMG,     new[]{FireMode.Full},                725f, 0.2f, 0.18f, 0.7f, 3.5f, 11f, 100f, 1, 1,3,  8000),
-                ("Weapon_M4A1",        "Weapon_M4A1",        "M4A1",          WeaponCategory.AR,      35f, 13f,  30, 30f, 200f,  AmmoType.AR,      new[]{FireMode.Full,FireMode.Semi},  900f, 0.2f, 0.20f, 0.5f, 3.0f, 10f, 100f, 2, 1,4, 15000),
-                ("Weapon_SK74",        "Weapon_SK74",        "SK-74",         WeaponCategory.AR,      38f, 10f,  30, 30f, 180f,  AmmoType.AR,      new[]{FireMode.Full,FireMode.Semi},  900f, 0.2f, 0.20f, 0.6f, 4.0f,  9f, 100f, 2, 1,4, 12000),
-                ("Weapon_BoltSR",      "Weapon_BoltSR",      "드라그 소총",   WeaponCategory.Sniper,  95f, 1.5f,  5,100f, 600f,  AmmoType.Sniper,  new[]{FireMode.Bolt},                830f, 0.3f, 0.30f, 0.1f, 1.0f, 15f, 100f, 3, 1,4, 35000),
-                ("Weapon_PumpSG",      "Weapon_PumpSG",      "펌프 샷건",     WeaponCategory.Shotgun, 85f, 1.2f,  7,  0f,  25f,  AmmoType.Shotgun, new[]{FireMode.Pump},                400f, 0.2f, 0.25f, 2.0f, 8.0f,  8f, 100f, 1, 1,4,  4000),
-                ("Weapon_AutoSG",      "Weapon_AutoSG",      "오토 샷건",     WeaponCategory.Shotgun, 70f,  4f,   8,  0f,  30f,  AmmoType.Shotgun, new[]{FireMode.Semi},                400f, 0.2f, 0.25f, 2.5f, 9.0f,  7f, 100f, 1, 1,4,  8000),
+                // ── 일반 (Common = 0) ──
+                ("Weapon_Glock17",       "Weapon_Glock17",       "글락-17",       WeaponCategory.Handgun,  20f,   8f,  17,   0f,   30f, AmmoType.Handgun, new[]{FireMode.Semi},                360f, 0.2f, 0.15f, 1.0f, 4.0f, 12f, 100f, 0,  1500),
+                ("Weapon_SelfDefense",   "Weapon_SelfDefense",   "호신용 권총",   WeaponCategory.Handgun,  14f,   6f,   8,   0f,   20f, AmmoType.Handgun, new[]{FireMode.Semi},                300f, 0.2f, 0.15f, 1.2f, 5.0f, 10f, 100f, 0,   800),
+
+                // ── 희귀 (Uncommon = 1) ──
+                ("Weapon_Revolver",      "Weapon_Revolver",      "리볼버",        WeaponCategory.Handgun,  48f,   3f,   6,   0f,   35f, AmmoType.Handgun, new[]{FireMode.Semi},                450f, 0.2f, 0.20f, 1.0f, 5.0f, 10f, 100f, 1,  5000),
+                ("Weapon_PumpSG",        "Weapon_PumpSG",        "펌프 샷건",     WeaponCategory.Shotgun,  85f,  1.2f,  7,   0f,   25f, AmmoType.Shotgun, new[]{FireMode.Pump},                400f, 0.2f, 0.25f, 2.0f, 8.0f,  8f, 100f, 1,  4000),
+
+                // ── 레어 (Rare = 2) ──
+                ("Weapon_SK74",          "Weapon_SK74",          "SK-74",         WeaponCategory.AR,       38f,  10f,  30,  30f,  180f, AmmoType.AR,      new[]{FireMode.Full,FireMode.Semi},  900f, 0.2f, 0.20f, 0.6f, 4.0f,  9f, 100f, 2, 12000),
+                ("Weapon_B90",           "Weapon_B90",           "B90",           WeaponCategory.Shotgun,  72f,  3.5f,  7,   0f,   30f, AmmoType.Shotgun, new[]{FireMode.Semi},                400f, 0.2f, 0.25f, 2.2f, 8.5f,  7f, 100f, 2, 18000),
+                ("Weapon_MB7",           "Weapon_MB7",           "MB-7",          WeaponCategory.SMG,      26f,  14f,  35,   0f,   75f, AmmoType.SMG,     new[]{FireMode.Full,FireMode.Semi},  680f, 0.2f, 0.18f, 0.6f, 3.5f, 11f, 100f, 2, 15000),
+
+                // ── 에픽 (Epic = 3) ──
+                ("Weapon_F2",            "Weapon_F2",            "F2",            WeaponCategory.AR,       42f,  14f,  25,  30f,  250f, AmmoType.AR,      new[]{FireMode.Full,FireMode.Semi},  950f, 0.2f, 0.20f, 0.4f, 2.8f, 11f, 100f, 3, 45000),
+                ("Weapon_BoltSR",        "Weapon_BoltSR",        "드라그 소총",   WeaponCategory.Sniper,   95f,  1.5f,  5, 100f,  600f, AmmoType.Sniper,  new[]{FireMode.Bolt},                830f, 0.3f, 0.30f, 0.1f, 1.0f, 15f, 100f, 3, 35000),
             };
 
             foreach (var w in list)
@@ -111,7 +137,7 @@ namespace DeadZone.Editor
 
                 SetBaseFields(so, w.id, w.name,
                     ItemCategory.Weapon, (RarityTier)w.rarity,
-                    new Vector2Int(w.gx, w.gy), 1, w.price);
+                    Vector2Int.one, 1, w.price);
 
                 AssetDatabase.CreateAsset(so, path);
                 count++;
@@ -119,15 +145,7 @@ namespace DeadZone.Editor
 
             return count;
         }
-
-        // ══════════════════════════════════════════════════
-        //  AMMO DATA (15종) — 5카테고리 × 3등급 (승우 커스텀 관통력)
-        //  AR:      LP=2  BP=4  AP=6
-        //  SMG:     LP=2  BP=3  AP=5
-        //  Handgun: LP=2  BP=3  AP=4
-        //  Sniper:  LP=4  BP=5  AP=6
-        //  Shotgun: LP=1  BP=2  AP=4
-        // ══════════════════════════════════════════════════
+        
 
         static int GenerateAmmo()
         {
@@ -183,7 +201,7 @@ namespace DeadZone.Editor
 
                 SetBaseFields(so, a.id, a.name,
                     ItemCategory.Ammo, (RarityTier)a.rarity,
-                    new Vector2Int(1, 1), a.stack, a.price);
+                    Vector2Int.one, a.stack, a.price);
 
                 AssetDatabase.CreateAsset(so, path);
                 count++;
@@ -191,10 +209,6 @@ namespace DeadZone.Editor
 
             return count;
         }
-
-        // ══════════════════════════════════════════════════
-        //  ARMOR DATA (6종) — GDD §5.3
-        // ══════════════════════════════════════════════════
 
         static int GenerateArmor()
         {
@@ -206,13 +220,13 @@ namespace DeadZone.Editor
                 ArmorClass cls, float dur, float spd, float block,
                 int rarity, int price)[]
             {
-                //           file         id           name       class         dur    spd     block  rarity price
-                ("Armor_C1", "Armor_C1", "C1 아머", ArmorClass.C1,  50f,  0f,    0.10f, 0,  1000),
-                ("Armor_C2", "Armor_C2", "C2 아머", ArmorClass.C2,  80f, -0.02f, 0.15f, 0,  3000),
-                ("Armor_C3", "Armor_C3", "C3 아머", ArmorClass.C3, 120f, -0.05f, 0.20f, 1,  8000),
-                ("Armor_C4", "Armor_C4", "C4 아머", ArmorClass.C4, 180f, -0.08f, 0.25f, 1, 15000),
-                ("Armor_C5", "Armor_C5", "C5 아머", ArmorClass.C5, 250f, -0.14f, 0.30f, 2, 35000),
-                ("Armor_C6", "Armor_C6", "C6 아머", ArmorClass.C6, 350f, -0.20f, 0.35f, 3, 60000),
+                //            file          id           name        class          dur    spd     block  rarity price
+                ("Armor_C1", "Armor_C1", "C1 아머", ArmorClass.C1,   50f,  0f,     0.10f, 0,  1000),
+                ("Armor_C2", "Armor_C2", "C2 아머", ArmorClass.C2,   80f, -0.02f,  0.15f, 0,  3000),
+                ("Armor_C3", "Armor_C3", "C3 아머", ArmorClass.C3,  120f, -0.05f,  0.20f, 1,  8000),
+                ("Armor_C4", "Armor_C4", "C4 아머", ArmorClass.C4,  180f, -0.08f,  0.25f, 1, 15000),
+                ("Armor_C5", "Armor_C5", "C5 아머", ArmorClass.C5,  250f, -0.14f,  0.30f, 2, 35000),
+                ("Armor_C6", "Armor_C6", "C6 아머", ArmorClass.C6,  350f, -0.20f,  0.35f, 3, 60000),
             };
 
             foreach (var a in list)
@@ -230,11 +244,10 @@ namespace DeadZone.Editor
                 so.maxDurability    = a.dur;
                 so.moveSpeedPenalty = a.spd;
                 so.blockChance      = a.block;
-                // protectedParts는 ArmorDataSO 기본값 { Torso } 그대로 사용
 
                 SetBaseFields(so, a.id, a.name,
                     ItemCategory.Armor, (RarityTier)a.rarity,
-                    new Vector2Int(2, 3), 1, a.price);
+                    Vector2Int.one, 1, a.price);
 
                 AssetDatabase.CreateAsset(so, path);
                 count++;
@@ -242,6 +255,97 @@ namespace DeadZone.Editor
 
             return count;
         }
+        
+        static int GenerateHelmets()
+        {
+            string folder = "Assets/_Project/Data/Helmets";
+            EnsureFolder(folder);
+            int count = 0;
+
+            var list = new (string file, string id, string name,
+                int helmetClass, float dur, float spd, float block,
+                int rarity, int price)[]
+            {
+                //              file           id            name          class dur   spd    block  rarity price
+                ("Helmet_C1", "Helmet_C1", "C1 헬멧",       1,   30f,  0f,     0.25f, 0,   800),
+                ("Helmet_C2", "Helmet_C2", "C2 헬멧",       2,   55f, -0.01f,  0.35f, 0,  2500),
+                ("Helmet_C3", "Helmet_C3", "C3 헬멧",       3,   85f, -0.03f,  0.50f, 1,  7000),
+                ("Helmet_C4", "Helmet_C4", "C4 헬멧",       4,  130f, -0.06f,  0.65f, 2, 20000),
+            };
+
+            foreach (var h in list)
+            {
+                string path = $"{folder}/{h.file}.asset";
+                if (AssetDatabase.LoadAssetAtPath<HelmetDataSO>(path) != null)
+                {
+                    Debug.Log($"[SOGen] SKIP (이미 존재): {path}");
+                    continue;
+                }
+
+                var so = ScriptableObject.CreateInstance<HelmetDataSO>();
+
+                so.helmetClass      = (HelmetClass)h.helmetClass;
+                so.maxDurability    = h.dur;
+                so.moveSpeedPenalty = h.spd;
+                so.blockChance      = h.block;
+
+                SetBaseFields(so, h.id, h.name,
+                    ItemCategory.Armor, (RarityTier)h.rarity,
+                    Vector2Int.one, 1, h.price);
+
+                AssetDatabase.CreateAsset(so, path);
+                count++;
+            }
+
+            return count;
+        }
+
+        static int GenerateBackpacks()
+        {
+            string folder = "Assets/_Project/Data/Backpacks";
+            EnsureFolder(folder);
+            int count = 0;
+
+            var list = new (string file, string id, string name,
+                int level, int slots, float weight,
+                int rarity, int price)[]
+            {
+                //                file              id                name         lv  slots weight rarity  price
+                ("Backpack_Lv1", "Backpack_Lv1", "Lv1 가방",         1,   5,  10f,   0,  2000),
+                ("Backpack_Lv2", "Backpack_Lv2", "Lv2 가방",         2,  10,  15f,   1,  8000),
+                ("Backpack_Lv3", "Backpack_Lv3", "Lv3 가방",         3,  15,  20f,   2, 20000),
+                ("Backpack_Lv4", "Backpack_Lv4", "Lv4 가방",         4,  20,  25f,   3, 50000),
+            };
+
+            foreach (var b in list)
+            {
+                string path = $"{folder}/{b.file}.asset";
+                if (AssetDatabase.LoadAssetAtPath<BackpackDataSO>(path) != null)
+                {
+                    Debug.Log($"[SOGen] SKIP (이미 존재): {path}");
+                    continue;
+                }
+
+                var so = ScriptableObject.CreateInstance<BackpackDataSO>();
+
+                so.backpackLevel      = b.level;
+                so.extraSlots         = b.slots;
+                so.extraWeightCapacity = b.weight;
+
+                SetBaseFields(so, b.id, b.name,
+                    ItemCategory.Armor, (RarityTier)b.rarity,
+                    Vector2Int.one, 1, b.price);
+
+                AssetDatabase.CreateAsset(so, path);
+                count++;
+            }
+
+            return count;
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  공통 베이스 필드 세팅
+        // ══════════════════════════════════════════════════════
 
         static void SetBaseFields(
             ItemDataSO so,
@@ -262,9 +366,9 @@ namespace DeadZone.Editor
             so.baseSellPrice = baseSellPrice;
         }
 
-        // ══════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════
         //  유틸리티
-        // ══════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════
 
         static void EnsureFolder(string path)
         {
