@@ -5,8 +5,12 @@ using DeadZone.Core;
 
 namespace DeadZone.Actors
 {
+    /// <summary>
+    /// v2.0 — hearingRange를 SO에서 읽어 티어별 자동 적용.
+    /// </summary>
     public class EnemyHearing : NetworkBehaviour
     {
+        [Header("Inspector 기본값 (SO 있으면 SO 값으로 덮어씀)")]
         [SerializeField] private float hearingRange = 20f;
         private EnemyAI ai;
 
@@ -15,6 +19,12 @@ namespace DeadZone.Actors
         public override void OnNetworkSpawn()
         {
             if (!IsServer) return;
+
+            // SO에서 hearingRange 읽기
+            var stats = GetComponent<EnemyStats>();
+            if (stats != null && stats.StatsSO != null)
+                hearingRange = stats.StatsSO.hearingRange;
+
             EventBus.Subscribe<WeaponFiredEvent>(OnSound);
         }
 

@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 488feee288201d1468c9397d30a52b8c, type: 3}
+  m_Name: Boss_S1_03
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.EnemyStatsSO
+  displayName: "\uC81C\uC7AC\uC18C \uBCF4\uC2A4"
+  tier: 5
+  faction: 2
+  isBoss: 1
+  maxHP: 600
+  defaultArmor: {fileID: 11400000, guid: 97a3fffd42429a946ad1c9a798af3847, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: 2fbf9be39f6fcc245894b4b70b10ade4, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 5a3b383a31ce9eb4d85c5a09f712b23d, type: 2}
+  penetrationModifier: -1
+  damageMultiplier: 1.1
+  fireInterval: 0.5
+  burstSize: 5
+  burstRestDelay: 0.4
+  spreadAngleMin: 0.3
+  spreadAngleMax: 1
+  rangeSpreadMultiplier: 1.2
+  maxEffectiveRange: 90
+  visionRange: 110
+  fov: 110
+  hearingRange: 35
+  reactionTime: 0.3
+  moveSpeed: 5
+  preferredRangeMin: 20
+  preferredRangeMax: 60
+  canCallReinforcements: 1
+  canThrowGrenades: 1
+  grenadeCooldown: 15

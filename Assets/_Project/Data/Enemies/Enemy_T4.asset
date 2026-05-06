@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 488feee288201d1468c9397d30a52b8c, type: 3}
+  m_Name: Enemy_T4
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.EnemyStatsSO
+  displayName: "T4 \uC5D8\uB9AC\uD2B8"
+  tier: 4
+  faction: 2
+  isBoss: 0
+  maxHP: 200
+  defaultArmor: {fileID: 11400000, guid: 0c43fb65333b1e1479b993b6175851f9, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: 2fbf9be39f6fcc245894b4b70b10ade4, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 5a3b383a31ce9eb4d85c5a09f712b23d, type: 2}
+  penetrationModifier: 0
+  damageMultiplier: 0.75
+  fireInterval: 0.6
+  burstSize: 4
+  burstRestDelay: 0.5
+  spreadAngleMin: 0.5
+  spreadAngleMax: 2
+  rangeSpreadMultiplier: 1.3
+  maxEffectiveRange: 80
+  visionRange: 90
+  fov: 110
+  hearingRange: 30
+  reactionTime: 0.5
+  moveSpeed: 5
+  preferredRangeMin: 20
+  preferredRangeMax: 70
+  canCallReinforcements: 1
+  canThrowGrenades: 1
+  grenadeCooldown: 20
