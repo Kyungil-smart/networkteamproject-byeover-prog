@@ -14,12 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Helmet_C1
   displayName: "1 \uD074\uB798\uC2A4 \uD5EC\uBA67"
-  description: 
+  description: "- \uB4F1\uAE09: \uC77C\uBC18\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
+    \uAD00\uD1B5\uB825 1\uCC28\uB2E8\n2. \uB0B4\uAD6C\uB3C4: 30\n3. \uC774\uC18D
+    \uD328\uB110\uD2F0: 0\n4. \uB9C9\uAE30 \uD655\uB960: 25%"
   icon: {fileID: 0}
   category: 3
   rarity: 0
   isValuable: 0
-  gridSize: {x: 2, y: 2}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.8
   baseSellPrice: 800
