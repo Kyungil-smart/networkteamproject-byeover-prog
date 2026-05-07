@@ -1,24 +1,24 @@
-﻿using Unity.Netcode;
-using UnityEngine;
-
 using DeadZone.Core;
 using DeadZone.Systems;
+using Unity.Netcode;
+using UnityEngine;
 
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// 적의 사격을 처리한다.
-    /// 적 전용 투사체 프리팹(빨간색)을 사용하여 플레이어 탄환과 구분한다.
-    /// WeaponDataSO의 projectilePrefab은 플레이어용이므로 사용하지 않는다.
+    /// 적의 사격을 처리하고 적 전용 투사체 프리팹을 발사합니다.
     /// </summary>
     public class EnemyShooter : NetworkBehaviour
     {
-        [Header("Refs")]
+        [Header("사격 기준")]
+        [Tooltip("총알이 생성될 총구 위치입니다. EnemyWeaponVisual이 자동 연결할 수 있습니다.")]
         [SerializeField] private Transform muzzle;
+
+        [Tooltip("명중 판정에 사용할 레이어입니다. 현재 투사체 방식에서는 예비 설정으로 유지됩니다.")]
         [SerializeField] private LayerMask hitMask = ~0;
 
         [Header("적 전용 투사체")]
-        [Tooltip("적이 발사하는 탄환 프리팹 (Enemy_Bullet_Trail). 플레이어 탄환과 색상 구분됨")]
+        [Tooltip("적이 발사하는 탄환 프리팹입니다. 플레이어 탄환과 색상 및 이펙트를 분리합니다.")]
         [SerializeField] private GameObject enemyBulletPrefab;
 
         private EnemyStats stats;
@@ -36,47 +36,73 @@ namespace DeadZone.Actors
             CacheMuzzleVelocity();
         }
 
+        /// <summary>
+        /// 네트워크 스폰 이후 서버 기준 총구 속도를 캐싱합니다.
+        /// </summary>
         public override void OnNetworkSpawn()
         {
-            if (IsServer) CacheMuzzleVelocity();
-        }
-
-        /// <summary>무기 SO에서 총구 속도를 가져온다.</summary>
-        private void CacheMuzzleVelocity()
-        {
-            if (stats == null || stats.StatsSO == null) return;
-            var weapon = stats.StatsSO.defaultWeapon;
-            muzzleVelocity = weapon != null ? weapon.muzzleVelocity : 300f;
-            if (muzzleVelocity <= 0f) muzzleVelocity = 300f;
+            if (IsServer)
+            {
+                CacheMuzzleVelocity();
+            }
         }
 
         /// <summary>
-        /// 타겟을 향해 사격한다. EnemyAI.TickEngage에서 호출.
+        /// 무기 비주얼에서 찾은 총구 위치를 사격 기준점으로 연결합니다.
         /// </summary>
+        /// <param name="muzzlePoint">적 무기 프리팹 내부의 총구 위치입니다.</param>
+        public void SetMuzzle(Transform muzzlePoint)
+        {
+            if (muzzlePoint == null)
+            {
+                return;
+            }
+
+            muzzle = muzzlePoint;
+        }
+
+        /// <summary>
+        /// 타겟을 향해 적 전용 투사체를 발사합니다.
+        /// </summary>
+        /// <param name="target">사격 대상입니다.</param>
         public void TryFireAt(Transform target)
         {
-            if (IsSpawned && !IsServer) return;
-            if (target == null || stats == null || stats.StatsSO == null) return;
-            if (Time.time < nextShotAllowed) return;
-            if (muzzle == null || enemyBulletPrefab == null) return;
+            if (IsSpawned && !IsServer)
+            {
+                return;
+            }
 
-            var so = stats.StatsSO;
+            if (target == null || stats == null || stats.StatsSO == null)
+            {
+                return;
+            }
 
-            // ── 방향 + 탄퍼짐 ──
+            if (Time.time < nextShotAllowed)
+            {
+                return;
+            }
+
+            if (muzzle == null || enemyBulletPrefab == null)
+            {
+                return;
+            }
+
+            EnemyStatsSO so = stats.StatsSO;
             Vector3 baseDir = (target.position - muzzle.position).normalized;
             float dist = Vector3.Distance(muzzle.position, target.position);
 
             float distRatio = Mathf.Clamp01(dist / so.maxEffectiveRange);
             float spreadDeg = Mathf.Lerp(so.spreadAngleMin, so.spreadAngleMax, distRatio);
             if (dist > so.maxEffectiveRange)
+            {
                 spreadDeg *= so.rangeSpreadMultiplier;
+            }
 
             Vector3 spreadDir = Quaternion.Euler(
                 Random.Range(-1f, 1f) * spreadDeg,
                 Random.Range(-1f, 1f) * spreadDeg,
-                0) * baseDir;
+                0f) * baseDir;
 
-            // ── 청각 이벤트 ──
             EventBus.Publish(new WeaponFiredEvent
             {
                 shooterClientId = DamageSystem.AI_SHOOTER_ID,
@@ -87,29 +113,30 @@ namespace DeadZone.Actors
                 loudness = 1f,
             });
 
-            // ── 투사체 발사 ──
             FireProjectile(spreadDir, so);
+            UpdateBurstTiming(so);
+        }
 
-            // ── 점사 타이밍 ──
-            burstCount++;
-            if (burstCount >= so.burstSize)
+        private void CacheMuzzleVelocity()
+        {
+            if (stats == null || stats.StatsSO == null)
             {
-                burstCount = 0;
-                nextShotAllowed = Time.time + so.burstRestDelay;
+                return;
             }
-            else
+
+            WeaponDataSO weapon = stats.StatsSO.defaultWeapon;
+            muzzleVelocity = weapon != null ? weapon.muzzleVelocity : 300f;
+            if (muzzleVelocity <= 0f)
             {
-                nextShotAllowed = Time.time + so.fireInterval;
+                muzzleVelocity = 300f;
             }
         }
 
-        /// <summary>적 전용 투사체를 생성한다.</summary>
         private void FireProjectile(Vector3 direction, EnemyStatsSO so)
         {
-            GameObject bullet = Instantiate(enemyBulletPrefab,
-                muzzle.position, Quaternion.LookRotation(direction));
+            GameObject bullet = Instantiate(enemyBulletPrefab, muzzle.position, Quaternion.LookRotation(direction));
 
-            var projectileData = new ProjectileData
+            ProjectileData projectileData = new ProjectileData
             {
                 ShooterId = DamageSystem.AI_SHOOTER_ID,
                 BaseDamage = so.defaultWeapon != null
@@ -123,15 +150,30 @@ namespace DeadZone.Actors
                 Range = so.maxEffectiveRange,
             };
 
-            // 네트워크 스폰 (온라인)
-            var netObj = bullet.GetComponent<NetworkObject>();
+            NetworkObject netObj = bullet.GetComponent<NetworkObject>();
             if (netObj != null && IsSpawned)
+            {
                 netObj.Spawn();
+            }
 
-            // 초기화
-            var controller = bullet.GetComponent<ProjectileController>();
+            ProjectileController controller = bullet.GetComponent<ProjectileController>();
             if (controller != null)
+            {
                 controller.Initialize(projectileData, direction, muzzleVelocity);
+            }
+        }
+
+        private void UpdateBurstTiming(EnemyStatsSO so)
+        {
+            burstCount++;
+            if (burstCount >= so.burstSize)
+            {
+                burstCount = 0;
+                nextShotAllowed = Time.time + so.burstRestDelay;
+                return;
+            }
+
+            nextShotAllowed = Time.time + so.fireInterval;
         }
     }
 }

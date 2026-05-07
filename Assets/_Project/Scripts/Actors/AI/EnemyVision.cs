@@ -1,34 +1,48 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// 적의 감지 시스템. 두 가지 감지 모드를 제공한다:
-    /// 1. 전방 시야 (FOV): SO의 visionRange/fov로 정면 감지
-    /// 2. 후방 근접 (Proximity): 짧은 거리 내 전방향 감지 (소리/기배)
+    /// 적의 감지 시스템입니다.
+    /// 전방 시야 감지와 후방 근접 감지를 분리해 벽 뒤 대상은 제외하고, 뒤에서 접근하는 플레이어는 짧은 거리에서 인식합니다.
     /// </summary>
     public class EnemyVision : NetworkBehaviour
     {
-        [Header("Inspector 기본값 (SO 있으면 SO 값으로 덮어씀)")]
+        [Header("감지 기본값")]
+        [Tooltip("SO가 없을 때 사용할 전방 시야각입니다.")]
         [SerializeField] private float fov = 110f;
+
+        [Tooltip("SO가 없을 때 사용할 전방 감지 거리입니다.")]
         [SerializeField] private float visionRange = 30f;
+
+        [Tooltip("시야를 막는 벽, 구조물, 장애물 레이어입니다.")]
         [SerializeField] private LayerMask obstacleMask;
+
+        [Tooltip("플레이어를 찾을 때 사용할 레이어입니다.")]
         [SerializeField] private LayerMask playerMask;
+
+        [Tooltip("감지 검사를 반복하는 간격입니다.")]
         [SerializeField] private float checkInterval = 0.1f;
+
+        [Tooltip("시야 판정의 시작 위치입니다. 비워두면 적 위치에서 위쪽으로 보정합니다.")]
         [SerializeField] private Transform eyeTransform;
 
         [Header("후방 근접 감지")]
-        [Tooltip("전방향으로 감지하는 근접 범위 (뒤에서 다가오는 플레이어 감지용)")]
+        [Tooltip("전방향으로 감지하는 근접 범위입니다. 뒤에서 접근하는 플레이어 감지에 사용합니다.")]
         [SerializeField] private float proximityRange = 5f;
 
-        [Tooltip("근접 감지에도 장애물 체크를 할지 여부")]
+        [Tooltip("근접 감지에도 장애물 차단 검사를 적용할지 여부입니다.")]
         [SerializeField] private bool proximityRequiresLOS = true;
 
         private float nextCheckTime;
         private Transform cachedTarget;
         private Transform cachedProximityTarget;
+        private readonly Collider[] detectionBuffer = new Collider[16];
 
+        /// <summary>
+        /// 네트워크 스폰 시 EnemyStatsSO의 감지 값을 적용합니다.
+        /// </summary>
         public override void OnNetworkSpawn()
         {
             if (!IsServer) return;
@@ -40,7 +54,9 @@ namespace DeadZone.Actors
             if (!IsSpawned) ApplySOValues();
         }
 
-        /// <summary>SO에서 시야 값 적용</summary>
+        /// <summary>
+        /// SO에서 시야 값을 적용합니다.
+        /// </summary>
         private void ApplySOValues()
         {
             var stats = GetComponent<EnemyStats>();
@@ -48,6 +64,7 @@ namespace DeadZone.Actors
             {
                 visionRange = stats.StatsSO.visionRange;
                 fov = stats.StatsSO.fov;
+                proximityRange = Mathf.Max(proximityRange, stats.StatsSO.preferredRangeMin * 0.5f);
             }
         }
 
@@ -58,6 +75,8 @@ namespace DeadZone.Actors
         /// <summary>
         /// FOV 기반 시야 감지. 정면 부채꼴 범위 내 플레이어를 탐지한다.
         /// </summary>
+        /// <param name="target">감지된 플레이어 Transform입니다.</param>
+        /// <returns>전방 시야로 볼 수 있는 대상이 있으면 true입니다.</returns>
         public bool TryGetVisibleTarget(out Transform target)
         {
             target = null;
@@ -70,18 +89,27 @@ namespace DeadZone.Actors
             }
             nextCheckTime = Time.time + checkInterval;
 
-            Collider[] hits = Physics.OverlapSphere(transform.position, visionRange, playerMask);
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                transform.position,
+                visionRange,
+                detectionBuffer,
+                playerMask);
+
             float closestDist = float.MaxValue;
 
-            foreach (var c in hits)
+            for (int i = 0; i < hitCount; i++)
             {
-                if (CanSee(c.transform))
+                Collider c = detectionBuffer[i];
+                if (c == null) continue;
+
+                Transform candidate = ResolveTargetTransform(c);
+                if (CanSee(candidate))
                 {
-                    float dist = Vector3.Distance(transform.position, c.transform.position);
+                    float dist = Vector3.Distance(transform.position, candidate.position);
                     if (dist < closestDist)
                     {
                         closestDist = dist;
-                        cachedTarget = c.transform;
+                        cachedTarget = candidate;
                     }
                 }
             }
@@ -99,6 +127,8 @@ namespace DeadZone.Actors
         /// <summary>
         /// 특정 대상이 시야 내에 있는지 확인한다.
         /// </summary>
+        /// <param name="candidate">검사할 대상 Transform입니다.</param>
+        /// <returns>전방 시야로 볼 수 있으면 true입니다.</returns>
         public bool CanSee(Transform candidate)
         {
             if (candidate == null) return false;
@@ -113,11 +143,7 @@ namespace DeadZone.Actors
             // FOV 각도 체크
             if (Vector3.Angle(transform.forward, dir) > fov * 0.5f) return false;
 
-            // 장애물 체크
-            if (Physics.Raycast(origin, dir.normalized, out _, dist, obstacleMask))
-                return false;
-
-            return true;
+            return HasLineOfSight(origin, candidate.position, dist);
         }
 
         // ═══════════════════════════════
@@ -128,37 +154,47 @@ namespace DeadZone.Actors
         /// 전방향 근접 감지. 짧은 거리 내 플레이어를 FOV 무시하고 탐지한다.
         /// 뒤에서 접근하는 플레이어를 감지하는 용도.
         /// </summary>
+        /// <param name="target">감지된 플레이어 Transform입니다.</param>
+        /// <returns>후방 또는 근접 대상이 있으면 true입니다.</returns>
         public bool TryGetProximityTarget(out Transform target)
         {
             target = null;
             if (IsSpawned && !IsServer) return false;
 
-            Collider[] hits = Physics.OverlapSphere(transform.position, proximityRange, playerMask);
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                transform.position,
+                proximityRange,
+                detectionBuffer,
+                playerMask);
 
             float closestDist = float.MaxValue;
             Transform closest = null;
 
-            foreach (var c in hits)
+            for (int i = 0; i < hitCount; i++)
             {
-                float dist = Vector3.Distance(transform.position, c.transform.position);
+                Collider c = detectionBuffer[i];
+                if (c == null) continue;
+
+                Transform candidate = ResolveTargetTransform(c);
+                float dist = Vector3.Distance(transform.position, candidate.position);
 
                 // 이미 전방 FOV에서 감지 가능한 대상은 스킵 (중복 방지)
-                if (Vector3.Angle(transform.forward, c.transform.position - transform.position) <= fov * 0.5f)
+                if (CanSee(candidate))
                     continue;
 
                 // 장애물 체크 (옵션)
                 if (proximityRequiresLOS)
                 {
                     Vector3 origin = GetEyePosition();
-                    Vector3 dir = c.transform.position - origin;
-                    if (Physics.Raycast(origin, dir.normalized, out _, dir.magnitude, obstacleMask))
+                    Vector3 dir = candidate.position - origin;
+                    if (!HasLineOfSight(origin, candidate.position, dir.magnitude))
                         continue;
                 }
 
                 if (dist < closestDist)
                 {
                     closestDist = dist;
-                    closest = c.transform;
+                    closest = candidate;
                 }
             }
 
@@ -180,6 +216,25 @@ namespace DeadZone.Actors
             return eyeTransform != null
                 ? eyeTransform.position
                 : transform.position + Vector3.up * 1.6f;
+        }
+
+        private bool HasLineOfSight(Vector3 origin, Vector3 targetPosition, float distance)
+        {
+            if (distance <= 0.01f) return true;
+
+            Vector3 direction = (targetPosition - origin).normalized;
+            return !Physics.Raycast(origin, direction, distance, obstacleMask);
+        }
+
+        private Transform ResolveTargetTransform(Collider targetCollider)
+        {
+            NetworkObject networkObject = targetCollider.GetComponentInParent<NetworkObject>();
+            if (networkObject != null)
+                return networkObject.transform;
+
+            return targetCollider.attachedRigidbody != null
+                ? targetCollider.attachedRigidbody.transform
+                : targetCollider.transform;
         }
 
 #if UNITY_EDITOR
