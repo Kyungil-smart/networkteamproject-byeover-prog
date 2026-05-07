@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5006551571251421729
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 823687238366635036}
+  - component: {fileID: 8355826573173109706}
+  - component: {fileID: 3733051453636270501}
+  - component: {fileID: 7190497899683804910}
+  m_Layer: 0
+  m_Name: QuestManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &823687238366635036
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5006551571251421729}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8355826573173109706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5006551571251421729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 13100686
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &3733051453636270501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5006551571251421729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba8983224d7e24f40a1f463d6aa5a72b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Quests.QuestManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  allQuests:
+  - {fileID: 11400000, guid: 09315e5c3eebdc0409d1dee96ffcd5b6, type: 2}
+  - {fileID: 11400000, guid: dcc3c242f9ff97343ba03d174b30febc, type: 2}
+  - {fileID: 11400000, guid: a77d61be97d5b6149893b4ba6db2daf4, type: 2}
+  - {fileID: 11400000, guid: f8d1d88bf01bc0d42b8d11fb8956fe76, type: 2}
+  - {fileID: 11400000, guid: 522d84decafefea4091bfadfebcfd10c, type: 2}
+  - {fileID: 11400000, guid: 5f45fa8d535015c4cacf6651fe713c2f, type: 2}
+  - {fileID: 11400000, guid: f1c3e43f95d53a648b27691d6974927f, type: 2}
+  - {fileID: 11400000, guid: b58ac944aa945094fb54cca950a5666a, type: 2}
+  enableDebugKeys: 1
+--- !u!114 &7190497899683804910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5006551571251421729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce9299dfc1d595a4fbc17ca09a2f81cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ZoneUnlockSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+  zoneLocks:
+  - zoneId: MapA_Zone2
+    barriers:
+    - {fileID: 0}
+  - zoneId: MapA_Zone3
+    barriers:
+    - {fileID: 0}
+  - zoneId: MapA_Zone4
+    barriers:
+    - {fileID: 0}
+  destroyEffect: {fileID: 0}

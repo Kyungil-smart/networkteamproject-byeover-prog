@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Shovel
   displayName: "\uC0BD"
-  description: 
+  description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uAC74\uC124\uC5C5\uC790\uAC00
+    \uB193\uACE0\uAC04 \uC0BD"
   icon: {fileID: 0}
   category: 9
   rarity: 1
   isValuable: 0
-  gridSize: {x: 1, y: 4}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 1.5
   baseSellPrice: 700

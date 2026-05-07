@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Battery
   displayName: "\uAC74\uC804\uC9C0"
-  description: 
+  description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
+    \uC6A9 \uC544\uC774\uD15C(\uC791\uC5C5\uB338)"
   icon: {fileID: 21300000, guid: 71802763c53c7784cb6b8c3d5959b0f4, type: 3}
   category: 8
   rarity: 1

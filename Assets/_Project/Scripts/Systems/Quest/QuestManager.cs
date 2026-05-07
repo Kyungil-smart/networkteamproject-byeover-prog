@@ -13,6 +13,10 @@ namespace DeadZone.Systems.Quests
         [Header("Quest Data (8개)")]
         [SerializeField] private QuestDataSO[] allQuests;
 
+        [Header("Debug")]
+        [Tooltip("true면 Home 키로 순차 퀘스트 강제 완료 가능")]
+        [SerializeField] private bool enableDebugKeys = true;
+
         /// <summary>clientId → 개인 퀘스트 상태. 서버에서만 Write.</summary>
         private readonly Dictionary<ulong, PlayerQuestState> _playerStates = new();
 
@@ -39,6 +43,7 @@ namespace DeadZone.Systems.Quests
             {
                 EventBus.Subscribe<EnemyKilledEvent>(OnEnemyKilled);
                 EventBus.Subscribe<ZoneEnteredEvent>(OnZoneEntered);
+                EventBus.Subscribe<SceneChangedEvent>(OnSceneChanged);
             }
         }
 
@@ -48,10 +53,22 @@ namespace DeadZone.Systems.Quests
             {
                 EventBus.Unsubscribe<EnemyKilledEvent>(OnEnemyKilled);
                 EventBus.Unsubscribe<ZoneEnteredEvent>(OnZoneEntered);
+                EventBus.Unsubscribe<SceneChangedEvent>(OnSceneChanged);
             }
             ServiceLocator.Unregister<IQuestQuery>();
             ServiceLocator.Unregister<QuestManager>();
             base.OnNetworkDespawn();
+        }
+
+        private void Update()
+        {
+            // ───────── Home 키 디버그: 순차 퀘스트 강제 완료 ─────────
+            if (!enableDebugKeys || !IsServer) return;
+
+            if (Input.GetKeyDown(KeyCode.Home))
+            {
+                DebugForceCompleteNext();
+            }
         }
 
         // ───────── 플레이어 상태 접근 ─────────
@@ -73,15 +90,17 @@ namespace DeadZone.Systems.Quests
             state.ReadFromCloudProgress(progress);
 
             Debug.Log($"[QuestManager] Restored client {clientId}: " +
-                      $"active={state.ActiveQuestIds.Count}, completed={state.CompletedQuestIds.Count}");
+                      $"active={state.ActiveQuestIds.Count}, " +
+                      $"completed={state.CompletedQuestIds.Count}, " +
+                      $"pending={state.PendingCompletionIds.Count}");
 
             if (state.ActiveQuestIds.Count == 0 && state.CompletedQuestIds.Count == 0)
-            {
                 AcceptQuest(clientId, "Q1");
-            }
         }
 
-        // ───────── 퀘스트 수락 ─────────
+        // ═══════════════════════════════════════════
+        //  퀘스트 수락
+        // ═══════════════════════════════════════════
 
         public bool AcceptQuest(ulong clientId, string questId)
         {
@@ -92,14 +111,12 @@ namespace DeadZone.Systems.Quests
             if (state.ActiveQuestIds.Contains(questId) || state.CompletedQuestIds.Contains(questId))
                 return false;
 
-            // 선행 퀘스트 확인
             if (!string.IsNullOrEmpty(questData.prerequisiteQuestID)
                 && !state.CompletedQuestIds.Contains(questData.prerequisiteQuestID))
                 return false;
 
             state.ActiveQuestIds.Add(questId);
 
-            // objective 카운트 초기화
             foreach (var obj in questData.objectives)
             {
                 string key = PlayerQuestState.MakeKey(questId, obj.targetID);
@@ -139,14 +156,16 @@ namespace DeadZone.Systems.Quests
             }
         }
 
-        // ───────── IQuestQuery 구현 ─────────
+        // ═══════════════════════════════════════════
+        //  진행 보고 (IQuestQuery 구현)
+        //  레이드 중: 카운트만 올림. 완료는 Hideout에서.
+        // ═══════════════════════════════════════════
 
         public void ReportProgress(ulong clientId, ObjectiveType type, string targetId, int amount)
         {
             if (!IsServer) return;
             var state = GetPlayerState(clientId);
 
-            // 복사본으로 순회 (CompleteQuest가 ActiveQuestIds를 수정하므로)
             var activeSnapshot = new List<string>(state.ActiveQuestIds);
 
             foreach (string questId in activeSnapshot)
@@ -175,8 +194,18 @@ namespace DeadZone.Systems.Quests
                             Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
                         });
 
-                    if (state.AreAllObjectivesComplete(questId))
-                        CompleteQuest(clientId, questId);
+                    // 즉시 완료하지 않음 → 대기열에 추가
+                    if (state.AreAllObjectivesComplete(questId)
+                        && !state.PendingCompletionIds.Contains(questId))
+                    {
+                        state.PendingCompletionIds.Add(questId);
+                        Debug.Log($"[QuestManager] Client {clientId}: {questId} objectives done → pending (Hideout에서 완료 처리)");
+
+                        NotifyQuestPendingClientRpc(questId, new ClientRpcParams
+                        {
+                            Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+                        });
+                    }
                 }
             }
         }
@@ -190,10 +219,7 @@ namespace DeadZone.Systems.Quests
         public bool IsQuestActive(ulong clientId, string questId)
             => GetPlayerState(clientId).ActiveQuestIds.Contains(questId);
 
-        // ───────── 하위 호환 오버로드 (clientId 없는 옛날 호출용) ─────────
-        // CommunicationsQuestUnlockProvider 등 외부 코드가 QuestManager.IsQuestCompleted("Q3")
-        // 형태로 호출하면 로컬 클라이언트 기준으로 동작한다.
-
+        // 하위 호환 오버로드
         public bool IsQuestCompleted(string questId)
         {
             if (NetworkManager.Singleton == null) return false;
@@ -206,17 +232,56 @@ namespace DeadZone.Systems.Quests
             return IsQuestActive(NetworkManager.Singleton.LocalClientId, questId);
         }
 
-        // ───────── 퀘스트 완료 ─────────
+        // ═══════════════════════════════════════════
+        //  Hideout 복귀 시: 대기 중인 퀘스트 일괄 완료
+        // ═══════════════════════════════════════════
+
+        private void OnSceneChanged(SceneChangedEvent e)
+        {
+            if (!IsServer) return;
+            if (e.sceneName.ToString() != "Hideout") return;
+
+            Debug.Log("[QuestManager] Hideout 진입 → 대기 중인 퀘스트 완료 처리 시작");
+
+            foreach (var kvp in _playerStates)
+            {
+                ProcessPendingCompletions(kvp.Key);
+            }
+        }
+
+        /// <summary>특정 플레이어의 대기 중인 퀘스트를 순차 완료 처리.</summary>
+        private void ProcessPendingCompletions(ulong clientId)
+        {
+            var state = GetPlayerState(clientId);
+            if (state.PendingCompletionIds.Count == 0) return;
+
+            // 복사본으로 순회 (CompleteQuest가 다음 퀘스트를 수주하면서 PendingIds가 바뀔 수 있음)
+            var pendingSnapshot = new List<string>(state.PendingCompletionIds);
+
+            foreach (string questId in pendingSnapshot)
+            {
+                CompleteQuest(clientId, questId);
+            }
+
+            Debug.Log($"[QuestManager] Client {clientId}: {pendingSnapshot.Count}개 퀘스트 완료 처리됨");
+        }
+
+        // ═══════════════════════════════════════════
+        //  퀘스트 완료 (내부)
+        // ═══════════════════════════════════════════
 
         private void CompleteQuest(ulong clientId, string questId)
         {
             if (!IsServer) return;
             var state = GetPlayerState(clientId);
-            if (!state.ActiveQuestIds.Remove(questId)) return;
+
+            state.ActiveQuestIds.Remove(questId);
+            state.PendingCompletionIds.Remove(questId);
             state.CompletedQuestIds.Add(questId);
 
             if (!_questLookup.TryGetValue(questId, out var questData)) return;
 
+            // 구역 해금 기록 (Firestore에 저장됨 → 다음 레이드에서 ZoneUnlockSystem이 읽음)
             if (!string.IsNullOrEmpty(questData.unlockZoneID))
                 state.UnlockedZones.Add(questData.unlockZoneID);
 
@@ -234,7 +299,9 @@ namespace DeadZone.Systems.Quests
                 Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
             });
 
-            Debug.Log($"[QuestManager] Client {clientId} completed {questId}");
+            Debug.Log($"[QuestManager] Client {clientId} completed {questId}" +
+                      (string.IsNullOrEmpty(questData.unlockZoneID) ? "" : $" → unlocked {questData.unlockZoneID}"));
+
             TryAutoAcceptNextQuest(clientId, questId);
         }
 
@@ -273,7 +340,9 @@ namespace DeadZone.Systems.Quests
             }
         }
 
-        // ───────── EventBus 핸들러 (서버 전용) ─────────
+        // ═══════════════════════════════════════════
+        //  EventBus 핸들러 (서버 전용)
+        // ═══════════════════════════════════════════
 
         private void OnEnemyKilled(EnemyKilledEvent e)
         {
@@ -289,6 +358,46 @@ namespace DeadZone.Systems.Quests
             ReportProgress(e.clientId, ObjectiveType.Reach, e.zoneId.ToString(), 1);
         }
 
+        // ═══════════════════════════════════════════
+        //  Home 키 디버그
+        // ═══════════════════════════════════════════
+
+        /// <summary>
+        /// Home 키 누를 때마다 다음 미완료 메인 퀘스트를 강제 완료.
+        /// 테스트용. enableDebugKeys=true일 때만 동작.
+        /// </summary>
+        private void DebugForceCompleteNext()
+        {
+            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            var state = GetPlayerState(localClientId);
+
+            // 메인 퀘스트 순서대로 찾아서 첫 번째 미완료를 완료
+            foreach (var quest in allQuests)
+            {
+                if (quest == null || quest.isSideQuest) continue;
+                if (state.CompletedQuestIds.Contains(quest.questID)) continue;
+
+                // 아직 수주 안 됐으면 수주부터
+                if (!state.ActiveQuestIds.Contains(quest.questID))
+                    AcceptQuest(localClientId, quest.questID);
+
+                // objective 전부 채우기
+                foreach (var obj in quest.objectives)
+                {
+                    string key = PlayerQuestState.MakeKey(quest.questID, obj.targetID);
+                    state.ObjectiveProgress[key] = (obj.requiredCount, obj.requiredCount);
+                }
+
+                // 즉시 완료 (디버그니까 Hideout 대기 안 함)
+                CompleteQuest(localClientId, quest.questID);
+
+                Debug.Log($"<color=yellow>[DEBUG] Home 키 → {quest.questID} ({quest.questName}) 강제 완료</color>");
+                return;
+            }
+
+            Debug.Log("<color=yellow>[DEBUG] Home 키 → 모든 메인 퀘스트 완료됨</color>");
+        }
+
         // ───────── ClientRpc ─────────
 
         [ClientRpc]
@@ -302,6 +411,12 @@ namespace DeadZone.Systems.Quests
             int currentCount, int requiredCount, ClientRpcParams rpcParams = default)
         {
             Debug.Log($"[QuestManager] Progress: {questId}/{targetId} ({currentCount}/{requiredCount})");
+        }
+
+        [ClientRpc]
+        private void NotifyQuestPendingClientRpc(string questId, ClientRpcParams rpcParams = default)
+        {
+            Debug.Log($"[QuestManager] Quest ready to complete (return to Hideout): {questId}");
         }
 
         [ClientRpc]

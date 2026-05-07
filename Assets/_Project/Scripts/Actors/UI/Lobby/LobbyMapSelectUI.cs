@@ -12,8 +12,8 @@ using DeadZone.Network;
 namespace DeadZone.Actors.UI
 {
     /// <summary>
-    /// 로비 맵 선택/레이드 시작 버튼을 로컬 UI로만 처리합니다.
-    /// 네트워크 동기화와 최종 검증은 LobbyRaidStartController와 NetworkLobbyState가 담당합니다.
+    /// 로비 맵 선택 UI를 처리합니다.
+    /// 선택된 맵 상태는 네트워크로 동기화하고, 출격 가능 여부를 UI에 반영합니다.
     /// </summary>
     public class LobbyMapSelectUI : MonoBehaviour
     {
@@ -24,8 +24,10 @@ namespace DeadZone.Actors.UI
         [Header("==== 버튼 ====")]
         [SerializeField] private Button btnMapA;
         [SerializeField] private Button btnMapB;
+
         [Tooltip("기존 파티 슬롯 Ready 버튼을 쓰는 경우에는 꺼둡니다. 별도 전역 Ready 버튼이 있을 때만 켭니다.")]
         [SerializeField] private bool useReadyButton;
+
         [SerializeField] private Button btnReady;
         [SerializeField] private Button btnStart;
 
@@ -39,9 +41,9 @@ namespace DeadZone.Actors.UI
         [SerializeField] private string btnMapAName = "Btn_Map_A";
         [SerializeField] private string btnMapBName = "Btn_Map_B";
         [SerializeField] private string btnReadyName = "";
-        [SerializeField] private string btnStartName = "Btn_Start";
+        [SerializeField] private string btnStartName = "Btn_Raid start";
         [SerializeField] private string iconLockName = "Icon_Lock";
-        [SerializeField] private string textStatusName = "Text_Status";
+        [SerializeField] private string textStatusName = "Text_RedyMessge";
 
         [Header("==== 디버그 ====")]
         [SerializeField] private bool logDebug;
@@ -49,6 +51,8 @@ namespace DeadZone.Actors.UI
         private bool isBound;
         private float refreshTimer;
         private bool hasWarnedInvalidStatusText;
+
+        private const string HostOnlyMapSelectionMessage = "맵 선택은 Host만 변경할 수 있습니다.";
 
         private void Awake()
         {
@@ -85,6 +89,13 @@ namespace DeadZone.Actors.UI
         {
             if (raidStartController == null) return;
 
+            if (!CanLocalPlayerSelectMap())
+            {
+                SetStatus(HostOnlyMapSelectionMessage);
+                Refresh();
+                return;
+            }
+
             raidStartController.SelectMap(LobbyRaidMap.MapA);
             Refresh();
         }
@@ -92,6 +103,13 @@ namespace DeadZone.Actors.UI
         private void HandleMapBClicked()
         {
             if (raidStartController == null) return;
+
+            if (!CanLocalPlayerSelectMap())
+            {
+                SetStatus(HostOnlyMapSelectionMessage);
+                Refresh();
+                return;
+            }
 
             if (!raidStartController.CanSelectMap(LobbyRaidMap.MapB, out string reason))
             {
@@ -106,13 +124,16 @@ namespace DeadZone.Actors.UI
 
         private void HandleReadyClicked()
         {
-            if (lobbyState == null || !lobbyState.IsSpawned || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient)
+            if (lobbyState == null ||
+                !lobbyState.IsSpawned ||
+                Unity.Netcode.NetworkManager.Singleton == null ||
+                !Unity.Netcode.NetworkManager.Singleton.IsClient)
             {
-                SetStatus("싱글 플레이는 준비 체크를 생략합니다.");
+                SetStatus("네트워크 로비에서만 준비 상태를 변경할 수 있습니다.");
                 return;
             }
 
-            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            ulong localClientId = Unity.Netcode.NetworkManager.Singleton.LocalClientId;
             bool nextReady = true;
 
             if (lobbyState.TryGetPlayer(localClientId, out LobbyPlayerState state))
@@ -124,7 +145,21 @@ namespace DeadZone.Actors.UI
 
         private void HandleStartClicked()
         {
-            if (raidStartController == null) return;
+            ResolveReferences();
+
+            if (raidStartController == null)
+            {
+                SetStatus("출격 조건을 확인할 수 없습니다.");
+                Refresh();
+                return;
+            }
+
+            if (!CanLocalPlayerStartRaid())
+            {
+                SetStatus("Host만 출격을 시작할 수 있습니다.");
+                Refresh();
+                return;
+            }
 
             if (!raidStartController.CanStartRaid(out string reason))
             {
@@ -133,7 +168,9 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
+            SetStatus("출격을 시작합니다.");
             raidStartController.StartRaid();
+            Refresh();
         }
 
         public void DebugUnlockMapBForLocalPlayer()
@@ -157,20 +194,26 @@ namespace DeadZone.Actors.UI
             ResolveReferences();
 
             bool hasController = raidStartController != null;
-            bool canMapB = hasController && raidStartController.CanSelectMap(LobbyRaidMap.MapB);
-            bool canStart = hasController && raidStartController.CanStartRaid();
+            bool canLocalSelectMap = CanLocalPlayerSelectMap();
+            bool canLocalStartRaid = CanLocalPlayerStartRaid();
+
+            bool canMapB = false;
+            string mapBReason = string.Empty;
+
+            if (hasController)
+                canMapB = raidStartController.CanSelectMap(LobbyRaidMap.MapB, out mapBReason);
 
             if (btnMapA != null)
-                btnMapA.interactable = hasController;
+                btnMapA.interactable = hasController && canLocalSelectMap;
 
             if (btnMapB != null)
-                btnMapB.interactable = canMapB;
+                btnMapB.interactable = hasController && canLocalSelectMap && canMapB;
 
             if (useReadyButton && btnReady != null)
                 btnReady.interactable = IsNetworkSessionActive();
 
             if (btnStart != null)
-                btnStart.interactable = hasController && canStart;
+                btnStart.interactable = hasController && canLocalStartRaid && raidStartController.CanStartRaid();
 
             if (iconLock != null)
                 iconLock.SetActive(!canMapB);
@@ -178,8 +221,8 @@ namespace DeadZone.Actors.UI
             if (btnMapBCanvasGroup != null)
                 btnMapBCanvasGroup.alpha = canMapB ? 1f : lockedMapBAlpha;
 
-            if (IsValidStatusText() && hasController)
-                textStatus.text = raidStartController.GetStatusMessage();
+            if (IsValidStatusText() && hasController && !canMapB)
+                textStatus.text = mapBReason;
         }
 
         private void BindButtons()
@@ -189,7 +232,13 @@ namespace DeadZone.Actors.UI
             if (btnMapA != null) btnMapA.onClick.AddListener(HandleMapAClicked);
             if (btnMapB != null) btnMapB.onClick.AddListener(HandleMapBClicked);
             if (useReadyButton && btnReady != null) btnReady.onClick.AddListener(HandleReadyClicked);
-            if (btnStart != null) btnStart.onClick.AddListener(HandleStartClicked);
+
+            if (btnStart != null)
+            {
+                btnStart.onClick.RemoveListener(HandleStartClicked);
+                btnStart.onClick.AddListener(HandleStartClicked);
+                btnStart.interactable = false;
+            }
 
             isBound = true;
         }
@@ -201,7 +250,9 @@ namespace DeadZone.Actors.UI
             if (btnMapA != null) btnMapA.onClick.RemoveListener(HandleMapAClicked);
             if (btnMapB != null) btnMapB.onClick.RemoveListener(HandleMapBClicked);
             if (useReadyButton && btnReady != null) btnReady.onClick.RemoveListener(HandleReadyClicked);
-            if (btnStart != null) btnStart.onClick.RemoveListener(HandleStartClicked);
+
+            if (btnStart != null)
+                btnStart.onClick.RemoveListener(HandleStartClicked);
 
             isBound = false;
         }
@@ -329,7 +380,32 @@ namespace DeadZone.Actors.UI
 
         private bool IsNetworkSessionActive()
         {
-            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+            return Unity.Netcode.NetworkManager.Singleton != null &&
+                   Unity.Netcode.NetworkManager.Singleton.IsListening;
+        }
+
+        private bool CanLocalPlayerSelectMap()
+        {
+            if (!IsNetworkSessionActive())
+                return true;
+
+            return Unity.Netcode.NetworkManager.Singleton != null &&
+                   Unity.Netcode.NetworkManager.Singleton.IsHost;
+        }
+
+        private bool CanLocalPlayerStartRaid()
+        {
+            if (!IsNetworkSessionActive())
+                return false;
+
+            if (Unity.Netcode.NetworkManager.Singleton == null ||
+                !Unity.Netcode.NetworkManager.Singleton.IsClient)
+            {
+                return false;
+            }
+
+            return Unity.Netcode.NetworkManager.Singleton.LocalClientId ==
+                   Unity.Netcode.NetworkManager.ServerClientId;
         }
 
         private void SetStatus(string message)

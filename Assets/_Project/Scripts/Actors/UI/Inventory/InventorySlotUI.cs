@@ -29,6 +29,11 @@ namespace DeadZone.Actors.UI
         QuickSlot
     }
 
+    public interface IInventorySlotDropHandler
+    {
+        bool TryHandleDrop(InventorySlotUI source, InventorySlotUI target);
+    }
+
     public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         [BoxGroup("슬롯 상태")]
@@ -140,6 +145,24 @@ namespace DeadZone.Actors.UI
 
             AutoBindReferences();
             ConfigureSlotKind();
+            EnsureRaycastTarget();
+        }
+
+        public void PrepareDropSlotAsKind(
+            ItemTooltipUI tooltip,
+            InventorySlotKind kind,
+            int index = -1,
+            InventoryUI inventoryUI = null)
+        {
+            if (index >= 0)
+                slotIndex = index;
+
+            slotKind = kind;
+            tooltipUI = tooltip;
+            if (inventoryUI != null)
+                ownerInventoryUI = inventoryUI;
+
+            AutoBindReferences();
             EnsureRaycastTarget();
         }
 
@@ -259,12 +282,35 @@ namespace DeadZone.Actors.UI
             if (draggingSlot == null || draggingSlot == this)
                 return;
 
+            if (TryHandleExternalDrop(draggingSlot, this))
+                return;
+
             bool received = TryReceiveDrop(draggingSlot);
             if (debugTooltipEvents)
             {
                 string sourceItemId = draggingSlot.CurrentItemData != null ? draggingSlot.CurrentItemData.itemID : "null";
                 Debug.Log($"[InventorySlotUI] Drop Result: source={draggingSlot.name}, target={name}, sourceItem={sourceItemId}, targetKind={slotKind}, success={received}", this);
             }
+        }
+
+        private static bool TryHandleExternalDrop(InventorySlotUI source, InventorySlotUI target)
+        {
+            if (source == null || target == null)
+                return false;
+
+            foreach (IInventorySlotDropHandler handler in target.GetComponents<IInventorySlotDropHandler>())
+            {
+                if (handler != null && handler.TryHandleDrop(source, target))
+                    return true;
+            }
+
+            foreach (IInventorySlotDropHandler handler in source.GetComponents<IInventorySlotDropHandler>())
+            {
+                if (handler != null && handler.TryHandleDrop(source, target))
+                    return true;
+            }
+
+            return false;
         }
 
         public void ClearItem()
@@ -586,7 +632,7 @@ namespace DeadZone.Actors.UI
             return slotKind switch
             {
                 InventorySlotKind.Bag => true,
-                InventorySlotKind.QuickSlot => itemData.category != ItemCategory.Weapon && itemData is not WeaponDataSO,
+                InventorySlotKind.QuickSlot => IsQuickSlotItem(itemData),
                 InventorySlotKind.EquipmentHead => itemData.category == ItemCategory.Helmet || itemData is HelmetDataSO,
                 InventorySlotKind.EquipmentArmor => itemData.category == ItemCategory.Armor || itemData is ArmorDataSO,
                 InventorySlotKind.EquipmentBackpack => itemData.category == ItemCategory.Backpack || itemData is BackpackDataSO,
@@ -599,17 +645,18 @@ namespace DeadZone.Actors.UI
 
         private void ConfigureSlotKind()
         {
-            if (!autoDetectSlotKind)
-                return;
-
             string path = GetHierarchyPath(transform).ToLowerInvariant();
-            string objectName = name.ToLowerInvariant();
 
             if (path.Contains("quickslotpanel"))
             {
                 slotKind = InventorySlotKind.QuickSlot;
                 return;
             }
+
+            if (!autoDetectSlotKind)
+                return;
+
+            string objectName = name.ToLowerInvariant();
 
             if (path.Contains("equipmentpanel"))
             {
@@ -903,6 +950,20 @@ namespace DeadZone.Actors.UI
         private static bool IsMeleeWeapon(ItemDataSO itemData)
         {
             return itemData is WeaponDataSO weaponData && weaponData.weaponCategory == WeaponCategory.Melee;
+        }
+
+        private static bool IsQuickSlotItem(ItemDataSO itemData)
+        {
+            if (itemData == null)
+                return false;
+
+            if (itemData is WeaponDataSO or ArmorDataSO or HelmetDataSO or BackpackDataSO)
+                return false;
+
+            return itemData.category is not ItemCategory.Weapon
+                and not ItemCategory.Armor
+                and not ItemCategory.Helmet
+                and not ItemCategory.Backpack;
         }
 
         private static string GetHierarchyPath(Transform target)

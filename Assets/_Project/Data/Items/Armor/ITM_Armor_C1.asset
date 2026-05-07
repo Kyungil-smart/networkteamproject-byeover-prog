@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Armor_C1
   displayName: "1 \uD074\uB798\uC2A4 \uC544\uBA38"
-  description: "\uAE30\uBCF8\uC801\uC778 \uBC29\uD0C4\uBCF5 \uC785\uB2C8\uB2E4."
+  description: "- \uB4F1\uAE09: \uC77C\uBC18\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
+    \uD749\uBD80 \uBCF4\uD638\n2. \uB0B4\uAD6C\uB3C4: 50\n3. \uC774\uC18D \uD328\uB110\uD2F0:
+    0%"
   icon: {fileID: 0}
   category: 2
   rarity: 0

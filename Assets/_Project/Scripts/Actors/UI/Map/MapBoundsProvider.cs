@@ -91,6 +91,23 @@ namespace DeadZone.Actors
         public Vector2 NormalizedOffset => normalizedOffset;
         public Vector2 NormalizedAnchor => normalizedAnchor;
 
+        public void ApplyStageConfig(MinimapStageConfig config)
+        {
+            if (config == null)
+                return;
+
+            fallbackWorldMin = config.WorldMin;
+            fallbackWorldMax = config.WorldMax;
+            MapCoordinateUtility.NormalizeBounds(ref fallbackWorldMin, ref fallbackWorldMax);
+
+            normalizedAnchor = config.NormalizedAnchor;
+            normalizedScale = config.NormalizedScale;
+            normalizedOffset = config.NormalizedOffset;
+
+            MoveBoundTransformsToFallback();
+            warnedMissingTransformBounds = false;
+        }
+
         public void GetBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax)
         {
             if (useTransformBounds && mapBoundMin != null && mapBoundMax != null)

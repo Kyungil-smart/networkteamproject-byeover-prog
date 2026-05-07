@@ -1,6 +1,7 @@
 ﻿using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections.Generic;
 
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -51,8 +52,8 @@ namespace DeadZone.Actors
 
         public bool TryAddItem(ItemDataSO item, int amount = 1)
         {
-            if (!IsServer || item == null || amount <= 0)
-                return false;
+            if (!IsServer || item == null || amount <= 0) return false;
+            if (!CanAddItem(item, amount)) return false;
 
             int mergedAmount = MergeIntoExistingStacks(item, amount, out int remainingAmount);
             bool addedAllRemaining = TryAddRemainingAsNewStacks(item, remainingAmount);
@@ -67,6 +68,43 @@ namespace DeadZone.Actors
             }
 
             return addedAllRemaining;
+        }
+
+        public bool CanAddItem(ItemDataSO item, int amount = 1)
+        {
+            if (!IsServer || item == null || amount <= 0) return false;
+
+            List<ItemSlotData> simulatedSlots = new(ServerGrid.Count);
+            for (int i = 0; i < ServerGrid.Count; i++)
+                simulatedSlots.Add(ServerGrid[i]);
+
+            int remainingAmount = amount;
+            int maxStackSize = Mathf.Max(1, item.maxStackSize);
+            FixedString64Bytes itemId = item.itemID;
+
+            for (int i = 0; i < simulatedSlots.Count && remainingAmount > 0; i++)
+            {
+                ItemSlotData slot = simulatedSlots[i];
+                if (!slot.itemId.Equals(itemId)) continue;
+                if (slot.stackCount >= maxStackSize) continue;
+
+                int mergeAmount = Mathf.Min(maxStackSize - slot.stackCount, remainingAmount);
+                slot.stackCount += (ushort)mergeAmount;
+                simulatedSlots[i] = slot;
+                remainingAmount -= mergeAmount;
+            }
+
+            while (remainingAmount > 0)
+            {
+                int stackAmount = Mathf.Min(maxStackSize, remainingAmount);
+                if (!TryFindPlacement(simulatedSlots, item, stackAmount, out ItemSlotData newSlot))
+                    return false;
+
+                simulatedSlots.Add(newSlot);
+                remainingAmount -= stackAmount;
+            }
+
+            return true;
         }
 
         public bool HasItem(string itemId, int count)
@@ -163,6 +201,74 @@ namespace DeadZone.Actors
 
             return true;
         }
+
+        private bool TryFindPlacement(
+            List<ItemSlotData> simulatedSlots,
+            ItemDataSO item,
+            int amount,
+            out ItemSlotData newSlot)
+        {
+            newSlot = default;
+
+            for (byte y = 0; y < BASE_HEIGHT; y++)
+            {
+                for (byte x = 0; x < BASE_WIDTH; x++)
+                {
+                    if (!CanPlaceAt(simulatedSlots, x, y, item.gridSize, false))
+                        continue;
+
+                    newSlot = new ItemSlotData
+                    {
+                        itemId = item.itemID,
+                        gridX = x,
+                        gridY = y,
+                        rotated = false,
+                        stackCount = (ushort)Mathf.Clamp(amount, 1, item.maxStackSize),
+                        currentDurability = (item is WeaponDataSO weapon) ? weapon.maxDurability : 0,
+                        currentAmmo = 0,
+                    };
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool CanPlaceAt(
+            List<ItemSlotData> slots,
+            byte x,
+            byte y,
+            Vector2Int size,
+            bool rotated)
+        {
+            int w = rotated ? size.y : size.x;
+            int h = rotated ? size.x : size.y;
+
+            if (x + w > BASE_WIDTH || y + h > BASE_HEIGHT) return false;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                ItemSlotData s = slots[i];
+
+                Vector2Int existingSize = Vector2Int.one;
+                if (itemDb != null)
+                {
+                    ItemDataSO so = itemDb.GetById(s.itemId.ToString());
+                    if (so != null) existingSize = so.gridSize;
+                }
+
+                int sw = s.rotated ? existingSize.y : existingSize.x;
+                int sh = s.rotated ? existingSize.x : existingSize.y;
+
+                bool overlap = !(x + w <= s.gridX || s.gridX + sw <= x ||
+                                 y + h <= s.gridY || s.gridY + sh <= y);
+                if (overlap) return false;
+            }
+
+            return true;
+        }
+
+        // ----------- 장전 실행 처리 -----------
 
         private struct ReloadContext
         {

@@ -20,10 +20,7 @@ MonoBehaviour:
     targetID: Boss_MilitaryBase
     requiredCount: 1
     location: "\uAD70\uC0AC \uC9C0\uC5ED"
-  rewards:
-  - type: 1
-    itemID: CrashSite_Key
-    amount: 1
-  unlockZoneID: 
+  rewards: []
+  unlockZoneID: MapA_Zone4
   prerequisiteQuestID: Q3
   isSideQuest: 0

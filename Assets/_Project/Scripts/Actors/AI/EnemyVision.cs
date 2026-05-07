@@ -3,10 +3,6 @@ using UnityEngine;
 
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// v2.0 — visionRange/fov를 SO에서 읽어 티어별 자동 적용.
-    /// obstacleMask는 Door + Environment + ViewBlocker 레이어를 포함해야 한다.
-    /// </summary>
     public class EnemyVision : NetworkBehaviour
     {
         [Header("Inspector 기본값 (SO 있으면 SO 값으로 덮어씀)")]
@@ -36,7 +32,7 @@ namespace DeadZone.Actors
         public bool TryGetVisibleTarget(out Transform target)
         {
             target = null;
-            if (!IsServer) return false;
+            if (IsSpawned && !IsServer) return false;
             if (Time.time < nextCheckTime)
             {
                 target = cachedTarget;
