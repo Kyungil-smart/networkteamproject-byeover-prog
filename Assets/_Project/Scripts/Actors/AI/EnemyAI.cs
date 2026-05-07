@@ -7,70 +7,52 @@ namespace DeadZone.Actors
     /// <summary>
     /// 적 AI 상태 열거형
     /// </summary>
-    public enum AIState : byte { Patrol, Alert, Engage }
-
-    /// <summary>
-    /// 서버 전용 AI 컨트롤러.
-    /// - 순찰: 스폰 위치 기준 소규모 랜덤 배회 (보스는 제자리 대기)
-    /// - 교전: preferredRange 거리를 유지하며 사격
-    /// - 추적: 시야를 잃어도 마지막 목격 위치까지 추적
-    /// - 복귀: 스폰 위치에서 maxChaseDistance 초과 시 추적 포기
-    /// </summary>
+    public enum AIState : byte { Patrol, Engage }
     public class EnemyAI : NetworkBehaviour
     {
-        [Header("순찰 — 웨이포인트 방식 (선택)")]
-        [Tooltip("지정된 위치를 순서대로 순찰. 비어있으면 랜덤 배회 모드")]
-        [SerializeField] private Transform[] patrolPoints;
-
-        [Header("순찰 — 랜덤 배회 설정")]
-        [Tooltip("스폰 위치 기준 배회 반경")]
+        [Header("순찰")]
+        [Tooltip("스폰 위치 기준 배회 반경 (보스는 무시)")]
         [SerializeField] private float wanderRadius = 5f;
 
-        [Tooltip("배회 목적지 도착 후 대기 시간 (최소)")]
-        [SerializeField] private float wanderWaitMin = 2f;
+        [Tooltip("배회 대기 시간 범위")]
+        [SerializeField] private Vector2 wanderWait = new(2f, 5f);
 
-        [Tooltip("배회 목적지 도착 후 대기 시간 (최대)")]
-        [SerializeField] private float wanderWaitMax = 5f;
-
-        [Header("추적 제한")]
-        [Tooltip("스폰 위치에서 이 거리 이상 멀어지면 추적을 포기하고 복귀")]
+        [Header("추적")]
+        [Tooltip("스폰 위치에서 이 거리 초과 시 추적 포기 + 복귀")]
         [SerializeField] private float maxChaseDistance = 40f;
 
-        [Header("경계 → 복귀")]
-        [Tooltip("Alert 상태에서 타겟을 찾지 못하면 Patrol로 돌아가는 시간")]
-        [SerializeField] private float alertTimeout = 8f;
+        [Tooltip("시야를 잃은 후 마지막 위치에서 탐색하는 시간")]
+        [SerializeField] private float searchDuration = 5f;
 
-        /// <summary>현재 AI 상태 (네트워크 동기화)</summary>
+        /// <summary>현재 AI 상태</summary>
         public NetworkVariable<AIState> State = new(AIState.Patrol);
 
-        // ───────── 컴포넌트 캐시 ─────────
-
+        // ── 컴포넌트 ──
         private NavMeshAgent agent;
         private EnemyStats stats;
         private EnemyVision vision;
         private EnemyShooter shooter;
 
-        // ───────── 런타임 상태 ─────────
-
-        private int patrolIndex;
-        private Transform currentTarget;
-        private float lastSeenTime;
-        private Vector3 lastKnownTargetPos;
-        private bool hasReachedLastKnownPos;
-
-        // 랜덤 배회용
+        // ── 런타임 ──
         private Vector3 spawnPosition;
-        private float wanderWaitTimer;
-        private float wanderWaitDuration;
-        private bool isWaiting;
-        private bool justSetDestination; // 목적지 설정 직후 플래그
-
-        // SO 캐시
+        private Transform currentTarget;
+        private Vector3 lastKnownPos;
         private bool isBoss;
         private float preferredRangeMin;
         private float preferredRangeMax;
 
-        // ───────── 라이프사이클 ─────────
+        // 순찰
+        private float wanderTimer;
+        private float wanderWaitDuration;
+        private bool isWanderWaiting;
+        private bool hasWanderDest;
+
+        // 추적
+        private float lastSeenTime;
+        private bool canSeeTarget;
+        private float repathTimer; // 경로 재계산 간격
+
+        // ───────── 초기화 ─────────
 
         private void Awake()
         {
@@ -78,7 +60,6 @@ namespace DeadZone.Actors
             stats = GetComponent<EnemyStats>();
             vision = GetComponent<EnemyVision>();
             shooter = GetComponent<EnemyShooter>();
-
             spawnPosition = transform.position;
         }
 
@@ -89,33 +70,23 @@ namespace DeadZone.Actors
             CacheSOData();
         }
 
-        /// <summary>SO 데이터를 로컬 변수에 캐시</summary>
+        private void Start()
+        {
+            if (!IsSpawned) CacheSOData();
+            StartWanderWait(Random.Range(0.5f, 1.5f));
+        }
+
         private void CacheSOData()
         {
             if (stats == null || stats.StatsSO == null) return;
-
             var so = stats.StatsSO;
             isBoss = so.isBoss;
             preferredRangeMin = so.preferredRangeMin;
             preferredRangeMax = so.preferredRangeMax;
-
-            if (agent != null)
-                agent.speed = so.moveSpeed;
+            if (agent != null) agent.speed = so.moveSpeed;
         }
 
-        private void Start()
-        {
-            if (!IsSpawned)
-                CacheSOData();
-
-            // 첫 배회 목적지 설정 (보스 아닌 경우)
-            if (!isBoss && (patrolPoints == null || patrolPoints.Length == 0))
-            {
-                isWaiting = true;
-                wanderWaitTimer = 0f;
-                wanderWaitDuration = Random.Range(0.5f, 1.5f); // 스폰 직후 짧은 대기
-            }
-        }
+        // ───────── 메인 루프 ─────────
 
         private void Update()
         {
@@ -125,283 +96,241 @@ namespace DeadZone.Actors
             switch (State.Value)
             {
                 case AIState.Patrol: TickPatrol(); break;
-                case AIState.Alert:  TickAlert();  break;
                 case AIState.Engage: TickEngage(); break;
             }
         }
 
-        // ═══════════════════════════════════════
-        //  Patrol 상태
-        // ═══════════════════════════════════════
+        // ═══════════════════════════════
+        //  PATROL — 배회 / 대기
+        // ═══════════════════════════════
 
-        /// <summary>
-        /// 순찰 상태.
-        /// 보스: 제자리 대기. 일반 적: 배회. 플레이어 발견 시 Engage.
-        /// </summary>
         private void TickPatrol()
         {
-            // 플레이어 감지 → Engage
-            if (vision != null && vision.TryGetVisibleTarget(out currentTarget))
+            // 감지 체크 (시야 + 후방 근접)
+            if (TryDetect(out Transform target))
             {
-                EnterEngage(currentTarget);
+                EnterEngage(target);
                 return;
             }
 
-            // 보스는 제자리 대기
-            if (isBoss) return;
+            if (isBoss) return; // 보스는 제자리
 
-            // 웨이포인트 모드
-            if (patrolPoints != null && patrolPoints.Length > 0)
-                PatrolWaypoints();
-            // 랜덤 배회 모드
-            else
-                PatrolWander();
-        }
-
-        /// <summary>웨이포인트 순회</summary>
-        private void PatrolWaypoints()
-        {
-            if (agent == null || agent.pathPending) return;
-
-            if (agent.remainingDistance < 0.5f)
+            // 배회 로직
+            if (isWanderWaiting)
             {
-                patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
-                agent.SetDestination(patrolPoints[patrolIndex].position);
-            }
-        }
-
-        /// <summary>스폰 위치 기준 랜덤 배회 (반복 동작)</summary>
-        private void PatrolWander()
-        {
-            if (agent == null) return;
-
-            // 대기 중 → 타이머 진행
-            if (isWaiting)
-            {
-                wanderWaitTimer += Time.deltaTime;
-                if (wanderWaitTimer >= wanderWaitDuration)
+                wanderTimer += Time.deltaTime;
+                if (wanderTimer >= wanderWaitDuration)
                 {
-                    isWaiting = false;
-                    SetRandomWanderDestination();
-                    justSetDestination = true;
+                    isWanderWaiting = false;
+                    SetWanderDestination();
                 }
-                return;
             }
-
-            // 목적지 설정 직후 → 경로 계산 대기 (1프레임 스킵)
-            if (justSetDestination)
+            else if (hasWanderDest)
             {
-                if (!agent.pathPending)
-                    justSetDestination = false;
-                return;
-            }
-
-            // 이동 중 → 도착 체크
-            if (!agent.pathPending && agent.remainingDistance < 0.5f)
-            {
-                isWaiting = true;
-                wanderWaitTimer = 0f;
-                wanderWaitDuration = Random.Range(wanderWaitMin, wanderWaitMax);
+                if (!agent.pathPending && agent.remainingDistance < 0.5f)
+                {
+                    hasWanderDest = false;
+                    StartWanderWait(Random.Range(wanderWait.x, wanderWait.y));
+                }
             }
         }
 
-        /// <summary>NavMesh 위 유효한 랜덤 지점 설정</summary>
-        private void SetRandomWanderDestination()
+        private void StartWanderWait(float duration)
         {
-            for (int attempt = 0; attempt < 10; attempt++)
-            {
-                Vector3 randomDir = Random.insideUnitSphere * wanderRadius;
-                randomDir.y = 0f;
-                Vector3 candidate = spawnPosition + randomDir;
+            isWanderWaiting = true;
+            wanderTimer = 0f;
+            wanderWaitDuration = duration;
+        }
 
-                if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+        private void SetWanderDestination()
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                Vector3 rnd = spawnPosition + Random.insideUnitSphere * wanderRadius;
+                rnd.y = spawnPosition.y;
+
+                if (NavMesh.SamplePosition(rnd, out NavMeshHit hit, 2f, NavMesh.AllAreas))
                 {
-                    agent.isStopped = false;
-                    agent.SetDestination(hit.position);
+                    SetDestinationSafe(hit.position);
+                    hasWanderDest = true;
                     return;
                 }
             }
-
-            agent.isStopped = false;
-            agent.SetDestination(spawnPosition);
+            hasWanderDest = false;
+            StartWanderWait(1f);
         }
 
-        // ═══════════════════════════════════════
-        //  Alert 상태
-        // ═══════════════════════════════════════
+        // ═══════════════════════════════
+        //  ENGAGE — 추적 + 사격
+        // ═══════════════════════════════
 
-        /// <summary>
-        /// 경계 상태. 마지막 목격 위치를 주시하며 재발견 대기.
-        /// 타임아웃 시 Patrol 복귀.
-        /// </summary>
-        private void TickAlert()
-        {
-            // 플레이어 재발견 → Engage
-            if (vision != null && vision.TryGetVisibleTarget(out currentTarget))
-            {
-                EnterEngage(currentTarget);
-                return;
-            }
-
-            // 타임아웃 → 복귀
-            if (Time.time - lastSeenTime > alertTimeout)
-            {
-                ReturnToPatrol();
-            }
-        }
-
-        // ═══════════════════════════════════════
-        //  Engage 상태
-        // ═══════════════════════════════════════
-
-        /// <summary>
-        /// 교전 상태.
-        /// - 시야 내: preferredRange 거리 유지 + 사격
-        /// - 시야 잃음: 마지막 목격 위치까지 추적 (길찾기)
-        /// - 스폰에서 너무 멀어짐: 추적 포기 + 복귀
-        /// </summary>
         private void TickEngage()
         {
-            // 타겟 오브젝트 소실 (접속 끊김 등)
+            // 타겟 소실 (접속 끊김 등)
             if (currentTarget == null)
-            {
-                State.Value = AIState.Alert;
-                lastSeenTime = Time.time;
-                return;
-            }
-
-            // ── 스폰 위치에서 너무 멀어졌는지 체크 ──
-            float distFromSpawn = Vector3.Distance(transform.position, spawnPosition);
-            if (distFromSpawn > maxChaseDistance)
             {
                 ReturnToPatrol();
                 return;
             }
 
-            // ── 시야 확인 ──
-            bool canSee = vision != null && vision.CanSee(currentTarget);
-
-            if (canSee)
+            // 스폰에서 너무 멀어졌으면 복귀
+            if (Vector3.Distance(transform.position, spawnPosition) > maxChaseDistance)
             {
-                // 타겟 보임 → 마지막 위치 갱신
-                lastKnownTargetPos = currentTarget.position;
+                ReturnToPatrol();
+                return;
+            }
+
+            // 시야 확인
+            canSeeTarget = vision != null && vision.CanSee(currentTarget);
+
+            if (canSeeTarget)
+            {
+                // ── 타겟 보임 ──
+                lastKnownPos = currentTarget.position;
                 lastSeenTime = Time.time;
-                hasReachedLastKnownPos = false;
 
-                float distToTarget = Vector3.Distance(transform.position, currentTarget.position);
+                float dist = Vector3.Distance(transform.position, currentTarget.position);
 
-                // 거리에 따른 행동 분기
-                if (distToTarget > preferredRangeMax)
+                // 거리 유지 이동
+                if (dist > preferredRangeMax)
                 {
-                    // 너무 멀다 → 접근
+                    // 접근 — 주기적 경로 갱신
+                    repathTimer += Time.deltaTime;
+                    if (repathTimer > 0.3f)
+                    {
+                        repathTimer = 0f;
+                        SetDestinationSafe(currentTarget.position);
+                    }
                     agent.isStopped = false;
-                    agent.SetDestination(currentTarget.position);
                 }
-                else if (distToTarget < preferredRangeMin)
+                else if (dist < preferredRangeMin)
                 {
-                    // 너무 가깝다 → 후퇴
+                    // 후퇴
                     TryRetreat();
+                    agent.isStopped = false;
                 }
                 else
                 {
-                    // 적정 거리 → 정지 + 사격
+                    // 적정 거리 — 정지
                     agent.isStopped = true;
                 }
 
-                // 타겟 바라보기 + 사격
-                LookAtTarget(currentTarget.position);
-                if (distToTarget <= preferredRangeMax)
+                // 바라보기 + 사격
+                LookAt(currentTarget.position);
+                if (dist <= preferredRangeMax)
                     shooter?.TryFireAt(currentTarget);
             }
             else
             {
-                // 시야 잃음 → 마지막 목격 위치까지 추적 (길찾기)
+                // ── 타겟 안 보임 → 마지막 위치로 추적 ──
                 agent.isStopped = false;
-                agent.SetDestination(lastKnownTargetPos);
 
-                float distToLastKnown = Vector3.Distance(transform.position, lastKnownTargetPos);
-
-                if (distToLastKnown < 1.5f)
+                repathTimer += Time.deltaTime;
+                if (repathTimer > 0.5f)
                 {
-                    // 마지막 목격 위치에 도착했는데 안 보임 → Alert
-                    if (!hasReachedLastKnownPos)
+                    repathTimer = 0f;
+                    SetDestinationSafe(lastKnownPos);
+                }
+
+                // 마지막 위치 도착 체크
+                if (!agent.pathPending && agent.remainingDistance < 1.5f)
+                {
+                    // 도착했는데 안 보임 → 탐색 시간 초과 시 복귀
+                    if (Time.time - lastSeenTime > searchDuration)
                     {
-                        hasReachedLastKnownPos = true;
-                        State.Value = AIState.Alert;
-                        lastSeenTime = Time.time;
+                        ReturnToPatrol();
                     }
+                }
+
+                // 추적 중에도 다시 보이면 갱신
+                if (TryDetect(out Transform newTarget))
+                {
+                    currentTarget = newTarget;
+                    lastKnownPos = newTarget.position;
+                    lastSeenTime = Time.time;
                 }
             }
         }
 
-        /// <summary>후퇴 시도. NavMesh 위 유효한 후퇴 지점을 찾는다.</summary>
-        private void TryRetreat()
-        {
-            Vector3 retreatDir = (transform.position - currentTarget.position).normalized;
-            Vector3 retreatPos = transform.position + retreatDir * 3f;
+        // ───────── 유틸리티 ─────────
 
-            if (NavMesh.SamplePosition(retreatPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
-            {
-                agent.isStopped = false;
-                agent.SetDestination(hit.position);
-            }
-            else
-            {
-                // 후퇴 불가 → 제자리에서 사격
-                agent.isStopped = true;
-            }
+        /// <summary>시야(전방) + 근접(후방) 감지</summary>
+        private bool TryDetect(out Transform target)
+        {
+            target = null;
+            if (vision == null) return false;
+
+            // 전방 시야
+            if (vision.TryGetVisibleTarget(out target))
+                return true;
+
+            // 후방 근접 감지 (소리/기배 느끼는 개념)
+            if (vision.TryGetProximityTarget(out target))
+                return true;
+
+            return false;
         }
 
-        // ═══════════════════════════════════════
-        //  공통 유틸리티
-        // ═══════════════════════════════════════
-
-        /// <summary>Engage 상태 진입</summary>
         private void EnterEngage(Transform target)
         {
             currentTarget = target;
-            lastKnownTargetPos = target.position;
+            lastKnownPos = target.position;
             lastSeenTime = Time.time;
-            hasReachedLastKnownPos = false;
-            State.Value = AIState.Engage;
+            repathTimer = 0f;
+
+            if (IsSpawned)
+                State.Value = AIState.Engage;
         }
 
-        /// <summary>Patrol 상태로 복귀. 스폰 위치로 돌아간다.</summary>
         private void ReturnToPatrol()
         {
             currentTarget = null;
-            State.Value = AIState.Patrol;
-            hasReachedLastKnownPos = false;
 
-            if (agent != null)
+            if (IsSpawned)
+                State.Value = AIState.Patrol;
+
+            agent.isStopped = false;
+            SetDestinationSafe(spawnPosition);
+            hasWanderDest = true; // 스폰 위치 도착 후 배회 재개
+        }
+
+        private void TryRetreat()
+        {
+            Vector3 dir = (transform.position - currentTarget.position).normalized;
+            Vector3 retreatPos = transform.position + dir * 3f;
+
+            if (NavMesh.SamplePosition(retreatPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+                SetDestinationSafe(hit.position);
+        }
+
+        /// <summary>
+        /// NavMesh 경로가 유효할 때만 목적지를 설정한다.
+        /// 도달 불가능한 목적지로 인한 벽 비빔을 방지한다.
+        /// </summary>
+        private void SetDestinationSafe(Vector3 dest)
+        {
+            if (agent == null || !agent.isOnNavMesh) return;
+
+            NavMeshPath path = new NavMeshPath();
+            if (agent.CalculatePath(dest, path))
             {
-                agent.isStopped = false;
-
-                if (isBoss)
+                if (path.status == NavMeshPathStatus.PathComplete ||
+                    path.status == NavMeshPathStatus.PathPartial)
                 {
-                    // 보스는 스폰 위치로 복귀
-                    agent.SetDestination(spawnPosition);
-                }
-                else
-                {
-                    // 일반 적은 스폰 위치 복귀 후 배회 재개
-                    agent.SetDestination(spawnPosition);
-                    isWaiting = false;
-                    justSetDestination = true;
+                    agent.SetPath(path);
                 }
             }
         }
 
-        /// <summary>타겟 방향으로 부드럽게 회전</summary>
-        private void LookAtTarget(Vector3 targetPos)
+        private void LookAt(Vector3 pos)
         {
-            Vector3 dir = targetPos - transform.position;
+            Vector3 dir = pos - transform.position;
             dir.y = 0f;
             if (dir.sqrMagnitude < 0.01f) return;
-
-            Quaternion targetRot = Quaternion.LookRotation(dir);
             transform.rotation = Quaternion.Slerp(
-                transform.rotation, targetRot, Time.deltaTime * 8f);
+                transform.rotation,
+                Quaternion.LookRotation(dir),
+                Time.deltaTime * 8f);
         }
     }
 }

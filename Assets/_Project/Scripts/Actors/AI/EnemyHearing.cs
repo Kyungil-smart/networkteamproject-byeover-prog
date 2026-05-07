@@ -40,7 +40,7 @@ namespace DeadZone.Actors
             if (dist > hearingRange * e.loudness) return;
             if (ai != null && ai.State.Value == AIState.Patrol)
             {
-                ai.State.Value = AIState.Alert;
+                transform.LookAt(new Vector3(e.origin.x, transform.position.y, e.origin.z));
             }
         }
     }
