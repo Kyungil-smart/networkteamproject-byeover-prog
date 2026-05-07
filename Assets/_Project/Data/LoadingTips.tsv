@@ -70,16 +70,16 @@ EasterEgg	의존성은 낮을수록 좋습니다. 하지만 이 책은 높을수
 EasterEgg	두근두근 의존성을 발견했다면 조심하세요. 한 번 엮이면 빠져나오기 어렵습니다.	DependencyBook
 EasterEgg	이 책은 제작 재료가 아닐 수도 있습니다. 하지만 개발자의 심박수는 올립니다.	DependencyBook
 EasterEgg	두근두근 의존성은 전쟁보다 무섭다는 말이 있습니다. 특히 마감 전날에.	DependencyBook
-EasterEgg	승우 피규어는 아이템으로 존재하지 않습니다. 하지만 로딩 화면에서는 존재감을 주장합니다.	SeungwooFigure
-EasterEgg	기록상 승우 피규어는 드랍되지 않습니다. 목격담만 남아 있습니다.	SeungwooFigure
-EasterEgg	승우 피규어를 봤다면 정상입니다. 아직 로딩 중이니까요.	SeungwooFigure
-EasterEgg	승우 피규어는 인벤토리에 들어가지 않습니다. 대신 기억에 남습니다.	SeungwooFigure
-EasterEgg	누군가는 전설 아이템을 찾고, 누군가는 승우 피규어를 봅니다. 둘 다 쉽게 설명되진 않습니다.	SeungwooFigure
-EasterEgg	승우 피규어는 판매할 수 없습니다. 애초에 소유한 적도 없습니다.	SeungwooFigure
-EasterEgg	승우 피규어가 보인다면 게임은 아직 멈추지 않았습니다. 당신의 정신력은 모르겠습니다.	SeungwooFigure
-EasterEgg	개발팀은 승우 피규어의 존재를 부정하지도, 인정하지도 않습니다.	SeungwooFigure
-EasterEgg	승우 피규어는 스탯을 올려주지 않습니다. 분위기는 올려줍니다.	SeungwooFigure
-EasterEgg	로딩이 길다면 승우 피규어를 감상하세요. 그것도 콘텐츠입니다.	SeungwooFigure
+EasterEgg	승쨩 피규어는 아이템으로 존재하지 않습니다. 하지만 로딩 화면에서는 존재감을 주장합니다.	SeungwooFigure
+EasterEgg	기록상 승쨩 피규어는 드랍되지 않습니다. 목격담만 남아 있습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어를 봤다면 정상입니다. 아직 로딩 중이니까요.	SeungwooFigure
+EasterEgg	승쨩 피규어는 인벤토리에 들어가지 않습니다. 대신 기억에 남습니다.	SeungwooFigure
+EasterEgg	누군가는 전설 아이템을 찾고, 누군가는 승쨩 피규어를 봅니다. 둘 다 쉽게 설명되진 않습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어는 판매할 수 없습니다. 애초에 소유한 적도 없습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어가 보인다면 게임은 아직 멈추지 않았습니다. 당신의 정신력은 모르겠습니다.	SeungwooFigure
+EasterEgg	개발팀은 승쨩 피규어의 존재를 부정하지도, 인정하지도 않습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어는 스탯을 올려주지 않습니다. 분위기는 올려줍니다.	SeungwooFigure
+EasterEgg	로딩이 길다면 승쨩 피규어를 감상하세요. 그것도 콘텐츠입니다.	SeungwooFigure&JadeFigure
 Humor	사망하면 가방을 잃습니다. 아마 누군가 가져갔을 겁니다.	Default
 Humor	의도가 명확해서 할 말이 없네요. 그래서 쐈습니다.	Default
 Humor	이 지역은 안전하지 않습니다. 안전했다면 게임이 아니었겠죠.	Default
@@ -105,8 +105,8 @@ Extraction	탈출 지점은 목적지이지 안전지대가 아닙니다.	Defaul
 Loot	한 칸짜리 아이템도 인생을 바꿀 수 있습니다.	Default
 Hideout	오늘의 파밍은 내일의 업그레이드입니다.	Hideout
 EasterEgg	0.1%는 낮습니다. 그래서 전설입니다.	JadeFigure
-EasterEgg	승우 피규어는 존재하지 않습니다. 아마도요.	SeungwooFigure
-Hideout	헬스장을 업그레이드하면 소지 무게 최대치가 증가합니다. 더 많이 들 수 있다는 건, 더 많이 잃을 수도 있다는 뜻입니다.	Kitchen
+EasterEgg	승쨩 피규어는 존재하지 않습니다. 아마도요.	SeungwooFigure
+Hideout	헬스장을 업그레이드하면 소지 무게 최대치가 증가합니다. 더 많이 들 수 있다는 건, 더 많이 잃을 수도 있다는 뜻입니다.	Default
 Hideout	헬스장은 소지 무게를 늘려줍니다. 욕심을 감당하려면 근력부터 키우세요.	Kitchen
 Hideout	헬스장 레벨이 오르면 더 많은 장비를 들 수 있습니다. 물론 살아서 들고 나와야 합니다.	Kitchen
 Hideout	파밍은 손이 아니라 허리로 하는 일입니다. 헬스장을 업그레이드하세요.	Kitchen
@@ -126,3 +126,41 @@ Hideout	잘 쉬는 생존자가 더 오래 뜁니다. 침실 업그레이드를 
 Hideout	침실 레벨이 오르면 스태미나 여유가 늘어납니다. 피로한 몸은 전장에서 오래 못 버팁니다.	Default
 Hideout	침실은 전투 시설이 아닙니다. 하지만 다음 전투를 버티게 만듭니다.	Default
 Hideout	휴식은 사치가 아닙니다. 다음 레이드의 보험 같은 겁니다.	Default
+EasterEgg	제이드는 승쨩을 무시하는 척합니다. 하지만 드랍 로그는 누구보다 먼저 확인합니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드를 이길 수 없다고 말합니다. 이상하게 매번 따라갑니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드와 승쨩이 같은 화면에 보인다면 조심하세요. 로딩보다 감정선이 더 무겁습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드가 싫다고 했습니다. 그래서 오늘도 가장 먼저 찾고 있습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩을 귀찮아합니다. 단, 누가 먼저 건드리면 이야기가 달라집니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩과 제이드는 사이가 나쁩니다. 정확히는 남이 보면 사이가 좋아 보일 만큼 나쁩니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드 피규어를 획득했다면 승쨩에게 자랑하지 마세요. 반응이 귀찮아질 수 있습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드 피규어를 필요 없다고 말했습니다. 아직 버리지는 않았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩의 작전을 비웃습니다. 문제는 그 작전이 가끔 통한다는 겁니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩과 제이드가 함께 있다면, 전투보다 말싸움이 먼저 시작될 수 있습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“딱히 걱정한 건 아니거든?” 제이드는 그렇게 말하고 탈출 지점을 먼저 확인했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“흥, 네가 죽으면 귀찮아질 뿐이야.” 제이드는 회복 아이템을 건넸습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“착각하지 마. 이번만 도와주는 거니까.” 제이드의 이번은 벌써 열 번째입니다.	SeungwooFigure&JadeFigure
+EasterEgg	“제이드 없어도 할 수 있거든?” 승쨩은 그렇게 말하고 3초 뒤 도움을 요청했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“이건 전략적 동행이야.” 승쨩은 제이드 뒤에 숨어 말했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“누가 네 걱정을 한다고 했어?” 제이드는 이미 탄창을 갈아 끼우고 있었습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“너 때문이 아니야. 전리품 때문이야.” 승쨩은 제이드 쪽으로 달렸습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“같이 가자는 말은 안 했어.” 제이드는 승쨩이 따라오는 걸 막지 않았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“이번엔 내가 구해준 거다?” 승쨩은 방금 제이드에게 구조받았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“흥, 고맙다는 말은 됐어.” 제이드는 들리지 않을 만큼 작게 웃었습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩을 신뢰하지 않습니다. 그래도 같은 탈출 지점을 향합니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드를 라이벌이라 부릅니다. 제이드는 아직 인정하지 않았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	애증 관계의 동료와 레이드에 들어갈 땐, 총알보다 대화 거리를 조심하세요.	SeungwooFigure&JadeFigure
+EasterEgg	제이드와 승쨩은 자주 다툽니다. 다만 적이 끼어들면 우선순위가 바뀝니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드의 잔소리가 싫다고 합니다. 이상하게 생존율은 올라갑니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드의 독설은 방어구보다 얇지만, 승쨩에게는 더 아프게 들어갑니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩과 제이드는 서로를 믿지 않는다고 말합니다. 전투 기록은 다르게 말합니다.	SeungwooFigure&JadeFigure
+EasterEgg	둘이 싸우기 시작했다면 아직 안전한 겁니다. 진짜 위험하면 말수가 줄어듭니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩을 버리고 간 적이 없습니다. 앞서 갔을 뿐입니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드에게 지지 않았다고 주장합니다. 결과창은 조용히 반박합니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드: “바보야, 그쪽은 위험하잖아.” 승쨩은 이미 그쪽으로 갔습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩: “계획대로야.” 제이드: “그 말 한 뒤로 성공한 적 없잖아.”	SeungwooFigure&JadeFigure
+EasterEgg	제이드: “정말 손이 많이 가네.” 승쨩은 그 말을 칭찬으로 받아들였습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩: “나 없으면 심심하잖아?” 제이드는 재장전으로 대답했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드: “이번만이야.” 시스템은 해당 대사를 반복 재생 중입니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩: “이건 운명이야.” 제이드: “그건 네 착각이야.”	SeungwooFigure&JadeFigure
+EasterEgg	제이드가 화난 것처럼 보인다면 정상입니다. 승쨩이 근처에 있다는 뜻입니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩이 조용하다면 위험 신호입니다. 제이드가 먼저 확인하러 갑니다.	SeungwooFigure&JadeFigure

@@ -21,8 +21,7 @@ namespace DeadZone.Actors.UI
 
         public bool IsSpecialImageKey(string imageKey)
         {
-            imageKey = NormalizeImageKey(imageKey);
-            return IsSupportedSpecialImageKey(imageKey);
+            return GetSpecialSprite(imageKey) != null;
         }
 
         public Sprite GetRandomDefaultBackground()
@@ -38,7 +37,7 @@ namespace DeadZone.Actors.UI
         {
             imageKey = NormalizeImageKey(imageKey);
 
-            if (!IsSupportedSpecialImageKey(imageKey))
+            if (imageKey == "Default")
                 return null;
 
             if (specialImages == null)
@@ -63,13 +62,5 @@ namespace DeadZone.Actors.UI
             return string.IsNullOrWhiteSpace(imageKey) ? "Default" : imageKey.Trim();
         }
 
-        private static bool IsSupportedSpecialImageKey(string imageKey)
-        {
-            return imageKey == "JadeFigure"
-                || imageKey == "SeungwooFigure"
-                || imageKey == "InsiderMic"
-                || imageKey == "StudyGlasses"
-                || imageKey == "DependencyBook";
-        }
     }
 }

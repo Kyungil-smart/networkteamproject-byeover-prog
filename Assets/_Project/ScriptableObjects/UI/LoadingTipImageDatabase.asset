@@ -12,17 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9385a92ff221a64f96d4a2a33dbe76a, type: 3}
   m_Name: LoadingTipImageDatabase
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LoadingTipImageDatabase
-  defaultSprites:
+  defaultBackgroundSprites:
   - {fileID: 21300000, guid: 2eae42f03af8cf24ba8f0d1cc2c9a100, type: 3}
   - {fileID: 21300000, guid: 5b824171809c4d8429ad9ef92d00c01b, type: 3}
   - {fileID: 21300000, guid: bce4a28cfd2864c4dab8c352986ba2b0, type: 3}
   - {fileID: 21300000, guid: 229f213617279c947a2a594b24d9fbe5, type: 3}
+  - {fileID: 21300000, guid: 229f213617279c947a2a594b24d9fbe5, type: 3}
   - {fileID: 21300000, guid: 25ee30ec96f5c214e8d232f3eb2d4fc0, type: 3}
-  images:
+  specialImages:
   - imageKey: JadeFigure
     sprite: {fileID: 21300000, guid: 596a12531d9869146b9d394a39f7106f, type: 3}
-  - imageKey: JadeFigure
-    sprite: {fileID: 21300000, guid: c6d7ef10a50e8b9449a7a2aa5cd9e615, type: 3}
   - imageKey: SeungwooFigure
     sprite: {fileID: 21300000, guid: ad5f5554c13159045905d5a0a376fdbc, type: 3}
   - imageKey: VolkimMicrophone
@@ -31,3 +30,5 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 9d774beb4bb83a748a7ad62acaba7ee8, type: 3}
   - imageKey: DependencyBook
     sprite: {fileID: 21300000, guid: 0be120e7df92dbb4e9bf4eb2cee3d324, type: 3}
+  - imageKey: SeungwooFigure&JadeFigure
+    sprite: {fileID: 21300000, guid: 2f0e686b3d956c34e80486b365a72baf, type: 3}
