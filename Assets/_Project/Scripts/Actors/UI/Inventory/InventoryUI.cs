@@ -451,7 +451,7 @@ namespace DeadZone.Actors.UI
 
             Transform quickSlotPanel = FindChildByName(inventoryRoot.transform, "QuickSlotPanel");
             if (quickSlotPanel != null)
-                EnsureDropSlotsUnder(quickSlotPanel, directChildrenOnly: true);
+                EnsureQuickSlotsUnder(quickSlotPanel);
         }
 
         private void EnsureDropSlotsUnder(Transform panel, bool directChildrenOnly)
@@ -481,6 +481,35 @@ namespace DeadZone.Actors.UI
 
             foreach (InventorySlotUI slot in panel.GetComponentsInChildren<InventorySlotUI>(true))
                 slot.PrepareDropSlot(itemTooltipUI, inventoryUI: this);
+        }
+
+        private void EnsureQuickSlotsUnder(Transform panel)
+        {
+            if (panel == null)
+                return;
+
+            int index = 0;
+            foreach (Transform child in panel)
+            {
+                if (child == null || child.GetComponent<RectTransform>() == null)
+                    continue;
+
+                if (!IsDropSlotCandidate(child, panel))
+                    continue;
+
+                InventorySlotUI slot = child.GetComponent<InventorySlotUI>();
+                if (slot == null)
+                    slot = child.gameObject.AddComponent<InventorySlotUI>();
+
+                slot.PrepareDropSlotAsKind(itemTooltipUI, InventorySlotKind.QuickSlot, index, this);
+                index++;
+            }
+
+            foreach (InventorySlotUI slot in panel.GetComponentsInChildren<InventorySlotUI>(true))
+            {
+                if (slot != null)
+                    slot.PrepareDropSlotAsKind(itemTooltipUI, InventorySlotKind.QuickSlot, inventoryUI: this);
+            }
         }
 
         private static bool IsDropSlotCandidate(Transform child, Transform panel)

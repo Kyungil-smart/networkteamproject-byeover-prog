@@ -148,6 +148,24 @@ namespace DeadZone.Actors.UI
             EnsureRaycastTarget();
         }
 
+        public void PrepareDropSlotAsKind(
+            ItemTooltipUI tooltip,
+            InventorySlotKind kind,
+            int index = -1,
+            InventoryUI inventoryUI = null)
+        {
+            if (index >= 0)
+                slotIndex = index;
+
+            slotKind = kind;
+            tooltipUI = tooltip;
+            if (inventoryUI != null)
+                ownerInventoryUI = inventoryUI;
+
+            AutoBindReferences();
+            EnsureRaycastTarget();
+        }
+
         public void SetTooltip(ItemTooltipUI tooltip)
         {
             tooltipUI = tooltip;
@@ -614,7 +632,7 @@ namespace DeadZone.Actors.UI
             return slotKind switch
             {
                 InventorySlotKind.Bag => true,
-                InventorySlotKind.QuickSlot => itemData.category != ItemCategory.Weapon && itemData is not WeaponDataSO,
+                InventorySlotKind.QuickSlot => IsQuickSlotItem(itemData),
                 InventorySlotKind.EquipmentHead => itemData.category == ItemCategory.Helmet || itemData is HelmetDataSO,
                 InventorySlotKind.EquipmentArmor => itemData.category == ItemCategory.Armor || itemData is ArmorDataSO,
                 InventorySlotKind.EquipmentBackpack => itemData.category == ItemCategory.Backpack || itemData is BackpackDataSO,
@@ -627,17 +645,18 @@ namespace DeadZone.Actors.UI
 
         private void ConfigureSlotKind()
         {
-            if (!autoDetectSlotKind)
-                return;
-
             string path = GetHierarchyPath(transform).ToLowerInvariant();
-            string objectName = name.ToLowerInvariant();
 
             if (path.Contains("quickslotpanel"))
             {
                 slotKind = InventorySlotKind.QuickSlot;
                 return;
             }
+
+            if (!autoDetectSlotKind)
+                return;
+
+            string objectName = name.ToLowerInvariant();
 
             if (path.Contains("equipmentpanel"))
             {
@@ -931,6 +950,20 @@ namespace DeadZone.Actors.UI
         private static bool IsMeleeWeapon(ItemDataSO itemData)
         {
             return itemData is WeaponDataSO weaponData && weaponData.weaponCategory == WeaponCategory.Melee;
+        }
+
+        private static bool IsQuickSlotItem(ItemDataSO itemData)
+        {
+            if (itemData == null)
+                return false;
+
+            if (itemData is WeaponDataSO or ArmorDataSO or HelmetDataSO or BackpackDataSO)
+                return false;
+
+            return itemData.category is not ItemCategory.Weapon
+                and not ItemCategory.Armor
+                and not ItemCategory.Helmet
+                and not ItemCategory.Backpack;
         }
 
         private static string GetHierarchyPath(Transform target)
