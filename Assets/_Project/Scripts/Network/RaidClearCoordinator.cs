@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DeadZone.Core;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DeadZone.Network
 {
@@ -16,15 +18,30 @@ namespace DeadZone.Network
         [Tooltip("클리어 후 각 클라이언트가 저장할 해금 ID입니다.")]
         [SerializeField] private string unlockZoneId = "MapB_All";
 
+        [Header("==== Lobby 복귀 ====")]
+        [Tooltip("저장 결과를 기다릴 최대 시간입니다. 단위: 초. 모든 대상이 먼저 응답하면 즉시 Lobby 복귀를 시작합니다.")]
+        [SerializeField, Min(0.1f)] private float saveResultTimeoutSeconds = 10f;
+
+        [Tooltip("레이드 종료 후 복귀할 Lobby 씬 이름입니다. Build Settings에 등록된 씬 이름과 일치해야 합니다.")]
+        [SerializeField] private string lobbySceneName = "Lobby";
+
         [Header("==== 로그 ====")]
-        [Tooltip("클리어 감지, 저장 요청, 저장 결과 수신 로그를 출력합니다.")]
+        [Tooltip("클리어 감지, 저장 요청, 저장 결과 수신, Lobby 복귀 로그를 출력합니다.")]
         [SerializeField] private bool logDebug = true;
 
         private readonly List<ulong> expectedClientIdsBuffer = new();
         private readonly Dictionary<ulong, bool> saveResultsByClientId = new();
         private readonly HashSet<ulong> receivedSaveResultClientIds = new();
 
+        private readonly List<ulong> successfulClientIdsBuffer = new();
+        private readonly List<ulong> failedClientIdsBuffer = new();
+        private readonly List<ulong> missingClientIdsBuffer = new();
+
+        private Coroutine saveResultWaitCoroutine;
+
         private bool hasHandledClear;
+        private bool hasCompletedSaveResultWait;
+        private bool hasRequestedLobbyReturn;
 
         public bool HasClearHandled => hasHandledClear;
 
@@ -76,6 +93,8 @@ namespace DeadZone.Network
             LogDebug(
                 $"Zone 저장 요청 전송. ZoneId={unlockZoneId}, " +
                 $"Targets={FormatClientIds(expectedClientIdsBuffer)}");
+
+            StartSaveResultWait();
 
             return true;
         }
@@ -208,12 +227,159 @@ namespace DeadZone.Network
             LogDebug(
                 $"Zone 저장 결과 진행 상황. " +
                 $"Received={receivedSaveResultClientIds.Count}/{saveResultsByClientId.Count}");
+
+            if (receivedSaveResultClientIds.Count >= saveResultsByClientId.Count)
+                CompleteSaveResultWait(false);
+        }
+
+        private void StartSaveResultWait()
+        {
+            if (!IsServer) return;
+
+            if (saveResultWaitCoroutine != null)
+                StopCoroutine(saveResultWaitCoroutine);
+
+            saveResultWaitCoroutine = StartCoroutine(WaitForSaveResults());
+        }
+
+        private IEnumerator WaitForSaveResults()
+        {
+            float endTime = Time.unscaledTime + saveResultTimeoutSeconds;
+
+            while (!hasCompletedSaveResultWait &&
+                   receivedSaveResultClientIds.Count < saveResultsByClientId.Count &&
+                   Time.unscaledTime < endTime)
+            {
+                yield return null;
+            }
+
+            saveResultWaitCoroutine = null;
+
+            if (hasCompletedSaveResultWait)
+                yield break;
+
+            bool timedOut = receivedSaveResultClientIds.Count < saveResultsByClientId.Count;
+            CompleteSaveResultWait(timedOut);
+        }
+
+        private void CompleteSaveResultWait(bool timedOut)
+        {
+            if (!IsServer) return;
+            if (hasCompletedSaveResultWait) return;
+
+            hasCompletedSaveResultWait = true;
+
+            if (saveResultWaitCoroutine != null)
+            {
+                StopCoroutine(saveResultWaitCoroutine);
+                saveResultWaitCoroutine = null;
+            }
+
+            BuildSaveResultSummary();
+
+            if (timedOut || failedClientIdsBuffer.Count > 0 || missingClientIdsBuffer.Count > 0)
+            {
+                Debug.LogWarning(
+                    $"[레이드 클리어] Zone 저장 결과 대기 완료. " +
+                    $"TimedOut={timedOut}, " +
+                    $"Success={FormatClientIds(successfulClientIdsBuffer)}, " +
+                    $"Failed={FormatClientIds(failedClientIdsBuffer)}, " +
+                    $"Missing={FormatClientIds(missingClientIdsBuffer)}",
+                    this);
+            }
+            else
+            {
+                Debug.Log(
+                    $"[레이드 클리어] Zone 저장 결과 대기 완료. " +
+                    $"Success={FormatClientIds(successfulClientIdsBuffer)}",
+                    this);
+            }
+
+            ResetGameSessionTracking();
+            RequestLobbyReturn();
+        }
+
+        private void BuildSaveResultSummary()
+        {
+            successfulClientIdsBuffer.Clear();
+            failedClientIdsBuffer.Clear();
+            missingClientIdsBuffer.Clear();
+
+            for (int i = 0; i < expectedClientIdsBuffer.Count; i++)
+            {
+                ulong clientId = expectedClientIdsBuffer[i];
+
+                if (!receivedSaveResultClientIds.Contains(clientId))
+                {
+                    missingClientIdsBuffer.Add(clientId);
+                    continue;
+                }
+
+                if (saveResultsByClientId.TryGetValue(clientId, out bool success) && success)
+                    successfulClientIdsBuffer.Add(clientId);
+                else
+                    failedClientIdsBuffer.Add(clientId);
+            }
+        }
+
+        private void RequestLobbyReturn()
+        {
+            if (!IsServer) return;
+            if (hasRequestedLobbyReturn) return;
+
+            if (string.IsNullOrWhiteSpace(lobbySceneName))
+            {
+                Debug.LogWarning("[레이드 클리어] Lobby 씬 이름이 비어 있어 복귀할 수 없습니다.", this);
+                return;
+            }
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+
+            if (networkManager == null || networkManager.SceneManager == null)
+            {
+                Debug.LogWarning("[레이드 클리어] NetworkSceneManager를 찾을 수 없어 Lobby 복귀를 시작하지 못했습니다.", this);
+                return;
+            }
+
+            SceneEventProgressStatus status =
+                networkManager.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+
+            if (status != SceneEventProgressStatus.Started)
+            {
+                Debug.LogWarning(
+                    $"[레이드 클리어] Lobby 씬 로드 요청 실패. Scene={lobbySceneName}, Status={status}",
+                    this);
+
+                return;
+            }
+
+            hasRequestedLobbyReturn = true;
+
+            Debug.Log($"[레이드 클리어] Lobby 씬 로드 요청. Scene={lobbySceneName}", this);
+        }
+
+        private void ResetGameSessionTracking()
+        {
+            if (!TryResolveGameSessionManager(out GameSessionManager gameSessionManager))
+                return;
+
+            if (!gameSessionManager.IsSpawned)
+                return;
+
+            gameSessionManager.CancelLoadTracking("레이드 클리어 처리 완료");
         }
 
         private void PrepareSaveResultTracking(IReadOnlyList<ulong> targetClientIds)
         {
             saveResultsByClientId.Clear();
             receivedSaveResultClientIds.Clear();
+
+            successfulClientIdsBuffer.Clear();
+            failedClientIdsBuffer.Clear();
+            missingClientIdsBuffer.Clear();
+
+            hasCompletedSaveResultWait = false;
+            hasRequestedLobbyReturn = false;
 
             foreach (ulong clientId in targetClientIds)
                 saveResultsByClientId[clientId] = false;
