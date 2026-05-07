@@ -15,6 +15,9 @@ namespace DeadZone.Actors.UI
             if (Keyboard.current == null)
                 return;
 
+            if (InGameMenuUI.IsAnyMenuBlockingInput())
+                return;
+
             if (Keyboard.current.tabKey.wasPressedThisFrame)
             {
                 ToggleInventory();

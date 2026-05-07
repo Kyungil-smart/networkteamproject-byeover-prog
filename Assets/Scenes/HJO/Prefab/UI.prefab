@@ -6240,8 +6240,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.999, y: 0.8879013}
-  m_SizeDelta: {x: 1824.6877, y: 985.7358}
+  m_AnchoredPosition: {x: 0.99902344, y: 0.8878784}
+  m_SizeDelta: {x: 1824.6877, y: 985.73584}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &96419472517366652
 CanvasRenderer:
@@ -19108,6 +19108,9 @@ MonoBehaviour:
   mapImageRect: {fileID: 3762022803407840903}
   target: {fileID: 0}
   boundsProvider: {fileID: 3224240857002343532}
+  stageConfigs: []
+  minimapImage: {fileID: 0}
+  worldMapImage: {fileID: 0}
   miniMapMask: {fileID: 0}
   markerRoot: {fileID: 0}
   localPlayerMarker: {fileID: 7212287077049823215}

@@ -109,6 +109,8 @@ namespace DeadZone.Actors
             }
         }
 
+        public int SlotCount => slotCount;
+
         // =========================================================
         // Awake
         // =========================================================
@@ -219,12 +221,63 @@ namespace DeadZone.Actors
             {
                 // 서버에 열기 요청
                 TryOpenServerRpc();
+                OpenLootingUI();
 
                 return;
             }
 
             // 로컬 테스트
             OpenLocalForEditorDebug(clientId);
+            OpenLootingUI();
+        }
+
+        public bool TryGetLocalSlot(int index, out global::ContainerSlotNetData slotData)
+        {
+            slotData = default;
+
+            if (localSlots == null || index < 0 || index >= localSlots.Count)
+                return false;
+
+            slotData = localSlots[index];
+            return true;
+        }
+
+        public void OpenLocalForLootingUITest(ulong clientId = 0)
+        {
+            OpenLocalForEditorDebug(clientId);
+        }
+
+        public void RequestTakeSlotToPlayer(int slotIndex)
+        {
+            if (IsNetworkActive())
+            {
+                TryTakeSlotToPlayerServerRpc(slotIndex);
+                return;
+            }
+
+            Debug.LogWarning("[LootContainer] 네트워크가 실행 중이 아니어서 상자 아이템 이동은 서버 검증 없이 처리하지 않습니다.", this);
+        }
+
+        public void RequestDepositFromPlayer(string itemId, int amount, int targetSlotIndex)
+        {
+            if (IsNetworkActive())
+            {
+                TryDepositFromPlayerServerRpc(new FixedString64Bytes(itemId), amount, targetSlotIndex);
+                return;
+            }
+
+            Debug.LogWarning("[LootContainer] 네트워크가 실행 중이 아니어서 플레이어 아이템 보관은 서버 검증 없이 처리하지 않습니다.", this);
+        }
+
+        public void RequestMoveSlot(int sourceSlotIndex, int targetSlotIndex)
+        {
+            if (IsNetworkActive())
+            {
+                TryMoveSlotServerRpc(sourceSlotIndex, targetSlotIndex);
+                return;
+            }
+
+            Debug.LogWarning("[LootContainer] 네트워크가 실행 중이 아니어서 상자 내부 이동은 서버 검증 없이 처리하지 않습니다.", this);
         }
 
         // =========================================================
@@ -270,6 +323,93 @@ namespace DeadZone.Actors
             {
                 PrintNetworkSlotsDebug(senderClientId);
             }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void TryTakeSlotToPlayerServerRpc(
+            int slotIndex,
+            ServerRpcParams rpcParams = default)
+        {
+            if (!TryGetServerSlot(slotIndex, out global::ContainerSlotNetData slotData) || slotData.IsEmpty)
+                return;
+
+            GridInventory inventory = ResolvePlayerInventory(rpcParams.Receive.SenderClientId);
+            if (inventory == null)
+                return;
+
+            ItemDataSO itemData = ResolveItemData(slotData.itemId.ToString());
+            if (itemData == null)
+                return;
+
+            int amount = Mathf.Max(1, slotData.amount);
+            if (!inventory.CanAddItem(itemData, amount))
+                return;
+
+            if (!inventory.TryAddItem(itemData, amount))
+                return;
+
+            Slots[slotIndex] = new global::ContainerSlotNetData();
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void TryDepositFromPlayerServerRpc(
+            FixedString64Bytes itemId,
+            int amount,
+            int targetSlotIndex,
+            ServerRpcParams rpcParams = default)
+        {
+            string itemIdString = itemId.ToString();
+            if (string.IsNullOrEmpty(itemIdString) || amount <= 0)
+                return;
+
+            if (!TryGetServerSlot(targetSlotIndex, out global::ContainerSlotNetData targetSlot))
+                return;
+
+            GridInventory inventory = ResolvePlayerInventory(rpcParams.Receive.SenderClientId);
+            if (inventory == null || !inventory.HasItem(itemIdString, amount))
+                return;
+
+            ItemDataSO itemData = ResolveItemData(itemIdString);
+            if (itemData == null || !CanAcceptItem(targetSlot, itemData, amount))
+                return;
+
+            if (!inventory.ConsumeItem(itemIdString, amount))
+                return;
+
+            AddItemToSlot(targetSlotIndex, targetSlot, itemData, amount);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void TryMoveSlotServerRpc(
+            int sourceSlotIndex,
+            int targetSlotIndex,
+            ServerRpcParams rpcParams = default)
+        {
+            if (sourceSlotIndex == targetSlotIndex)
+                return;
+
+            if (!TryGetServerSlot(sourceSlotIndex, out global::ContainerSlotNetData sourceSlot) ||
+                !TryGetServerSlot(targetSlotIndex, out global::ContainerSlotNetData targetSlot) ||
+                sourceSlot.IsEmpty)
+            {
+                return;
+            }
+
+            ItemDataSO sourceItem = ResolveItemData(sourceSlot.itemId.ToString());
+            if (sourceItem == null)
+                return;
+
+            if (!targetSlot.IsEmpty &&
+                targetSlot.itemId.Equals(sourceSlot.itemId) &&
+                CanAcceptItem(targetSlot, sourceItem, sourceSlot.amount))
+            {
+                AddItemToSlot(targetSlotIndex, targetSlot, sourceItem, sourceSlot.amount);
+                Slots[sourceSlotIndex] = new global::ContainerSlotNetData();
+                return;
+            }
+
+            Slots[sourceSlotIndex] = targetSlot;
+            Slots[targetSlotIndex] = sourceSlot;
         }
 
         // =========================================================
@@ -484,6 +624,99 @@ namespace DeadZone.Actors
 
             // Console 출력
             Debug.Log(log, this);
+        }
+
+        private bool TryGetServerSlot(int slotIndex, out global::ContainerSlotNetData slotData)
+        {
+            slotData = default;
+
+            if (!IsServer || Slots == null || slotIndex < 0 || slotIndex >= Slots.Count)
+                return false;
+
+            slotData = Slots[slotIndex];
+            return true;
+        }
+
+        private GridInventory ResolvePlayerInventory(ulong clientId)
+        {
+            if (!IsServer || NetworkManager.Singleton == null)
+                return null;
+
+            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out NetworkClient client))
+                return null;
+
+            if (client.PlayerObject == null)
+                return null;
+
+            return client.PlayerObject.GetComponent<GridInventory>();
+        }
+
+        private ItemDataSO ResolveItemData(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId))
+                return null;
+
+            IItemDatabase itemDb = ServiceLocator.Get<IItemDatabase>();
+            return itemDb?.GetById(itemId);
+        }
+
+        private bool CanAcceptItem(global::ContainerSlotNetData targetSlot, ItemDataSO itemData, int amount)
+        {
+            if (itemData == null || amount <= 0)
+                return false;
+
+            if (targetSlot.IsEmpty)
+                return true;
+
+            if (!targetSlot.itemId.ToString().Equals(itemData.itemID))
+                return false;
+
+            int maxStackSize = Mathf.Max(1, itemData.maxStackSize);
+            return targetSlot.amount + amount <= maxStackSize;
+        }
+
+        private void AddItemToSlot(
+            int slotIndex,
+            global::ContainerSlotNetData currentSlot,
+            ItemDataSO itemData,
+            int amount)
+        {
+            if (!IsServer || itemData == null || slotIndex < 0 || slotIndex >= Slots.Count)
+                return;
+
+            if (currentSlot.IsEmpty)
+            {
+                Slots[slotIndex] = new global::ContainerSlotNetData
+                {
+                    itemId = new FixedString64Bytes(itemData.itemID),
+                    amount = (ushort)Mathf.Clamp(amount, 1, ushort.MaxValue)
+                };
+                return;
+            }
+
+            currentSlot.amount = (ushort)Mathf.Clamp(
+                currentSlot.amount + amount,
+                1,
+                Mathf.Max(1, itemData.maxStackSize));
+            Slots[slotIndex] = currentSlot;
+        }
+
+        private void OpenLootingUI()
+        {
+            MonoBehaviour[] behaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
+            foreach (MonoBehaviour behaviour in behaviours)
+            {
+                if (behaviour == null || behaviour.GetType().Name != "LootingUIController")
+                    continue;
+
+                if (!behaviour.gameObject.scene.IsValid())
+                    continue;
+
+                behaviour.SendMessage("Open", this, SendMessageOptions.DontRequireReceiver);
+                return;
+            }
+
+            Debug.LogWarning("[LootContainer] LootingUIController를 찾지 못했습니다. 씬 UI에 LootingUIController를 배치하세요.", this);
         }
 
         // =========================================================
