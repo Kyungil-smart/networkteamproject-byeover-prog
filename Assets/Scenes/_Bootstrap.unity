@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NetworkBootstrap
       objectReference: {fileID: 0}
+    - target: {fileID: 671104383096634637, guid: b04ee3aba1426704e97a4b2e44d14bc2, type: 3}
+      propertyPath: firstSceneName
+      value: Title
+      objectReference: {fileID: 0}
     - target: {fileID: 2730368526248898919, guid: b04ee3aba1426704e97a4b2e44d14bc2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
