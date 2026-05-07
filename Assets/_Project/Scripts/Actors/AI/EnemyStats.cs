@@ -37,6 +37,9 @@ namespace DeadZone.Actors
         {
             if (!IsServer || IsDead) return;
             CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
+            
+            GetComponent<EnemyAnimHandler>()?.PlayHitFlash();
+
             if (CurrentHP.Value <= 0f)
                 Die(attackerClientId);
         }
