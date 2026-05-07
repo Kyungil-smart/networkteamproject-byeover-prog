@@ -38,7 +38,7 @@ MonoBehaviour:
   preferredRangeMin: 25
   preferredRangeMax: 70
   canCallReinforcements: 0
-  canThrowGrenades: 1
+  canThrowGrenades: 0
   grenadeCooldown: 10
   dropEquippedGear: 1
   extraLootTable: {fileID: 0}
