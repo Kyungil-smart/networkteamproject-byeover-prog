@@ -3392,7 +3392,7 @@ MonoBehaviour:
   closeButton: {fileID: 2062565111}
   messageText: {fileID: 223107014}
   loadingBlocker: {fileID: 0}
-  lobbySceneName: HJO_Lobby
+  lobbySceneName: Lobby
   cloudSaveTimeoutMs: 10000
 --- !u!1 &1304664582
 GameObject:
