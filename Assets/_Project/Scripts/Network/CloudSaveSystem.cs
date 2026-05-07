@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Firebase.Firestore;
 using Unity.Netcode;
 using UnityEngine;
-
 using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -206,7 +206,7 @@ namespace DeadZone.Network
                     isNew = true;
                     loadedFirebaseUid = uid;
 
-                    bool uploaded = await UploadAsync();  // 신규 유저는 즉시 기본 데이터 기록
+                    bool uploaded = await UploadAsync(); // 신규 유저는 즉시 기본 데이터 기록
                     if (!uploaded)
                     {
                         currentData = null;
@@ -216,7 +216,7 @@ namespace DeadZone.Network
                 }
 
                 loadedFirebaseUid = uid;
-                
+
                 EventBus.Publish(new CloudSaveLoadedEvent
                 {
                     firebaseUid = uid,
@@ -285,6 +285,88 @@ namespace DeadZone.Network
             }
         }
 
+        public async Task<bool> UnlockZoneAndUploadAsync(string zoneId)
+        {
+            if (string.IsNullOrWhiteSpace(zoneId))
+            {
+                Debug.LogWarning("[CloudSaveSystem] Zone 저장 실패. ZoneId가 비어 있습니다.");
+                return false;
+            }
+
+            if (!TryGetSignedInAuth(out string uid, out _))
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. 로그인 상태가 아닙니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            if (!TryEnsureFirestoreReady())
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. Firestore가 준비되지 않았습니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            if (currentData == null)
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. CurrentData가 없습니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            if (loadedFirebaseUid != uid)
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. 현재 로그인 UID와 로드된 데이터 UID가 다릅니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            try
+            {
+                EnsureCloudDataContainers();
+
+                CollectDataFromScene();
+
+                EnsureCloudDataContainers();
+
+                bool added = false;
+
+                if (!currentData.progress.unlockedZones.Contains(zoneId))
+                {
+                    currentData.progress.unlockedZones.Add(zoneId);
+                    added = true;
+                }
+
+                currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = true,
+                });
+
+                Debug.Log($"[CloudSaveSystem] Zone 저장 완료. ZoneId={zoneId}, Added={added}");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[CloudSaveSystem] Zone 저장 실패. ZoneId={zoneId}, Error={ex}");
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = false,
+                });
+
+                return false;
+            }
+        }
+
+        private void EnsureCloudDataContainers()
+        {
+            currentData.profile ??= new ProfileData();
+            currentData.progress ??= new ProgressData();
+            currentData.progress.unlockedZones ??= new List<string>();
+        }
+        
         // =================================================================
         // 씬에서 데이터 수집 (Part VII §7.7 - Pull 방식)
         // =================================================================
@@ -330,13 +412,13 @@ namespace DeadZone.Network
             if (eq == null) return;
 
             currentData.equipment.helmetId = eq.HeadSlotId.Value.ToString();
-            currentData.equipment.armorId  = eq.TorsoSlotId.Value.ToString();
+            currentData.equipment.armorId = eq.TorsoSlotId.Value.ToString();
             currentData.equipment.primary1 = eq.Primary1Id.Value.ToString();
             currentData.equipment.primary2 = eq.Primary2Id.Value.ToString();
             currentData.equipment.secondary = eq.SecondaryId.Value.ToString();
-            currentData.equipment.melee    = eq.MeleeId.Value.ToString();
+            currentData.equipment.melee = eq.MeleeId.Value.ToString();
             currentData.equipment.helmetDurability = eq.HelmetDurability.Value;
-            currentData.equipment.armorDurability  = eq.ArmorDurability.Value;
+            currentData.equipment.armorDurability = eq.ArmorDurability.Value;
         }
 
         private void CollectFacilities()
@@ -349,12 +431,12 @@ namespace DeadZone.Network
             {
                 switch (f.Type)
                 {
-                    case FacilityType.Workbench:   currentData.facilities.workbench   = f.CurrentLevel.Value; break;
+                    case FacilityType.Workbench: currentData.facilities.workbench = f.CurrentLevel.Value; break;
                     case FacilityType.CommStation: currentData.facilities.commStation = f.CurrentLevel.Value; break;
-                    case FacilityType.Gym:         currentData.facilities.gym         = f.CurrentLevel.Value; break;
-                    case FacilityType.Stash:       currentData.facilities.stash       = f.CurrentLevel.Value; break;
-                    case FacilityType.Kitchen:     currentData.facilities.kitchen     = f.CurrentLevel.Value; break;
-                    case FacilityType.Bed:         currentData.facilities.bed         = f.CurrentLevel.Value; break;
+                    case FacilityType.Gym: currentData.facilities.gym = f.CurrentLevel.Value; break;
+                    case FacilityType.Stash: currentData.facilities.stash = f.CurrentLevel.Value; break;
+                    case FacilityType.Kitchen: currentData.facilities.kitchen = f.CurrentLevel.Value; break;
+                    case FacilityType.Bed: currentData.facilities.bed = f.CurrentLevel.Value; break;
                 }
             }
         }
