@@ -14,7 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.AmmoDataSO
   itemID: Ammo_SMG_BP
   displayName: "SMG BP \uD0C4\uC57D"
-  description: 
+  description: "- \uB4F1\uAE09: \uD76C\uADC0\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
+    SMG \uD0C4\uC57D. \uC911\uAC04 \uC544\uBA38\uAE4C\uC9C0 \uB370\uBBF8\uC9C0 \uC720\uD6A8.\n2.
+    \uAD00\uB3D9\uB825: 3\n3. \uB370\uBBF8\uC9C0 \uC801\uC6A9: \uAE30\uBCF8 \uB370\uBBF8\uC9C0\n4.
+    \uD0C4\uC18D: 1"
   icon: {fileID: 0}
   category: 1
   rarity: 1

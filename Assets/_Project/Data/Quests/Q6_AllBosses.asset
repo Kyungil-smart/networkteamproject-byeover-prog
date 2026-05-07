@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
+  m_Name: Q6_AllBosses
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
+  questID: Q6
+  questName: "\uCD5C\uC885 \uBCF4\uC2A4 \uCC98\uCE58"
+  description: "\uBAA8\uB4E0 \uBCF4\uC2A4\uB97C \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624.
+    \uB9C8\uC9C0\uB9C9 \uBCF4\uC2A4\uAC00 \uBCF4\uD2B8 \uC5F4\uC1E0\uB97C \uB4DC\uB78D\uD569\uB2C8\uB2E4."
+  objectives:
+  - type: 0
+    targetID: Boss_Stage2_All
+    requiredCount: 3
+    location: "\uB9F5B \uC804\uCCB4"
+  rewards: []
+  unlockZoneID: 
+  prerequisiteQuestID: Q5
+  isSideQuest: 0

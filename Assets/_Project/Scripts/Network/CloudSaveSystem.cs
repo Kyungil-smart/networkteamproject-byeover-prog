@@ -7,26 +7,10 @@ using UnityEngine;
 using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Quests;
 
 namespace DeadZone.Network
 {
-    /// <summary>
-    /// Firestore로 PlayerCloudData를 업/다운로드.
-    /// Lives on PersistentSystems 하위의 자기 GameObject (DontDestroyOnLoad).
-    ///
-    /// 세이브 트리거 (팀장 결정):
-    ///   1) PlayerDiedEvent 발행 + 본인 플레이어일 때 즉시 업로드
-    ///   2) SceneChangedEvent("Hideout") 수신 시 업로드
-    ///   3) OnApplicationQuit 시 최대 3초 동기 대기 업로드
-    ///
-    /// 데이터 수집 전략 (Part VII §7.7):
-    ///   CloudSaveSystem이 각 시스템을 ServiceLocator / GetComponent로 pull.
-    ///   (L1 → L3 의존성은 이 매니저에 한해 예외 허용.)
-    ///
-    /// Firestore 직렬화:
-    ///   PlayerCloudData에 [FirestoreData] 어노테이션이 붙어있어
-    ///   SetAsync(currentData) / snapshot.ConvertTo<T>() 만으로 자동 변환.
-    /// </summary>
     public class CloudSaveSystem : MonoBehaviour
     {
         private const string UsersCollection = "users";
@@ -377,18 +361,16 @@ namespace DeadZone.Network
 
         private void CollectPersonalQuestProgress()
         {
-            // v1.3 초기: NetworkList(공유 상태)를 그대로 개인 필드에 복사.
-            // 추후 QuestManager 개선 시 개인 플래그를 분리하면 이 로직도 교체.
+            if (NetworkManager.Singleton == null) return;
+
             var quest = ServiceLocator.Get<QuestManager>();
             if (quest == null) return;
 
-            currentData.progress.personalActiveQuestIds.Clear();
-            for (int i = 0; i < quest.ActiveQuestIds.Count; i++)
-                currentData.progress.personalActiveQuestIds.Add(quest.ActiveQuestIds[i].ToString());
+            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            var myState = quest.GetPlayerState(localClientId);
+            if (myState == null) return;
 
-            currentData.progress.personalCompletedQuestIds.Clear();
-            for (int i = 0; i < quest.CompletedQuestIds.Count; i++)
-                currentData.progress.personalCompletedQuestIds.Add(quest.CompletedQuestIds[i].ToString());
+            myState.WriteToCloudProgress(currentData.progress);
         }
 
         // =================================================================

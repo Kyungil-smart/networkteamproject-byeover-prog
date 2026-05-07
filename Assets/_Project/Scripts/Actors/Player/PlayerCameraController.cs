@@ -1,6 +1,8 @@
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Core;
+
 namespace DeadZone.Actors
 {
     public class PlayerCameraController : NetworkBehaviour
@@ -32,6 +34,19 @@ namespace DeadZone.Actors
                  "\n기본값 (0, 1, 0)은 플레이어 발밑이 아니라 상체 근처를 바라보게 하기 위한 값")]
         [SerializeField] private Vector3 lookAtOffset = new Vector3(0f, 1f, 0f);
 
+        [Header("====조준 방향 포커스 설정====")]
+        [Tooltip("기본 상태에서 바라보는 방향으로 밀어줄 최소 포커스 거리")]
+        [SerializeField, Min(0f)] private float defaultLookAheadDistance = 1.6f;
+
+        [Tooltip("ADS 상태에서 바라보는 방향으로 밀어줄 최대 포커스 거리")]
+        [SerializeField, Min(0f)] private float adsLookAheadDistance = 3f;
+
+        [Tooltip("현재 무기를 찾을 수 없을 때 사용할 기본 ADS 진입 시간")]
+        [SerializeField, Min(0.01f)] private float defaultAdsTransitionTime = 0.2f;
+
+        [Tooltip("ADS 해제 시 기본 포커스 거리로 돌아오는 시간")]
+        [SerializeField, Min(0.01f)] private float adsReleaseReturnTime = 0.1f;
+
         [Header("====플레이어 컨트롤러 연결====")]
         [Tooltip("마우스 조준 Raycast에 사용할 카메라를 전달받는 입력 컨트롤러" +
                  "\n비워두면 같은 Player Root에서 PlayerInputController를 자동 탐색")]
@@ -40,6 +55,14 @@ namespace DeadZone.Actors
         [Tooltip("이동 기준 방향을 카메라 기준으로 맞추기 위한 이동 컨트롤러" +
                  "\n비워두면 같은 Player Root에서 FPSController를 자동 탐색")]
         [SerializeField] private FPSController fpsController;
+
+        [Tooltip("ADS 상태를 확인하기 위한 조준 시스템" +
+                 "\n비워두면 같은 Player Root에서 ADSSystem을 자동 탐색")]
+        [SerializeField] private ADSSystem adsSystem;
+
+        [Tooltip("현재 무기의 ADS 전환 시간을 확인하기 위한 장비 슬롯" +
+                 "\n비워두면 같은 Player Root에서 EquipmentSlots를 자동 탐색")]
+        [SerializeField] private EquipmentSlots equipment;
         
         [Header("====디버그=====")]
         [Tooltip("카메라 활성화 상태, Owner 여부, AudioListener 상태를 Console에 출력" +
@@ -48,6 +71,8 @@ namespace DeadZone.Actors
 
         private Transform cameraTransform;
         private bool isLocalOwnerCamera;
+        private float currentLookAheadDistance;
+        private Vector3 lastValidLookDirection = Vector3.forward;
 
         private void Awake()
         {
@@ -61,6 +86,14 @@ namespace DeadZone.Actors
 
             if (fpsController == null)
                 fpsController = GetComponent<FPSController>();
+
+            if (adsSystem == null)
+                adsSystem = GetComponent<ADSSystem>();
+
+            if (equipment == null)
+                equipment = GetComponent<EquipmentSlots>();
+
+            currentLookAheadDistance = defaultLookAheadDistance;
 
             SetCameraActive(false, "Awake");
             LogCameraState("Awake");
@@ -178,16 +211,85 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// 추적 대상 위치와 오프셋을 기준으로 쿼터뷰 카메라의 월드 위치와 회전을 계산한다.
+        /// 추적 대상 위치, 마우스 바라보기 방향 오프셋, 높이 보정을 기준으로 쿼터뷰 카메라의 월드 위치와 회전을 계산한다.
         /// </summary>
         private void ApplyCameraTransform()
         {
             if (cameraTransform == null || followTarget == null)
                 return;
 
-            Vector3 cameraPosition = followTarget.position + worldOffset;
-            Vector3 lookTarget = followTarget.position + lookAtOffset;
-            Vector3 lookDirection = lookTarget - cameraPosition;
+            UpdateLookAheadDistance();
+
+            Vector3 lookDirection = ResolveMouseLookDirection();
+            Vector3 focusPosition = CalculateCameraFocusPosition(lookDirection);
+
+            ApplyCameraPose(focusPosition);
+        }
+
+        /// <summary>
+        /// ADS 상태에 따라 카메라 포커스 거리를 최소 거리와 최대 거리 사이에서 갱신한다.
+        /// ADS 진입은 현재 무기의 adsTransitionTime을 사용하고, 무기가 없으면 기본값 0.2초를 사용한다.
+        /// ADS 해제는 무기와 관계없이 adsReleaseReturnTime을 사용한다.
+        /// </summary>
+        private void UpdateLookAheadDistance()
+        {
+            bool isAds = adsSystem != null && adsSystem.IsADS;
+            float targetDistance = isAds ? adsLookAheadDistance : defaultLookAheadDistance;
+            float transitionTime = isAds
+                ? GetCurrentWeaponAdsTransitionTime()
+                : adsReleaseReturnTime;
+            float distanceDelta = Mathf.Abs(adsLookAheadDistance - defaultLookAheadDistance);
+            float speed = distanceDelta / Mathf.Max(0.01f, transitionTime);
+
+            currentLookAheadDistance = Mathf.MoveTowards(
+                currentLookAheadDistance,
+                targetDistance,
+                speed * Time.deltaTime);
+        }
+
+        /// <summary>
+        /// 현재 무기의 ADS 진입 시간을 반환한다.
+        /// 현재 무기가 없거나 장비 슬롯 참조가 없으면 기본 ADS 진입 시간 0.2초를 사용한다.
+        /// </summary>
+        private float GetCurrentWeaponAdsTransitionTime()
+        {
+            WeaponDataSO weapon = equipment != null ? equipment.GetCurrentWeapon() : null;
+            return weapon != null ? weapon.adsTransitionTime : defaultAdsTransitionTime;
+        }
+
+        /// <summary>
+        /// 마우스 기준 바라보기 방향을 카메라 포커스 오프셋에 사용할 월드 수평 방향으로 변환한다.
+        /// 유효한 바라보기 입력이 없으면 마지막 유효 방향을 유지해 카메라 포커스가 튀지 않게 한다.
+        /// </summary>
+        private Vector3 ResolveMouseLookDirection()
+        {
+            Vector2 lookInput = fpsController != null ? fpsController.LookInput : Vector2.zero;
+            Vector3 lookDirection = new Vector3(lookInput.x, 0f, lookInput.y);
+
+            if (lookDirection.sqrMagnitude < 0.001f)
+                return lastValidLookDirection;
+
+            lastValidLookDirection = lookDirection.normalized;
+            return lastValidLookDirection;
+        }
+
+        /// <summary>
+        /// 플레이어 위치에 바라보기 방향 거리 보정과 기존 높이 보정을 더해 카메라가 바라볼 포커스 지점을 계산한다.
+        /// </summary>
+        private Vector3 CalculateCameraFocusPosition(Vector3 lookDirection)
+        {
+            return followTarget.position
+                + lookDirection * currentLookAheadDistance
+                + lookAtOffset;
+        }
+
+        /// <summary>
+        /// 계산된 포커스 지점을 기준으로 카메라의 위치와 회전을 즉시 적용한다.
+        /// </summary>
+        private void ApplyCameraPose(Vector3 focusPosition)
+        {
+            Vector3 cameraPosition = focusPosition + worldOffset;
+            Vector3 lookDirection = focusPosition - cameraPosition;
 
             if (lookDirection.sqrMagnitude <= 0.0001f)
                 return;

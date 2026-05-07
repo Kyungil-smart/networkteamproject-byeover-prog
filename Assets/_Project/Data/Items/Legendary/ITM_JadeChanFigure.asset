@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: JadeChanFigure
   displayName: "JADE\uCA29 \uD53C\uADDC\uC5B4"
-  description: 
+  description: "- \uB4F1\uAE09: \uC804\uC124\n- \uC6A9\uB3C4: \uC720\uBA85 \uD504\uB85C\uADF8\uB798\uBA38\uC758
+    \uD53C\uADDC\uC5B4"
   icon: {fileID: 21300000, guid: 596a12531d9869146b9d394a39f7106f, type: 3}
   category: 7
   rarity: 4
   isValuable: 1
-  gridSize: {x: 2, y: 3}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.8
   baseSellPrice: 100000

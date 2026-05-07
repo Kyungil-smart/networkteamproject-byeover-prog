@@ -143,9 +143,7 @@ namespace DeadZone.Actors.UI
 
             if (tooltipRoot != null)
                 tooltipRoot.SetActive(false);
-
-            if (debugTooltipEvents)
-                Debug.Log($"[ItemTooltipUI] Hide 호출됨. RootActive={(tooltipRoot != null && tooltipRoot.activeSelf)}", this);
+            
         }
 
         public void Refresh()

@@ -14,16 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_SK74
   displayName: SK-74
-  description: 
-  icon: {fileID: 0}
+  description: "- \uC18C\uB828 \uC804\uD1B5 AR\uC18C\uCD1D\n- \uB4F1\uAE09: \uB808\uC5B4\n\n-
+    \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 38\n2. \uACF5\uACA9 \uC18D\uB3C4: 10\n3.
+    \uD0C4\uCC3D \uD06C\uAE30: 30"
+  icon: {fileID: 21300000, guid: 777b949ae1003a244a4291ed1bbc340b, type: 3}
   category: 0
   rarity: 2
   isValuable: 0
-  gridSize: {x: 1, y: 4}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 12000
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 1881064825521636036, guid: 69e755bce754f1f46b0aee5fde40fb6e, type: 3}
   weaponCategory: 0
   damage: 38
   fireRate: 10

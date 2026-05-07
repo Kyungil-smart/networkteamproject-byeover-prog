@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Sledgehammer
   displayName: "\uB300\uD615 \uD574\uBA38"
-  description: 
+  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uB2E4\uBAA9\uC801
+    \uB300\uD615 \uD574\uBA38"
   icon: {fileID: 21300000, guid: 951a6807753b3a04ea3585cfdb170f5a, type: 3}
   category: 9
   rarity: 2
   isValuable: 0
-  gridSize: {x: 1, y: 4}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 4
   baseSellPrice: 4000

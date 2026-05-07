@@ -1,40 +1,26 @@
 using UnityEngine;
 
-
 namespace DeadZone.Core
 {
     /// <summary>
-    /// 가방 ScriptableObject. 장착 시 GridInventory의 높이가 확장된다.
-    ///
-    /// 그리드 구조 (GameSystem v1.0 + 결정사항):
-    ///   - 베이스: 4x5 = 20칸 (가방 미장착)
-    ///   - 가방 장착 시: 4 x (5 + extraRows)
-    ///
-    /// 등급별 권장 수치:
-    ///   Common (Backpack_Small):    extraRows=5,  carryWeightBonus=+5
-    ///   Uncommon (Backpack_Medium): extraRows=10,  carryWeightBonus=+10
-    ///   Rare (Backpack_Large):      extraRows=15, carryWeightBonus=+15
-    ///   Epic (Backpack_Tactical):   extraRows=20, carryWeightBonus=+25
+    /// 가방 데이터. 장착 시 인벤토리 슬롯과 최대 무게를 증가시킨다.
+    /// Lv1: +5슬롯 +10kg / Lv2~4: 레벨당 +5슬롯 +5kg 추가
     /// </summary>
-    [CreateAssetMenu(menuName = "DeadZone/Items/Backpack Data", fileName = "Backpack_New")]
+    [CreateAssetMenu(
+        fileName = "NewBackpack",
+        menuName = "DeadZone/Data/Backpack Data",
+        order = 5)]
     public class BackpackDataSO : ItemDataSO
     {
-        [Header("Backpack Capacity")]
-        [Tooltip("베이스 그리드(4x5) 아래에 추가되는 행 개수")]
-        [Range(0, 30)]
-        public byte extraRows = 5;
+        [Header("=== Backpack Stats ===")]
 
-        [Header("Carry Weight")]
-        [Tooltip("소지 무게 한계 증가량 (kg). PlayerStats.carryWeight에 합산됨")]
-        public float carryWeightBonus = 5f;
+        [Tooltip("가방 레벨 (1~4)")]
+        public int backpackLevel = 1;
 
-        private void OnValidate()
-        {
-            // BackpackDataSO 자산은 항상 Backpack 카테고리여야 함
-            if (category != ItemCategory.Backpack)
-            {
-                category = ItemCategory.Backpack;
-            }
-        }
+        [Tooltip("추가 인벤토리 슬롯 수")]
+        public int extraSlots;
+
+        [Tooltip("추가 최대 무게 (kg)")]
+        public float extraWeightCapacity;
     }
 }

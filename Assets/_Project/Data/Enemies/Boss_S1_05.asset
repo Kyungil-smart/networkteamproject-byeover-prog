@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 488feee288201d1468c9397d30a52b8c, type: 3}
+  m_Name: Boss_S1_05
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.EnemyStatsSO
+  displayName: "\uBC1C\uC804\uC2DC\uC124 \uBCF4\uC2A4"
+  tier: 5
+  faction: 1
+  isBoss: 1
+  enemyId: 
+  maxHP: 300
+  defaultArmor: {fileID: 11400000, guid: 9f51616f2f98c7e42b29bfcd6d27af3d, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: cd9b237be8e599849b82f50bbba2e135, type: 2}
+  penetrationModifier: -1
+  damageMultiplier: 1
+  fireInterval: 0.5
+  burstSize: 5
+  burstRestDelay: 0.4
+  spreadAngleMin: 0.4
+  spreadAngleMax: 1.5
+  rangeSpreadMultiplier: 1.3
+  maxEffectiveRange: 70
+  visionRange: 100
+  fov: 110
+  hearingRange: 30
+  reactionTime: 0.3
+  moveSpeed: 4.5
+  preferredRangeMin: 15
+  preferredRangeMax: 60
+  canCallReinforcements: 0
+  canThrowGrenades: 0
+  grenadeCooldown: 20
+  dropEquippedGear: 1
+  extraLootTable: {fileID: 0}
+  extraLootCount: 1
+  corpsePrefab: {fileID: 0}
+  corpseDespawnTime: 120
+  corpseDespawnWhenEmpty: 30

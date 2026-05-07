@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f589fbea863f6d74ab13add916bb6dcc, type: 3}
+  m_Name: Trader_Igor
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.TraderDataSO
+  traderName: Igor
+  stock:
+  - item: {fileID: 11400000, guid: 383b228f5316ed5459f0c624b4786842, type: 2}
+    basePrice: 3000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 179fe61ddb5d6b84c96f8ab664f34ef3, type: 2}
+    basePrice: 2400
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 7ef1f8660b1b95f469dada26ba4bd98a, type: 2}
+    basePrice: 6000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 4e7f75c1d36e7004aa003eee4af8517c, type: 2}
+    basePrice: 10000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: 05fed358211994c48bb87d8052ac969f, type: 2}
+    basePrice: 13000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
+    basePrice: 24000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 5dbc704d01bc662438998288b0482d8b, type: 2}
+    basePrice: 20000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}
+    basePrice: 30000
+    requiredCommLevel: 3
+  sellMultiplier: 0.5

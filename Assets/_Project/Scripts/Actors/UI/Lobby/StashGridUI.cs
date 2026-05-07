@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using DeadZone.Core;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +22,10 @@ namespace DeadZone.Actors.UI
         [SerializeField] private InventorySlotUI slotPrefab;
 
         [SerializeField] private ItemTooltipUI tooltipUI;
+
+        [SerializeField] private TMP_Text levelText;
+
+        [SerializeField] private TMP_Text slotCountText;
 
         [Title("스크롤 설정")]
         [SerializeField] private ScrollRect scrollRect;
@@ -62,6 +67,10 @@ namespace DeadZone.Actors.UI
 
         [Tooltip("스택 가능한 아이템을 생성할 때 1개가 아니라 랜덤 수량으로 생성합니다.")]
         [SerializeField] private bool randomizeStackCount = true;
+
+        [Title("디버그")]
+        [Tooltip("Play 중 보관함 슬롯 캐시와 0번 슬롯 상태를 콘솔에 출력합니다.")]
+        [SerializeField] private bool logSlotCacheOnRefresh = true;
 
         [Title("상태")]
         [ReadOnly]
@@ -109,6 +118,7 @@ namespace DeadZone.Actors.UI
         {
             AutoBindReferences();
             ApplyGridSettings();
+            PrepareSlotTemplate();
             RebuildSlotCache();
 
             int targetCount = GetSlotCountByLevel(stashLevel);
@@ -117,6 +127,7 @@ namespace DeadZone.Actors.UI
             ApplyContentSize(targetCount);
 
             activeSlotCount = targetCount;
+            RefreshStatusText();
 
             Canvas.ForceUpdateCanvases();
             if (contentRoot != null)
@@ -126,6 +137,8 @@ namespace DeadZone.Actors.UI
 
             if (scrollRect != null)
                 scrollRect.verticalNormalizedPosition = 1f;
+
+            LogSlotCacheState();
         }
 
         public int GetSlotCountByLevel(int level)
@@ -252,6 +265,12 @@ namespace DeadZone.Actors.UI
 
             if (tooltipUI == null)
                 tooltipUI = GetComponentInParent<ItemTooltipUI>(true);
+
+            if (levelText == null)
+                levelText = FindNamedText(transform, "Text_Level");
+
+            if (slotCountText == null)
+                slotCountText = FindNamedText(transform, "Text_SlotCount");
         }
 
         private void ApplyGridSettings()
@@ -349,7 +368,7 @@ namespace DeadZone.Actors.UI
             for (int i = 0; i < foundSlots.Length; i++)
             {
                 InventorySlotUI slot = foundSlots[i];
-                if (slot == null || slot == slotPrefab && slotPrefab.transform.IsChildOf(contentRoot) == false)
+                if (slot == null || slot == slotPrefab)
                     continue;
 
                 if (!slots.Contains(slot))
@@ -369,6 +388,9 @@ namespace DeadZone.Actors.UI
             {
                 InventorySlotUI slot = Instantiate(slotPrefab, contentRoot);
                 slot.name = $"StashSlot_{slots.Count:000}";
+                slot.gameObject.SetActive(true);
+                slot.ClearItem();
+                slot.PrepareDropSlot(tooltipUI, slots.Count);
                 slots.Add(slot);
             }
         }
@@ -385,8 +407,26 @@ namespace DeadZone.Actors.UI
                 slot.gameObject.SetActive(active);
 
                 if (active)
+                {
+                    slot.name = $"StashSlot_{i:000}";
+                    slot.CopyRarityBackgroundSpritesFrom(slotPrefab);
                     slot.PrepareDropSlot(tooltipUI, i);
+
+                    if (!slot.HasItem)
+                        slot.ClearItem();
+                }
             }
+        }
+
+        private void PrepareSlotTemplate()
+        {
+            if (slotPrefab == null)
+                return;
+
+            slotPrefab.ClearItem();
+
+            if (contentRoot != null && slotPrefab.transform.IsChildOf(contentRoot))
+                slotPrefab.gameObject.SetActive(false);
         }
 
         private void ApplyContentSize(int targetCount)
@@ -401,6 +441,15 @@ namespace DeadZone.Actors.UI
             contentRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
             contentRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
             contentRoot.anchoredPosition = Vector2.zero;
+        }
+
+        private void RefreshStatusText()
+        {
+            if (levelText != null)
+                levelText.text = $"Lv.{stashLevel}";
+
+            if (slotCountText != null)
+                slotCountText.text = $"({activeSlotCount}\uCE78)";
         }
 
         private RectOffset CreatePadding()
@@ -454,6 +503,22 @@ namespace DeadZone.Actors.UI
             return null;
         }
 
+        private static TMP_Text FindNamedText(Transform root, string objectName)
+        {
+            if (root == null)
+                return null;
+
+            TMP_Text[] texts = root.GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                TMP_Text text = texts[i];
+                if (text != null && text.name == objectName)
+                    return text;
+            }
+
+            return null;
+        }
+
         private void GenerateRandomTestItems(int count)
         {
             RefreshSlots();
@@ -467,28 +532,47 @@ namespace DeadZone.Actors.UI
 
             ClearActiveSlots();
 
-            int targetCount = Mathf.Min(count, activeSlotCount, slots.Count);
+            int targetCount = Mathf.Min(count, activeSlotCount, slots.Count, validItems.Count);
             for (int i = 0; i < targetCount; i++)
             {
                 InventorySlotUI slot = slots[i];
                 if (slot == null)
                     continue;
 
-                ItemDataSO itemData = validItems[Random.Range(0, validItems.Count)];
+                int itemIndex = Random.Range(0, validItems.Count);
+                ItemDataSO itemData = validItems[itemIndex];
+                validItems.RemoveAt(itemIndex);
+
                 int stackCount = GetRandomStackCount(itemData);
                 slot.SetItem(itemData, stackCount);
             }
+
+            LogSlotCacheState();
         }
 
         private List<ItemDataSO> GetValidTestItems()
         {
             List<ItemDataSO> validItems = new List<ItemDataSO>();
+            HashSet<ItemDataSO> addedItems = new HashSet<ItemDataSO>();
+            HashSet<string> addedItemIds = new HashSet<string>();
 
             for (int i = 0; i < testItemPool.Count; i++)
             {
                 ItemDataSO itemData = testItemPool[i];
-                if (itemData != null)
-                    validItems.Add(itemData);
+                if (itemData == null)
+                    continue;
+
+                if (!string.IsNullOrWhiteSpace(itemData.itemID))
+                {
+                    if (!addedItemIds.Add(itemData.itemID))
+                        continue;
+                }
+                else if (!addedItems.Add(itemData))
+                {
+                    continue;
+                }
+
+                validItems.Add(itemData);
             }
 
             return validItems;
@@ -513,6 +597,47 @@ namespace DeadZone.Actors.UI
 
                 slot.ClearItem();
             }
+        }
+
+        private void LogSlotCacheState()
+        {
+            if (!logSlotCacheOnRefresh || !Application.isPlaying)
+                return;
+
+            string prefabPath = slotPrefab != null ? GetHierarchyPath(slotPrefab.transform) : "null";
+            string firstSlotPath = slots.Count > 0 && slots[0] != null ? GetHierarchyPath(slots[0].transform) : "null";
+            string firstIconInfo = slots.Count > 0 && slots[0] != null ? GetSlotIconInfo(slots[0]) : "null";
+            bool prefabInsideContent = contentRoot != null && slotPrefab != null && slotPrefab.transform.IsChildOf(contentRoot);
+            bool firstIsPrefab = slots.Count > 0 && slots[0] == slotPrefab;
+
+            Debug.Log($"[StashGridUI] SlotCache: count={slots.Count}, activeSlotCount={activeSlotCount}, slotPrefabInsideContent={prefabInsideContent}, slotPrefabActive={(slotPrefab != null && slotPrefab.gameObject.activeSelf)}, slots[0].IsPrefab={firstIsPrefab}, slotPrefab={prefabPath}, slots[0]={firstSlotPath}, slots[0].Icon={firstIconInfo}", this);
+        }
+
+        private static string GetSlotIconInfo(InventorySlotUI slot)
+        {
+            RectTransform iconTransform = FindNamedRectTransform(slot.transform, "Icon_Item");
+            if (iconTransform == null)
+                return "Icon_Item=null";
+
+            Image iconImage = iconTransform.GetComponent<Image>();
+            bool hasSprite = iconImage != null && iconImage.sprite != null;
+            return $"parent={GetHierarchyPath(iconTransform.parent)}, active={iconTransform.gameObject.activeSelf}, enabled={(iconImage != null && iconImage.enabled)}, hasSprite={hasSprite}";
+        }
+
+        private static string GetHierarchyPath(Transform target)
+        {
+            if (target == null)
+                return "null";
+
+            string path = target.name;
+            Transform current = target.parent;
+            while (current != null)
+            {
+                path = $"{current.name}/{path}";
+                current = current.parent;
+            }
+
+            return path;
         }
     }
 }

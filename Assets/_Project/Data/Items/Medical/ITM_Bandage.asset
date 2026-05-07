@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Bandage
   displayName: "\uBD95\uB300"
-  description: 
+  description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC6A9\uB3C4: \uAC00\uBCBC\uC6B4
+    \uC0C1\uCC98 \uCE58\uB8CC\uC6A9 \uBD95\uB300\n\n- \uD2B9\uC9D5\n1. \uD6A8\uACFC:
+    HP +25\uD68C\uBCF5\n2. \uC0AC\uC6A9\uC2DC\uAC04: 3\uCD08"
   icon: {fileID: 21300000, guid: 274807c39806452408ce0cdb9b0a2c9c, type: 3}
   category: 5
   rarity: 0

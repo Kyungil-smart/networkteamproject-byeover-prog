@@ -18,6 +18,9 @@ namespace DeadZone.Core
     {
         public string traderName;
         public List<TraderEntry> stock;
-        public float buyPriceMultiplier = 1.0f;
+
+        [Tooltip("유저→트레이더 판매 시 basePrice에 곱하는 배율 (0.5 = 50%)")]
+        [Range(0f, 1f)]
+        public float sellMultiplier = 0.5f;
     }
 }

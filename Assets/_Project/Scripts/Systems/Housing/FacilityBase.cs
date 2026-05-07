@@ -5,11 +5,6 @@ using DeadZone.Core;
 
 namespace DeadZone.Systems
 {
-    /// <summary>
-    /// 하우징 시설의 공통 기반 클래스입니다.
-    /// 시설 레벨 상태, 레벨 변경 이벤트, 현재 레벨 데이터 조회를 담당합니다.
-    /// 실제 업그레이드 재료 검사와 소모는 시설별 UpgradeController가 담당합니다.
-    /// </summary>
     public abstract class FacilityBase : NetworkBehaviour
     {
         [Header("시설 데이터")]
@@ -17,25 +12,17 @@ namespace DeadZone.Systems
         [Tooltip("시설 타입, 레벨별 업그레이드 재료, 효과 설명을 가진 FacilityDataSO입니다.")]
         protected FacilityDataSO facilityData;
 
-        [SerializeField]
-        [Tooltip("플레이어가 시설과 상호작용할 수 있는 거리입니다.")]
-        protected float interactDistance = 2.5f;
-
         public NetworkVariable<int> CurrentLevel = new(1);
 
         public FacilityType Type => facilityData != null ? facilityData.type : default;
-        public float InteractDistance => interactDistance;
         public FacilityDataSO FacilityData => facilityData;
 
         public override void OnNetworkSpawn()
         {
             CurrentLevel.OnValueChanged += HandleLevelChanged;
 
-            // 서버에서 현재 레벨 효과를 한 번 초기화합니다.
             if (IsServer)
-            {
                 HandleLevelChanged(0, CurrentLevel.Value);
-            }
         }
 
         public override void OnNetworkDespawn()
@@ -103,12 +90,138 @@ namespace DeadZone.Systems
             return facilityData.GetLevel(nextLevel);
         }
 
+        public FacilityDataSO GetFacilityData()
+        {
+            return facilityData;
+        }
+
+        public int GetCurrentLevel()
+        {
+            return CurrentLevel.Value;
+        }
+
+        public int GetMaxLevel()
+        {
+            if (facilityData == null || facilityData.levels == null)
+                return 0;
+
+            return facilityData.levels.Length;
+        }
+
+        public FacilityLevel GetLevelData(int targetLevel)
+        {
+            if (facilityData == null)
+                return null;
+
+            if (!CanSetLevel(targetLevel))
+                return null;
+
+            return facilityData.GetLevel(targetLevel);
+        }
+
+        public bool IsUpgradeTargetLevel(int targetLevel)
+        {
+            if (facilityData == null)
+                return false;
+
+            if (!CanSetLevel(targetLevel))
+                return false;
+
+            return targetLevel == CurrentLevel.Value + 1;
+        }
+
+        public bool IsLevelAlreadyReached(int targetLevel)
+        {
+            return CurrentLevel.Value >= targetLevel;
+        }
+
+        public bool CanUpgradeToLevel(int targetLevel, IInventory inventory)
+        {
+            if (facilityData == null)
+                return false;
+
+            if (inventory == null)
+                return false;
+
+            if (!IsUpgradeTargetLevel(targetLevel))
+                return false;
+
+            FacilityLevel levelData = GetLevelData(targetLevel);
+
+            if (levelData == null)
+                return false;
+
+            return HasUpgradeMaterials(levelData, inventory);
+        }
+
+        public bool TryUpgradeToLevelFromServer(int targetLevel, IInventory inventory)
+        {
+            if (!IsServer)
+                return false;
+
+            if (!CanUpgradeToLevel(targetLevel, inventory))
+                return false;
+
+            FacilityLevel levelData = GetLevelData(targetLevel);
+
+            if (levelData == null)
+                return false;
+
+            if (!ConsumeUpgradeMaterials(levelData, inventory))
+                return false;
+
+            CurrentLevel.Value = targetLevel;
+            return true;
+        }
+
         public bool IsMaxLevel()
         {
             if (facilityData == null || facilityData.levels == null)
                 return true;
 
             return CurrentLevel.Value >= facilityData.levels.Length;
+        }
+
+        private bool HasUpgradeMaterials(FacilityLevel levelData, IInventory inventory)
+        {
+            if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
+                return true;
+
+            for (int i = 0; i < levelData.upgradeMaterials.Count; i++)
+            {
+                ItemRequirement material = levelData.upgradeMaterials[i];
+
+                if (material.item == null)
+                    return false;
+
+                int requiredAmount = Mathf.Max(1, material.amount);
+
+                if (!inventory.HasItem(material.item.itemID, requiredAmount))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool ConsumeUpgradeMaterials(FacilityLevel levelData, IInventory inventory)
+        {
+            if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
+                return true;
+
+            for (int i = 0; i < levelData.upgradeMaterials.Count; i++)
+            {
+                ItemRequirement material = levelData.upgradeMaterials[i];
+
+                if (material.item == null)
+                    return false;
+
+                int requiredAmount = Mathf.Max(1, material.amount);
+
+                if (!inventory.ConsumeItem(material.item.itemID, requiredAmount))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

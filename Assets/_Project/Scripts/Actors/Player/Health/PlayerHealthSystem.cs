@@ -107,9 +107,7 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
-            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
-            // if (IsSpawned && !IsServer) return;
+            if (IsSpawned && !IsServer) return;
 
             if (IsKnocked && !isBeingRevived)
             {
@@ -129,10 +127,8 @@ namespace DeadZone.Actors
         {
             if (IsDead)
                 return;
-
-            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
-            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
-            // if (IsSpawned && !IsServer) return;
+            
+            if (IsSpawned && !IsServer) return;
 
             if (ShouldIgnoreDamage())
                 return;
@@ -187,12 +183,8 @@ namespace DeadZone.Actors
 
         public void Heal(float amount)
         {
-            if (!IsAlive)
-                return;
-
-            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
-            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
-            // if (IsSpawned && !IsServer) return;
+            if (!IsAlive) return;
+            if (IsSpawned && !IsServer) return;
 
             CurrentHP.Value = Mathf.Min(MaxHP, CurrentHP.Value + amount);
         }
@@ -264,9 +256,7 @@ namespace DeadZone.Actors
 
         private void TransitionToKnocked(ulong attackerClientId)
         {
-            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
-            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
-            // if (IsSpawned && !IsServer) return;
+            if (IsSpawned && !IsServer) return;
 
             KnockedHP.Value = knockedMaxHP;
             BleedoutRemaining.Value = bleedoutSeconds;
@@ -283,9 +273,7 @@ namespace DeadZone.Actors
 
         private void TransitionToDead(ulong attackerClientId)
         {
-            // TODO(NetworkAuthority): 로컬 단일 플레이 테스트 중에는 서버 권위 가드를 임시 비활성화
-            // 복구 조건: 서버 전용 호출 경로가 검증되면 활성화
-            // if (IsSpawned && !IsServer) return;
+            if (IsSpawned && !IsServer) return;
 
             KnockedHP.Value = 0f;
             BleedoutRemaining.Value = 0f;

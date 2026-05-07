@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 488feee288201d1468c9397d30a52b8c, type: 3}
+  m_Name: Enemy_T5
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.EnemyStatsSO
+  displayName: "T5 \uBCF4\uC2A4\uAE09"
+  tier: 5
+  faction: 2
+  isBoss: 0
+  enemyId: 
+  maxHP: 400
+  defaultArmor: {fileID: 11400000, guid: ad53c2923f3214f4680771020646c23e, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: 2fbf9be39f6fcc245894b4b70b10ade4, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 5a3b383a31ce9eb4d85c5a09f712b23d, type: 2}
+  penetrationModifier: 0
+  damageMultiplier: 1
+  fireInterval: 0.5
+  burstSize: 5
+  burstRestDelay: 0.4
+  spreadAngleMin: 0.3
+  spreadAngleMax: 1
+  rangeSpreadMultiplier: 1.2
+  maxEffectiveRange: 100
+  visionRange: 120
+  fov: 110
+  hearingRange: 40
+  reactionTime: 0.3
+  moveSpeed: 6
+  preferredRangeMin: 30
+  preferredRangeMax: 90
+  canCallReinforcements: 0
+  canThrowGrenades: 0
+  grenadeCooldown: 15
+  dropEquippedGear: 1
+  extraLootTable: {fileID: 0}
+  extraLootCount: 1
+  corpsePrefab: {fileID: 0}
+  corpseDespawnTime: 120
+  corpseDespawnWhenEmpty: 30

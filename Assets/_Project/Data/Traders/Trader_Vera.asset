@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f589fbea863f6d74ab13add916bb6dcc, type: 3}
+  m_Name: Trader_Vera
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.TraderDataSO
+  traderName: Vera
+  stock:
+  - item: {fileID: 11400000, guid: 857126b0884445049aee3c4c40237363, type: 2}
+    basePrice: 2000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 7db79ebddeb3f594197dddab3986b957, type: 2}
+    basePrice: 5000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: f0d2237f8b9871e4c922b0e37e47bae5, type: 2}
+    basePrice: 11000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: 9d0112c233b249b43a9e3c1dab65ee5c, type: 2}
+    basePrice: 24000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 605e66098567a8a408815c91cf2271b4, type: 2}
+    basePrice: 50000
+    requiredCommLevel: 4
+  - item: {fileID: 11400000, guid: d978fc212d09dc943aa22747dbb03023, type: 2}
+    basePrice: 1600
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 8c921a8e24562874da6a2c664e9258d3, type: 2}
+    basePrice: 3600
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 1d90bafe4996db742a631d3a4b69b6d2, type: 2}
+    basePrice: 10000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: 0dde25b1684935d40b9bff5e224fdad2, type: 2}
+    basePrice: 4000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 9e9ea9c5bdf17a74ea6d6c04903839b6, type: 2}
+    basePrice: 16000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: 9fc8319757764364e88453c28306cba9, type: 2}
+    basePrice: 40000
+    requiredCommLevel: 3
+  sellMultiplier: 0.5
