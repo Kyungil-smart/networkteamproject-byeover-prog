@@ -8,6 +8,7 @@ namespace DeadZone.Actors
     /// <summary>
     /// 서버 권위로 동작하는 투사체 컨트롤러입니다.
     /// 레이캐스트 CCD를 통해 고속 이동 시 터널링을 방지합니다.
+    /// 네트워크 스폰 안 된 상태(오프라인 테스트)에서도 동작합니다.
     /// </summary>
     public class ProjectileController : NetworkBehaviour
     {
@@ -25,7 +26,7 @@ namespace DeadZone.Actors
         private Vector3 direction;
         private float speed;
         private float distanceTravelled;
-        private bool isInitialized; // 데이터 주입 전까지 update 막는 변수
+        private bool isInitialized;
 
         /// <summary>
         /// 생성 직후 서버에서 데이터를 주입하여 투사체를 활성화합니다.
@@ -33,7 +34,8 @@ namespace DeadZone.Actors
         public void Initialize(ProjectileData pData, Vector3 dir, 
             float velocity)
         {
-            if (!IsServer) return;
+            // 네트워크 스폰됐으면 서버만, 아니면 로컬 실행
+            if (IsSpawned && !IsServer) return;
 
             data = pData;
             direction = dir.normalized;
@@ -47,8 +49,9 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            // 모든 물리 및 상태 판정은 서버에서만 수행
-            if (!IsServer || !isInitialized) return;
+            // 네트워크 스폰됐으면 서버만, 아니면 로컬 실행
+            if (IsSpawned && !IsServer) return;
+            if (!isInitialized) return;
 
             float moveDistance = speed * Time.deltaTime;
             Vector3 currentPos = transform.position;
@@ -77,7 +80,6 @@ namespace DeadZone.Actors
         /// </summary>
         private void HandleCollision(RaycastHit hit)
         {
-            // 비트 연산을 위한 레이어 비트 추출
             int layerBit = 1 << hit.collider.gameObject.layer;
 
             // 1. 데미지 판정 대상(Hitbox)인 경우
@@ -99,8 +101,6 @@ namespace DeadZone.Actors
                 var victim = hitZone.GetOwner<IDamageable>();
                 if (victim != null)
                 {
-                    // 기획 핵심: 실제 hitZone(부위) 대신 
-                    // 탄환 내부에 저장된 조준 의도(data)를 전달
                     ServiceLocator.Get<DamageSystem>()?.ApplyDamage(
                         victim, 
                         hit.point, 
@@ -109,15 +109,23 @@ namespace DeadZone.Actors
                 }
             }
 
-            // 관통 기능이 없는 '최대 1명 명중' 로직이므로 즉시 소멸
             DespawnProjectile();
         }
 
+        /// <summary>
+        /// 투사체를 제거한다. 네트워크 스폰 여부에 따라 분기 처리.
+        /// </summary>
         private void DespawnProjectile()
         {
+            // 네트워크 스폰된 상태 → Despawn
             if (NetworkObject != null && NetworkObject.IsSpawned)
             {
                 NetworkObject.Despawn(true);
+            }
+            // 오프라인 → 일반 Destroy
+            else
+            {
+                Destroy(gameObject);
             }
         }
     }

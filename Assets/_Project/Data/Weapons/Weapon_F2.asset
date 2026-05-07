@@ -25,7 +25,7 @@ MonoBehaviour:
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 45000
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 4877502891820607573, guid: 84e96cfa27210fe4488f053115ff8dd8, type: 3}
   weaponCategory: 0
   damage: 42
   fireRate: 14
