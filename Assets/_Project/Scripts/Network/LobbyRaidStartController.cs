@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using DeadZone.Core;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -35,6 +37,8 @@ namespace DeadZone.Network
             LobbyRaidMap.MapA,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
+
+        private readonly List<ulong> expectedClientIdsBuffer = new();
 
         private LobbyRaidMap offlineSelectedMap = LobbyRaidMap.MapA;
         private bool hasRaidStartRequested;
@@ -147,11 +151,24 @@ namespace DeadZone.Network
                 return;
             }
 
+            if (!TryCollectExpectedClientIds(expectedClientIdsBuffer, out reason))
+            {
+                Debug.LogWarning($"[LobbyRaidStartController] 출격 대상 확인 실패: {reason}", this);
+                return;
+            }
+
+            if (!TryBeginLoadTracking(sceneName, expectedClientIdsBuffer, out reason))
+            {
+                Debug.LogWarning($"[LobbyRaidStartController] 로드 추적 시작 실패: {reason}", this);
+                return;
+            }
+
             hasRaidStartRequested = true;
 
             if (!TryLoadSelectedRaidScene(sceneName, out reason))
             {
                 hasRaidStartRequested = false;
+                CancelLoadTracking(reason);
                 Debug.LogWarning($"[LobbyRaidStartController] 레이드 씬 로드 실패: {reason}", this);
             }
         }
@@ -312,18 +329,6 @@ namespace DeadZone.Network
             DebugUnlockMapBForLocalPlayer();
         }
 
-        private int GetPartyCount()
-        {
-            if (!IsNetworkSessionActive()) return 1;
-
-            ResolveReferences();
-
-            if (lobbyState == null || lobbyState.Players == null || lobbyState.Players.Count == 0)
-                return 1;
-
-            return lobbyState.Players.Count;
-        }
-
         private bool AreAllPlayersReady()
         {
             ResolveReferences();
@@ -372,6 +377,83 @@ namespace DeadZone.Network
             }
 
             reason = "레이드 씬 확인 완료";
+            return true;
+        }
+
+        private bool TryCollectExpectedClientIds(List<ulong> clientIds, out string reason)
+        {
+            clientIds.Clear();
+            ResolveReferences();
+
+            if (!IsServer)
+            {
+                reason = "서버에서만 출격 대상 clientId 목록을 수집할 수 있습니다.";
+                return false;
+            }
+
+            if (lobbyState == null || lobbyState.Players == null || lobbyState.Players.Count == 0)
+            {
+                reason = "출격 대상 clientId 목록을 확인할 수 없습니다.";
+                return false;
+            }
+
+            for (int i = 0; i < lobbyState.Players.Count; i++)
+            {
+                ulong clientId = lobbyState.Players[i].ClientId;
+
+                if (!clientIds.Contains(clientId))
+                    clientIds.Add(clientId);
+            }
+
+            if (clientIds.Count == 0)
+            {
+                reason = "유효한 출격 대상 clientId가 없습니다.";
+                return false;
+            }
+
+            reason = $"출격 대상 clientId 목록 확인 완료. Count={clientIds.Count}";
+            return true;
+        }
+
+        private bool TryBeginLoadTracking(string sceneName, IReadOnlyList<ulong> clientIds, out string reason)
+        {
+            if (!TryResolveGameSessionManager(out GameSessionManager gameSessionManager, out reason))
+                return false;
+
+            return gameSessionManager.BeginLoadTracking(sceneName, clientIds, out reason);
+        }
+
+        private void CancelLoadTracking(string reason)
+        {
+            if (!TryResolveGameSessionManager(out GameSessionManager gameSessionManager, out _))
+                return;
+
+            gameSessionManager.CancelLoadTracking(reason);
+        }
+
+        private bool TryResolveGameSessionManager(out GameSessionManager gameSessionManager, out string reason)
+        {
+            gameSessionManager = null;
+
+            if (ServiceLocator.TryGet<GameSessionManager>(out GameSessionManager registeredManager))
+                gameSessionManager = registeredManager;
+
+            if (gameSessionManager == null)
+                gameSessionManager = FindObjectOfType<GameSessionManager>();
+
+            if (gameSessionManager == null)
+            {
+                reason = "GameSessionManager를 찾을 수 없습니다.";
+                return false;
+            }
+
+            if (!gameSessionManager.IsSpawned)
+            {
+                reason = "GameSessionManager가 아직 Network Spawn되지 않았습니다.";
+                return false;
+            }
+
+            reason = "GameSessionManager 확인 완료";
             return true;
         }
 
