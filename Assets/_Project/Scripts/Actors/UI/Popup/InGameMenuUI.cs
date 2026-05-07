@@ -12,6 +12,7 @@ namespace DeadZone.Actors.UI
     public class InGameMenuUI : MonoBehaviour
     {
         private const string SettingPopupName = "Popup_Setting";
+        private const int PopupSortingOrder = 10000;
 
         [Header("팝업")]
         [SerializeField] private GameObject popupPause;
@@ -24,7 +25,9 @@ namespace DeadZone.Actors.UI
         [Header("마우스 설정")]
         [SerializeField] private bool lockCursorOnResume = true;
 
-        private bool IsMenuOpen => IsPopupVisible(popupPause);
+        public bool IsMenuOpen => IsPopupVisible(popupPause);
+
+        public bool BlocksOtherInput => IsMenuOpen || IsSettingOpen();
 
         private void Awake()
         {
@@ -50,6 +53,7 @@ namespace DeadZone.Actors.UI
         {
             SetPopupVisible(popupPause, true);
             EnsurePopupScale(popupPause);
+            BringPopupToFront(popupPause);
 
             CursorStateController.PushUiOwner(this);
         }
@@ -72,6 +76,7 @@ namespace DeadZone.Actors.UI
             else
                 SetPopupVisible(popupSetting, true);
 
+            BringPopupToFront(popupSetting);
             CursorStateController.PushUiOwner(this);
         }
 
@@ -105,6 +110,19 @@ namespace DeadZone.Actors.UI
 #else
             Application.Quit();
 #endif
+        }
+
+        public static bool IsAnyMenuBlockingInput()
+        {
+            InGameMenuUI[] menus = Resources.FindObjectsOfTypeAll<InGameMenuUI>();
+            for (int i = 0; i < menus.Length; i++)
+            {
+                InGameMenuUI menu = menus[i];
+                if (menu != null && menu.gameObject.scene.IsValid() && menu.BlocksOtherInput)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool IsPopupVisible(GameObject popup)
@@ -174,6 +192,28 @@ namespace DeadZone.Actors.UI
         {
             if (popup != null && popup.transform.localScale == Vector3.zero)
                 popup.transform.localScale = Vector3.one;
+        }
+
+        private void BringPopupToFront(GameObject popup)
+        {
+            if (popup == null)
+                return;
+
+            popup.transform.SetAsLastSibling();
+            EnsureTopSortingCanvas(popup);
+        }
+
+        private void EnsureTopSortingCanvas(GameObject popup)
+        {
+            Canvas canvas = popup.GetComponent<Canvas>();
+            if (canvas == null)
+                canvas = popup.AddComponent<Canvas>();
+
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = PopupSortingOrder;
+
+            if (popup.GetComponent<GraphicRaycaster>() == null)
+                popup.AddComponent<GraphicRaycaster>();
         }
 
         private bool IsSettingOpen()
