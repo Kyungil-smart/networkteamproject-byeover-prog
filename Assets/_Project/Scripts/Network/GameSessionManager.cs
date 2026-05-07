@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
-using System.Text;
+
 using DeadZone.Core;
+
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,15 +10,17 @@ using UnityEngine.SceneManagement;
 namespace DeadZone.Network
 {
     /// <summary>
-    /// 게임 씬 이동 이후 expected client들의 로드 완료 상태를 서버 기준으로 추적한다.
-    /// Player Spawn은 담당하지 않으며, 후속 Spawn 시스템이 사용할 수 있는 완료 상태만 제공한다.
+    /// 출격 씬으로 이동한 뒤 expected client들이 모두 로드를 완료했는지 서버에서 추적한다.
+    /// 클라이언트는 인원 수와 완료 여부만 읽고, 실제 clientId 목록은 서버 내부에서만 관리한다.
     /// </summary>
     public sealed class GameSessionManager : NetworkBehaviour
     {
         private static GameSessionManager instance;
 
-        // 클라이언트는 현재 로딩 진행률만 읽는다.
-        // expected / loaded clientId 목록 자체는 서버 내부 상태로만 관리한다.
+        [Header("==== 디버그 ====")]
+        [Tooltip("로드 추적 시작, 개별 Client LoadComplete 수신, 전원 로드 완료 로그를 출력합니다.")]
+        [SerializeField] private bool logDebug;
+
         private readonly NetworkVariable<int> expectedCount = new(
             0,
             NetworkVariableReadPermission.Everyone,
@@ -32,27 +36,25 @@ namespace DeadZone.Network
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
-        [Header("==== 디버그 ====")]
-        [Tooltip("로드 추적 시작, 개별 Client 로드 완료, 전원 로드 완료 로그를 출력합니다.")]
-        [SerializeField] private bool logDebug;
-
-        // 서버 내부 추적용 목록이다.
-        // HashSet을 사용해 같은 clientId의 중복 LoadComplete 처리를 방어한다.
         private readonly HashSet<ulong> expectedClientIds = new();
         private readonly HashSet<ulong> loadedClientIds = new();
 
+        // SpawnPoint 배정은 출격 직전 로비에서 수집한 clientId 순서를 기준으로 한다.
+        // HashSet은 포함 여부 검증용, List는 순서 보존용으로 역할을 분리한다.
+        private readonly List<ulong> expectedClientIdOrder = new();
+
         private string targetSceneName;
         private bool isTracking;
-        private bool isSceneEventSubscribed;
+        private bool subscribedToSceneEvents;
         private bool isRegisteredToServiceLocator;
-
-        public int ExpectedCountValue => expectedCount.Value;
-        public int LoadedCountValue => loadedCount.Value;
-        public bool IsAllClientsLoaded => isAllClientsLoaded.Value;
 
         public NetworkVariable<int> ExpectedCount => expectedCount;
         public NetworkVariable<int> LoadedCount => loadedCount;
         public NetworkVariable<bool> AllClientsLoadedState => isAllClientsLoaded;
+
+        public bool IsAllClientsLoaded => isAllClientsLoaded.Value;
+        public int ExpectedClientCount => expectedCount.Value;
+        public int LoadedClientCount => loadedCount.Value;
 
         private void Awake()
         {
@@ -69,73 +71,85 @@ namespace DeadZone.Network
         public override void OnNetworkSpawn()
         {
             RegisterToServiceLocator();
-            SubscribeSceneEventsIfServer();
 
             if (IsServer)
-                ResetState();
+            {
+                ResetTrackingState();
+                SubscribeSceneEvents();
+            }
 
-            LogDebug($"OnNetworkSpawn. IsServer={IsServer}, IsClient={IsClient}, IsSpawned={IsSpawned}");
+            LogDebug($"네트워크 Spawn 완료. 서버={IsServer}, 클라이언트={IsClient}, Spawn상태={IsSpawned}");
         }
 
         public override void OnNetworkDespawn()
         {
-            UnsubscribeSceneEvents();
-            ClearLocalTrackingCollections();
+            if (IsServer)
+                UnsubscribeSceneEvents();
+
             UnregisterFromServiceLocator();
 
-            LogDebug("OnNetworkDespawn.");
+            LogDebug("네트워크 Despawn 완료.");
         }
 
         private void OnDestroy()
         {
-            UnsubscribeSceneEvents();
-            UnregisterFromServiceLocator();
-
             if (instance == this)
                 instance = null;
+
+            UnsubscribeSceneEvents();
+            UnregisterFromServiceLocator();
         }
 
         /// <summary>
-        /// 씬 로드 시작 직전에 호출한다.
-        /// 이 메서드가 먼저 실행되어야 이후 OnLoadComplete 이벤트를 놓치지 않는다.
+        /// 서버가 출격 씬 로드를 시작하기 직전에 호출한다.
+        /// 전달받은 clientId 순서는 이후 SpawnPoint 배정 순서로 사용된다.
         /// </summary>
         public bool BeginLoadTracking(string sceneName, IReadOnlyList<ulong> clientIds, out string reason)
         {
+            reason = string.Empty;
+
             if (!IsServer)
             {
                 reason = "서버에서만 로드 완료 추적을 시작할 수 있습니다.";
+                LogDebug(reason);
                 return false;
             }
 
             if (!IsSpawned)
             {
                 reason = "GameSessionManager가 아직 Network Spawn되지 않았습니다.";
+                LogDebug(reason);
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(sceneName))
             {
-                reason = "로드 완료를 추적할 대상 씬 이름이 비어 있습니다.";
+                reason = "대상 씬 이름이 비어 있습니다.";
+                LogDebug(reason);
                 return false;
             }
 
             if (clientIds == null || clientIds.Count == 0)
             {
                 reason = "로드 완료를 기다릴 clientId 목록이 비어 있습니다.";
+                LogDebug(reason);
                 return false;
             }
 
-            SubscribeSceneEventsIfServer();
-
-            expectedClientIds.Clear();
-            loadedClientIds.Clear();
+            ClearLocalTrackingCollections();
 
             for (int i = 0; i < clientIds.Count; i++)
-                expectedClientIds.Add(clientIds[i]);
+            {
+                ulong clientId = clientIds[i];
+
+                if (expectedClientIds.Add(clientId))
+                    expectedClientIdOrder.Add(clientId);
+            }
 
             if (expectedClientIds.Count == 0)
             {
-                reason = "유효한 expected clientId가 없습니다.";
+                reason = "중복 제거 후 로드 완료를 기다릴 clientId 목록이 비어 있습니다.";
+                LogDebug(reason);
                 return false;
             }
 
@@ -146,62 +160,73 @@ namespace DeadZone.Network
             loadedCount.Value = 0;
             isAllClientsLoaded.Value = false;
 
-            reason = $"로드 완료 추적 시작. Scene={targetSceneName}, Expected={expectedClientIds.Count}";
-            LogDebug($"{reason}, ClientIds={FormatClientIds(expectedClientIds)}");
+            reason = "로드 완료 추적을 시작했습니다.";
+
+            LogDebug(
+                $"로드 완료 추적 시작. 대상씬={targetSceneName}, " +
+                $"기대인원={expectedCount.Value}, 대상ClientIds={FormatClientIds(expectedClientIdOrder)}");
+
             return true;
         }
 
         /// <summary>
-        /// 씬 로드 요청 실패처럼 추적을 유지하면 안 되는 상황에서 호출한다.
+        /// 씬 로드 요청이 실패했거나 출격 흐름을 되돌려야 할 때 서버 상태를 초기화한다.
         /// </summary>
         public void CancelLoadTracking(string reason)
         {
-            if (!IsServer) return;
+            if (!IsServer)
+                return;
 
-            ClearLocalTrackingCollections();
+            LogDebug($"로드 완료 추적 취소. 사유={reason}");
+            ResetTrackingState();
+        }
 
-            targetSceneName = string.Empty;
-            isTracking = false;
+        /// <summary>
+        /// PlayerSpawnManager가 Spawn 대상 순서를 읽을 때 사용한다.
+        /// 내부 List를 직접 노출하지 않기 위해 호출자가 넘긴 버퍼에 복사한다.
+        /// </summary>
+        public void GetExpectedClientIdOrder(List<ulong> destination)
+        {
+            if (destination == null)
+                throw new ArgumentNullException(nameof(destination));
 
-            expectedCount.Value = 0;
-            loadedCount.Value = 0;
-            isAllClientsLoaded.Value = false;
+            destination.Clear();
 
-            LogDebug($"로드 완료 추적 취소: {reason}");
+            for (int i = 0; i < expectedClientIdOrder.Count; i++)
+                destination.Add(expectedClientIdOrder[i]);
         }
 
         private void HandleLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
         {
-            if (!IsServer) return;
-            if (!isTracking) return;
+            if (!IsServer)
+                return;
+
+            if (!isTracking)
+                return;
 
             if (loadSceneMode != LoadSceneMode.Single)
-            {
-                LogDebug($"LoadSceneMode가 Single이 아니므로 무시합니다. ClientId={clientId}, Mode={loadSceneMode}");
                 return;
-            }
 
-            if (sceneName != targetSceneName)
-            {
-                LogDebug($"대상 씬과 다른 LoadComplete를 무시합니다. ClientId={clientId}, Scene={sceneName}, Target={targetSceneName}");
+            if (!string.Equals(sceneName, targetSceneName, StringComparison.Ordinal))
                 return;
-            }
 
             if (!expectedClientIds.Contains(clientId))
             {
-                LogDebug($"expected 목록에 없는 Client LoadComplete를 무시합니다. ClientId={clientId}");
+                LogDebug($"로드 완료 이벤트 무시. 출격 대상이 아닌 ClientId입니다. ClientId={clientId}");
                 return;
             }
 
             if (!loadedClientIds.Add(clientId))
             {
-                LogDebug($"이미 로드 완료 처리된 Client입니다. ClientId={clientId}");
+                LogDebug($"중복 로드 완료 이벤트 무시. ClientId={clientId}");
                 return;
             }
 
             loadedCount.Value = loadedClientIds.Count;
 
-            LogDebug($"Client 로드 완료. ClientId={clientId}, Loaded={loadedCount.Value}/{expectedCount.Value}");
+            LogDebug(
+                $"Client 로드 완료 집계. ClientId={clientId}, " +
+                $"로드완료={loadedCount.Value}/{expectedCount.Value}");
 
             if (loadedClientIds.Count < expectedClientIds.Count)
                 return;
@@ -209,43 +234,71 @@ namespace DeadZone.Network
             isAllClientsLoaded.Value = true;
             isTracking = false;
 
-            LogDebug($"모든 expected Client가 로드 완료했습니다. Scene={targetSceneName}");
+            LogDebug(
+                $"모든 출격 대상 Client 로드 완료. " +
+                $"로드완료={loadedCount.Value}/{expectedCount.Value}");
         }
 
-        private void SubscribeSceneEventsIfServer()
+        private void ResetTrackingState()
         {
-            if (!IsServer) return;
-            if (isSceneEventSubscribed) return;
+            ClearLocalTrackingCollections();
 
-            Unity.Netcode.NetworkManager networkManager = Unity.Netcode.NetworkManager.Singleton;
+            targetSceneName = string.Empty;
+            isTracking = false;
 
-            if (networkManager == null || networkManager.SceneManager == null)
+            if (!IsServer || !IsSpawned)
+                return;
+
+            expectedCount.Value = 0;
+            loadedCount.Value = 0;
+            isAllClientsLoaded.Value = false;
+
+            LogDebug("로드 추적 상태 초기화 완료.");
+        }
+
+        private void ClearLocalTrackingCollections()
+        {
+            expectedClientIds.Clear();
+            loadedClientIds.Clear();
+            expectedClientIdOrder.Clear();
+        }
+
+        private void SubscribeSceneEvents()
+        {
+            if (subscribedToSceneEvents)
+                return;
+
+            if (NetworkManager == null || NetworkManager.SceneManager == null)
             {
-                LogDebug("NetworkSceneManager를 찾을 수 없어 OnLoadComplete를 구독하지 못했습니다.");
+                LogDebug("NetworkSceneManager를 찾을 수 없어 로드 완료 이벤트를 구독하지 못했습니다.");
                 return;
             }
 
-            networkManager.SceneManager.OnLoadComplete += HandleLoadComplete;
-            isSceneEventSubscribed = true;
+            NetworkManager.SceneManager.OnLoadComplete += HandleLoadComplete;
+            subscribedToSceneEvents = true;
 
-            LogDebug("NetworkSceneManager.OnLoadComplete 구독 완료.");
+            LogDebug("NetworkSceneManager 로드 완료 이벤트 구독 완료.");
         }
 
         private void UnsubscribeSceneEvents()
         {
-            if (!isSceneEventSubscribed) return;
+            if (!subscribedToSceneEvents)
+                return;
 
-            Unity.Netcode.NetworkManager networkManager = Unity.Netcode.NetworkManager.Singleton;
+            NetworkManager networkManager = NetworkManager.Singleton;
 
             if (networkManager != null && networkManager.SceneManager != null)
                 networkManager.SceneManager.OnLoadComplete -= HandleLoadComplete;
 
-            isSceneEventSubscribed = false;
+            subscribedToSceneEvents = false;
+
+            LogDebug("NetworkSceneManager 로드 완료 이벤트 구독 해제 완료.");
         }
 
         private void RegisterToServiceLocator()
         {
-            if (isRegisteredToServiceLocator) return;
+            if (isRegisteredToServiceLocator)
+                return;
 
             ServiceLocator.Register(this);
             isRegisteredToServiceLocator = true;
@@ -255,49 +308,29 @@ namespace DeadZone.Network
 
         private void UnregisterFromServiceLocator()
         {
-            if (!isRegisteredToServiceLocator) return;
+            if (!isRegisteredToServiceLocator)
+                return;
 
             ServiceLocator.Unregister<GameSessionManager>();
             isRegisteredToServiceLocator = false;
+
+            LogDebug("ServiceLocator 등록 해제 완료.");
         }
 
-        private void ResetState()
+        private string FormatClientIds(IReadOnlyList<ulong> clientIds)
         {
-            ClearLocalTrackingCollections();
+            if (clientIds == null || clientIds.Count == 0)
+                return "(비어 있음)";
 
-            targetSceneName = string.Empty;
-            isTracking = false;
-
-            expectedCount.Value = 0;
-            loadedCount.Value = 0;
-            isAllClientsLoaded.Value = false;
-        }
-
-        private void ClearLocalTrackingCollections()
-        {
-            expectedClientIds.Clear();
-            loadedClientIds.Clear();
-        }
-
-        private string FormatClientIds(IEnumerable<ulong> clientIds)
-        {
-            StringBuilder builder = new();
-
-            foreach (ulong clientId in clientIds)
-            {
-                if (builder.Length > 0)
-                    builder.Append(", ");
-
-                builder.Append(clientId);
-            }
-
-            return builder.ToString();
+            return string.Join(", ", clientIds);
         }
 
         private void LogDebug(string message)
         {
-            if (!logDebug) return;
-            Debug.Log($"[GameSessionManager] {message}", this);
+            if (!logDebug)
+                return;
+
+            Debug.Log($"[게임 세션] {message}", this);
         }
     }
 }
