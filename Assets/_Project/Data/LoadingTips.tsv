@@ -1,0 +1,166 @@
+Category	Message	ImageKey
+Control	WASD로 이동합니다. 총알은 이동 시키지 못합니다.	Default
+Control	마우스로 조준점을 움직입니다. 커서가 곧 생존선입니다.	Default
+Control	좌클릭으로 발사합니다. 빗나간 탄은 사과하지 않습니다.	Default
+Control	우클릭으로 조준합니다. 급하면 쏘고, 살고 싶으면 조준하세요.	Default
+Control	R키로 재장전합니다. 빈 탄창으로 용기 내지 마세요.	Default
+Control	F키로 문, 상자, 시설과 상호작용합니다. 문은 어떻게 열죠?	Default
+Control	Tab키로 인벤토리를 엽니다. 정리는 생존자의 기본 소양입니다.	Default
+Control	M키로 지도를 확인합니다. 길 잃는 것도 전략은 아닙니다.	Default
+Control	Esc키로 메뉴를 엽니다. 현실 도피는 지원하지 않습니다.	Default
+Control	Space로 구르기를 사용할 수 있습니다. 총알보다 빠르진 않아도, 맞는 위치는 바꿀 수 있습니다.	Default
+Control	구르기는 스태미나를 소모합니다. 남발하면 멋있게 죽습니다.	Default
+Control	Shift를 누르고 있으면 달립니다. 도망도 전술입니다.	Default
+Control	1번은 보조무기, 2~3번은 주무기 슬롯입니다.	Default
+Control	4~9번은 퀵슬롯입니다. 회복템을 넣어두면 후회가 줄어듭니다.	Default
+Control	T키로 퀘스트 창을 확인할 수 있습니다. 목적 없는 파밍은 산책입니다.	Default
+Loot	무거운 장비를 많이 들면 이동이 느려집니다. 욕심도 무게가 있습니다.	Default
+Loot	인벤토리가 꽉 찼다면, 정말 필요한 것과 그냥 아까운 것을 구분하세요.	Default
+Loot	탄약 등급을 확인하세요. LP, BP, AP는 이름보다 결과가 다릅니다.	Default
+Loot	좋은 총보다 맞는 탄이 더 중요할 때가 있습니다.	Default
+Loot	값비싼 귀중품은 제작할 수 없습니다. 훔치듯 주워야 합니다.	Default
+Loot	잠긴 구역일수록 좋은 아이템이 나올 확률이 높습니다. 물론 죽을 확률도 높습니다.	Default
+Loot	아이템을 주웠다고 끝이 아닙니다. 탈출해야 진짜 내 것입니다.	Default
+Loot	가방에 들어간 아이템은 희망입니다. 사망하면 남의 희망이 됩니다.	Default
+Combat	방어구는 무적이 아닙니다. 수명을 조금 빌려줄 뿐입니다.	Default
+Combat	헬멧은 머리를 지켜줍니다. 생각은 직접 하셔야 합니다.	Default
+Combat	적이 보이지 않아도 소리를 들을 수 있습니다. 당신도 마찬가지입니다.	Default
+Combat	엄폐물은 장식이 아닙니다. 벽 뒤에서 생존하면 일단 팀원의 분노게이지는 줄어듭니다.	Default
+Combat	체력이 낮을 땐 싸움보다 탈출 지점이 더 좋은 친구입니다.	Default
+Extraction	탈출 지점에 도착해도 즉시 탈출되지는 않습니다. 끝까지 버티세요.	Default
+Extraction	탈출 카운트다운 중에는 주변을 확인하세요. 마지막 15초가 제일 깁니다.	Default
+Extraction	조건부 탈출 지점은 특정 아이템이나 퀘스트 조건이 필요할 수 있습니다.	Default
+Extraction	레이드는 파밍보다 탈출이 중요합니다. 죽은 사람의 인벤토리는 통계입니다.	Default
+Extraction	탈출에 성공하면 아이템은 보상이 됩니다. 실패하면 배경 설정이 됩니다.	Default
+Extraction	욕심내서 한 상자 더 열다가 모든 상자를 잃을 수 있습니다.	Default
+Extraction	살아 돌아오면 성장합니다. 죽어 돌아오면 교훈만 남습니다.	Default
+Hideout	은신처 시설을 업그레이드하면 생존에 필요한 물품 제작과 생존 능력이 강화됩니다.	Hideout
+Hideout	의료시설을 업그레이드하면 최대 체력이 증가합니다. 덜 죽는 건 아니지만, 조금 더 버팁니다.	MedicalFacility
+Hideout	의료시설은 최대 체력을 올려줍니다. 치료보다 좋은 건 안 맞는 거지만, 그건 어렵습니다.	MedicalFacility
+Hideout	의료시설 레벨이 오르면 생존력이 증가합니다. 총알 한 발 차이가 결과를 바꿀 수 있습니다.	MedicalFacility
+Hideout	의료시설은 레이드 전 몸 상태를 끌어올려줍니다. 전쟁터에 건강검진은 없습니다.	MedicalFacility
+Hideout	의료시설을 강화하면 최대 체력이 증가합니다. 준비된 몸은 준비된 장비만큼 중요합니다.	MedicalFacility
+Hideout	최대 체력이 높을수록 실수 한 번을 더 감당할 수 있습니다. 두 번은 장담하지 않습니다.	MedicalFacility
+Hideout	응급처치는 전장에서 하고, 체력 관리는 은신처에서 합니다.	MedicalFacility
+Hideout	의료시설은 사망을 막아주진 않습니다. 사망까지 가는 시간을 늘려줄 뿐입니다.	MedicalFacility
+Hideout	최대 체력 증가는 단순한 숫자가 아닙니다. 탈출 직전의 1초가 될 수도 있습니다.	MedicalFacility
+Hideout	레이드에서 살아남고 싶다면 총만 챙기지 말고 몸도 챙기세요.	MedicalFacility
+Hideout	헬스장은 소지 무게에 영향을 줍니다. 파밍도 근력입니다.	Kitchen
+Hideout	조리시설은 스테미너도움을 줍니다. 전쟁터에서도 밥은 중요합니다.	Kitchen
+Hideout	시설 업그레이드 재료는 버리지 마세요. 지금은 잡동사니, 나중엔 기반시설입니다.	Hideout
+Hideout	은신처는 안전합니다. 단, 당신의 정리 습관까지 구해주진 않습니다.	Hideout
+EasterEgg	전설 등급 JADE쨩 피규어는 0.1% 확률로 드랍됩니다. 발견했다면 오늘은 나가지 마세요. 운 다 썼습니다.	JadeFigure
+EasterEgg	JADE쨩 피규어를 찾았다면 보관하세요. 귀엽고, 희귀하고, 이상하게 강해집니다.	JadeFigure
+EasterEgg	0.1% 확률은 낮습니다. 하지만 사람은 원래 낮은 확률에 인생을 겁니다.	JadeFigure
+EasterEgg	JADE쨩 피규어는 단순한 장식품이 아닙니다. 누군가의 집착이 스탯으로 환산된 결과입니다.	JadeFigure
+EasterEgg	전설은 총구에서만 탄생하지 않습니다. 가끔 피규어 선반에서도 나옵니다.	JadeFigure
+EasterEgg	JADE쨩 피규어를 발견하면 팀원에게 말하지 마세요. 우정은 드랍률보다 낮을 수 있습니다.	JadeFigure
+EasterEgg	인싸 마이크를 발견했다면 조용히 챙기세요. 시끄러운 사람일수록 비싸게 팔립니다.	VolkimMicrophone
+EasterEgg	인싸 마이크는 전쟁터에서도 존재감을 잃지 않습니다. 문제는 적도 들을 수 있다는 겁니다.	VolkimMicrophone
+EasterEgg	말이 많은 장비는 보통 비쌉니다. 인싸 마이크도 예외는 아닙니다.	VolkimMicrophone
+EasterEgg	마이크를 들었다고 소통이 좋아지는 건 아닙니다. 그래도 가격은 좋습니다.	VolkimMicrophone
+EasterEgg	인싸 마이크는 귀중품입니다. 사용법은 모릅니다. 일단 챙기세요.	VolkimMicrophone
+EasterEgg	학습의 안경을 찾았다면 착용자의 지능이 오른다는 소문이 있습니다. 확인된 건 가격뿐입니다.	StudyGlasses
+EasterEgg	안경은 시야를 밝혀줍니다. 판단력까지 밝혀주진 않습니다.	StudyGlasses
+EasterEgg	학습의 안경은 귀중품입니다. 공부는 안 해도 돈은 됩니다.	StudyGlasses
+EasterEgg	좋은 안경은 먼 곳을 보게 해줍니다. 탈출 지점도 같이 보이면 좋겠군요.	StudyGlasses
+EasterEgg	학습의 안경을 주웠다면 책상보다 가방에 넣으세요. 여긴 도서관이 아닙니다.	StudyGlasses
+EasterEgg	두근두근 의존성은 책입니다. 읽으면 강해질 수도 있고, 프로젝트가 터질 수도 있습니다.	DependencyBook
+EasterEgg	의존성은 낮을수록 좋습니다. 하지만 이 책은 높을수록 수상합니다.	DependencyBook
+EasterEgg	두근두근 의존성을 발견했다면 조심하세요. 한 번 엮이면 빠져나오기 어렵습니다.	DependencyBook
+EasterEgg	이 책은 제작 재료가 아닐 수도 있습니다. 하지만 개발자의 심박수는 올립니다.	DependencyBook
+EasterEgg	두근두근 의존성은 전쟁보다 무섭다는 말이 있습니다. 특히 마감 전날에.	DependencyBook
+EasterEgg	승쨩 피규어는 아이템으로 존재하지 않습니다. 하지만 로딩 화면에서는 존재감을 주장합니다.	SeungwooFigure
+EasterEgg	기록상 승쨩 피규어는 드랍되지 않습니다. 목격담만 남아 있습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어를 봤다면 정상입니다. 아직 로딩 중이니까요.	SeungwooFigure
+EasterEgg	승쨩 피규어는 인벤토리에 들어가지 않습니다. 대신 기억에 남습니다.	SeungwooFigure
+EasterEgg	누군가는 전설 아이템을 찾고, 누군가는 승쨩 피규어를 봅니다. 둘 다 쉽게 설명되진 않습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어는 판매할 수 없습니다. 애초에 소유한 적도 없습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어가 보인다면 게임은 아직 멈추지 않았습니다. 당신의 정신력은 모르겠습니다.	SeungwooFigure
+EasterEgg	개발팀은 승쨩 피규어의 존재를 부정하지도, 인정하지도 않습니다.	SeungwooFigure
+EasterEgg	승쨩 피규어는 스탯을 올려주지 않습니다. 분위기는 올려줍니다.	SeungwooFigure
+EasterEgg	로딩이 길다면 승쨩 피규어를 감상하세요. 그것도 콘텐츠입니다.	SeungwooFigure&JadeFigure
+Humor	사망하면 가방을 잃습니다. 아마 누군가 가져갔을 겁니다.	Default
+Humor	의도가 명확해서 할 말이 없네요. 그래서 쐈습니다.	Default
+Humor	이 지역은 안전하지 않습니다. 안전했다면 게임이 아니었겠죠.	Default
+Humor	총알은 귀합니다. 적에게 기부하지 마세요.	Default
+Humor	오늘의 교훈: 살아남은 사람이 루팅합니다.	Default
+Humor	방심은 무료입니다. 대가는 비쌉니다.	Default
+Humor	팀원은 자산입니다. 가끔 움직이는 가방이기도 합니다.	Default
+Humor	적이 약해 보여도 방심하지 마세요. 당신도 그렇게 보입니다.	Default
+Humor	죽음은 빠르고, 로딩은 상대적으로 깁니다.	Default
+Humor	좋은 판단은 생존율을 올립니다. 나쁜 판단은 추억을 만듭니다.	Default
+Humor	전쟁터에서 가장 위험한 건 적이 아닐 수 있습니다. 욕심입니다.	Default
+Humor	가방이 무거워졌다면 마음도 무거워질 준비를 하세요.	Default
+Humor	퇴각은 패배가 아닙니다. 다음 판 입장권입니다.	Default
+Humor	적을 모두 잡을 필요는 없습니다. 살아서 나가면 됩니다.	Default
+Loot	살아서 나가야 전리품입니다.	Default
+Extraction	총알보다 탈출 시간이 더 소중할 때가 있습니다.	Default
+Loot	가방 정리는 전투 준비입니다.	Default
+Loot	희귀한 건 대체로 무겁거나 위험합니다.	Default
+Control	구르기는 회피용입니다. 관광용이 아닙니다.	Default
+Combat	적의 머리를 노리세요. 내 머리는 숨기세요.	Default
+Combat	좋은 장비는 생존율을 올립니다. 과신도 같이 올립니다.	Default
+Extraction	탈출 지점은 목적지이지 안전지대가 아닙니다.	Default
+Loot	한 칸짜리 아이템도 인생을 바꿀 수 있습니다.	Default
+Hideout	오늘의 파밍은 내일의 업그레이드입니다.	Hideout
+EasterEgg	0.1%는 낮습니다. 그래서 전설입니다.	JadeFigure
+EasterEgg	승쨩 피규어는 존재하지 않습니다. 아마도요.	SeungwooFigure
+Hideout	헬스장을 업그레이드하면 소지 무게 최대치가 증가합니다. 더 많이 들 수 있다는 건, 더 많이 잃을 수도 있다는 뜻입니다.	Default
+Hideout	헬스장은 소지 무게를 늘려줍니다. 욕심을 감당하려면 근력부터 키우세요.	Kitchen
+Hideout	헬스장 레벨이 오르면 더 많은 장비를 들 수 있습니다. 물론 살아서 들고 나와야 합니다.	Kitchen
+Hideout	파밍은 손이 아니라 허리로 하는 일입니다. 헬스장을 업그레이드하세요.	Kitchen
+Hideout	소지 무게가 늘어나면 선택지가 늘어납니다. 판단력까지 늘어나진 않습니다.	Kitchen
+Hideout	조리 시설을 업그레이드하면 최대 스태미나가 증가합니다. 잘 먹어야 오래 도망칩니다.	Kitchen
+Hideout	전쟁터에서도 밥은 중요합니다. 조리 시설은 다음 레이드의 체력을 준비합니다.	Kitchen
+Hideout	조리 시설 레벨이 오르면 스태미나가 증가합니다. 굶주린 생존자는 오래 뛰지 못합니다.	Kitchen
+Hideout	좋은 식사는 좋은 탄창만큼 중요합니다. 둘 다 없으면 오래 버티기 어렵습니다.	Kitchen
+Hideout	달리고, 구르고, 살아남으려면 먼저 먹어야 합니다.	Kitchen
+Hideout	작업대 레벨이 오르면 더 높은 등급의 아이템을 제작할 수 있습니다.	Default
+Hideout	좋은 장비는 운으로 얻을 수도 있지만, 작업대에서는 계획으로 만듭니다.	Default
+Hideout	작업대를 업그레이드하면 제작 가능한 장비 등급이 확장됩니다. 총알도 준비된 사람을 좋아합니다.	Default
+Hideout	레이드에서 주운 잡동사니는 작업대 앞에서 장비가 됩니다.	Default
+Hideout	작업대는 폐품을 생존 수단으로 바꿉니다. 기적은 아니고 제작입니다.	Default
+Hideout	침실을 업그레이드하면 최대 스태미나가 증가합니다. 잠도 생존 전략입니다.	Default
+Hideout	잘 쉬는 생존자가 더 오래 뜁니다. 침실 업그레이드를 무시하지 마세요.	Default
+Hideout	침실 레벨이 오르면 스태미나 여유가 늘어납니다. 피로한 몸은 전장에서 오래 못 버팁니다.	Default
+Hideout	침실은 전투 시설이 아닙니다. 하지만 다음 전투를 버티게 만듭니다.	Default
+Hideout	휴식은 사치가 아닙니다. 다음 레이드의 보험 같은 겁니다.	Default
+EasterEgg	제이드는 승쨩을 무시하는 척합니다. 하지만 드랍 로그는 누구보다 먼저 확인합니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드를 이길 수 없다고 말합니다. 이상하게 매번 따라갑니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드와 승쨩이 같은 화면에 보인다면 조심하세요. 로딩보다 감정선이 더 무겁습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드가 싫다고 했습니다. 그래서 오늘도 가장 먼저 찾고 있습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩을 귀찮아합니다. 단, 누가 먼저 건드리면 이야기가 달라집니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩과 제이드는 사이가 나쁩니다. 정확히는 남이 보면 사이가 좋아 보일 만큼 나쁩니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드 피규어를 획득했다면 승쨩에게 자랑하지 마세요. 반응이 귀찮아질 수 있습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드 피규어를 필요 없다고 말했습니다. 아직 버리지는 않았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩의 작전을 비웃습니다. 문제는 그 작전이 가끔 통한다는 겁니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩과 제이드가 함께 있다면, 전투보다 말싸움이 먼저 시작될 수 있습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“딱히 걱정한 건 아니거든?” 제이드는 그렇게 말하고 탈출 지점을 먼저 확인했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“흥, 네가 죽으면 귀찮아질 뿐이야.” 제이드는 회복 아이템을 건넸습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“착각하지 마. 이번만 도와주는 거니까.” 제이드의 이번은 벌써 열 번째입니다.	SeungwooFigure&JadeFigure
+EasterEgg	“제이드 없어도 할 수 있거든?” 승쨩은 그렇게 말하고 3초 뒤 도움을 요청했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“이건 전략적 동행이야.” 승쨩은 제이드 뒤에 숨어 말했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“누가 네 걱정을 한다고 했어?” 제이드는 이미 탄창을 갈아 끼우고 있었습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“너 때문이 아니야. 전리품 때문이야.” 승쨩은 제이드 쪽으로 달렸습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“같이 가자는 말은 안 했어.” 제이드는 승쨩이 따라오는 걸 막지 않았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“이번엔 내가 구해준 거다?” 승쨩은 방금 제이드에게 구조받았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	“흥, 고맙다는 말은 됐어.” 제이드는 들리지 않을 만큼 작게 웃었습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩을 신뢰하지 않습니다. 그래도 같은 탈출 지점을 향합니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드를 라이벌이라 부릅니다. 제이드는 아직 인정하지 않았습니다.	SeungwooFigure&JadeFigure
+EasterEgg	애증 관계의 동료와 레이드에 들어갈 땐, 총알보다 대화 거리를 조심하세요.	SeungwooFigure&JadeFigure
+EasterEgg	제이드와 승쨩은 자주 다툽니다. 다만 적이 끼어들면 우선순위가 바뀝니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드의 잔소리가 싫다고 합니다. 이상하게 생존율은 올라갑니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드의 독설은 방어구보다 얇지만, 승쨩에게는 더 아프게 들어갑니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩과 제이드는 서로를 믿지 않는다고 말합니다. 전투 기록은 다르게 말합니다.	SeungwooFigure&JadeFigure
+EasterEgg	둘이 싸우기 시작했다면 아직 안전한 겁니다. 진짜 위험하면 말수가 줄어듭니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드는 승쨩을 버리고 간 적이 없습니다. 앞서 갔을 뿐입니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩은 제이드에게 지지 않았다고 주장합니다. 결과창은 조용히 반박합니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드: “바보야, 그쪽은 위험하잖아.” 승쨩은 이미 그쪽으로 갔습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩: “계획대로야.” 제이드: “그 말 한 뒤로 성공한 적 없잖아.”	SeungwooFigure&JadeFigure
+EasterEgg	제이드: “정말 손이 많이 가네.” 승쨩은 그 말을 칭찬으로 받아들였습니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩: “나 없으면 심심하잖아?” 제이드는 재장전으로 대답했습니다.	SeungwooFigure&JadeFigure
+EasterEgg	제이드: “이번만이야.” 시스템은 해당 대사를 반복 재생 중입니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩: “이건 운명이야.” 제이드: “그건 네 착각이야.”	SeungwooFigure&JadeFigure
+EasterEgg	제이드가 화난 것처럼 보인다면 정상입니다. 승쨩이 근처에 있다는 뜻입니다.	SeungwooFigure&JadeFigure
+EasterEgg	승쨩이 조용하다면 위험 신호입니다. 제이드가 먼저 확인하러 갑니다.	SeungwooFigure&JadeFigure
