@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: RAM
   displayName: "\uB7A8"
-  description: 
+  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: NASA\uC5D0\uC11C \uC4F0\uC774\uB294
+    \uD2B9\uC218\uC6A9 \uC8FC\uAE30\uC5B5\uC7A5\uCE58"
   icon: {fileID: 21300000, guid: 6c6dbd5886f08fa438fb58cb1d1fcde1, type: 3}
   category: 7
   rarity: 2

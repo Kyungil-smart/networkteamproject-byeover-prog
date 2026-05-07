@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: BrokenLCD
   displayName: "\uBD80\uC11C\uC9C4 LCD"
-  description: 
+  description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC6A9\uB3C4: LG\uAC00 \uBC84\uB9B0
+    \uBD80\uC11C\uC9C4 LCD"
   icon: {fileID: 21300000, guid: 71c607f8fd72a054ba314432ef0b4ad9, type: 3}
   category: 7
   rarity: 0
   isValuable: 1
-  gridSize: {x: 1, y: 2}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 1.5
   baseSellPrice: 600

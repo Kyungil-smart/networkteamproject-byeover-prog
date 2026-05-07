@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f010173fe70edd41a5315be8988a8e6, type: 3}
+  m_Name: Armor_C6
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ArmorDataSO
+  itemID: Armor_C6
+  displayName: "C6 \uC544\uBA38"
+  description: "- \uB4F1\uAE09: \uC5D0\uD53D\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
+    \uC804\uC2E0 \uBCF4\uD638(\uB2E4\uB9AC/\uBA38\uB9AC \uC81C\uC678)\n2. \uB0B4\uAD6C\uB3C4:
+    350\n3. \uC774\uC18D \uD328\uB110\uD2F0: -20%"
+  icon: {fileID: 0}
+  category: 2
+  rarity: 3
+  isValuable: 0
+  gridSize: {x: 1, y: 1}
+  maxStackSize: 1
+  weightKg: 0.1
+  baseSellPrice: 60000
+  worldPrefab: {fileID: 0}
+  armorClass: 6
+  maxDurability: 350
+  moveSpeedPenalty: -0.2
+  blockChance: 0.35
+  protectedParts: 01

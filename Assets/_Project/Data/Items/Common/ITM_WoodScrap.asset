@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: WoodScrap
   displayName: "\uB098\uBB34 \uC870\uAC01"
-  description: 
+  description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC124\uBA85: \uC740\uC2E0\uCC98
+    \uC6A9 \uC544\uC774\uD15C(\uC870\uB9AC \uC2DC\uC124)"
   icon: {fileID: 21300000, guid: e8a1204bf43176e4e98bb4a31dbdae55, type: 3}
   category: 8
   rarity: 0

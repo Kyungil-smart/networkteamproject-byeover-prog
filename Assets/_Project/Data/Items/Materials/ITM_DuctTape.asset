@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: DuctTape
   displayName: "\uB355 \uD14C\uC774\uD504"
-  description: 
+  description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
+    \uC6A9 \uC544\uC774\uD15C(\uC791\uC5C5\uB300)"
   icon: {fileID: 21300000, guid: 7da48274817322b42b4e67954d1df175, type: 3}
   category: 8
   rarity: 0

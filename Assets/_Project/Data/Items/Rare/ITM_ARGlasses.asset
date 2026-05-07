@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: ARGlasses
   displayName: "AR\uAE30\uAE30"
-  description: 
+  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4:  \uAD70\uC0AC\uC6A9
+    \uC601\uC0C1 \uBD84\uC11D\uAE30"
   icon: {fileID: 21300000, guid: f5d8ad825a4aa5f4e8d01b3e8ee618bc, type: 3}
   category: 7
   rarity: 2
   isValuable: 1
-  gridSize: {x: 1, y: 2}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.4
   baseSellPrice: 7000
