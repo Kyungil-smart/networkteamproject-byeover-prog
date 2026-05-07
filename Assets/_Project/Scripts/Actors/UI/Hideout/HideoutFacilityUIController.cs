@@ -1,11 +1,9 @@
 using UnityEngine;
 
-using DeadZone.Actors.UI;
-
 namespace DeadZone.Actors.UI.Hideout
 {
     // 은신처 시설 UI의 전체 흐름을 관리
-    // 시설 버튼 선택, 카메라 이동 요청, 시설 열기, 뒤로가기를 담당
+    // 시설 선택, 카메라 이동, 시설 열기 버튼 표시, 업그레이드 창 열기를 담당
     [DisallowMultipleComponent]
     public sealed class HideoutFacilityUIController : MonoBehaviour
     {
@@ -20,25 +18,25 @@ namespace DeadZone.Actors.UI.Hideout
         private GameObject openFacilityButtonRoot;
 
         [SerializeField]
-        [Tooltip("좌측 시설 패널과 우측 인벤토리 패널을 묶는 전체 루트입니다.")]
+        [Tooltip("새 시설 업그레이드 창입니다. FacilityContentRoot 대신 사용합니다.")]
+        private FacilityUpgradeWindowUI facilityUpgradeWindowUI;
+
+        [Header("기존 UI 루트")]
+        [SerializeField]
+        [Tooltip("기존 FacilityContentRoot입니다. 새 업그레이드 UI에서는 사용하지 않습니다.")]
         private GameObject facilityContentRoot;
 
         [SerializeField]
-        [Tooltip("화면 중앙 좌측의 시설 정보 패널입니다.")]
+        [Tooltip("기존 좌측 시설 패널입니다. 새 업그레이드 UI에서는 사용하지 않습니다.")]
         private GameObject leftFacilityPanelRoot;
 
         [SerializeField]
-        [Tooltip("화면 중앙 우측의 플레이어 인벤토리 패널입니다.")]
+        [Tooltip("기존 우측 인벤토리 패널입니다. 새 업그레이드 UI에서는 사용하지 않습니다.")]
         private GameObject rightInventoryPanelRoot;
-
-        [Header("인벤토리")]
-        [SerializeField]
-        [Tooltip("우측 플레이어 인벤토리 UI입니다. 아직 없으면 비워둬도 됩니다.")]
-        private InventoryUI inventoryUI;
 
         [Header("동작 옵션")]
         [SerializeField]
-        [Tooltip("다른 시설을 선택할 때 열려 있던 좌우 패널을 자동으로 닫습니다.")]
+        [Tooltip("다른 시설을 선택할 때 열려 있던 업그레이드 창을 닫습니다.")]
         private bool closeContentWhenSelectFacility = true;
 
         [SerializeField]
@@ -67,12 +65,10 @@ namespace DeadZone.Actors.UI.Hideout
             if (cameraFacilitySelector == null)
                 cameraFacilitySelector = FindFirstObjectByType<HideoutCameraFacilitySelector>();
 
-            if (inventoryUI == null)
-                inventoryUI = FindFirstObjectByType<InventoryUI>(FindObjectsInactive.Include);
+            if (facilityUpgradeWindowUI == null)
+                facilityUpgradeWindowUI = FindFirstObjectByType<FacilityUpgradeWindowUI>(FindObjectsInactive.Include);
         }
 
-        /// 상단 시설 버튼에서 호출
-        /// 시설을 선택하고 카메라를 해당 시설 시점으로 이동
         public void SelectFacility(HideoutCameraFacilitySelector.FacilityView facilityView)
         {
             if (facilityView == HideoutCameraFacilitySelector.FacilityView.None)
@@ -99,8 +95,6 @@ namespace DeadZone.Actors.UI.Hideout
             DebugLog($"{facilityView} 시설을 선택했습니다.");
         }
 
-        // 시설열기 버튼에서 호출
-        // 선택된 시설의 좌측 패널과 우측 인벤토리 패널
         public void OpenSelectedFacility()
         {
             if (selectedFacility == HideoutCameraFacilitySelector.FacilityView.None)
@@ -109,18 +103,18 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            SetContentVisible(true);
+            if (facilityUpgradeWindowUI == null)
+            {
+                Debug.LogWarning("[HideoutFacilityUIController] FacilityUpgradeWindowUI가 연결되지 않았습니다.", this);
+                return;
+            }
 
-            if (inventoryUI != null)
-                inventoryUI.Open();
-            else if (rightInventoryPanelRoot != null)
-                rightInventoryPanelRoot.SetActive(true);
+            HideLegacyContentRoot();
+            facilityUpgradeWindowUI.Open(selectedFacility);
 
-            DebugLog($"{selectedFacility} 시설 UI를 열었습니다.");
+            DebugLog($"{selectedFacility} 시설 업그레이드 창을 열었습니다.");
         }
 
-        /// 뒤로가기 버튼에서 호출
-        /// 시설 UI를 닫고 기본 은신처 카메라 시점으로 복귀
         public void CloseFacilityView()
         {
             selectedFacility = HideoutCameraFacilitySelector.FacilityView.None;
@@ -134,15 +128,12 @@ namespace DeadZone.Actors.UI.Hideout
             DebugLog("시설 UI를 닫고 기본 시점으로 돌아갑니다.");
         }
 
-        /// <summary>
-        /// 좌우 패널만 닫습니다. 카메라 시점은 변경하지 않습니다.
-        /// </summary>
         public void CloseContentOnly()
         {
-            if (inventoryUI != null)
-                inventoryUI.Close();
+            if (facilityUpgradeWindowUI != null)
+                facilityUpgradeWindowUI.Close();
 
-            SetContentVisible(false);
+            HideLegacyContentRoot();
         }
 
         public void SelectWorkbench()
@@ -186,16 +177,16 @@ namespace DeadZone.Actors.UI.Hideout
                 openFacilityButtonRoot.SetActive(visible);
         }
 
-        private void SetContentVisible(bool visible)
+        private void HideLegacyContentRoot()
         {
             if (facilityContentRoot != null)
-                facilityContentRoot.SetActive(visible);
+                facilityContentRoot.SetActive(false);
 
             if (leftFacilityPanelRoot != null)
-                leftFacilityPanelRoot.SetActive(visible);
+                leftFacilityPanelRoot.SetActive(false);
 
             if (rightInventoryPanelRoot != null)
-                rightInventoryPanelRoot.SetActive(visible);
+                rightInventoryPanelRoot.SetActive(false);
         }
 
         private void DebugLog(string message)
