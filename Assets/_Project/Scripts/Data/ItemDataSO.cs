@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-
+using DeadZone.Core;
 
 namespace DeadZone.Core
 {

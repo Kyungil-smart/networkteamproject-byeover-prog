@@ -686,11 +686,8 @@ namespace DeadZone.Editor
                 {
                     new() { type = ObjectiveType.Kill, targetID = "Boss_MilitaryBase", requiredCount = 1, location = "군사 지역" }
                 },
-                new QuestReward[]
-                {
-                    new() { type = RewardType.Item, itemID = "CrashSite_Key", amount = 1 }
-                },
-                "", "Q3", false);
+                null,
+                "MapA_Zone4", "Q3", false);
 
             // ── Q5: 스테이지 2 이동 ──
             count += CreateQuest(folder, "Q5_MoveToStage2", "Q5", "스테이지 2 진입",
