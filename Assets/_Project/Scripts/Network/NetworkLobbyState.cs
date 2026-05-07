@@ -24,12 +24,12 @@ namespace DeadZone.Network
         [Header("==== 디버그 ====")]
         [Tooltip("로비 상태 변경 로그를 출력할지 여부")]
         [SerializeField] private bool logDebug = false;
-        
+
         private NetworkList<LobbyPlayerState> players;
 
         /// <summary>
-        /// UI 계층에서 읽기와 OnListChanged 구독 용도로 사용
-        /// 목록 변경은 서버 메서드에서만 처리
+        /// UI 계층에서 읽기와 OnListChanged 구독 용도로 사용합니다.
+        /// 목록 변경은 서버 메서드에서만 처리합니다.
         /// </summary>
         public NetworkList<LobbyPlayerState> Players => players;
 
@@ -75,7 +75,7 @@ namespace DeadZone.Network
         }
 
         /// <summary>
-        /// 로컬 플레이어의 표시 이름 제출 요청을 서버에서 처리
+        /// 로컬 플레이어의 표시 이름 제출 요청을 서버에서 처리합니다.
         /// ClientId는 클라이언트가 보내지 않고 SenderClientId로 판별합니다.
         /// </summary>
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -87,9 +87,9 @@ namespace DeadZone.Network
             ulong senderClientId = rpcParams.Receive.SenderClientId;
             UpdatePlayerInfoServer(senderClientId, SanitizeDisplayName(displayName));
         }
-        
+
         /// <summary>
-        /// Ready 상태 변경 요청을 서버에서 처리
+        /// Ready 상태 변경 요청을 서버에서 처리합니다.
         /// 실제 변경 대상은 SenderClientId 기준으로 서버가 결정합니다.
         /// </summary>
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -103,7 +103,7 @@ namespace DeadZone.Network
             if (index < 0)
             {
                 Debug.LogWarning(
-                    $"[NetworkLobbyState] 미등록 client의 Ready 요청입니다." +
+                    $"[NetworkLobbyState] 미등록 client의 Ready 요청입니다. " +
                     $"fallback 등록 후 처리합니다. ClientId={senderClientId}", this);
 
                 EnsurePlayerExistsServer(senderClientId);
@@ -118,20 +118,20 @@ namespace DeadZone.Network
 
             LogDebug($"Ready 상태 변경. ClientId={senderClientId}, Ready={ready}");
         }
-
+        
         /// <summary>
-        /// Map A 탈출 여부 변경 요청입니다. 실제 변경 대상은 SenderClientId 기준으로 서버가 결정합니다.
-        /// 현재는 로비/테스트 UI에서 B맵 잠금 검증을 확인하기 위해 사용합니다.
+        /// 각 클라이언트가 제출한 MapB 해금 여부를 서버에서 처리합니다.
+        /// 실제 변경 대상은 SenderClientId 기준으로 서버가 결정합니다.
         /// </summary>
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-        public void SetMapAEscapedServerRpc(bool hasEscaped, RpcParams rpcParams = default)
+        public void SubmitMapBUnlockStateServerRpc(bool hasUnlockedMapB, RpcParams rpcParams = default)
         {
             if (!IsServer) return;
 
-            SetMapAEscapedServer(rpcParams.Receive.SenderClientId, hasEscaped);
+            SetPlayerMapBUnlockState(rpcParams.Receive.SenderClientId, hasUnlockedMapB);
         }
 
-        public void SetMapAEscapedServer(ulong clientId, bool hasEscaped)
+        private void SetPlayerMapBUnlockState(ulong clientId, bool hasUnlockedMapB)
         {
             if (!IsServer) return;
 
@@ -140,7 +140,7 @@ namespace DeadZone.Network
             if (index < 0)
             {
                 Debug.LogWarning(
-                    $"[NetworkLobbyState] 미등록 client의 Map A 탈출 상태 요청입니다. " +
+                    $"[NetworkLobbyState] 미등록 client의 MapB 해금 상태 제출입니다. " +
                     $"fallback 등록 후 처리합니다. ClientId={clientId}", this);
 
                 EnsurePlayerExistsServer(clientId);
@@ -150,14 +150,18 @@ namespace DeadZone.Network
             if (index < 0) return;
 
             LobbyPlayerState state = players[index];
-            state.HasEscapedMapA = hasEscaped;
+
+            if (state.HasUnlockedMapB == hasUnlockedMapB)
+                return;
+
+            state.HasUnlockedMapB = hasUnlockedMapB;
             players[index] = state;
 
-            LogDebug($"Map A 탈출 상태 변경. ClientId={clientId}, HasEscapedMapA={hasEscaped}");
+            LogDebug($"MapB 해금 상태 갱신. ClientId={clientId}, HasUnlockedMapB={hasUnlockedMapB}");
         }
-        
+
         /// <summary>
-        /// 특정 client의 로비 상태를 조회
+        /// 특정 client의 로비 상태를 조회합니다.
         /// </summary>
         public bool TryGetPlayer(ulong clientId, out LobbyPlayerState state)
         {
@@ -186,17 +190,19 @@ namespace DeadZone.Network
         private void HandleClientConnected(ulong clientId)
         {
             if (!IsServer) return;
+
             EnsurePlayerExistsServer(clientId);
         }
-        
+
         private void HandleClientDisconnected(ulong clientId)
         {
             if (!IsServer) return;
+
             RemovePlayerServer(clientId);
         }
 
         /// <summary>
-        /// 접속한 clientId가 목록에 없으면 기본 표시 이름으로 등록
+        /// 접속한 clientId가 목록에 없으면 기본 표시 이름으로 등록합니다.
         /// 실제 Cloud Save 표시 이름 갱신은 SubmitLocalPlayerInfoServerRpc에서 처리합니다.
         /// </summary>
         private void EnsurePlayerExistsServer(ulong clientId)
@@ -210,27 +216,27 @@ namespace DeadZone.Network
                     $"[NetworkLobbyState] 최대 인원을 초과해 player 추가를 무시합니다. ClientId={clientId}", this);
                 return;
             }
-            
+
             players.Add(new LobbyPlayerState
             {
                 ClientId = clientId,
                 DisplayName = ToFixedDisplayName(fallbackDisplayName),
                 IsHost = clientId == NetworkManager.ServerClientId,
                 IsReady = false,
-                HasEscapedMapA = false
+                HasUnlockedMapB = false
             });
 
             LogDebug($"플레이어 등록. ClientId={clientId}");
         }
-        
+
         /// <summary>
-        /// 서버의 로비 플레이어 목록에 표시 이름을 갱신
-        /// 접속 직후 목록 등록보다 정보 제출이 먼저 도착한 경우 기본 등록 후 갱신
+        /// 서버의 로비 플레이어 목록에 표시 이름을 갱신합니다.
+        /// 접속 직후 목록 등록보다 정보 제출이 먼저 도착한 경우 기본 등록 후 갱신합니다.
         /// </summary>
         private void UpdatePlayerInfoServer(ulong clientId, FixedString64Bytes displayName)
         {
             if (!IsServer) return;
-            
+
             int index = FindPlayerIndex(clientId);
 
             if (index < 0)
@@ -240,9 +246,9 @@ namespace DeadZone.Network
                 EnsurePlayerExistsServer(clientId);
                 index = FindPlayerIndex(clientId);
             }
-            
+
             if (index < 0) return;
-            
+
             LobbyPlayerState state = players[index];
             state.DisplayName = displayName;
             state.IsHost = clientId == NetworkManager.ServerClientId;
@@ -276,7 +282,7 @@ namespace DeadZone.Network
             {
                 if (players[i].ClientId == clientId) return i;
             }
-            
+
             return -1;
         }
 
@@ -300,7 +306,7 @@ namespace DeadZone.Network
         private void LogDebug(string msg)
         {
             if (!logDebug) return;
-            
+
             Debug.Log($"[NetworkLobbyState] {msg}", this);
         }
     }

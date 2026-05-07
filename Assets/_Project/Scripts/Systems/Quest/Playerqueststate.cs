@@ -14,12 +14,9 @@ namespace DeadZone.Systems.Quests
 
         /// <summary>해금된 구역 ID 목록.</summary>
         public HashSet<string> UnlockedZones { get; } = new();
-
-        /// <summary>
-        /// objective별 진행 카운트.
-        /// Key = "questId:targetId" (예: "Q1:Enemy_Zone1_Any")
-        /// Value = (currentCount, requiredCount)
-        /// </summary>
+        
+        public HashSet<string> PendingCompletionIds { get; } = new();
+        
         public Dictionary<string, (int current, int required)> ObjectiveProgress { get; } = new();
 
         // ─────────────────────────────────────────────
@@ -76,6 +73,7 @@ namespace DeadZone.Systems.Quests
             progress.personalActiveQuestIds = ActiveQuestIds.ToList();
             progress.personalCompletedQuestIds = CompletedQuestIds.ToList();
             progress.unlockedZones = UnlockedZones.ToList();
+            progress.pendingCompletionIds = PendingCompletionIds.ToList();
 
             progress.questObjectives = new List<QuestObjectiveProgress>();
             foreach (var kvp in ObjectiveProgress)
@@ -104,6 +102,7 @@ namespace DeadZone.Systems.Quests
             ActiveQuestIds.Clear();
             CompletedQuestIds.Clear();
             UnlockedZones.Clear();
+            PendingCompletionIds.Clear();
             ObjectiveProgress.Clear();
 
             if (progress.personalActiveQuestIds != null)
@@ -117,6 +116,10 @@ namespace DeadZone.Systems.Quests
             if (progress.unlockedZones != null)
                 foreach (var id in progress.unlockedZones)
                     UnlockedZones.Add(id);
+
+            if (progress.pendingCompletionIds != null)
+                foreach (var id in progress.pendingCompletionIds)
+                    PendingCompletionIds.Add(id);
 
             if (progress.questObjectives != null)
             {

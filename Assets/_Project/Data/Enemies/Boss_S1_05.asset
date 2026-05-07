@@ -16,6 +16,7 @@ MonoBehaviour:
   tier: 5
   faction: 1
   isBoss: 1
+  enemyId: 
   maxHP: 300
   defaultArmor: {fileID: 11400000, guid: 9f51616f2f98c7e42b29bfcd6d27af3d, type: 2}
   defaultWeapon: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}
@@ -36,6 +37,12 @@ MonoBehaviour:
   moveSpeed: 4.5
   preferredRangeMin: 15
   preferredRangeMax: 60
-  canCallReinforcements: 1
-  canThrowGrenades: 1
+  canCallReinforcements: 0
+  canThrowGrenades: 0
   grenadeCooldown: 20
+  dropEquippedGear: 1
+  extraLootTable: {fileID: 0}
+  extraLootCount: 1
+  corpsePrefab: {fileID: 0}
+  corpseDespawnTime: 120
+  corpseDespawnWhenEmpty: 30

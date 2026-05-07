@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86777399825c54743b0ab09bbeb30174, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.GameBootstrap
-  firstSceneName: HJO_Title
+  firstSceneName: Title
 --- !u!114 &9039696499241898258
 MonoBehaviour:
   m_ObjectHideFlags: 0

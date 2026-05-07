@@ -15429,7 +15429,7 @@ MonoBehaviour:
   btnReadyName: Btn_Ready
   btnStartName: Btn_Raid start
   iconLockName: Icon_Lock
-  textStatusName: Text_Map_B
+  textStatusName: Text_RedyMessge
   logDebug: 0
 --- !u!1 &296657632
 GameObject:
@@ -88139,7 +88139,7 @@ MonoBehaviour:
   maxPlayers: 4
   fallbackDisplayName: Player
   maxDisplayNameCharacters: 20
-  logDebug: 1
+  logDebug: 0
 --- !u!114 &1780229062
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -88174,9 +88174,9 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   lobbyState: {fileID: 1780229061}
   gameManager: {fileID: 1780229062}
-  mapASceneName: Game_Stage_1
+  mapASceneName: LSH_Game_Scene_NetFlow
   mapBSceneName: Game_Stage_2
-  offlineHasEscapedMapA: 0
+  offlineHasUnlockedMapB: 0
   logDebug: 0
 --- !u!1 &1780639760
 GameObject:
