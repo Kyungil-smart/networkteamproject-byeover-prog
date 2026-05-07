@@ -14,7 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.AmmoDataSO
   itemID: Ammo_AR_AP
   displayName: "AR AP \uD0C4\uC57D"
-  description: 
+  description: "- \uB4F1\uAE09: \uB808\uC5B4\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
+    AR \uD0C4\uC57D. \uACE0\uC544\uBA38 \uAD00\uD1B5 \uD2B9\uD654.\n2. \uAD00\uB3D9\uB825:
+    6 \n3. \uB370\uBBF8\uC9C0 \uC801\uC6A9: \uB370\uBBF8\uC9C0 20% \uAC10\uC18C\n4.
+    \uD0C4\uC18D: 1.1"
   icon: {fileID: 0}
   category: 1
   rarity: 2

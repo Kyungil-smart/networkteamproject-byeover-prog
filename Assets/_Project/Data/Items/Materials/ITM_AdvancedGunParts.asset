@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: AdvancedGunParts
   displayName: "\uACE0\uAE09 \uCD1D\uAE30 \uBD80\uD488"
-  description: 
+  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uACE0\uAE09 \uCD1D\uAE30
+    \uC81C\uC791\uC5D0 \uC4F0\uC774\uB294 \uBD80\uD488"
   icon: {fileID: 21300000, guid: bec33f361b1d973459d9a55b32f04350, type: 3}
   category: 8
   rarity: 2

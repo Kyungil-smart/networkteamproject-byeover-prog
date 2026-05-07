@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Hammer
   displayName: "\uB9DD\uCE58"
-  description: 
+  description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
+    \uC6A9 \uC544\uC774\uD15C(\uC791\uC5C5\uB300)"
   icon: {fileID: 21300000, guid: 4f95c35a41d8bb34b9a4159514ed113f, type: 3}
   category: 9
   rarity: 1
   isValuable: 0
-  gridSize: {x: 1, y: 2}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.8
   baseSellPrice: 1000
