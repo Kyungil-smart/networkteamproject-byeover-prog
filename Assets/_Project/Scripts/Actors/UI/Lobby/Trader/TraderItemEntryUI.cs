@@ -58,8 +58,8 @@ namespace DeadZone.Actors.UI
         public void SetupBuyEntry(TraderEntry entry, int currentCommLevel, UnityAction<TraderEntry> onBuyClicked)
         {
             AutoBindReferences();
-            UnbindButtons();
             ApplyStableEntryLayout();
+            ConfigureNonInteractiveRaycasts();
 
             currentEntry = entry;
             actionClicked = onBuyClicked;
@@ -68,41 +68,9 @@ namespace DeadZone.Actors.UI
             bool hasItem = item != null;
             bool isLocked = entry.requiredCommLevel > currentCommLevel;
 
-            if (itemIcon != null)
-            {
-                itemIcon.sprite = hasItem ? item.icon : null;
-                itemIcon.enabled = hasItem && item.icon != null;
-            }
-
-            if (itemNameText != null)
-                itemNameText.text = hasItem ? GetItemDisplayName(item) : "Unknown Item";
-
-            if (priceText != null)
-                priceText.text = entry.basePrice.ToString();
-
-            if (lockRoot != null)
-                lockRoot.SetActive(isLocked);
-
-            if (lockIcon != null)
-                lockIcon.SetActive(isLocked);
-
-            if (lockReasonText != null)
-            {
-                lockReasonText.gameObject.SetActive(isLocked);
-                lockReasonText.text = isLocked
-                    ? $"거래 권한 부족\n현재 통신장비 Lv.{currentCommLevel}\n통신장비를 Lv.{entry.requiredCommLevel}까지 업그레이드하면 구매할 수 있습니다."
-                    : string.Empty;
-            }
-
-            if (actionButton != null)
-            {
-                actionButton.gameObject.SetActive(true);
-                actionButton.interactable = hasItem && !isLocked;
-                EnsureButtonRaycastTarget(actionButton);
-                actionButton.onClick.AddListener(HandleActionClicked);
-            }
-
-            SetActionButtonText("구매");
+            ApplyItemView(item, entry.basePrice);
+            ApplyLockState(isLocked, currentCommLevel, entry.requiredCommLevel);
+            ConfigureActionButton("구매", hasItem && !isLocked);
 
             gameObject.SetActive(true);
         }
@@ -110,13 +78,24 @@ namespace DeadZone.Actors.UI
         public void SetupSellEntry(TraderEntry entry, UnityAction<TraderEntry> onSellClicked)
         {
             AutoBindReferences();
-            UnbindButtons();
             ApplyStableEntryLayout();
+            ConfigureNonInteractiveRaycasts();
 
             currentEntry = entry;
             actionClicked = onSellClicked;
 
             ItemDataSO item = entry.item;
+            bool hasItem = item != null;
+
+            ApplyItemView(item, entry.basePrice);
+            ApplyLockState(false, 0, 0);
+            ConfigureActionButton("판매", hasItem);
+
+            gameObject.SetActive(true);
+        }
+
+        private void ApplyItemView(ItemDataSO item, int price)
+        {
             bool hasItem = item != null;
 
             if (itemIcon != null)
@@ -129,31 +108,39 @@ namespace DeadZone.Actors.UI
                 itemNameText.text = hasItem ? GetItemDisplayName(item) : "Unknown Item";
 
             if (priceText != null)
-                priceText.text = entry.basePrice.ToString();
+                priceText.text = price.ToString();
+        }
 
+        private void ApplyLockState(bool isLocked, int currentCommLevel, int requiredCommLevel)
+        {
             if (lockRoot != null)
-                lockRoot.SetActive(false);
+                lockRoot.SetActive(isLocked);
 
             if (lockIcon != null)
-                lockIcon.SetActive(false);
+                lockIcon.SetActive(isLocked);
 
-            if (lockReasonText != null)
-            {
-                lockReasonText.gameObject.SetActive(false);
-                lockReasonText.text = string.Empty;
-            }
+            if (lockReasonText == null)
+                return;
 
+            lockReasonText.gameObject.SetActive(isLocked);
+            lockReasonText.text = isLocked
+                ? $"거래 권한 부족\n현재 통신장비 Lv.{currentCommLevel}\n통신장비를 Lv.{requiredCommLevel}까지 업그레이드하면 구매할 수 있습니다."
+                : string.Empty;
+        }
+
+        private void ConfigureActionButton(string buttonText, bool interactable)
+        {
             if (actionButton != null)
             {
                 actionButton.gameObject.SetActive(true);
-                actionButton.interactable = hasItem;
+                actionButton.interactable = interactable;
                 EnsureButtonRaycastTarget(actionButton);
+                actionButton.onClick.RemoveAllListeners();
                 actionButton.onClick.AddListener(HandleActionClicked);
             }
 
-            SetActionButtonText("판매");
-
-            gameObject.SetActive(true);
+            if (actionButtonText != null)
+                actionButtonText.text = buttonText;
         }
 
         private void HandleActionClicked()
@@ -164,7 +151,7 @@ namespace DeadZone.Actors.UI
         private void UnbindButtons()
         {
             if (actionButton != null)
-                actionButton.onClick.RemoveListener(HandleActionClicked);
+                actionButton.onClick.RemoveAllListeners();
         }
 
         private void AutoBindReferences()
@@ -194,12 +181,6 @@ namespace DeadZone.Actors.UI
                 lockReasonText = lockRoot.GetComponentInChildren<TMP_Text>(true);
         }
 
-        private void SetActionButtonText(string text)
-        {
-            if (actionButtonText != null)
-                actionButtonText.text = text;
-        }
-
         private void ApplyStableEntryLayout()
         {
             if (transform is RectTransform rectTransform)
@@ -224,15 +205,39 @@ namespace DeadZone.Actors.UI
             }
         }
 
+        private void ConfigureNonInteractiveRaycasts()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+                if (image == null)
+                    continue;
+
+                Button parentButton = image.GetComponentInParent<Button>(true);
+                if (parentButton != null && parentButton.targetGraphic == image)
+                    continue;
+
+                image.raycastTarget = false;
+            }
+
+            if (lockRoot == null)
+                return;
+
+            Graphic[] lockGraphics = lockRoot.GetComponentsInChildren<Graphic>(true);
+            for (int i = 0; i < lockGraphics.Length; i++)
+            {
+                if (lockGraphics[i] != null)
+                    lockGraphics[i].raycastTarget = false;
+            }
+        }
+
         private static void EnsureButtonRaycastTarget(Button button)
         {
             if (button == null)
                 return;
 
-            Graphic graphic = button.targetGraphic;
-            if (graphic == null)
-                graphic = button.GetComponent<Graphic>();
-
+            Graphic graphic = button.targetGraphic != null ? button.targetGraphic : button.GetComponent<Graphic>();
             if (graphic == null)
             {
                 Image image = button.gameObject.AddComponent<Image>();

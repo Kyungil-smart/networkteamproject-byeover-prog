@@ -3,6 +3,7 @@ using DeadZone.Core;
 using DeadZone.Systems;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace DeadZone.Actors.UI
@@ -24,8 +25,12 @@ namespace DeadZone.Actors.UI
 #endif
         [SerializeField] private Image selectedTraderPortraitImage;
         [SerializeField] private TMP_Text traderNameText;
-        [SerializeField] private Button buyTabButton;
-        [SerializeField] private Button sellTabButton;
+        [FormerlySerializedAs("buyTabButton")]
+        [SerializeField] private Button tabBuyButton;
+        [FormerlySerializedAs("sellTabButton")]
+        [SerializeField] private Button tabSellButton;
+        [SerializeField] private GameObject buyListRoot;
+        [SerializeField] private GameObject sellListRoot;
         [SerializeField] private Transform buyContent;
         [SerializeField] private Transform sellContent;
         [SerializeField] private TraderItemEntryUI itemEntryPrefab;
@@ -87,6 +92,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private bool useTestCurrency = true;
         [SerializeField] private int testCurrency = 999999;
         [SerializeField] private MonoBehaviour testInventoryTarget;
+        [SerializeField] private StashGridUI stashGridUI;
 
         private void Reset()
         {
@@ -105,7 +111,20 @@ namespace DeadZone.Actors.UI
         private void Awake()
         {
             AutoBindReferences();
+            ConfigureTraderPageRaycasts();
             BindTabButtons();
+        }
+
+        private void OnEnable()
+        {
+            AutoBindReferences();
+            ConfigureTraderPageRaycasts();
+            BindTabButtons();
+
+            if (showingBuyTab)
+                ShowBuyList();
+            else
+                ShowSellList();
         }
 
         private void OnDestroy()
@@ -132,6 +151,9 @@ namespace DeadZone.Actors.UI
         {
             Debug.Log($"[TraderPageView] SelectTrader 호출: {traderId}", this);
 
+            AutoBindReferences();
+            ConfigureTraderPageRaycasts();
+
             currentTraderId = traderId;
             TraderDataSO traderData = GetTraderData(traderId);
 
@@ -148,7 +170,7 @@ namespace DeadZone.Actors.UI
 
             RebuildBuyList(traderData);
             RebuildSellList();
-            ShowBuyTab();
+            ShowBuyList();
         }
 
         public void SelectTrader(int traderIndex)
@@ -255,21 +277,35 @@ namespace DeadZone.Actors.UI
 
         public void ShowBuyTab()
         {
-            showingBuyTab = true;
-            SetListVisible(buyContent, true);
-            SetListVisible(sellContent, false);
-            SetTabUnderline(buyTabButton, true);
-            SetTabUnderline(sellTabButton, false);
-            BringTabButtonsToFront();
+            ShowBuyList();
         }
 
         public void ShowSellTab()
         {
+            ShowSellList();
+        }
+
+        public void ShowBuyList()
+        {
+            showingBuyTab = true;
+            ConfigureListRoot(buyContent);
+            ConfigureListRoot(sellContent);
+            SetActiveSafe(ResolveBuyListRoot(), true);
+            SetActiveSafe(ResolveSellListRoot(), false);
+            SetTabUnderline(tabBuyButton, true);
+            SetTabUnderline(tabSellButton, false);
+            BringTabButtonsToFront();
+        }
+
+        public void ShowSellList()
+        {
             showingBuyTab = false;
-            SetListVisible(buyContent, false);
-            SetListVisible(sellContent, true);
-            SetTabUnderline(buyTabButton, false);
-            SetTabUnderline(sellTabButton, true);
+            ConfigureListRoot(buyContent);
+            ConfigureListRoot(sellContent);
+            SetActiveSafe(ResolveBuyListRoot(), false);
+            SetActiveSafe(ResolveSellListRoot(), true);
+            SetTabUnderline(tabBuyButton, false);
+            SetTabUnderline(tabSellButton, true);
             BringTabButtonsToFront();
             RebuildSellList();
         }
@@ -346,13 +382,16 @@ namespace DeadZone.Actors.UI
             }
 
             IInventory inventory = ResolveInventoryTarget();
-            if (inventory != null && !inventory.TryAddItem(entry.item, 1))
+            if (inventory == null)
             {
-                Debug.LogWarning("[TraderPageView] IInventory.TryAddItem(ItemDataSO item, int amount) 호출이 실패했습니다. 구매 아이템을 인벤토리 탭의 시스템 보관함에 넣는 API가 필요합니다.", this);
+                Debug.LogWarning("[TraderPageView] 테스트 구매 실패: 보관함 IInventory 대상을 찾지 못했습니다. StashGridUI를 TraderPageView의 Stash Grid UI 필드에 연결해야 합니다.", this);
+                return;
             }
-            else if (inventory == null)
+
+            if (!inventory.TryAddItem(entry.item, 1))
             {
-                Debug.LogWarning("[TraderPageView] 시스템 보관함 IInventory 대상을 찾지 못했습니다. 테스트 목록에는 추가하지만, 인벤토리 탭 보관함에 실제 반영하려면 시스템 보관함 TryAddItem API 연결이 필요합니다.", this);
+                Debug.LogWarning($"[TraderPageView] 테스트 구매 실패: 보관함 빈 슬롯 또는 스택 여유가 부족합니다. Item={entry.item.itemID}", this);
+                return;
             }
 
             testCurrency -= price;
@@ -368,6 +407,13 @@ namespace DeadZone.Actors.UI
         {
             if (testInventoryTarget is IInventory configuredInventory)
                 return configuredInventory;
+
+            if (stashGridUI != null)
+                return stashGridUI;
+
+            stashGridUI = FindObjectOfType<StashGridUI>(true);
+            if (stashGridUI != null)
+                return stashGridUI;
 
             MonoBehaviour[] behaviours = FindObjectsOfType<MonoBehaviour>(true);
             for (int i = 0; i < behaviours.Length; i++)
@@ -452,11 +498,11 @@ namespace DeadZone.Actors.UI
             if (traderNameText == null)
                 traderNameText = FindText("TraderName", "Name");
 
-            if (!IsNamedButton(buyTabButton, "Tab_Buy"))
-                buyTabButton = FindOrCreateTabButton("Tab_Buy", "Buy", "구매");
+            if (!IsNamedButton(tabBuyButton, "Tab_Buy"))
+                tabBuyButton = FindOrCreateTabButton("Tab_Buy", "Buy", "구매");
 
-            if (!IsNamedButton(sellTabButton, "Tab_Sell"))
-                sellTabButton = FindOrCreateTabButton("Tab_Sell", "Sell", "판매");
+            if (!IsNamedButton(tabSellButton, "Tab_Sell"))
+                tabSellButton = FindOrCreateTabButton("Tab_Sell", "Sell", "판매");
 
             if (buyContent != null && IsTabTransform(buyContent))
                 buyContent = null;
@@ -470,6 +516,12 @@ namespace DeadZone.Actors.UI
             if (sellContent == null)
                 sellContent = FindTransform("Content_SellList");
 
+            if (buyListRoot == null)
+                buyListRoot = ResolveListRoot(buyContent);
+
+            if (sellListRoot == null)
+                sellListRoot = ResolveListRoot(sellContent);
+
             if (itemEntryPrefab == null)
                 itemEntryPrefab = FindItemEntryTemplateInDetailRoot();
         }
@@ -478,22 +530,28 @@ namespace DeadZone.Actors.UI
         {
             UnbindTabButtons();
 
-            if (buyTabButton != null)
-                buyTabButton.onClick.AddListener(ShowBuyTab);
+            if (tabBuyButton != null)
+            {
+                tabBuyButton.onClick.RemoveAllListeners();
+                tabBuyButton.onClick.AddListener(ShowBuyList);
+            }
 
-            if (sellTabButton != null)
-                sellTabButton.onClick.AddListener(ShowSellTab);
+            if (tabSellButton != null)
+            {
+                tabSellButton.onClick.RemoveAllListeners();
+                tabSellButton.onClick.AddListener(ShowSellList);
+            }
 
             BringTabButtonsToFront();
         }
 
         private void UnbindTabButtons()
         {
-            if (buyTabButton != null)
-                buyTabButton.onClick.RemoveListener(ShowBuyTab);
+            if (tabBuyButton != null)
+                tabBuyButton.onClick.RemoveAllListeners();
 
-            if (sellTabButton != null)
-                sellTabButton.onClick.RemoveListener(ShowSellTab);
+            if (tabSellButton != null)
+                tabSellButton.onClick.RemoveAllListeners();
         }
 
         private TraderItemEntryUI ResolveItemEntryTemplate()
@@ -544,19 +602,28 @@ namespace DeadZone.Actors.UI
 
             RectTransform contentRect = content as RectTransform;
             if (contentRect != null)
-                contentRect.pivot = new Vector2(contentRect.pivot.x, 1f);
+            {
+                contentRect.anchorMin = new Vector2(0f, 1f);
+                contentRect.anchorMax = new Vector2(1f, 1f);
+                contentRect.pivot = new Vector2(0.5f, 1f);
+                contentRect.anchoredPosition = Vector2.zero;
+            }
 
             if (!autoConfigureListLayout)
                 return;
+
+            ScrollRect scrollRect = ResolveOrCreateScrollRect(content);
+            if (scrollRect != null)
+                ConfigureScrollRect(scrollRect, contentRect);
 
             VerticalLayoutGroup layoutGroup = content.GetComponent<VerticalLayoutGroup>();
             if (layoutGroup == null)
                 layoutGroup = content.gameObject.AddComponent<VerticalLayoutGroup>();
 
             layoutGroup.childAlignment = TextAnchor.UpperLeft;
-            layoutGroup.childControlWidth = false;
+            layoutGroup.childControlWidth = true;
             layoutGroup.childControlHeight = false;
-            layoutGroup.childForceExpandWidth = false;
+            layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
             layoutGroup.spacing = itemEntrySpacing;
 
@@ -567,24 +634,71 @@ namespace DeadZone.Actors.UI
             sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            DisableLayoutOnScrollRoot(scrollRect, content);
+        }
+
+        private static ScrollRect ResolveOrCreateScrollRect(Transform content)
+        {
             ScrollRect scrollRect = content.GetComponentInParent<ScrollRect>(true);
-            if (scrollRect == null && content.parent is RectTransform scrollRoot)
-                scrollRect = scrollRoot.gameObject.AddComponent<ScrollRect>();
-
             if (scrollRect != null)
+                return scrollRect;
+
+            Transform viewport = content.parent;
+            Transform scrollRoot = viewport != null && viewport.name == "Viewport" ? viewport.parent : viewport;
+            if (scrollRoot == null)
+                return null;
+
+            return scrollRoot.GetComponent<ScrollRect>() ?? scrollRoot.gameObject.AddComponent<ScrollRect>();
+        }
+
+        private static void ConfigureScrollRect(ScrollRect scrollRect, RectTransform contentRect)
+        {
+            if (scrollRect == null || contentRect == null)
+                return;
+
+            RectTransform viewport = FindViewport(scrollRect.transform, contentRect);
+            scrollRect.content = contentRect;
+            scrollRect.viewport = viewport;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 35f;
+
+            if (viewport != null)
             {
-                scrollRect.content = contentRect;
-                if (scrollRect.viewport == null && content.parent is RectTransform parentRect)
-                    scrollRect.viewport = parentRect;
-
-                if (scrollRect.viewport != null)
-                    EnsureViewportRaycastAndMask(scrollRect.viewport);
-
-                scrollRect.horizontal = false;
-                scrollRect.vertical = true;
-                scrollRect.movementType = ScrollRect.MovementType.Clamped;
-                scrollRect.scrollSensitivity = 35f;
+                EnsureViewportRaycastAndMask(viewport);
+                viewport.anchorMin = Vector2.zero;
+                viewport.anchorMax = Vector2.one;
+                viewport.pivot = new Vector2(0.5f, 0.5f);
+                viewport.anchoredPosition = Vector2.zero;
+                viewport.sizeDelta = Vector2.zero;
             }
+        }
+
+        private static RectTransform FindViewport(Transform scrollRoot, RectTransform contentRect)
+        {
+            if (scrollRoot == null)
+                return contentRect != null ? contentRect.parent as RectTransform : null;
+
+            Transform viewport = scrollRoot.Find("Viewport");
+            if (viewport is RectTransform namedViewport)
+                return namedViewport;
+
+            return contentRect != null ? contentRect.parent as RectTransform : null;
+        }
+
+        private static void DisableLayoutOnScrollRoot(ScrollRect scrollRect, Transform content)
+        {
+            if (scrollRect == null || content == null || scrollRect.transform == content)
+                return;
+
+            VerticalLayoutGroup verticalLayoutGroup = scrollRect.GetComponent<VerticalLayoutGroup>();
+            if (verticalLayoutGroup != null)
+                verticalLayoutGroup.enabled = false;
+
+            ContentSizeFitter sizeFitter = scrollRect.GetComponent<ContentSizeFitter>();
+            if (sizeFitter != null)
+                sizeFitter.enabled = false;
         }
 
         private static void SetListVisible(Transform content, bool visible)
@@ -597,6 +711,22 @@ namespace DeadZone.Actors.UI
             }
 
             SetActiveSafe(content != null ? content.gameObject : null, visible);
+        }
+
+        private GameObject ResolveBuyListRoot()
+        {
+            if (buyListRoot == null)
+                buyListRoot = ResolveListRoot(buyContent);
+
+            return buyListRoot;
+        }
+
+        private GameObject ResolveSellListRoot()
+        {
+            if (sellListRoot == null)
+                sellListRoot = ResolveListRoot(sellContent);
+
+            return sellListRoot;
         }
 
         private static GameObject ResolveListRoot(Transform content)
@@ -613,11 +743,18 @@ namespace DeadZone.Actors.UI
 
         private void BringTabButtonsToFront()
         {
-            if (buyTabButton != null)
-                buyTabButton.transform.SetAsLastSibling();
+            Transform tabRoot = tabBuyButton != null ? tabBuyButton.transform.parent : null;
+            if (tabRoot == null && tabSellButton != null)
+                tabRoot = tabSellButton.transform.parent;
 
-            if (sellTabButton != null)
-                sellTabButton.transform.SetAsLastSibling();
+            if (tabRoot != null && tabRoot != transform)
+                tabRoot.SetAsLastSibling();
+
+            if (tabBuyButton != null)
+                tabBuyButton.transform.SetAsLastSibling();
+
+            if (tabSellButton != null)
+                tabSellButton.transform.SetAsLastSibling();
         }
 
         private static void EnsureViewportRaycastAndMask(RectTransform viewport)
@@ -677,6 +814,45 @@ namespace DeadZone.Actors.UI
                 layoutElement.preferredWidth = preferredWidth;
             layoutElement.flexibleHeight = 0f;
             layoutElement.flexibleWidth = 0f;
+        }
+
+        private void ConfigureTraderPageRaycasts()
+        {
+            if (selectedTraderPortraitImage != null)
+                selectedTraderPortraitImage.raycastTarget = false;
+
+            Image[] images = GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+                if (image == null)
+                    continue;
+
+                if (IsInteractiveImage(image))
+                    continue;
+
+                image.raycastTarget = false;
+            }
+        }
+
+        private static bool IsInteractiveImage(Image image)
+        {
+            if (image == null)
+                return false;
+
+            Button parentButton = image.GetComponentInParent<Button>(true);
+            if (parentButton != null && parentButton.targetGraphic == image)
+                return true;
+
+            Scrollbar parentScrollbar = image.GetComponentInParent<Scrollbar>(true);
+            if (parentScrollbar != null)
+                return true;
+
+            ScrollRect parentScrollRect = image.GetComponentInParent<ScrollRect>(true);
+            if (parentScrollRect != null && parentScrollRect.viewport == image.rectTransform)
+                return true;
+
+            return false;
         }
 
         private Image FindImage(params string[] nameTokens)

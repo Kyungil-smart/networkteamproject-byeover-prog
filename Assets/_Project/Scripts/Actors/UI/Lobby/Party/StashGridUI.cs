@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using DeadZone.Core;
+using DeadZone.Systems;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -7,7 +8,7 @@ using UnityEngine.UI;
 
 namespace DeadZone.Actors.UI
 {
-    public class StashGridUI : MonoBehaviour
+    public class StashGridUI : MonoBehaviour, IInventory
     {
         private const int BaseSlotCount = 50;
         private const int AdditionalSlotsPerLevel = 20;
@@ -145,6 +146,106 @@ namespace DeadZone.Actors.UI
         {
             int clampedLevel = Mathf.Clamp(level, 1, MaxStashLevel);
             return BaseSlotCount + (clampedLevel - 1) * AdditionalSlotsPerLevel;
+        }
+
+        public bool TryAddItem(ItemDataSO item, int amount = 1)
+        {
+            if (item == null || amount <= 0)
+                return false;
+
+            RefreshSlots();
+
+            int maxStack = Mathf.Max(1, item.maxStackSize);
+            if (GetRemainingCapacity(item, maxStack) < amount)
+                return false;
+
+            int remaining = amount;
+
+            for (int i = 0; i < activeSlotCount && i < slots.Count && remaining > 0; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (!IsSameItemSlot(slot, item))
+                    continue;
+
+                int available = maxStack - slot.CurrentStackCount;
+                if (available <= 0)
+                    continue;
+
+                int addCount = Mathf.Min(available, remaining);
+                slot.SetItem(item, slot.CurrentStackCount + addCount);
+                remaining -= addCount;
+            }
+
+            while (remaining > 0)
+            {
+                InventorySlotUI emptySlot = FindFirstEmptySlot();
+                if (emptySlot == null)
+                    return false;
+
+                int stackCount = Mathf.Min(maxStack, remaining);
+                emptySlot.SetItem(item, stackCount);
+                remaining -= stackCount;
+            }
+
+            return true;
+        }
+
+        public bool HasItem(string itemId, int count)
+        {
+            if (string.IsNullOrWhiteSpace(itemId) || count <= 0)
+                return false;
+
+            return GetItemCount(itemId) >= count;
+        }
+
+        public bool ConsumeItem(string itemId, int count)
+        {
+            if (string.IsNullOrWhiteSpace(itemId) || count <= 0)
+                return false;
+
+            RefreshSlots();
+
+            if (!HasItem(itemId, count))
+                return false;
+
+            int remaining = count;
+            for (int i = 0; i < activeSlotCount && i < slots.Count && remaining > 0; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (!IsItemIdSlot(slot, itemId))
+                    continue;
+
+                ItemDataSO item = slot.CurrentItemData;
+                int consumeCount = Mathf.Min(slot.CurrentStackCount, remaining);
+                int nextCount = slot.CurrentStackCount - consumeCount;
+
+                if (nextCount <= 0)
+                    slot.ClearItem();
+                else
+                    slot.SetItem(item, nextCount);
+
+                remaining -= consumeCount;
+            }
+
+            return true;
+        }
+
+        public int GetItemCount(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return 0;
+
+            RefreshSlots();
+
+            int foundCount = 0;
+            for (int i = 0; i < activeSlotCount && i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (IsItemIdSlot(slot, itemId))
+                    foundCount += slot.CurrentStackCount;
+            }
+
+            return foundCount;
         }
 
         [Button("Lv1 테스트")]
@@ -597,6 +698,60 @@ namespace DeadZone.Actors.UI
 
                 slot.ClearItem();
             }
+        }
+
+        private int GetRemainingCapacity(ItemDataSO item, int maxStack)
+        {
+            int capacity = 0;
+
+            for (int i = 0; i < activeSlotCount && i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null || slot == slotPrefab)
+                    continue;
+
+                if (!slot.HasItem)
+                {
+                    capacity += maxStack;
+                    continue;
+                }
+
+                if (IsSameItemSlot(slot, item))
+                    capacity += Mathf.Max(0, maxStack - slot.CurrentStackCount);
+            }
+
+            return capacity;
+        }
+
+        private InventorySlotUI FindFirstEmptySlot()
+        {
+            for (int i = 0; i < activeSlotCount && i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot != null && slot != slotPrefab && !slot.HasItem)
+                    return slot;
+            }
+
+            return null;
+        }
+
+        private static bool IsSameItemSlot(InventorySlotUI slot, ItemDataSO item)
+        {
+            if (slot == null || item == null || !slot.HasItem || slot.CurrentItemData == null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(item.itemID) && !string.IsNullOrWhiteSpace(slot.CurrentItemData.itemID))
+                return slot.CurrentItemData.itemID == item.itemID;
+
+            return slot.CurrentItemData == item;
+        }
+
+        private static bool IsItemIdSlot(InventorySlotUI slot, string itemId)
+        {
+            return slot != null &&
+                   slot.HasItem &&
+                   slot.CurrentItemData != null &&
+                   slot.CurrentItemData.itemID == itemId;
         }
 
         private void LogSlotCacheState()
