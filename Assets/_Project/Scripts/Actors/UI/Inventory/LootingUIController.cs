@@ -40,6 +40,7 @@ namespace DeadZone.Actors.UI
         private readonly List<RectTransform> activeMoveTargets = new();
         private readonly List<Vector2> originalMoveTargetPositions = new();
         private LootContainer currentContainer;
+        private CorpseInventory currentCorpseInventory;
         private bool hasOriginalPositionCache;
 
         public bool IsOpen => lootingPanel != null && lootingPanel.activeSelf;
@@ -87,6 +88,7 @@ namespace DeadZone.Actors.UI
             }
 
             currentContainer = container;
+            currentCorpseInventory = null;
 
             if (inventoryUI != null)
                 inventoryUI.Open();
@@ -100,6 +102,38 @@ namespace DeadZone.Actors.UI
                 containerGridView.Bind(container);
         }
 
+        public void Open(CorpseInventory corpseInventory)
+        {
+            ResolveReferences();
+            CacheOriginalPositions();
+
+            if (corpseInventory == null)
+            {
+                Debug.LogWarning("[LootingUIController] 열 CorpseInventory가 없습니다.", this);
+                return;
+            }
+
+            if (IsOpen && currentCorpseInventory == corpseInventory)
+            {
+                Close();
+                return;
+            }
+
+            currentContainer = null;
+            currentCorpseInventory = corpseInventory;
+
+            if (inventoryUI != null)
+                inventoryUI.Open();
+
+            if (lootingPanel != null)
+                lootingPanel.SetActive(true);
+
+            ApplyLootingPosition();
+
+            if (containerGridView != null)
+                containerGridView.Bind(corpseInventory);
+        }
+
         public void Close()
         {
             Close(closeInventory: true);
@@ -111,6 +145,7 @@ namespace DeadZone.Actors.UI
                 containerGridView.Clear();
 
             currentContainer = null;
+            currentCorpseInventory = null;
             RestoreInventoryPosition();
             CloseLootingPanelOnly();
 
@@ -147,6 +182,7 @@ namespace DeadZone.Actors.UI
             CacheOriginalPositions();
 
             currentContainer = null;
+            currentCorpseInventory = null;
 
             if (inventoryUI != null)
                 inventoryUI.Open();
