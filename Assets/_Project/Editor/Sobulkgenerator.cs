@@ -5,11 +5,8 @@ using DeadZone.Core;
 
 namespace DeadZone.Editor
 {
-  
     public static class SOBulkGenerator
     {
-     
-
         [MenuItem("DeadZone/Data/Generate All SO Assets", priority = 100)]
         public static void GenerateAll()
         {
@@ -19,6 +16,8 @@ namespace DeadZone.Editor
             created += GenerateArmor();
             created += GenerateHelmets();
             created += GenerateBackpacks();
+            created += GenerateEnemies();
+            created += GenerateQuests();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -77,7 +76,24 @@ namespace DeadZone.Editor
             AssetDatabase.Refresh();
             Debug.Log($"[SOGen] BackpackDataSO {n}개 생성 완료");
         }
-        
+
+        [MenuItem("DeadZone/Data/Generate Enemies Only")]
+        public static void GenEnemiesMenu()
+        {
+            int n = GenerateEnemies();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[SOGen] EnemyStatsSO {n}개 생성 완료");
+        }
+
+        [MenuItem("DeadZone/Data/Generate Quests Only")]
+        public static void GenQuestsMenu()
+        {
+            int n = GenerateQuests();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[SOGen] QuestDataSO {n}개 생성 완료");
+        }
 
         static int GenerateWeapons()
         {
@@ -145,7 +161,6 @@ namespace DeadZone.Editor
 
             return count;
         }
-        
 
         static int GenerateAmmo()
         {
@@ -209,7 +224,7 @@ namespace DeadZone.Editor
 
             return count;
         }
-
+        
         static int GenerateArmor()
         {
             string folder = "Assets/_Project/Data/Armor";
@@ -341,6 +356,389 @@ namespace DeadZone.Editor
             }
 
             return count;
+        }
+        
+        static int GenerateEnemies()
+        {
+            string folder = "Assets/_Project/Data/Enemies";
+            EnsureFolder(folder);
+            int count = 0;
+
+            // ── 일반 적 T1~T5 ──
+            count += CreateEnemy(folder, "Enemy_T1", "T1 졸병",
+                EnemyTier.T1, Faction.Scavenger, false,
+                80f, 3.5f, "Armor_C1", "Weapon_Glock17", "Ammo_Handgun_LP",
+                0, 0.50f,
+                1.2f, 2, 1.0f,
+                2.0f, 6.0f, 2.0f, 25f,
+                30f, 110f, 15f, 1.5f,
+                5f, 20f,
+                false, false, 5f,
+                "Enemy_Zone1_Any", 0);
+
+            count += CreateEnemy(folder, "Enemy_T2", "T2 정규",
+                EnemyTier.T2, Faction.Conscript, false,
+                100f, 4.0f, "Armor_C2", "Weapon_Revolver", "Ammo_Handgun_BP",
+                0, 0.50f,
+                1.0f, 3, 0.8f,
+                1.5f, 4.5f, 1.8f, 35f,
+                50f, 110f, 20f, 1.0f,
+                8f, 30f,
+                false, false, 5f,
+                "Enemy_Zone1_Any", 1);
+
+            count += CreateEnemy(folder, "Enemy_T3", "T3 베테랑",
+                EnemyTier.T3, Faction.Conscript, false,
+                140f, 4.5f, "Armor_C3", "Weapon_SK74", "Ammo_AR_BP",
+                0, 0.75f,
+                0.8f, 3, 0.6f,
+                0.8f, 3.0f, 1.5f, 60f,
+                70f, 110f, 25f, 0.7f,
+                15f, 50f,
+                true, true, 25f,
+                "", 1);
+
+            count += CreateEnemy(folder, "Enemy_T4", "T4 엘리트",
+                EnemyTier.T4, Faction.Cerberus, false,
+                200f, 5.0f, "Armor_C4", "Weapon_F2", "Ammo_AR_AP",
+                0, 0.75f,
+                0.6f, 4, 0.5f,
+                0.5f, 2.0f, 1.3f, 80f,
+                90f, 110f, 30f, 0.5f,
+                20f, 70f,
+                true, true, 20f,
+                "", 2);
+
+            count += CreateEnemy(folder, "Enemy_T5", "T5 보스급",
+                EnemyTier.T5, Faction.Cerberus, false,
+                400f, 6.0f, "Armor_C6", "Weapon_F2", "Ammo_AR_AP",
+                0, 1.0f,
+                0.5f, 5, 0.4f,
+                0.3f, 1.0f, 1.2f, 100f,
+                120f, 110f, 40f, 0.3f,
+                30f, 90f,
+                true, true, 15f,
+                "", 2);
+
+            // ── Stage 1 보스 5종 ──
+
+            // 창고 보스 (Q3 Kill target)
+            count += CreateEnemy(folder, "Boss_S1_01", "창고 보스",
+                EnemyTier.T5, Faction.Conscript, true,
+                500f, 5.0f, "Armor_C4", "Weapon_SK74", "Ammo_AR_BP",
+                -1, 1.0f,
+                0.5f, 5, 0.4f,
+                0.3f, 1.0f, 1.2f, 80f,
+                100f, 110f, 35f, 0.3f,
+                25f, 70f,
+                true, true, 15f,
+                "Boss_Warehouse", 3);
+
+            // 군사 막사 보스 (Q4 Kill target, grenadeCooldown=10)
+            count += CreateEnemy(folder, "Boss_S1_02", "군사 막사 보스",
+                EnemyTier.T5, Faction.Conscript, true,
+                400f, 5.0f, "Armor_C4", "Weapon_SK74", "Ammo_AR_BP",
+                -1, 1.1f,
+                0.5f, 5, 0.4f,
+                0.3f, 1.0f, 1.2f, 80f,
+                100f, 110f, 35f, 0.3f,
+                25f, 70f,
+                true, true, 10f,
+                "Boss_MilitaryBase", 3);
+
+            // 제재소 보스 (Q3-1 Kill target)
+            count += CreateEnemy(folder, "Boss_S1_03", "제재소 보스",
+                EnemyTier.T5, Faction.Cerberus, true,
+                600f, 5.0f, "Armor_C5", "Weapon_F2", "Ammo_AR_AP",
+                -1, 1.1f,
+                0.5f, 5, 0.4f,
+                0.3f, 1.0f, 1.2f, 90f,
+                110f, 110f, 35f, 0.3f,
+                20f, 60f,
+                true, true, 15f,
+                "Boss_Sawmill", 3);
+
+            // 숲 보스 (Q2-1 Kill target, 스나이퍼)
+            count += CreateEnemy(folder, "Boss_S1_04", "숲 보스",
+                EnemyTier.T5, Faction.Conscript, true,
+                300f, 4.5f, null, "Weapon_BoltSR", "Ammo_Sniper_AP",
+                0, 1.2f,
+                2.0f, 1, 2.5f,
+                0.1f, 0.5f, 1.2f, 200f,
+                150f, 110f, 30f, 0.3f,
+                80f, 180f,
+                false, false, 5f,
+                "Boss_Forest_Sniper", 2);
+
+            // 발전시설 보스 (Q2 Kill target)
+            count += CreateEnemy(folder, "Boss_S1_05", "발전시설 보스",
+                EnemyTier.T5, Faction.Conscript, true,
+                300f, 4.5f, "Armor_C3", "Weapon_MB7", "Ammo_SMG_BP",
+                -1, 1.0f,
+                0.5f, 5, 0.4f,
+                0.4f, 1.5f, 1.3f, 70f,
+                100f, 110f, 30f, 0.3f,
+                15f, 60f,
+                true, true, 20f,
+                "Boss_PowerPlant", 2);
+
+            // ── Stage 2 보스 3종 (Q6 Kill target — 3종 공유 ID) ──
+
+            // 보스 2-1
+            count += CreateEnemy(folder, "Boss_S2_01", "보스 2-1",
+                EnemyTier.T5, Faction.Cerberus, true,
+                600f, 5.5f, "Armor_C5", "Weapon_F2", "Ammo_AR_AP",
+                -1, 1.0f,
+                0.5f, 5, 0.4f,
+                0.3f, 1.0f, 1.2f, 100f,
+                120f, 110f, 40f, 0.3f,
+                25f, 80f,
+                true, true, 15f,
+                "Boss_Stage2_All", 3);
+
+            // 보스 2-2 (HP 1000, C6)
+            count += CreateEnemy(folder, "Boss_S2_02", "보스 2-2",
+                EnemyTier.T5, Faction.Cerberus, true,
+                1000f, 6.0f, "Armor_C6", "Weapon_F2", "Ammo_AR_AP",
+                0, 1.2f,
+                0.5f, 5, 0.4f,
+                0.3f, 1.0f, 1.2f, 100f,
+                120f, 110f, 40f, 0.3f,
+                30f, 90f,
+                true, true, 12f,
+                "Boss_Stage2_All", 4);
+
+            // 보스 2-3
+            count += CreateEnemy(folder, "Boss_S2_03", "보스 2-3",
+                EnemyTier.T5, Faction.Cerberus, true,
+                800f, 5.5f, "Armor_C5", "Weapon_F2", "Ammo_AR_AP",
+                -1, 1.1f,
+                0.5f, 5, 0.4f,
+                0.3f, 1.0f, 1.2f, 100f,
+                120f, 110f, 40f, 0.3f,
+                25f, 80f,
+                true, true, 15f,
+                "Boss_Stage2_All", 3);
+
+            return count;
+        }
+
+        /// <summary>적 SO 1개 생성 헬퍼. 이미 존재하면 스킵.</summary>
+        static int CreateEnemy(string folder, string file, string displayName,
+            EnemyTier tier, Faction faction, bool isBoss,
+            float hp, float speed,
+            string armorFile, string weaponFile, string ammoFile,
+            int penMod, float dmgMult,
+            float fireInterval, int burstSize, float burstRest,
+            float spMin, float spMax, float rangeMult, float maxRange,
+            float vision, float fov, float hearing, float reaction,
+            float prefMin, float prefMax,
+            bool canReinforce, bool canGrenade, float grenadeCd,
+            string enemyId = "", int extraLootCount = 1)
+        {
+            string path = $"{folder}/{file}.asset";
+            if (AssetDatabase.LoadAssetAtPath<EnemyStatsSO>(path) != null)
+            {
+                Debug.Log($"[SOGen] SKIP (이미 존재): {path}");
+                return 0;
+            }
+
+            var so = ScriptableObject.CreateInstance<EnemyStatsSO>();
+
+            // 식별
+            so.displayName = displayName;
+            so.tier        = tier;
+            so.faction     = faction;
+            so.isBoss      = isBoss;
+            so.enemyId     = enemyId;
+
+            // 체력 & 방어
+            so.maxHP        = hp;
+            so.defaultArmor = armorFile != null
+                ? AssetDatabase.LoadAssetAtPath<ArmorDataSO>($"Assets/_Project/Data/Armor/{armorFile}.asset")
+                : null;
+
+            // 무기 & 탄약
+            so.defaultWeapon = AssetDatabase.LoadAssetAtPath<WeaponDataSO>(
+                $"Assets/_Project/Data/Weapons/{weaponFile}.asset");
+            so.defaultAmmo = AssetDatabase.LoadAssetAtPath<AmmoDataSO>(
+                $"Assets/_Project/Data/Ammo/{ammoFile}.asset");
+            so.penetrationModifier = penMod;
+            so.damageMultiplier    = dmgMult;
+
+            // 사격 타이밍
+            so.fireInterval   = fireInterval;
+            so.burstSize      = burstSize;
+            so.burstRestDelay = burstRest;
+
+            // 탄퍼짐
+            so.spreadAngleMin        = spMin;
+            so.spreadAngleMax        = spMax;
+            so.rangeSpreadMultiplier = rangeMult;
+            so.maxEffectiveRange     = maxRange;
+
+            // 감지
+            so.visionRange  = vision;
+            so.fov          = fov;
+            so.hearingRange = hearing;
+            so.reactionTime = reaction;
+
+            // 이동
+            so.moveSpeed = speed;
+
+            // 교전 거리
+            so.preferredRangeMin = prefMin;
+            so.preferredRangeMax = prefMax;
+
+            // 확장 능력
+            so.canCallReinforcements = canReinforce;
+            so.canThrowGrenades      = canGrenade;
+            so.grenadeCooldown       = grenadeCd;
+
+            // 사망 드랍
+            so.dropEquippedGear = true;
+            so.extraLootCount   = extraLootCount;
+            // extraLootTable / corpsePrefab은 Inspector에서 수동 할당 (SO 자산이 아직 없을 수 있음)
+
+            // 참조 경고
+            if (so.defaultWeapon == null)
+                Debug.LogWarning($"[SOGen] {file}: Weapon '{weaponFile}' 못 찾음 — Weapons를 먼저 생성하세요");
+            if (so.defaultAmmo == null)
+                Debug.LogWarning($"[SOGen] {file}: Ammo '{ammoFile}' 못 찾음 — Ammo를 먼저 생성하세요");
+
+            AssetDatabase.CreateAsset(so, path);
+            return 1;
+        }
+
+        // ══════════════════════════════════════════
+        //  QUEST DATA (8종) — GameSystem §5 v2.1
+        // ══════════════════════════════════════════
+
+        static int GenerateQuests()
+        {
+            string folder = "Assets/_Project/Data/Quests";
+            EnsureFolder(folder);
+            int count = 0;
+
+            // ── Q1: 민간 지역 적 처치 ──
+            count += CreateQuest(folder, "Q1_CivilianClear", "Q1", "민간 지역 소탕",
+                "민간 지역에 있는 적 10명을 처치하십시오.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Kill, targetID = "Enemy_Zone1_Any", requiredCount = 10, location = "민간 지역" }
+                },
+                new QuestReward[]
+                {
+                    new() { type = RewardType.Item, itemID = "Weapon_Rare_Choice_Q1", amount = 1 }
+                },
+                "", "", false);
+
+            // ── Q2: 발전소 보스 ──
+            count += CreateQuest(folder, "Q2_PowerPlantBoss", "Q2", "발전소 보스 처치",
+                "발전소에 있는 보스를 처치하십시오.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Kill, targetID = "Boss_PowerPlant", requiredCount = 1, location = "발전소" }
+                },
+                null,
+                "MapA_Zone2", "Q1", false);
+
+            // ── Q2-1: 숲 보스 (사이드) ──
+            count += CreateQuest(folder, "Q2_1_ForestBoss", "Q2-1", "숲의 사냥꾼",
+                "[사이드] 숲에 있는 보스를 처치하십시오.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Kill, targetID = "Boss_Forest_Sniper", requiredCount = 1, location = "숲" }
+                },
+                new QuestReward[]
+                {
+                    new() { type = RewardType.Item, itemID = "Weapon_SK74", amount = 1 }
+                },
+                "", "Q1", true);
+
+            // ── Q3: 창고 보스 ──
+            count += CreateQuest(folder, "Q3_WarehouseBoss", "Q3", "창고 보스 처치",
+                "창고에 있는 보스를 처치하십시오.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Kill, targetID = "Boss_Warehouse", requiredCount = 1, location = "창고" }
+                },
+                null,
+                "MapA_Zone3", "Q2", false);
+
+            // ── Q3-1: 제재소 보스 (사이드) ──
+            count += CreateQuest(folder, "Q3_1_SawmillBoss", "Q3-1", "제재소의 수호자",
+                "[사이드] 제재소에 있는 보스를 처치하십시오.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Kill, targetID = "Boss_Sawmill", requiredCount = 1, location = "제재소" }
+                },
+                new QuestReward[]
+                {
+                    new() { type = RewardType.Item, itemID = "Weapon_MB7", amount = 1 }
+                },
+                "", "Q2", true);
+
+            // ── Q4: 군사 지역 보스 ──
+            count += CreateQuest(folder, "Q4_MilitaryBoss", "Q4", "군사 지역 보스 처치",
+                "군사 지역에 있는 보스를 처치하십시오.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Kill, targetID = "Boss_MilitaryBase", requiredCount = 1, location = "군사 지역" }
+                },
+                null,
+                "MapA_Zone4", "Q3", false);
+
+            // ── Q5: 스테이지 2 이동 ──
+            count += CreateQuest(folder, "Q5_MoveToStage2", "Q5", "스테이지 2 진입",
+                "추락 지점을 통해 스테이지 2로 이동하십시오.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Reach, targetID = "CrashSite_TransitionPoint", requiredCount = 1, location = "추락 지점" }
+                },
+                new QuestReward[]
+                {
+                    new() { type = RewardType.Item, itemID = "Armor_C6", amount = 1 },
+                    new() { type = RewardType.Item, itemID = "Helmet_C4", amount = 1 }
+                },
+                "MapB_All", "Q4", false);
+
+            // ── Q6: Stage 2 모든 보스 ──
+            count += CreateQuest(folder, "Q6_AllBosses", "Q6", "최종 보스 처치",
+                "모든 보스를 처치하십시오. 마지막 보스가 보트 열쇠를 드랍합니다.",
+                new QuestObjectiveData[]
+                {
+                    new() { type = ObjectiveType.Kill, targetID = "Boss_Stage2_All", requiredCount = 3, location = "맵B 전체" }
+                },
+                null, // 보트 열쇠는 BossKeyDropper가 마지막 보스 사체에서 드랍 (QuestReward 아님)
+                "", "Q5", false);
+
+            return count;
+        }
+
+        static int CreateQuest(string folder, string file, string questID, string questName,
+            string description, QuestObjectiveData[] objectives, QuestReward[] rewards,
+            string unlockZoneID, string prerequisiteQuestID, bool isSideQuest)
+        {
+            string path = $"{folder}/{file}.asset";
+            if (AssetDatabase.LoadAssetAtPath<QuestDataSO>(path) != null)
+            {
+                Debug.Log($"[SOGen] SKIP (이미 존재): {path}");
+                return 0;
+            }
+
+            var so = ScriptableObject.CreateInstance<QuestDataSO>();
+            so.questID              = questID;
+            so.questName            = questName;
+            so.description          = description;
+            so.objectives           = objectives ?? new QuestObjectiveData[0];
+            so.rewards              = rewards ?? new QuestReward[0];
+            so.unlockZoneID         = unlockZoneID ?? "";
+            so.prerequisiteQuestID  = prerequisiteQuestID ?? "";
+            so.isSideQuest          = isSideQuest;
+
+            AssetDatabase.CreateAsset(so, path);
+            return 1;
         }
 
         // ══════════════════════════════════════════════════════

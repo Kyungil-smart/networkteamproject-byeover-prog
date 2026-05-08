@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_BoltSR
   displayName: "\uB4DC\uB77C\uADF8 \uC18C\uCD1D"
-  description: 
+  description: "- \uC18C\uB828\uC81C \uC9C0\uC815\uC790\uC218 \uC18C\uCD1D\n- \uB4F1\uAE09:
+    \uC5D0\uD53D\n\n- \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 95\n2. \uACF5\uACA9 \uC18D\uB3C4:
+    1.5\n3. \uD0C4\uCC3D \uD06C\uAE30: 5"
   icon: {fileID: 0}
   category: 0
   rarity: 3
@@ -23,7 +25,7 @@ MonoBehaviour:
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 35000
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 5012478770829545033, guid: 92963e6931496a54cbba79fd2cb71bca, type: 3}
   weaponCategory: 3
   damage: 95
   fireRate: 1.5

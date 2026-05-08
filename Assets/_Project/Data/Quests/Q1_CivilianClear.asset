@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
+  m_Name: Q1_CivilianClear
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
+  questID: Q1
+  questName: "\uBBFC\uAC04 \uC9C0\uC5ED \uC18C\uD0D5"
+  description: "\uBBFC\uAC04 \uC9C0\uC5ED\uC5D0 \uC788\uB294 \uC801 10\uBA85\uC744
+    \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  objectives:
+  - type: 0
+    targetID: Enemy_Zone1_Any
+    requiredCount: 10
+    location: "\uBBFC\uAC04 \uC9C0\uC5ED"
+  rewards:
+  - type: 1
+    itemID: Weapon_Rare_Choice_Q1
+    amount: 1
+  unlockZoneID: 
+  prerequisiteQuestID: 
+  isSideQuest: 0

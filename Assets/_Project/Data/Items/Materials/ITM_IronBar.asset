@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: IronBar
   displayName: "\uCCA0 \uBD09"
-  description: 
+  description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uD131\uAC78\uC774
+    \uC6A9 \uCCA0 \uBD09\uC5D0\uC11C \uBE60\uC9C4 \uCCA0 \uBD09"
   icon: {fileID: 21300000, guid: a3980538173c6dd4ab6010a8bec64ebd, type: 3}
   category: 8
   rarity: 1
   isValuable: 0
-  gridSize: {x: 1, y: 3}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 3
   weightKg: 1.5
   baseSellPrice: 400

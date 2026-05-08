@@ -38,6 +38,8 @@ namespace DeadZone.Core
         public ulong attackerClientId;
         public EnemyTier tier;
         public Vector3 position;
+        /// <summary>[v2.1 추가] 처치된 적의 식별자 (Boss_PowerPlant, Enemy_Zone1_Any 등). QuestManager가 Kill objective 매칭에 사용.</summary>
+        public FixedString64Bytes enemyId;
     }
 
     public struct CriticalHitEvent : IGameEvent
@@ -181,6 +183,8 @@ namespace DeadZone.Core
     public struct QuestAcceptedEvent : IGameEvent
     {
         public FixedString64Bytes questId;
+        /// <summary>[v2.1 추가] 퀘스트를 수락한 플레이어.</summary>
+        public ulong clientId;
     }
 
     public struct QuestProgressEvent : IGameEvent
@@ -189,11 +193,19 @@ namespace DeadZone.Core
         public ObjectiveType objectiveType;
         public int currentCount;
         public int requiredCount;
+        /// <summary>[v2.1 추가] 진행 보고한 플레이어.</summary>
+        public ulong clientId;
+        /// <summary>[v2.1 추가] 진행된 objective의 targetID.</summary>
+        public FixedString64Bytes targetId;
     }
 
     public struct QuestCompletedEvent : IGameEvent
     {
         public FixedString64Bytes questId;
+        /// <summary>[v2.1 추가] 퀘스트를 완료한 플레이어.</summary>
+        public ulong clientId;
+        /// <summary>[v2.1 추가] 완료 시 해금되는 구역 ID (ZoneUnlockSystem 구독용).</summary>
+        public FixedString64Bytes unlockZoneId;
     }
 
     public struct ExtractionStartedEvent : IGameEvent
@@ -291,19 +303,6 @@ namespace DeadZone.Core
 
     //테스트
     public struct FireInputEvent : IGameEvent {}
-
-    // =====================================================================
-    // Firebase / Relay 이벤트 (v1.3 추가, Part VII Addendum)
-    //
-    // 주의: Firebase/Relay 이벤트 페이로드는 string(uid, email, joinCode)를
-    // 포함해야 하는데 struct에 string 필드를 넣으면 매번 allocation이 발생
-    // (GC 부담). 발생 빈도가 매우 낮으므로(로그인 1회, 방 생성 1회 등)
-    // 여기서는 단순성을 위해 FixedString 사용. 길이 제한에 주의.
-    //   - FixedString64Bytes  : UID 28자(Firebase) + 여유 → OK
-    //   - FixedString128Bytes : email 최대 254자 RFC 기준에는 부족하지만
-    //                           실제 사용 이메일은 대부분 128자 미만이라 타협
-    // =====================================================================
-
     public struct AuthSignedInEvent : IGameEvent
     {
         public FixedString64Bytes firebaseUid;

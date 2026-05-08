@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_Glock17
   displayName: "\uAE00\uB77D-17"
-  description: 
-  icon: {fileID: 0}
+  description: "- \uC624\uC2A4\uB9AC\uD2B8\uC544\uC0B0 \uAD8C\uCD1D\n- \uB4F1\uAE09:
+    \uC77C\uBC18\n\n- \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 20\n2. \uACF5\uACA9 \uC18D\uB3C4: 
+    8\n3. \uD0C4\uCC3D \uD06C\uAE30: 17"
+  icon: {fileID: 21300000, guid: ca3ef69234cf565499d359eea6cee8ee, type: 3}
   category: 0
   rarity: 0
   isValuable: 0
@@ -23,7 +25,7 @@ MonoBehaviour:
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 1500
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 7247205917096702570, guid: 627055ce2b9d7694bb6f23ad66e27c1e, type: 3}
   weaponCategory: 2
   damage: 20
   fireRate: 8

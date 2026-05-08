@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: Defibrillator
   displayName: "\uC81C\uC138\uB3D9\uAE30"
-  description: 
+  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
+    \uC6A9 \uC544\uC774\uD15C(\uC758\uB8CC \uC2DC\uC124)"
   icon: {fileID: 21300000, guid: c5829d882cb633a4bb6a6b5e61805114, type: 3}
   category: 5
   rarity: 2
   isValuable: 0
-  gridSize: {x: 2, y: 2}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 2.5
   baseSellPrice: 8000

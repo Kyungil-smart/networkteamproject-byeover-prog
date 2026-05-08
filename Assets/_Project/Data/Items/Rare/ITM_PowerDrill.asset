@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
   itemID: PowerDrill
   displayName: "\uC804\uB3D9 \uB4DC\uB9B4"
-  description: 
+  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
+    \uC6A9 \uC544\uC774\uD15C(\uCE68\uC2E4)"
   icon: {fileID: 21300000, guid: 1011bfc7dc9afae49beeced3393ca8a5, type: 3}
   category: 9
   rarity: 2
   isValuable: 0
-  gridSize: {x: 2, y: 2}
+  gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 1.5
   baseSellPrice: 3000

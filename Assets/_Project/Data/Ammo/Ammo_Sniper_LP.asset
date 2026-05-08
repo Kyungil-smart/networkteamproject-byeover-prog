@@ -14,7 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.AmmoDataSO
   itemID: Ammo_Sniper_LP
   displayName: "7.62mm LP \uD0C4\uC57D"
-  description: 
+  description: "- \uB4F1\uAE09: \uC77C\uBC18\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
+    Sniper \uD0C4\uC57D. \uBE44\uC7A5\uAC11 \uB300\uC0C1 \uD2B9\uD654.\n2. \uAD00\uB3D9\uB825:
+    4\n3. \uB370\uBBF8\uC9C0 \uC801\uC6A9: \uB370\uBBF8\uC9C0 20% \uC99D\uAC00\n4.
+    \uD0C4\uC18D: 0.9"
   icon: {fileID: 0}
   category: 1
   rarity: 0

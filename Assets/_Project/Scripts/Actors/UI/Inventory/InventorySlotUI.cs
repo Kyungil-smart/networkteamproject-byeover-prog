@@ -29,10 +29,14 @@ namespace DeadZone.Actors.UI
         QuickSlot
     }
 
+    public interface IInventorySlotDropHandler
+    {
+        bool TryHandleDrop(InventorySlotUI source, InventorySlotUI target);
+    }
+
     public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         [BoxGroup("슬롯 상태")]
-        [ReadOnly]
         [Tooltip("인벤토리 그리드의 슬롯 인덱스입니다.")]
         [SerializeField] private int slotIndex;
 
@@ -79,32 +83,15 @@ namespace DeadZone.Actors.UI
         [BoxGroup("희귀도 배경")]
         [SerializeField] private Sprite legendaryBackground;
 
-        [BoxGroup("희귀도 색상")]
-        [SerializeField] private Color commonColor = new Color(0.42f, 0.42f, 0.42f, 0.75f);
-
-        [BoxGroup("희귀도 색상")]
-        [SerializeField] private Color uncommonColor = new Color(0.16f, 0.62f, 0.26f, 0.8f);
-
-        [BoxGroup("희귀도 색상")]
-        [SerializeField] private Color rareColor = new Color(0.16f, 0.38f, 0.88f, 0.8f);
-
-        [BoxGroup("희귀도 색상")]
-        [SerializeField] private Color epicColor = new Color(0.62f, 0.25f, 0.86f, 0.8f);
-
-        [BoxGroup("희귀도 색상")]
-        [SerializeField] private Color legendaryColor = new Color(0.95f, 0.55f, 0.12f, 0.85f);
-
         [BoxGroup("툴팁")]
         [Tooltip("아이템이 들어있는 슬롯에 마우스를 올렸을 때 표시할 툴팁 UI입니다.")]
         [SerializeField] private ItemTooltipUI tooltipUI;
 
         [BoxGroup("툴팁")]
-        [ReadOnly]
         [Tooltip("현재 슬롯에 들어있는 아이템 ScriptableObject입니다.")]
         [SerializeField] private ScriptableObject currentItemData;
 
         [BoxGroup("툴팁")]
-        [ReadOnly]
         [Tooltip("현재 슬롯에 들어있는 아이템 중첩 개수입니다.")]
         [SerializeField] private int currentStackCount;
 
@@ -118,6 +105,7 @@ namespace DeadZone.Actors.UI
         private static InventorySlotUI draggingSlot;
 
         private bool isLocked;
+        private InventoryUI ownerInventoryUI;
 
         public int SlotIndex => slotIndex;
         public InventorySlotKind SlotKind => slotKind;
@@ -146,20 +134,53 @@ namespace DeadZone.Actors.UI
             EnsureRaycastTarget();
         }
 
-        public void PrepareDropSlot(ItemTooltipUI tooltip, int index = -1)
+        public void PrepareDropSlot(ItemTooltipUI tooltip, int index = -1, InventoryUI inventoryUI = null)
         {
             if (index >= 0)
                 slotIndex = index;
 
             tooltipUI = tooltip;
+            if (inventoryUI != null)
+                ownerInventoryUI = inventoryUI;
+
             AutoBindReferences();
             ConfigureSlotKind();
+            EnsureRaycastTarget();
+        }
+
+        public void PrepareDropSlotAsKind(
+            ItemTooltipUI tooltip,
+            InventorySlotKind kind,
+            int index = -1,
+            InventoryUI inventoryUI = null)
+        {
+            if (index >= 0)
+                slotIndex = index;
+
+            slotKind = kind;
+            tooltipUI = tooltip;
+            if (inventoryUI != null)
+                ownerInventoryUI = inventoryUI;
+
+            AutoBindReferences();
             EnsureRaycastTarget();
         }
 
         public void SetTooltip(ItemTooltipUI tooltip)
         {
             tooltipUI = tooltip;
+        }
+
+        public void CopyRarityBackgroundSpritesFrom(InventorySlotUI source)
+        {
+            if (source == null || source == this)
+                return;
+
+            commonBackground = source.commonBackground;
+            uncommonBackground = source.uncommonBackground;
+            rareBackground = source.rareBackground;
+            epicBackground = source.epicBackground;
+            legendaryBackground = source.legendaryBackground;
         }
 
         public void SetItem(ItemDataSO itemData, int stackCount)
@@ -187,20 +208,18 @@ namespace DeadZone.Actors.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (debugTooltipEvents)
+            if (debugTooltipEvents && HasItem)
                 Debug.Log($"[InventorySlotUI] Pointer Enter: {name}, Item={currentItemData}, Stack={currentStackCount}, Tooltip={tooltipUI}", this);
+
+            if (!HasItem)
+            {
+                WarnIfVisibleContentHasNoItemData("툴팁 표시");
+                return;
+            }
 
             if (tooltipUI == null)
             {
                 Debug.LogWarning("[InventorySlotUI] Tooltip UI가 연결되지 않았습니다.", this);
-                return;
-            }
-
-            if (currentItemData == null)
-            {
-                if (debugTooltipEvents)
-                    Debug.LogWarning("[InventorySlotUI] currentItemData가 null입니다.", this);
-
                 return;
             }
 
@@ -220,8 +239,19 @@ namespace DeadZone.Actors.UI
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (!HasItem || isLocked)
+            if (isLocked)
+            {
+                if (debugTooltipEvents)
+                    Debug.LogWarning($"[InventorySlotUI] {name} 슬롯은 잠겨 있어서 드래그할 수 없습니다.", this);
+
                 return;
+            }
+
+            if (!HasItem)
+            {
+                WarnIfVisibleContentHasNoItemData("드래그 시작");
+                return;
+            }
 
             draggingSlot = this;
             if (tooltipUI != null)
@@ -252,7 +282,35 @@ namespace DeadZone.Actors.UI
             if (draggingSlot == null || draggingSlot == this)
                 return;
 
-            TryReceiveDrop(draggingSlot);
+            if (TryHandleExternalDrop(draggingSlot, this))
+                return;
+
+            bool received = TryReceiveDrop(draggingSlot);
+            if (debugTooltipEvents)
+            {
+                string sourceItemId = draggingSlot.CurrentItemData != null ? draggingSlot.CurrentItemData.itemID : "null";
+                Debug.Log($"[InventorySlotUI] Drop Result: source={draggingSlot.name}, target={name}, sourceItem={sourceItemId}, targetKind={slotKind}, success={received}", this);
+            }
+        }
+
+        private static bool TryHandleExternalDrop(InventorySlotUI source, InventorySlotUI target)
+        {
+            if (source == null || target == null)
+                return false;
+
+            foreach (IInventorySlotDropHandler handler in target.GetComponents<IInventorySlotDropHandler>())
+            {
+                if (handler != null && handler.TryHandleDrop(source, target))
+                    return true;
+            }
+
+            foreach (IInventorySlotDropHandler handler in source.GetComponents<IInventorySlotDropHandler>())
+            {
+                if (handler != null && handler.TryHandleDrop(source, target))
+                    return true;
+            }
+
+            return false;
         }
 
         public void ClearItem()
@@ -301,14 +359,21 @@ namespace DeadZone.Actors.UI
         private bool TryReceiveDrop(InventorySlotUI source)
         {
             if (source == null || source == this || source.isLocked || isLocked || !source.HasItem)
+            {
+                if (debugTooltipEvents)
+                {
+                    Debug.LogWarning($"[InventorySlotUI] Drop blocked: source={source}, sameSlot={source == this}, sourceLocked={source != null && source.isLocked}, targetLocked={isLocked}, sourceHasItem={source != null && source.HasItem}", this);
+                }
+
                 return false;
+            }
 
             ItemDataSO sourceItem = source.CurrentItemData;
             int sourceCount = source.CurrentStackCount;
 
             if (!CanAccept(sourceItem))
             {
-                Debug.LogWarning($"[InventorySlotUI] {name} 슬롯에는 {sourceItem.displayName} 아이템을 넣을 수 없습니다.", this);
+                Debug.LogWarning($"[InventorySlotUI] {name} 슬롯에는 {sourceItem.displayName} 아이템을 넣을 수 없습니다. slotKind={slotKind}, itemType={sourceItem.GetType().Name}", this);
                 return false;
             }
 
@@ -370,15 +435,11 @@ namespace DeadZone.Actors.UI
             if (slot == null || !slot.TryGetWeaponSlot(out WeaponSlot weaponSlot))
                 return true;
 
-            InventoryUI inventoryUI = slot.GetComponentInParent<InventoryUI>(true);
-            if (inventoryUI == null)
-            {
-                Debug.LogWarning($"[InventorySlotUI] {slot.name} 장비 슬롯을 처리할 InventoryUI를 찾지 못했습니다.", slot);
-                return false;
-            }
-
             if (nextItem == null)
-                return inventoryUI.TryClearWeaponSlot(weaponSlot);
+            {
+                Debug.Log($"[InventorySlotUI] 장비 슬롯 해제 요청: slot={slot.name}, weaponSlot={weaponSlot}", slot);
+                return TryClearWeaponSlot(weaponSlot, slot);
+            }
 
             if (nextItem is not WeaponDataSO weaponData)
             {
@@ -386,7 +447,152 @@ namespace DeadZone.Actors.UI
                 return false;
             }
 
-            return inventoryUI.TryEquipWeaponSlot(weaponSlot, weaponData);
+            Debug.Log($"[InventorySlotUI] 장비 슬롯 장착 요청: slot={slot.name}, weaponSlot={weaponSlot}, itemID={weaponData.itemID}, category={weaponData.weaponCategory}", slot);
+            return TryEquipWeaponSlot(weaponSlot, weaponData, slot);
+        }
+
+        private static bool TryEquipWeaponSlot(WeaponSlot weaponSlot, WeaponDataSO weaponData, UnityEngine.Object context)
+        {
+            if (weaponData == null)
+                return TryClearWeaponSlot(weaponSlot, context);
+
+            Unity.Collections.FixedString64Bytes ammoId = "";
+            int ammoCount = Mathf.Max(0, weaponData.magSize);
+
+            EquipmentSlotsBridge bridge = ResolveEquipmentSlotsBridge(weaponData.itemID);
+            if (bridge != null && bridge.IsSpawned)
+            {
+                bridge.EquipItemServerRpc(
+                    new Unity.Collections.FixedString64Bytes(weaponData.itemID),
+                    weaponSlot,
+                    ammoId,
+                    (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
+
+                return true;
+            }
+
+            EquipmentSlots equipmentSlots = ResolveEquipmentSlots();
+            if (equipmentSlots != null && equipmentSlots.IsServer)
+            {
+                WeaponState state = new()
+                {
+                    loadedAmmoId = ammoId,
+                    currentAmmo = ammoCount
+                };
+
+                equipmentSlots.UpdateSlot(weaponSlot, weaponData.itemID, state);
+                return true;
+            }
+
+            if (equipmentSlots != null && equipmentSlots.IsSpawned)
+            {
+                equipmentSlots.EquipWeaponSlotServerRpc(
+                    new Unity.Collections.FixedString64Bytes(weaponData.itemID),
+                    weaponSlot,
+                    ammoId,
+                    (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
+
+                return true;
+            }
+
+            Debug.LogWarning($"[InventorySlotUI] 무기 장착 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. slot={weaponSlot}, itemID={weaponData.itemID}", context);
+            return true;
+        }
+
+        private static bool TryClearWeaponSlot(WeaponSlot weaponSlot, UnityEngine.Object context)
+        {
+            EquipmentSlots equipmentSlots = ResolveEquipmentSlots();
+            if (equipmentSlots != null && equipmentSlots.IsServer)
+            {
+                equipmentSlots.UpdateSlot(weaponSlot, string.Empty, default);
+                return true;
+            }
+
+            if (equipmentSlots != null && equipmentSlots.IsSpawned)
+            {
+                equipmentSlots.ClearWeaponSlotServerRpc(weaponSlot);
+                return true;
+            }
+
+            Debug.LogWarning($"[InventorySlotUI] 무기 장착 해제 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. slot={weaponSlot}", context);
+            return true;
+        }
+
+        private static EquipmentSlotsBridge ResolveEquipmentSlotsBridge(string itemId)
+        {
+            EquipmentSlotsBridge[] candidates = FindObjectsByType<EquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner && candidate.CanEquipItem(itemId))
+                    return candidate;
+            }
+
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null && candidate.CanEquipItem(itemId))
+                    return candidate;
+            }
+
+            return null;
+        }
+
+        private static EquipmentSlots ResolveEquipmentSlots()
+        {
+            EquipmentSlots[] candidates = FindObjectsByType<EquipmentSlots>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlots candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                    return candidate;
+            }
+
+            foreach (EquipmentSlots candidate in candidates)
+            {
+                if (candidate != null)
+                    return candidate;
+            }
+
+            return null;
+        }
+
+        private static InventoryUI ResolveInventoryUI(InventorySlotUI slot)
+        {
+            if (slot == null)
+                return null;
+
+            if (slot.ownerInventoryUI != null)
+                return slot.ownerInventoryUI;
+
+            InventoryUI parentInventoryUI = slot.GetComponentInParent<InventoryUI>(true);
+            if (parentInventoryUI != null)
+                return parentInventoryUI;
+
+            if (InventoryUI.ActiveInstance != null)
+                return InventoryUI.ActiveInstance;
+
+            InventoryUI[] candidates = FindObjectsByType<InventoryUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (InventoryUI candidate in candidates)
+            {
+                if (candidate != null && candidate.OwnsSlot(slot))
+                    return candidate;
+            }
+
+            if (candidates.Length > 0)
+                return candidates[0];
+
+            InventoryUI[] allInventoryUIs = Resources.FindObjectsOfTypeAll<InventoryUI>();
+            foreach (InventoryUI candidate in allInventoryUIs)
+            {
+                if (candidate != null && candidate.gameObject.scene.IsValid() && candidate.OwnsSlot(slot))
+                    return candidate;
+            }
+
+            foreach (InventoryUI candidate in allInventoryUIs)
+            {
+                if (candidate != null && candidate.gameObject.scene.IsValid())
+                    return candidate;
+            }
+
+            return null;
         }
 
         private bool TryGetWeaponSlot(out WeaponSlot weaponSlot)
@@ -426,7 +632,7 @@ namespace DeadZone.Actors.UI
             return slotKind switch
             {
                 InventorySlotKind.Bag => true,
-                InventorySlotKind.QuickSlot => itemData.category != ItemCategory.Weapon && itemData is not WeaponDataSO,
+                InventorySlotKind.QuickSlot => IsQuickSlotItem(itemData),
                 InventorySlotKind.EquipmentHead => itemData.category == ItemCategory.Helmet || itemData is HelmetDataSO,
                 InventorySlotKind.EquipmentArmor => itemData.category == ItemCategory.Armor || itemData is ArmorDataSO,
                 InventorySlotKind.EquipmentBackpack => itemData.category == ItemCategory.Backpack || itemData is BackpackDataSO,
@@ -439,17 +645,18 @@ namespace DeadZone.Actors.UI
 
         private void ConfigureSlotKind()
         {
-            if (!autoDetectSlotKind)
-                return;
-
             string path = GetHierarchyPath(transform).ToLowerInvariant();
-            string objectName = name.ToLowerInvariant();
 
             if (path.Contains("quickslotpanel"))
             {
                 slotKind = InventorySlotKind.QuickSlot;
                 return;
             }
+
+            if (!autoDetectSlotKind)
+                return;
+
+            string objectName = name.ToLowerInvariant();
 
             if (path.Contains("equipmentpanel"))
             {
@@ -544,7 +751,12 @@ namespace DeadZone.Actors.UI
             DestroyDragIcon();
 
             if (iconImage == null || iconImage.sprite == null)
+            {
+                if (debugTooltipEvents)
+                    Debug.LogWarning($"[InventorySlotUI] {name} 슬롯의 아이콘 이미지가 비어 있어 드래그 아이콘을 만들 수 없습니다.", this);
+
                 return;
+            }
 
             dragCanvas = GetComponentInParent<Canvas>();
             if (dragCanvas == null)
@@ -568,6 +780,34 @@ namespace DeadZone.Actors.UI
             dragImage.raycastTarget = false;
 
             MoveDragIcon(eventData.position);
+        }
+
+        private void WarnIfVisibleContentHasNoItemData(string actionName)
+        {
+            if (!debugTooltipEvents || !HasVisibleItemContent())
+                return;
+
+            Debug.LogWarning($"[InventorySlotUI] {name} 슬롯은 UI 이미지/텍스트가 보이지만 currentItemData 또는 stackCount가 비어 있어 {actionName}을 할 수 없습니다. 아이콘을 직접 넣지 말고 SetItem(ItemDataSO, count) 또는 InventoryUI testItemPool로 아이템 데이터를 넣어야 합니다.", this);
+        }
+
+        private bool HasVisibleItemContent()
+        {
+            bool hasIcon = iconImage != null &&
+                           iconImage.enabled &&
+                           iconImage.gameObject.activeInHierarchy &&
+                           iconImage.sprite != null;
+
+            bool hasRarityBackground = rarityBackground != null &&
+                                       rarityBackground.enabled &&
+                                       rarityBackground.gameObject.activeInHierarchy &&
+                                       rarityBackground.sprite != null;
+
+            bool hasStackText = stackCountText != null &&
+                                stackCountText.enabled &&
+                                stackCountText.gameObject.activeInHierarchy &&
+                                !string.IsNullOrWhiteSpace(stackCountText.text);
+
+            return hasIcon || hasRarityBackground || hasStackText;
         }
 
         private void MoveDragIcon(Vector2 screenPosition)
@@ -632,10 +872,10 @@ namespace DeadZone.Actors.UI
             Sprite backgroundSprite = GetRarityBackgroundSprite(rarity);
 
             rarityBackground.sprite = backgroundSprite;
-            rarityBackground.color = GetRarityBackgroundColor(rarity);
-            rarityBackground.enabled = true;
+            rarityBackground.color = Color.white;
+            rarityBackground.enabled = backgroundSprite != null;
             rarityBackground.raycastTarget = false;
-            rarityBackground.gameObject.SetActive(true);
+            rarityBackground.gameObject.SetActive(backgroundSprite != null);
         }
 
         private Sprite GetRarityBackgroundSprite(InventoryItemRarity rarity)
@@ -648,19 +888,6 @@ namespace DeadZone.Actors.UI
                 InventoryItemRarity.Epic => epicBackground,
                 InventoryItemRarity.Legendary => legendaryBackground,
                 _ => commonBackground
-            };
-        }
-
-        private Color GetRarityBackgroundColor(InventoryItemRarity rarity)
-        {
-            return rarity switch
-            {
-                InventoryItemRarity.Common => commonColor,
-                InventoryItemRarity.Uncommon => uncommonColor,
-                InventoryItemRarity.Rare => rareColor,
-                InventoryItemRarity.Epic => epicColor,
-                InventoryItemRarity.Legendary => legendaryColor,
-                _ => commonColor
             };
         }
 
@@ -723,6 +950,20 @@ namespace DeadZone.Actors.UI
         private static bool IsMeleeWeapon(ItemDataSO itemData)
         {
             return itemData is WeaponDataSO weaponData && weaponData.weaponCategory == WeaponCategory.Melee;
+        }
+
+        private static bool IsQuickSlotItem(ItemDataSO itemData)
+        {
+            if (itemData == null)
+                return false;
+
+            if (itemData is WeaponDataSO or ArmorDataSO or HelmetDataSO or BackpackDataSO)
+                return false;
+
+            return itemData.category is not ItemCategory.Weapon
+                and not ItemCategory.Armor
+                and not ItemCategory.Helmet
+                and not ItemCategory.Backpack;
         }
 
         private static string GetHierarchyPath(Transform target)

@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.HelmetDataSO
   itemID: Helmet_C3
   displayName: "C3 \uD5EC\uBA67"
-  description: 
+  description: "- \uB4F1\uAE09: \uD76C\uADC0\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
+    \uAD00\uD1B5\uB825 3\uCC28\uB2E8\n2. \uB0B4\uAD6C\uB3C4: 85\n3. \uC774\uC18D
+    \uD328\uB110\uD2F0: -3%\n4. \uB9C9\uAE30 \uD655\uB960: 50%"
   icon: {fileID: 0}
   category: 2
   rarity: 1

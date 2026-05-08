@@ -1,6 +1,7 @@
 using Sirenix.OdinInspector;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace DeadZone.Actors
@@ -23,6 +24,18 @@ namespace DeadZone.Actors
         [BoxGroup("참조")]
         [Tooltip("선택 사항인 공유 경계 제공자입니다. 비워두면 부모에서 찾고, 없으면 아래 직렬화 값을 사용합니다.")]
         [SerializeField] private MapBoundsProvider boundsProvider;
+
+        [BoxGroup("스테이지 설정")]
+        [ListDrawerSettings(Expanded = true, DraggableItems = true, ShowIndexLabels = true)]
+        [SerializeField] private MinimapStageConfig[] stageConfigs;
+
+        [BoxGroup("이미지")]
+        [Tooltip("미니맵 배경 Image입니다. 비워두면 MiniMapMapImage에서 자동으로 찾습니다.")]
+        [SerializeField] private Image minimapImage;
+
+        [BoxGroup("이미지")]
+        [Tooltip("전체 지도 Image입니다. 비워두면 Png_WorldMap_01에서 자동으로 찾습니다.")]
+        [SerializeField] private Image worldMapImage;
 
         [BoxGroup("런타임 구조")]
         [SerializeField] private RectTransform miniMapMask;
@@ -78,10 +91,12 @@ namespace DeadZone.Actors
         [SerializeField] private bool logStructureBuild = true;
 
         private bool warnedTargetOutsideBounds;
+        private MinimapStageConfig currentStageConfig;
 
         private void Awake()
         {
             ResolveBoundsProvider();
+            ApplyConfigByCurrentScene();
             EnsureMiniMapStructure();
         }
 
@@ -119,7 +134,7 @@ namespace DeadZone.Actors
 
             Image frameImage = miniMapFrame != null ? miniMapFrame.GetComponent<Image>() : null;
             Sprite frameSprite = frameImage != null ? frameImage.sprite : null;
-            Sprite worldMapSprite = FindWorldMapSprite();
+            Sprite worldMapSprite = GetCurrentMinimapSprite();
 
             miniMapMask = GetOrCreateRect(miniMapRoot, "MiniMapMask");
             miniMapMask.SetParent(miniMapRoot, false);
@@ -140,10 +155,11 @@ namespace DeadZone.Actors
             mapImageRect.SetParent(miniMapMask, false);
             ResetCenteredRect(mapImageRect, mapImageSize);
 
-            Image mapImage = GetOrAddImage(mapImageRect.gameObject);
-            mapImage.sprite = worldMapSprite;
-            mapImage.preserveAspect = true;
-            mapImage.raycastTarget = false;
+            minimapImage = GetOrAddImage(mapImageRect.gameObject);
+            minimapImage.sprite = worldMapSprite;
+            minimapImage.preserveAspect = true;
+            minimapImage.raycastTarget = false;
+            ApplyWorldMapImageSprite();
 
             markerRoot = GetOrCreateRect(miniMapRoot, "MarkerRoot_Minimap");
             markerRoot.SetParent(miniMapRoot, false);
@@ -320,6 +336,51 @@ namespace DeadZone.Actors
             Refresh();
         }
 
+        [Button("현재 씬 미니맵 설정 적용")]
+        public void ApplyConfigByCurrentScene()
+        {
+            string currentSceneName = SceneManager.GetActiveScene().name;
+
+            if (stageConfigs == null || stageConfigs.Length == 0)
+            {
+                Debug.LogWarning($"[MinimapSystem] No minimap configs assigned for scene: {currentSceneName}", this);
+                return;
+            }
+
+            foreach (MinimapStageConfig config in stageConfigs)
+            {
+                if (config == null)
+                    continue;
+
+                if (config.SceneName == currentSceneName)
+                {
+                    ApplyConfig(config);
+                    return;
+                }
+            }
+
+            Debug.LogWarning($"[MinimapSystem] No minimap config found for scene: {currentSceneName}", this);
+        }
+
+        public void ApplyConfig(MinimapStageConfig config)
+        {
+            if (config == null)
+                return;
+
+            currentStageConfig = config;
+            worldMin = config.WorldMin;
+            worldMax = config.WorldMax;
+            miniMapSize = config.MiniMapSize;
+            mapImageSize = config.MapImageSize;
+
+            if (boundsProvider != null)
+                boundsProvider.ApplyStageConfig(config);
+
+            ApplyMinimapImageSprite();
+            ApplyWorldMapImageSprite();
+            Refresh();
+        }
+
         private void ResolveMiniMapRoot()
         {
             if (miniMapRoot != null)
@@ -350,6 +411,71 @@ namespace DeadZone.Actors
             }
 
             return null;
+        }
+
+        private Image FindWorldMapImage()
+        {
+            foreach (Image image in transform.root.GetComponentsInChildren<Image>(true))
+            {
+                if (image.name == "Png_WorldMap_01")
+                    return image;
+            }
+
+            return null;
+        }
+
+        private Sprite GetCurrentMinimapSprite()
+        {
+            if (currentStageConfig != null && currentStageConfig.MinimapSprite != null)
+                return currentStageConfig.MinimapSprite;
+
+            return FindWorldMapSprite();
+        }
+
+        private Sprite GetCurrentWorldMapSprite()
+        {
+            if (currentStageConfig != null && currentStageConfig.WorldMapSprite != null)
+                return currentStageConfig.WorldMapSprite;
+
+            return GetCurrentMinimapSprite();
+        }
+
+        private void ApplyMinimapImageSprite()
+        {
+            if (minimapImage == null && mapImageRect != null)
+                minimapImage = mapImageRect.GetComponent<Image>();
+
+            if (minimapImage == null)
+                return;
+
+            Sprite sprite = GetCurrentMinimapSprite();
+            if (sprite == null)
+            {
+                Debug.LogWarning($"[MinimapSystem] Minimap sprite is missing for scene: {SceneManager.GetActiveScene().name}", this);
+                return;
+            }
+
+            minimapImage.sprite = sprite;
+            minimapImage.preserveAspect = true;
+        }
+
+        private void ApplyWorldMapImageSprite()
+        {
+            if (worldMapImage == null)
+                worldMapImage = FindWorldMapImage();
+
+            if (worldMapImage == null)
+                return;
+
+            Sprite sprite = GetCurrentWorldMapSprite();
+            if (sprite == null)
+            {
+                Debug.LogWarning($"[MinimapSystem] World map sprite is missing for scene: {SceneManager.GetActiveScene().name}", this);
+                return;
+            }
+
+            worldMapImage.sprite = sprite;
+            worldMapImage.preserveAspect = true;
         }
 
         private Vector2 GetFrameSize()
@@ -486,6 +612,9 @@ namespace DeadZone.Actors
                 boundsProvider = worldMapController.gameObject.AddComponent<MapBoundsProvider>();
                 boundsProvider.CreateOrRefreshBoundTransforms();
             }
+
+            if (currentStageConfig != null)
+                boundsProvider.ApplyStageConfig(currentStageConfig);
         }
 
         private Vector2 CorrectNormalized(Vector2 rawNormalized)

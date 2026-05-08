@@ -33,6 +33,9 @@ namespace DeadZone.Actors.UI
         
         [Tooltip("입력한 JoinCode로 Relay 방 참가를 요청하는 버튼")]
         [SerializeField] private Button joinRoomButton;
+
+        [Tooltip("Join popup cancel button")]
+        [SerializeField] private Button cancelJoinPopupButton;
         
         [Tooltip("현재 Host/Client 연결을 종료하는 버튼")]
         [SerializeField] private Button leaveRoomButton;
@@ -73,10 +76,15 @@ namespace DeadZone.Actors.UI
         private RoomUiState currentState = RoomUiState.Idle;
         private string currentJoinCode = string.Empty;
 
-        private void Awake() => InitializeView();
+        private void Awake()
+        {
+            ResolveMissingReferences();
+            InitializeView();
+        }
 
         private void OnEnable()
         {
+            ResolveMissingReferences();
             BindButtons();
             SetRoomState(RoomUiState.Idle);
         }
@@ -93,6 +101,9 @@ namespace DeadZone.Actors.UI
 
             if (joinRoomButton != null)
                 joinRoomButton.onClick.AddListener(OnJoinRoomClicked);
+
+            if (cancelJoinPopupButton != null)
+                cancelJoinPopupButton.onClick.AddListener(OnCancelJoinPopupClicked);
 
             if (leaveRoomButton != null)
                 leaveRoomButton.onClick.AddListener(OnLeaveRoomClicked);
@@ -111,6 +122,9 @@ namespace DeadZone.Actors.UI
 
             if (joinRoomButton != null)
                 joinRoomButton.onClick.RemoveListener(OnJoinRoomClicked);
+
+            if (cancelJoinPopupButton != null)
+                cancelJoinPopupButton.onClick.RemoveListener(OnCancelJoinPopupClicked);
 
             if (leaveRoomButton != null)
                 leaveRoomButton.onClick.RemoveListener(OnLeaveRoomClicked);
@@ -152,6 +166,17 @@ namespace DeadZone.Actors.UI
             if (IsBusyState()) return;
 
             _ = JoinRoomAsync();
+        }
+
+        private void OnCancelJoinPopupClicked()
+        {
+            if (IsBusyState()) return;
+
+            if (joinCodeInput != null)
+                joinCodeInput.text = string.Empty;
+
+            SetJoinPopupVisible(false);
+            ApplyButtonsForCurrentState();
         }
 
         private void OnLeaveRoomClicked()
@@ -337,6 +362,7 @@ namespace DeadZone.Actors.UI
                     SetButtonInteractable(createRoomButton, true);
                     SetButtonInteractable(openJoinPopupButton, true);
                     SetButtonInteractable(joinRoomButton, IsJoinPopupVisible());
+                    SetButtonInteractable(cancelJoinPopupButton, IsJoinPopupVisible());
                     SetButtonInteractable(leaveRoomButton, false);
                     SetButtonInteractable(copyJoinCodeButton, false);
                     break;
@@ -345,6 +371,7 @@ namespace DeadZone.Actors.UI
                     SetButtonInteractable(createRoomButton, false);
                     SetButtonInteractable(openJoinPopupButton, false);
                     SetButtonInteractable(joinRoomButton, false);
+                    SetButtonInteractable(cancelJoinPopupButton, false);
                     SetButtonInteractable(leaveRoomButton, false);
                     SetButtonInteractable(copyJoinCodeButton, false);
                     break;
@@ -353,6 +380,7 @@ namespace DeadZone.Actors.UI
                     SetButtonInteractable(createRoomButton, false);
                     SetButtonInteractable(openJoinPopupButton, false);
                     SetButtonInteractable(joinRoomButton, false);
+                    SetButtonInteractable(cancelJoinPopupButton, false);
                     SetButtonInteractable(leaveRoomButton, true);
                     SetButtonInteractable(copyJoinCodeButton, !string.IsNullOrWhiteSpace(currentJoinCode));
                     break;
@@ -361,6 +389,7 @@ namespace DeadZone.Actors.UI
                     SetButtonInteractable(createRoomButton, false);
                     SetButtonInteractable(openJoinPopupButton, false);
                     SetButtonInteractable(joinRoomButton, false);
+                    SetButtonInteractable(cancelJoinPopupButton, false);
                     SetButtonInteractable(leaveRoomButton, true);
                     SetButtonInteractable(copyJoinCodeButton, false);
                     break;
@@ -397,6 +426,29 @@ namespace DeadZone.Actors.UI
         {
             if (loadingBlocker == null) return;
             loadingBlocker.SetActive(active);
+        }
+
+        private void ResolveMissingReferences()
+        {
+            if (cancelJoinPopupButton != null || joinPopup == null) return;
+
+            cancelJoinPopupButton = FindButtonInJoinPopup("Btn_Cancle");
+            if (cancelJoinPopupButton == null)
+                cancelJoinPopupButton = FindButtonInJoinPopup("Btn_Cancel");
+        }
+
+        private Button FindButtonInJoinPopup(string buttonName)
+        {
+            if (joinPopup == null || string.IsNullOrWhiteSpace(buttonName)) return null;
+
+            Button[] buttons = joinPopup.GetComponentsInChildren<Button>(true);
+            foreach (Button button in buttons)
+            {
+                if (button != null && button.name == buttonName)
+                    return button;
+            }
+
+            return null;
         }
     }
     

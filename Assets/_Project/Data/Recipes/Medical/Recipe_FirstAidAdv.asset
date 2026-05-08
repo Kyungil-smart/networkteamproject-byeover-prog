@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32f17ffca3e7c7347854b133fdf3a7b9, type: 3}
+  m_Name: Recipe_FirstAidAdv
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.RecipeSO
+  recipeID: recipe_firstaid_adv
+  result: {fileID: 11400000, guid: 16afedd06c1b33e46985c80e79b3e6a3, type: 2}
+  resultCount: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
+    amount: 3
+  requiredFacilityLevel: 3
+  requiredTier: 2

@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_B90
   displayName: B90
-  description: 
+  description: "- \uBCA8\uAE30\uC5D0 \uD22D\uC218\uBD80\uB300 \uCD1D\n- \uB4F1\uAE09:
+    \uB808\uC5B4\n\n- \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 72\n2. \uACF5\uACA9 \uC18D\uB3C4:
+    3.5\n3. \uD0C4\uCC3D \uD06C\uAE30: 7"
   icon: {fileID: 0}
   category: 0
   rarity: 2
@@ -23,7 +25,7 @@ MonoBehaviour:
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 18000
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 3736537216667916661, guid: 98dbc7269c7474d4ba9aa60c3c4b5afc, type: 3}
   weaponCategory: 4
   damage: 72
   fireRate: 3.5

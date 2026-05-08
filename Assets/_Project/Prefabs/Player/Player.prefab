@@ -476,9 +476,11 @@ GameObject:
   - component: {fileID: 95481129507444498}
   - component: {fileID: -1804149649411048333}
   - component: {fileID: 3481043232388762985}
+  - component: {fileID: 2664804114799552292}
   - component: {fileID: 8480392820659206216}
   - component: {fileID: 173030480013012939}
   - component: {fileID: 5805277289091868248}
+  - component: {fileID: -1125630354745373428}
   - component: {fileID: 8354546832462354360}
   - component: {fileID: 1860151659725561128}
   - component: {fileID: 1755801955162734937}
@@ -585,6 +587,52 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &2664804114799552292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 1
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 0
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
 --- !u!114 &8480392820659206216
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -638,15 +686,77 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cffc98105aaa3ce4998d5623c3d841e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerAniController
+  ShowTopMostFoldoutHeaderGroup: 1
   animator: {fileID: 95481129507444498}
   characterController: {fileID: -1804149649411048333}
   rollSystem: {fileID: -4358573395740997876}
+  allowLocalAnimationWithoutNetworkSpawn: 1
   runSpeed: 7
   movingThreshold: 0.05
   sprintThreshold: 0.75
   walkBlendMagnitude: 0.5
   runBlendMagnitude: 1
   parameterDampTime: 0.1
+--- !u!114 &-1125630354745373428
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 1
+  m_Animator: {fileID: 95481129507444498}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Speed
+      NameHash: -823668238
+      Synchronize: 1
+      ParameterType: 1
+    - name: MoveX
+      NameHash: 675470966
+      Synchronize: 1
+      ParameterType: 1
+    - name: MoveY
+      NameHash: 1598418656
+      Synchronize: 1
+      ParameterType: 1
+    - name: IsMoving
+      NameHash: 120489994
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsSprinting
+      NameHash: -980523212
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsRolling
+      NameHash: -1181490662
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsKnocked
+      NameHash: -432808389
+      Synchronize: 0
+      ParameterType: 4
+    - name: Knockdown
+      NameHash: 1600680830
+      Synchronize: 0
+      ParameterType: 9
+    - name: IsDead
+      NameHash: 1270110494
+      Synchronize: 0
+      ParameterType: 4
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 0
+      ParameterType: 3
+  AnimatorParametersExpanded: 0
 --- !u!114 &8354546832462354360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -661,6 +771,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHealthSystem
   ShowTopMostFoldoutHeaderGroup: 1
   maxHP: 100
+  housingMaxHpBonus: 0
+  fillHpWhenMaxHpIncreased: 1
   knockedMaxHP: 100
   bleedoutSeconds: 60
   bleedoutDamagePerSecond: 1.5
@@ -700,6 +812,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerStaminaSystem
   ShowTopMostFoldoutHeaderGroup: 1
   maxStamina: 100
+  housingMaxStaminaBonus: 0
+  fillStaminaWhenMaxStaminaIncreased: 1
   regenPerSecond: 8
   regenDelaySeconds: 1.5
 --- !u!114 &1755801955162734937
@@ -790,8 +904,15 @@ MonoBehaviour:
   followTarget: {fileID: 4077195986647316}
   worldOffset: {x: 0, y: 12, z: -8}
   lookAtOffset: {x: 0, y: 1, z: 0}
+  defaultLookAheadDistance: 1.6
+  adsLookAheadDistance: 3
+  defaultAdsTransitionTime: 0.2
+  adsReleaseReturnTime: 0.1
   inputController: {fileID: 8480392820659206216}
   fpsController: {fileID: 173030480013012939}
+  adsSystem: {fileID: 0}
+  equipment: {fileID: 0}
+  enableDebugLogs: 0
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0

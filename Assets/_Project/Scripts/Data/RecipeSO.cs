@@ -11,7 +11,6 @@ namespace DeadZone.Core
         public ItemDataSO result;
         public int resultCount = 1;
         public List<ItemRequirement> ingredients;
-        public float craftTimeSeconds = 5f;
         public int requiredFacilityLevel = 1;
         public RarityTier requiredTier = RarityTier.Common;
     }

@@ -1,32 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Firebase.Firestore;
 using Unity.Netcode;
 using UnityEngine;
-
 using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Quests;
 
 namespace DeadZone.Network
 {
-    /// <summary>
-    /// Firestore로 PlayerCloudData를 업/다운로드.
-    /// Lives on PersistentSystems 하위의 자기 GameObject (DontDestroyOnLoad).
-    ///
-    /// 세이브 트리거 (팀장 결정):
-    ///   1) PlayerDiedEvent 발행 + 본인 플레이어일 때 즉시 업로드
-    ///   2) SceneChangedEvent("Hideout") 수신 시 업로드
-    ///   3) OnApplicationQuit 시 최대 3초 동기 대기 업로드
-    ///
-    /// 데이터 수집 전략 (Part VII §7.7):
-    ///   CloudSaveSystem이 각 시스템을 ServiceLocator / GetComponent로 pull.
-    ///   (L1 → L3 의존성은 이 매니저에 한해 예외 허용.)
-    ///
-    /// Firestore 직렬화:
-    ///   PlayerCloudData에 [FirestoreData] 어노테이션이 붙어있어
-    ///   SetAsync(currentData) / snapshot.ConvertTo<T>() 만으로 자동 변환.
-    /// </summary>
     public class CloudSaveSystem : MonoBehaviour
     {
         private const string UsersCollection = "users";
@@ -222,7 +206,7 @@ namespace DeadZone.Network
                     isNew = true;
                     loadedFirebaseUid = uid;
 
-                    bool uploaded = await UploadAsync();  // 신규 유저는 즉시 기본 데이터 기록
+                    bool uploaded = await UploadAsync(); // 신규 유저는 즉시 기본 데이터 기록
                     if (!uploaded)
                     {
                         currentData = null;
@@ -232,7 +216,7 @@ namespace DeadZone.Network
                 }
 
                 loadedFirebaseUid = uid;
-                
+
                 EventBus.Publish(new CloudSaveLoadedEvent
                 {
                     firebaseUid = uid,
@@ -301,6 +285,88 @@ namespace DeadZone.Network
             }
         }
 
+        public async Task<bool> UnlockZoneAndUploadAsync(string zoneId)
+        {
+            if (string.IsNullOrWhiteSpace(zoneId))
+            {
+                Debug.LogWarning("[CloudSaveSystem] Zone 저장 실패. ZoneId가 비어 있습니다.");
+                return false;
+            }
+
+            if (!TryGetSignedInAuth(out string uid, out _))
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. 로그인 상태가 아닙니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            if (!TryEnsureFirestoreReady())
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. Firestore가 준비되지 않았습니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            if (currentData == null)
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. CurrentData가 없습니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            if (loadedFirebaseUid != uid)
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Zone 저장 실패. 현재 로그인 UID와 로드된 데이터 UID가 다릅니다. ZoneId={zoneId}");
+                return false;
+            }
+
+            try
+            {
+                EnsureCloudDataContainers();
+
+                CollectDataFromScene();
+
+                EnsureCloudDataContainers();
+
+                bool added = false;
+
+                if (!currentData.progress.unlockedZones.Contains(zoneId))
+                {
+                    currentData.progress.unlockedZones.Add(zoneId);
+                    added = true;
+                }
+
+                currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = true,
+                });
+
+                Debug.Log($"[CloudSaveSystem] Zone 저장 완료. ZoneId={zoneId}, Added={added}");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[CloudSaveSystem] Zone 저장 실패. ZoneId={zoneId}, Error={ex}");
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = false,
+                });
+
+                return false;
+            }
+        }
+
+        private void EnsureCloudDataContainers()
+        {
+            currentData.profile ??= new ProfileData();
+            currentData.progress ??= new ProgressData();
+            currentData.progress.unlockedZones ??= new List<string>();
+        }
+        
         // =================================================================
         // 씬에서 데이터 수집 (Part VII §7.7 - Pull 방식)
         // =================================================================
@@ -346,13 +412,13 @@ namespace DeadZone.Network
             if (eq == null) return;
 
             currentData.equipment.helmetId = eq.HeadSlotId.Value.ToString();
-            currentData.equipment.armorId  = eq.TorsoSlotId.Value.ToString();
+            currentData.equipment.armorId = eq.TorsoSlotId.Value.ToString();
             currentData.equipment.primary1 = eq.Primary1Id.Value.ToString();
             currentData.equipment.primary2 = eq.Primary2Id.Value.ToString();
             currentData.equipment.secondary = eq.SecondaryId.Value.ToString();
-            currentData.equipment.melee    = eq.MeleeId.Value.ToString();
+            currentData.equipment.melee = eq.MeleeId.Value.ToString();
             currentData.equipment.helmetDurability = eq.HelmetDurability.Value;
-            currentData.equipment.armorDurability  = eq.ArmorDurability.Value;
+            currentData.equipment.armorDurability = eq.ArmorDurability.Value;
         }
 
         private void CollectFacilities()
@@ -365,30 +431,28 @@ namespace DeadZone.Network
             {
                 switch (f.Type)
                 {
-                    case FacilityType.Workbench:   currentData.facilities.workbench   = f.CurrentLevel.Value; break;
+                    case FacilityType.Workbench: currentData.facilities.workbench = f.CurrentLevel.Value; break;
                     case FacilityType.CommStation: currentData.facilities.commStation = f.CurrentLevel.Value; break;
-                    case FacilityType.Gym:         currentData.facilities.gym         = f.CurrentLevel.Value; break;
-                    case FacilityType.Stash:       currentData.facilities.stash       = f.CurrentLevel.Value; break;
-                    case FacilityType.Kitchen:     currentData.facilities.kitchen     = f.CurrentLevel.Value; break;
-                    case FacilityType.Bed:         currentData.facilities.bed         = f.CurrentLevel.Value; break;
+                    case FacilityType.Gym: currentData.facilities.gym = f.CurrentLevel.Value; break;
+                    case FacilityType.Stash: currentData.facilities.stash = f.CurrentLevel.Value; break;
+                    case FacilityType.Kitchen: currentData.facilities.kitchen = f.CurrentLevel.Value; break;
+                    case FacilityType.Bed: currentData.facilities.bed = f.CurrentLevel.Value; break;
                 }
             }
         }
 
         private void CollectPersonalQuestProgress()
         {
-            // v1.3 초기: NetworkList(공유 상태)를 그대로 개인 필드에 복사.
-            // 추후 QuestManager 개선 시 개인 플래그를 분리하면 이 로직도 교체.
+            if (NetworkManager.Singleton == null) return;
+
             var quest = ServiceLocator.Get<QuestManager>();
             if (quest == null) return;
 
-            currentData.progress.personalActiveQuestIds.Clear();
-            for (int i = 0; i < quest.ActiveQuestIds.Count; i++)
-                currentData.progress.personalActiveQuestIds.Add(quest.ActiveQuestIds[i].ToString());
+            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            var myState = quest.GetPlayerState(localClientId);
+            if (myState == null) return;
 
-            currentData.progress.personalCompletedQuestIds.Clear();
-            for (int i = 0; i < quest.CompletedQuestIds.Count; i++)
-                currentData.progress.personalCompletedQuestIds.Add(quest.CompletedQuestIds[i].ToString());
+            myState.WriteToCloudProgress(currentData.progress);
         }
 
         // =================================================================
