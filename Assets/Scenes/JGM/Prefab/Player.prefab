@@ -1011,7 +1011,7 @@ Transform:
   m_GameObject: {fileID: 2099325004758248890}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 3.1044087e-10, y: 1.6027416, z: -0.0032264395}
+  m_LocalPosition: {x: 0, y: 1.6027426, z: -0.0032263945}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1540,8 +1540,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3327090606728123391}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0000005617606, y: 0.00000018725329, z: -0.00000037450693, w: 1}
-  m_LocalPosition: {x: 0.000000002483527, y: 1.1699642, z: -0.021774773}
+  m_LocalRotation: {x: -0.00000056176054, y: -2.1038327e-13, z: -0.000000374507, w: 1}
+  m_LocalPosition: {x: 0, y: 1.1699626, z: -0.021774825}
   m_LocalScale: {x: 1.0905, y: 1.8127933, z: 1.0553}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3132,7 +3132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3365319497
+  GlobalObjectIdHash: 1410919396
   InScenePlacedSourceGlobalObjectIdHash: 1410919396
   DeferredDespawnTick: 0
   Ownership: 1
@@ -3198,9 +3198,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cffc98105aaa3ce4998d5623c3d841e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerAniController
+  ShowTopMostFoldoutHeaderGroup: 1
   animator: {fileID: 7415627967692734220}
   characterController: {fileID: 7838744683106696135}
   rollSystem: {fileID: 2224597425123872731}
+  allowLocalAnimationWithoutNetworkSpawn: 1
   runSpeed: 7
   movingThreshold: 0.05
   sprintThreshold: 0.75
@@ -3406,39 +3408,29 @@ MonoBehaviour:
   gridInventory: {fileID: 4260008715252334417}
   testItems:
   - item: {fileID: 11400000, guid: 0ad2af112dd8ad94192784a3dadaf54d, type: 2}
-    amount: 99
+    amount: 15
   - item: {fileID: 11400000, guid: b0f7fba7e4e87a74c91f5c3d0cbd5f44, type: 2}
-    amount: 99
+    amount: 15
+  - item: {fileID: 11400000, guid: b225481d750ccc04b803ebb051064af7, type: 2}
+    amount: 1
   - item: {fileID: 11400000, guid: 5c2259d638199a34c87356386180e0fb, type: 2}
-    amount: 99
+    amount: 1
   - item: {fileID: 11400000, guid: cd4e61cb257052b40ada50b9154659af, type: 2}
-    amount: 99
+    amount: 1
   - item: {fileID: 11400000, guid: 62bfb5be1f6350342aac4c5a39528dd9, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: fb39cbbad24212c4db9c4e2476051643, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 920d06dc601dcaf47895d1989f2968d6, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 62bfb5be1f6350342aac4c5a39528dd9, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 767b74ff11969224e8c3e739ffb9f6d2, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: 228f7cdc946b06042960e1f6445bde2e, type: 2}
-    amount: 99
-  - item: {fileID: 11400000, guid: be884a024d1ace14487ad8ca2af8974c, type: 2}
-    amount: 99
+    amount: 4
   - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
-    amount: 99
+    amount: 30
   - item: {fileID: 11400000, guid: dafe881ee30592d4da6053db2bcf0ff4, type: 2}
-    amount: 99
+    amount: 1
+  - item: {fileID: 11400000, guid: 3f26f68f6f0f19a4bbaf942bed6f42a7, type: 2}
+    amount: 15
+  - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: d1bef906214968245aa2782265ea3f2c, type: 2}
+    amount: 6
+  - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
+    amount: 3
 --- !u!1 &8891958178260265517
 GameObject:
   m_ObjectHideFlags: 0

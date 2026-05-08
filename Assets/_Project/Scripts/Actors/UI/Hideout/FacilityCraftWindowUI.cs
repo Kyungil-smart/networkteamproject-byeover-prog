@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Housing;
 
 namespace DeadZone.Actors.UI.Hideout
 {
-    // 작업대/의료시설 아이템 제작 창을 관리
-    // 레시피 목록 표시, 재료 검사, 재료 소모, 결과 아이템 지급을 담당
+    // 작업대/의료시설 제작 창 UI
+    // UI는 레시피 표시와 제작 요청만 담당하고, 재료 소모와 결과 지급은 서버 제작 컨트롤러가 처리
     [DisallowMultipleComponent]
     public sealed class FacilityCraftWindowUI : MonoBehaviour
     {
@@ -24,7 +26,7 @@ namespace DeadZone.Actors.UI.Hideout
         [Header("창 루트")]
         [SerializeField] private GameObject windowRoot;
 
-        [Header("상단 표시")]
+        [Header("텍스트 표시")]
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text descriptionText;
         [SerializeField] private TMP_Text levelText;
@@ -33,7 +35,7 @@ namespace DeadZone.Actors.UI.Hideout
         [Header("시설 연결")]
         [SerializeField] private List<FacilityViewBinding> facilityBindings = new();
 
-        [Header("인벤토리")]
+        [Header("인벤토리 표시용")]
         [SerializeField] private MonoBehaviour inventoryBehaviour;
 
         [Header("레시피 목록")]
@@ -48,7 +50,6 @@ namespace DeadZone.Actors.UI.Hideout
         [SerializeField] private bool showDebugLog = true;
 
         private readonly List<FacilityCraftRecipeRowUI> spawnedRows = new();
-        private readonly List<ItemRequirement> consumedIngredients = new();
 
         private HideoutCameraFacilitySelector.FacilityView currentFacilityView =
             HideoutCameraFacilitySelector.FacilityView.None;
@@ -76,7 +77,7 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (!CanUseCraftWindow(facilityView))
             {
-                Debug.LogWarning($"[FacilityCraftWindowUI] {facilityView} 시설은 제작 창을 열 수 없습니다.", this);
+                Debug.LogWarning($"[FacilityCraftWindowUI] {facilityView} 시설은 제작 창을 사용할 수 없습니다.", this);
                 return;
             }
 
@@ -130,7 +131,7 @@ namespace DeadZone.Actors.UI.Hideout
             RefreshRecipeRows();
         }
 
-        private void TryCraftRecipe(RecipeSO recipe)
+        private void RequestCraftRecipe(RecipeSO recipe)
         {
             if (recipe == null)
             {
@@ -138,22 +139,14 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            ResolveInventory();
+            if (!IsRecipeValid(recipe))
+                return;
 
             if (currentFacility == null)
             {
                 SetMessage("현재 선택된 시설이 없습니다.");
                 return;
             }
-
-            if (inventory == null)
-            {
-                SetMessage("인벤토리가 연결되지 않았습니다.");
-                return;
-            }
-
-            if (!IsRecipeValid(recipe))
-                return;
 
             int currentLevel = currentFacility.GetCurrentLevel();
             int requiredLevel = Mathf.Max(1, recipe.requiredFacilityLevel);
@@ -165,47 +158,59 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            if (!HasAllIngredients(recipe))
+            if (!RequestCraftToCurrentFacility(recipe.recipeID))
             {
-                SetMessage("제작 재료가 부족합니다.");
-                Refresh();
+                SetMessage("제작 컨트롤러가 연결되어 있지 않습니다.");
                 return;
             }
 
-            if (!ConsumeAllIngredients(recipe))
-            {
-                SetMessage("제작 재료 소모에 실패했습니다.");
-                Refresh();
-                return;
-            }
+            string resultName = recipe.result != null && !string.IsNullOrWhiteSpace(recipe.result.displayName)
+                ? recipe.result.displayName
+                : recipe.recipeID;
 
-            int resultCount = Mathf.Max(1, recipe.resultCount);
-
-            if (!inventory.TryAddItem(recipe.result, resultCount))
-            {
-                RestoreConsumedIngredients();
-                SetMessage("결과 아이템 지급에 실패했습니다. 재료를 되돌렸습니다.");
-                Refresh();
-                return;
-            }
-
-            consumedIngredients.Clear();
-
-            string resultName = string.IsNullOrWhiteSpace(recipe.result.displayName)
-                ? recipe.result.itemID
-                : recipe.result.displayName;
-
-            SetMessage($"{resultName} x{resultCount} 제작 완료");
-            DebugLog($"제작 성공: {recipe.recipeID} → {recipe.result.itemID} x{resultCount}");
+            SetMessage($"{resultName} 제작을 서버에 요청했습니다.");
+            DebugLog($"제작 요청: {recipe.recipeID}");
 
             Refresh();
+        }
+
+        private bool RequestCraftToCurrentFacility(string recipeID)
+        {
+            if (currentFacility == null)
+                return false;
+
+            WorkbenchCraftingController workbenchController =
+                currentFacility.GetComponent<WorkbenchCraftingController>();
+
+            if (workbenchController == null)
+                workbenchController = currentFacility.GetComponentInChildren<WorkbenchCraftingController>(true);
+
+            if (workbenchController != null)
+            {
+                workbenchController.RequestCraft(recipeID);
+                return true;
+            }
+
+            MedicalCraftingController medicalController =
+                currentFacility.GetComponent<MedicalCraftingController>();
+
+            if (medicalController == null)
+                medicalController = currentFacility.GetComponentInChildren<MedicalCraftingController>(true);
+
+            if (medicalController != null)
+            {
+                medicalController.RequestCraft(recipeID);
+                return true;
+            }
+
+            return false;
         }
 
         private bool IsRecipeValid(RecipeSO recipe)
         {
             if (recipe == null)
             {
-                SetMessage("레시피가 없습니다.");
+                SetMessage("레시피 데이터가 없습니다.");
                 return false;
             }
 
@@ -217,86 +222,11 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (recipe.result == null)
             {
-                SetMessage("결과 아이템이 설정되지 않았습니다.");
+                SetMessage("결과 아이템이 연결되어 있지 않습니다.");
                 return false;
             }
 
             return true;
-        }
-
-        private bool HasAllIngredients(RecipeSO recipe)
-        {
-            if (recipe.ingredients == null || recipe.ingredients.Count == 0)
-                return true;
-
-            for (int i = 0; i < recipe.ingredients.Count; i++)
-            {
-                ItemRequirement ingredient = recipe.ingredients[i];
-
-                if (ingredient.item == null || string.IsNullOrWhiteSpace(ingredient.item.itemID))
-                    return false;
-
-                int amount = Mathf.Max(1, ingredient.amount);
-
-                if (!inventory.HasItem(ingredient.item.itemID, amount))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private bool ConsumeAllIngredients(RecipeSO recipe)
-        {
-            consumedIngredients.Clear();
-
-            if (recipe.ingredients == null || recipe.ingredients.Count == 0)
-                return true;
-
-            for (int i = 0; i < recipe.ingredients.Count; i++)
-            {
-                ItemRequirement ingredient = recipe.ingredients[i];
-
-                if (ingredient.item == null || string.IsNullOrWhiteSpace(ingredient.item.itemID))
-                {
-                    RestoreConsumedIngredients();
-                    return false;
-                }
-
-                int amount = Mathf.Max(1, ingredient.amount);
-
-                if (!inventory.ConsumeItem(ingredient.item.itemID, amount))
-                {
-                    RestoreConsumedIngredients();
-                    return false;
-                }
-
-                consumedIngredients.Add(new ItemRequirement
-                {
-                    item = ingredient.item,
-                    amount = amount
-                });
-            }
-
-            return true;
-        }
-
-        private void RestoreConsumedIngredients()
-        {
-            if (inventory == null)
-                return;
-
-            for (int i = 0; i < consumedIngredients.Count; i++)
-            {
-                ItemRequirement ingredient = consumedIngredients[i];
-
-                if (ingredient.item == null)
-                    continue;
-
-                int amount = Mathf.Max(1, ingredient.amount);
-                inventory.TryAddItem(ingredient.item, amount);
-            }
-
-            consumedIngredients.Clear();
         }
 
         private void Initialize()
@@ -308,7 +238,6 @@ namespace DeadZone.Actors.UI.Hideout
                 windowRoot = gameObject;
 
             ResolveInventory();
-
             isInitialized = true;
         }
 
@@ -316,11 +245,41 @@ namespace DeadZone.Actors.UI.Hideout
         {
             inventory = null;
 
+            // 네트워크 실사용 기준: 현재 로컬 플레이어의 PlayerObject 인벤토리를 가장 먼저 찾는다.
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+                if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out NetworkClient localClient))
+                {
+                    if (localClient.PlayerObject != null)
+                    {
+                        IInventory playerInventory = localClient.PlayerObject.GetComponent<IInventory>();
+
+                        if (playerInventory == null)
+                            playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
+
+                        if (playerInventory != null)
+                        {
+                            inventory = playerInventory;
+                            inventoryBehaviour = playerInventory as MonoBehaviour;
+
+                            if (inventoryBehaviour != null)
+                                DebugLog($"로컬 플레이어 인벤토리 연결 완료: {inventoryBehaviour.gameObject.name}");
+
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 인스펙터에 직접 연결된 인벤토리
             if (inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
                 {
                     inventory = directInventory;
+                    DebugLog($"IInventory 직접 연결 완료: {inventoryBehaviour.GetType().Name}");
                     return;
                 }
 
@@ -329,6 +288,7 @@ namespace DeadZone.Actors.UI.Hideout
                 if (sameObjectInventory != null)
                 {
                     inventory = sameObjectInventory;
+                    DebugLog($"IInventory 같은 오브젝트에서 연결 완료: {sameObjectInventory.GetType().Name}");
                     return;
                 }
 
@@ -337,12 +297,14 @@ namespace DeadZone.Actors.UI.Hideout
                 if (childInventory != null)
                 {
                     inventory = childInventory;
+                    DebugLog($"IInventory 자식 오브젝트에서 연결 완료: {childInventory.GetType().Name}");
                     return;
                 }
             }
 
+            // 최후의 자동 검색
             MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Include,
+                FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
 
             for (int i = 0; i < behaviours.Length; i++)
@@ -352,8 +314,12 @@ namespace DeadZone.Actors.UI.Hideout
 
                 inventory = foundInventory;
                 inventoryBehaviour = behaviours[i];
+
+                DebugLog($"IInventory 자동 연결 완료: {behaviours[i].GetType().Name} / 오브젝트: {behaviours[i].gameObject.name}");
                 return;
             }
+
+            Debug.LogWarning("[FacilityCraftWindowUI] 씬에서 IInventory 구현체를 찾지 못했습니다.", this);
         }
 
         private void RefreshTexts()
@@ -385,13 +351,13 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (recipeListRoot == null)
             {
-                Debug.LogWarning("[FacilityCraftWindowUI] Recipe List Root가 연결되지 않았습니다.", this);
+                Debug.LogWarning("[FacilityCraftWindowUI] Recipe List Root가 연결되어 있지 않습니다.", this);
                 return;
             }
 
             if (recipeRowPrefab == null)
             {
-                Debug.LogWarning("[FacilityCraftWindowUI] Recipe Row Prefab이 연결되지 않았습니다.", this);
+                Debug.LogWarning("[FacilityCraftWindowUI] Recipe Row Prefab이 연결되어 있지 않습니다.", this);
                 return;
             }
 
@@ -405,12 +371,11 @@ namespace DeadZone.Actors.UI.Hideout
                     continue;
 
                 FacilityCraftRecipeRowUI row = Instantiate(recipeRowPrefab, recipeListRoot);
-                row.Set(recipe, currentLevel, inventory, TryCraftRecipe);
-
+                row.Set(recipe, currentLevel, inventory, RequestCraftRecipe);
                 spawnedRows.Add(row);
             }
 
-            DebugLog($"{currentFacilityView} 레시피 Row {spawnedRows.Count}개를 생성했습니다.");
+            DebugLog($"{currentFacilityView} 제작 Row {spawnedRows.Count}개를 생성했습니다.");
         }
 
         private IReadOnlyList<RecipeSO> GetCurrentRecipes()
@@ -492,7 +457,7 @@ namespace DeadZone.Actors.UI.Hideout
             {
                 HideoutCameraFacilitySelector.FacilityView.Workbench => "총기 작업대 제작",
                 HideoutCameraFacilitySelector.FacilityView.Medical => "의료시설 제작",
-                _ => "아이템 제작"
+                _ => "제작"
             };
         }
 
@@ -501,10 +466,10 @@ namespace DeadZone.Actors.UI.Hideout
             return facilityView switch
             {
                 HideoutCameraFacilitySelector.FacilityView.Workbench =>
-                    "시설 레벨에 따라 총기 제작 목록이 표시됩니다.",
+                    "시설 레벨에 따라 총기 제작 레시피가 표시됩니다.",
 
                 HideoutCameraFacilitySelector.FacilityView.Medical =>
-                    "시설 레벨에 따라 의료품 제작 목록이 표시됩니다.",
+                    "시설 레벨에 따라 의료품 제작 레시피가 표시됩니다.",
 
                 _ => string.Empty
             };
