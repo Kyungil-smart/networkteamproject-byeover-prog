@@ -1,6 +1,7 @@
 ﻿using Unity.Collections;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Systems;
 
 namespace DeadZone.Core
@@ -155,6 +156,20 @@ namespace DeadZone.Core
     {
         public Vector3 position;
         public bool isOpen;
+    }
+
+    // CameraCutoutTarget이 활성화되어 카메라 컷아웃 관리 대상에 등록될 때 발행된다.
+    // 씬 초기화 시 Start에서 한 번 발행되고, 이후 비활성화된 오브젝트가 다시 활성화될 때 OnEnable에서 발행된다.
+    public struct CameraCutoutTargetRegisteredEvent : IGameEvent
+    {
+        public CameraCutoutTarget target;
+    }
+
+    // CameraCutoutTarget이 비활성화되어 카메라 컷아웃 관리 대상에서 해제될 때 발행된다.
+    // 등록된 대상이 OnDisable을 호출할 때 발행된다.
+    public struct CameraCutoutTargetUnregisteredEvent : IGameEvent
+    {
+        public CameraCutoutTarget target;
     }
 
     public struct ZoneEnteredEvent : IGameEvent
