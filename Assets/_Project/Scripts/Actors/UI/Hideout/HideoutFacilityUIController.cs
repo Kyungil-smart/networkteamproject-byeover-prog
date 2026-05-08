@@ -92,6 +92,7 @@ namespace DeadZone.Actors.UI.Hideout
                 CloseContentOnly();
 
             SetOpenFacilityButtonVisible(true);
+
             DebugLog($"{facilityView} 시설을 선택했습니다.");
         }
 
@@ -111,6 +112,8 @@ namespace DeadZone.Actors.UI.Hideout
 
             HideLegacyContentRoot();
             facilityUpgradeWindowUI.Open(selectedFacility);
+
+            SetOpenFacilityButtonVisible(false);
 
             DebugLog($"{selectedFacility} 시설 업그레이드 창을 열었습니다.");
         }
@@ -179,14 +182,20 @@ namespace DeadZone.Actors.UI.Hideout
 
         private void HideLegacyContentRoot()
         {
-            if (facilityContentRoot != null)
-                facilityContentRoot.SetActive(false);
+            HideIfNotUpgradeWindow(facilityContentRoot);
+            HideIfNotUpgradeWindow(leftFacilityPanelRoot);
+            HideIfNotUpgradeWindow(rightInventoryPanelRoot);
+        }
 
-            if (leftFacilityPanelRoot != null)
-                leftFacilityPanelRoot.SetActive(false);
+        private void HideIfNotUpgradeWindow(GameObject target)
+        {
+            if (target == null)
+                return;
 
-            if (rightInventoryPanelRoot != null)
-                rightInventoryPanelRoot.SetActive(false);
+            if (facilityUpgradeWindowUI != null && target == facilityUpgradeWindowUI.WindowRoot)
+                return;
+
+            target.SetActive(false);
         }
 
         private void DebugLog(string message)
