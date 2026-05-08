@@ -1,9 +1,11 @@
-using DeadZone.Core;
-using DeadZone.Systems;
 using System;
 using System.Collections.Generic;
+
 using TMPro;
 using UnityEngine;
+
+using DeadZone.Core;
+using DeadZone.Systems;
 
 namespace DeadZone.Actors.UI.Hideout
 {
@@ -44,9 +46,11 @@ namespace DeadZone.Actors.UI.Hideout
 
         private FacilityBase currentFacility;
         private IInventory inventory;
+        private bool isInitialized;
 
         public bool IsOpen => windowRoot != null && windowRoot.activeSelf;
         public FacilityBase CurrentFacility => currentFacility;
+        public GameObject WindowRoot => windowRoot != null ? windowRoot : gameObject;
 
         private void Reset()
         {
@@ -55,17 +59,13 @@ namespace DeadZone.Actors.UI.Hideout
 
         private void Awake()
         {
-            DebugLog("Awake 실행");
-
-            if (windowRoot == null)
-                windowRoot = gameObject;
-
-            ResolveInventory();
-            Close();
+            Initialize();
         }
 
         public void Open(HideoutCameraFacilitySelector.FacilityView facilityView)
         {
+            Initialize();
+
             if (facilityView == HideoutCameraFacilitySelector.FacilityView.None)
             {
                 Debug.LogWarning("[FacilityUpgradeWindowUI] 열 시설이 선택되지 않았습니다.", this);
@@ -98,6 +98,9 @@ namespace DeadZone.Actors.UI.Hideout
             if (windowRoot != null)
                 windowRoot.SetActive(false);
 
+            ClearTexts();
+            ClearRows();
+
             DebugLog("업그레이드 창을 닫았습니다.");
         }
 
@@ -129,7 +132,22 @@ namespace DeadZone.Actors.UI.Hideout
             }
 
             RefreshUpgradeRows();
+
             DebugLog($"시설 데이터 조회: {currentFacilityView}, 현재 레벨 {currentLevel}, 최대 레벨 {maxLevel}");
+        }
+
+        private void Initialize()
+        {
+            if (isInitialized)
+                return;
+
+            if (windowRoot == null)
+                windowRoot = gameObject;
+
+            ResolveInventory();
+
+            isInitialized = true;
+            DebugLog("초기화 완료");
         }
 
         private void RefreshUpgradeRows()
