@@ -18,7 +18,7 @@ namespace DeadZone.Actors.UI
             new[] { "party", "파티" },
             new[] { "inventory", "인벤토리" },
             new[] { "craft", "제작" },
-            new[] { "shop", "trader", "상점", "트레이더" },
+            new[] { "trader", "트레이더" },
             new[] { "quest", "퀘스트" },
             new[] { "facility", "시설" }
         };
@@ -28,7 +28,7 @@ namespace DeadZone.Actors.UI
             "Page_Party",
             "Page_Inventory",
             "Page_Craft",
-            "Page_Shop",
+            "Page_Trader",
             "Page_Quest",
             "Page_Facility"
         };
@@ -41,9 +41,8 @@ namespace DeadZone.Actors.UI
         [Required]
         [SerializeField] private GameObject[] pages;
 
-        [Title("기본 선택")]
-        [MinValue(0)]
-        [SerializeField] private int defaultIndex;
+        [Title("기본 탭")]
+        [SerializeField] private int defaultTabIndex = 0;
 
         [Title("자동 연결")]
         [SerializeField] private bool autoCollectTabsInScene = true;
@@ -78,11 +77,6 @@ namespace DeadZone.Actors.UI
             AutoConnectTabsAndPages();
         }
 
-        private void OnValidate()
-        {
-            defaultIndex = Mathf.Clamp(defaultIndex, 0, Mathf.Max(0, PageNames.Length - 1));
-        }
-
         private void Awake()
         {
             if (logLifecycle)
@@ -96,10 +90,7 @@ namespace DeadZone.Actors.UI
 
         private void Start()
         {
-            if (logLifecycle)
-                Debug.Log($"[LobbyTabController] Start 실행됨. DefaultIndex={defaultIndex}, Tabs={GetLength(tabs)}, Pages={GetLength(pages)}", this);
-
-            SelectTabInstant(defaultIndex);
+            SelectTabInstant(defaultTabIndex);
         }
 
         private void Update()
@@ -162,12 +153,6 @@ namespace DeadZone.Actors.UI
             }
         }
 
-        [Button("기본 탭으로 초기화")]
-        private void ResetToDefaultTab()
-        {
-            SelectTab(defaultIndex);
-        }
-
         private void ResolveMissingReferences()
         {
             if (autoCollectTabsInScene && !HasUsableManualTabs())
@@ -175,8 +160,6 @@ namespace DeadZone.Actors.UI
 
             if (autoCollectPagesInScene && !HasUsableManualPages())
                 pages = ResolvePagesByName();
-
-            defaultIndex = Mathf.Clamp(defaultIndex, 0, Mathf.Max(0, PageNames.Length - 1));
         }
 
         private LobbyTabButtonUI[] ResolveTabsByKeywordOrder()
@@ -392,6 +375,25 @@ namespace DeadZone.Actors.UI
                 if (pages != null && i < pages.Length && pages[i] != null)
                     pages[i].SetActive(selected);
             }
+
+            NotifySelectedPageOpened(selectedIndex);
+        }
+
+        private void NotifySelectedPageOpened(int selectedIndex)
+        {
+            if (pages == null || selectedIndex < 0 || selectedIndex >= pages.Length)
+                return;
+
+            GameObject selectedPage = pages[selectedIndex];
+            if (selectedPage == null || selectedPage.name != "Page_Trader")
+                return;
+
+            LobbyTraderUI traderUI = selectedPage.GetComponent<LobbyTraderUI>();
+            if (traderUI == null)
+                traderUI = selectedPage.GetComponentInChildren<LobbyTraderUI>(true);
+
+            if (traderUI != null)
+                traderUI.OpenTraderDefault();
         }
 
         private bool IsValidTabIndex(int index)
