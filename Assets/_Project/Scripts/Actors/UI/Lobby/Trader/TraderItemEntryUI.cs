@@ -35,6 +35,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private GameObject lockRoot;
         [SerializeField] private GameObject lockIcon;
         [SerializeField] private TMP_Text lockReasonText;
+        [SerializeField] private float fallbackEntryHeight = 72f;
 
         private TraderEntry currentEntry;
         private UnityAction<TraderEntry> actionClicked;
@@ -58,6 +59,7 @@ namespace DeadZone.Actors.UI
         {
             AutoBindReferences();
             UnbindButtons();
+            ApplyStableEntryLayout();
 
             currentEntry = entry;
             actionClicked = onBuyClicked;
@@ -96,6 +98,7 @@ namespace DeadZone.Actors.UI
             {
                 actionButton.gameObject.SetActive(true);
                 actionButton.interactable = hasItem && !isLocked;
+                EnsureButtonRaycastTarget(actionButton);
                 actionButton.onClick.AddListener(HandleActionClicked);
             }
 
@@ -108,6 +111,7 @@ namespace DeadZone.Actors.UI
         {
             AutoBindReferences();
             UnbindButtons();
+            ApplyStableEntryLayout();
 
             currentEntry = entry;
             actionClicked = onSellClicked;
@@ -143,6 +147,7 @@ namespace DeadZone.Actors.UI
             {
                 actionButton.gameObject.SetActive(true);
                 actionButton.interactable = hasItem;
+                EnsureButtonRaycastTarget(actionButton);
                 actionButton.onClick.AddListener(HandleActionClicked);
             }
 
@@ -193,6 +198,50 @@ namespace DeadZone.Actors.UI
         {
             if (actionButtonText != null)
                 actionButtonText.text = text;
+        }
+
+        private void ApplyStableEntryLayout()
+        {
+            if (transform is RectTransform rectTransform)
+            {
+                LayoutElement layoutElement = GetComponent<LayoutElement>();
+                if (layoutElement == null)
+                    layoutElement = gameObject.AddComponent<LayoutElement>();
+
+                float preferredHeight = rectTransform.rect.height > 0f ? rectTransform.rect.height : fallbackEntryHeight;
+                layoutElement.minHeight = preferredHeight;
+                layoutElement.preferredHeight = preferredHeight;
+                layoutElement.flexibleHeight = 0f;
+                layoutElement.flexibleWidth = 0f;
+            }
+
+            if (lockRoot != null && lockRoot.transform is RectTransform lockRect)
+            {
+                lockRect.anchorMin = Vector2.zero;
+                lockRect.anchorMax = Vector2.one;
+                lockRect.offsetMin = Vector2.zero;
+                lockRect.offsetMax = Vector2.zero;
+            }
+        }
+
+        private static void EnsureButtonRaycastTarget(Button button)
+        {
+            if (button == null)
+                return;
+
+            Graphic graphic = button.targetGraphic;
+            if (graphic == null)
+                graphic = button.GetComponent<Graphic>();
+
+            if (graphic == null)
+            {
+                Image image = button.gameObject.AddComponent<Image>();
+                image.color = new Color(1f, 1f, 1f, 0f);
+                graphic = image;
+            }
+
+            graphic.raycastTarget = true;
+            button.targetGraphic = graphic;
         }
 
         private Image FindImage(params string[] nameTokens)

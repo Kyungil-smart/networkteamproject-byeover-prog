@@ -111,6 +111,8 @@ namespace DeadZone.Actors.UI
 
         private void SelectTrader(TraderId traderId)
         {
+            Debug.Log($"[LobbyTraderUI] 상인 선택 요청: {traderId}", this);
+
             SetActiveSafe(traderSelectionRoot, true);
             SetActiveSafe(traderDetailRoot, true);
             SetSelectionImagesVisible(false);
@@ -164,10 +166,16 @@ namespace DeadZone.Actors.UI
             if (traderPageView == null)
             {
                 if (traderDetailRoot != null)
-                    traderPageView = traderDetailRoot.GetComponent<TraderPageView>();
+                    traderPageView = traderDetailRoot.GetComponentInChildren<TraderPageView>(true);
 
                 if (traderPageView == null)
                     traderPageView = GetComponentInChildren<TraderPageView>(true);
+            }
+            else if (traderDetailRoot != null && !traderPageView.transform.IsChildOf(traderDetailRoot.transform))
+            {
+                TraderPageView detailView = traderDetailRoot.GetComponentInChildren<TraderPageView>(true);
+                if (detailView != null)
+                    traderPageView = detailView;
             }
 
             if (igorSelectionImage == null)

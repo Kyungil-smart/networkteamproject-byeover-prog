@@ -5344,7 +5344,6 @@ GameObject:
   - component: {fileID: 117996816}
   - component: {fileID: 117996815}
   - component: {fileID: 117996814}
-  - component: {fileID: 117996813}
   m_Layer: 5
   m_Name: Tab_Vera
   m_TagString: Untagged
@@ -5374,25 +5373,6 @@ RectTransform:
   m_AnchoredPosition: {x: 719.625, y: -15.894012}
   m_SizeDelta: {x: 479.75, y: 31.788}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &117996813
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 117996811}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb17b6ae473c08c4397a4e0820e2bb4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyTabButtonUI
-  button: {fileID: 117996814}
-  label: {fileID: 1938162474}
-  underline: {fileID: 1074264496}
-  normalTextColor: {r: 1, g: 1, b: 1, a: 0.25}
-  selectedTextColor: {r: 0.8, g: 0.95, b: 1, a: 1}
-  tweenDuration: 0.15
-  logClickEvents: 1
 --- !u!114 &117996814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12847,10 +12827,18 @@ MonoBehaviour:
   traderSelectionRoot: {fileID: 1228934553}
   traderDetailRoot: {fileID: 456264734}
   traderPageView: {fileID: 1228934558}
-  igorSelectButton: {fileID: 1695244813}
-  veraSelectButton: {fileID: 117996814}
-  docSelectButton: {fileID: 959438068}
-  shadeSelectButton: {fileID: 556147541}
+  igorSelectionImage: {fileID: 1695244810}
+  veraSelectionImage: {fileID: 117996811}
+  docSelectionImage: {fileID: 959438065}
+  shadeSelectionImage: {fileID: 556147538}
+  tabIgorButton: {fileID: 1695244813}
+  tabVeraButton: {fileID: 117996814}
+  tabDocButton: {fileID: 959438068}
+  tabShadeButton: {fileID: 556147541}
+  igorImageButton: {fileID: 734371681}
+  veraImageButton: {fileID: 1134776033}
+  docImageButton: {fileID: 108533892}
+  shadeImageButton: {fileID: 1469253452}
 --- !u!1 &245082462
 GameObject:
   m_ObjectHideFlags: 0
@@ -24312,6 +24300,7 @@ GameObject:
   m_Component:
   - component: {fileID: 456264735}
   - component: {fileID: 456264736}
+  - component: {fileID: 456264737}
   m_Layer: 5
   m_Name: TraderDetailRoot
   m_TagString: Untagged
@@ -24366,6 +24355,33 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 3
   m_TargetDisplay: 0
+--- !u!114 &456264737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456264734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17ea3b784f8c113418627c79895efd66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.TraderPageView
+  selectedTraderPortraitImage: {fileID: 558546548}
+  traderNameText: {fileID: 1014476256}
+  buyContent: {fileID: 706262832}
+  sellContent: {fileID: 1020015754}
+  itemEntryPrefab: {fileID: 8367620122049395627, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+  igorTraderData: {fileID: 11400000, guid: 10116fe5d119ad64bb5d6ef84d5f2ff1, type: 2}
+  veraTraderData: {fileID: 11400000, guid: 366372644e007b84db1fde1a17e7d326, type: 2}
+  docTraderData: {fileID: 11400000, guid: 411acb4baea006b4f85bd123d546453d, type: 2}
+  shadeTraderData: {fileID: 11400000, guid: 6eadbecc731625f48b206b845e804dce, type: 2}
+  igorPortrait: {fileID: 0}
+  veraPortrait: {fileID: 0}
+  docPortrait: {fileID: 0}
+  shadePortrait: {fileID: 0}
+  currentCommLevel: 0
+  traderManager: {fileID: 244852895}
 --- !u!1 &456634174
 GameObject:
   m_ObjectHideFlags: 0
@@ -29764,7 +29780,6 @@ GameObject:
   - component: {fileID: 556147543}
   - component: {fileID: 556147542}
   - component: {fileID: 556147541}
-  - component: {fileID: 556147540}
   m_Layer: 5
   m_Name: Tab_Shade
   m_TagString: Untagged
@@ -29794,25 +29809,6 @@ RectTransform:
   m_AnchoredPosition: {x: 1679.125, y: -15.896}
   m_SizeDelta: {x: 479.75, y: 31.792}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &556147540
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 556147538}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb17b6ae473c08c4397a4e0820e2bb4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyTabButtonUI
-  button: {fileID: 556147541}
-  label: {fileID: 946729270}
-  underline: {fileID: 1320777141}
-  normalTextColor: {r: 1, g: 1, b: 1, a: 0.25}
-  selectedTextColor: {r: 0.8, g: 0.95, b: 1, a: 1}
-  tweenDuration: 0.15
-  logClickEvents: 1
 --- !u!114 &556147541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30382,7 +30378,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.00024414062, y: -0.00018883}
+  m_AnchoredPosition: {x: -0.00024414062, y: -0.00018882751}
   m_SizeDelta: {x: 0, y: -0.00034332}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &565162771
@@ -36565,7 +36561,6 @@ GameObject:
   - component: {fileID: 706262836}
   - component: {fileID: 706262835}
   - component: {fileID: 706262834}
-  - component: {fileID: 706262833}
   m_Layer: 5
   m_Name: Tab_Buy
   m_TagString: Untagged
@@ -36594,25 +36589,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 250.2459, y: 31.265}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &706262833
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 706262831}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb17b6ae473c08c4397a4e0820e2bb4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyTabButtonUI
-  button: {fileID: 706262834}
-  label: {fileID: 1396253390}
-  underline: {fileID: 1216455758}
-  normalTextColor: {r: 1, g: 1, b: 1, a: 0.25}
-  selectedTextColor: {r: 0.8, g: 0.95, b: 1, a: 1}
-  tweenDuration: 0.15
-  logClickEvents: 1
 --- !u!114 &706262834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38910,7 +38886,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.00012207}
+  m_AnchoredPosition: {x: 0, y: -0.00012207031}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &747813630
@@ -48414,7 +48390,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.00012207}
+  m_AnchoredPosition: {x: 0, y: -0.00012207031}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &946729270
@@ -48604,7 +48580,6 @@ GameObject:
   - component: {fileID: 959438070}
   - component: {fileID: 959438069}
   - component: {fileID: 959438068}
-  - component: {fileID: 959438067}
   m_Layer: 5
   m_Name: Tab_Doc
   m_TagString: Untagged
@@ -48634,25 +48609,6 @@ RectTransform:
   m_AnchoredPosition: {x: 1199.375, y: -15.896}
   m_SizeDelta: {x: 479.75, y: 31.792}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &959438067
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 959438065}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb17b6ae473c08c4397a4e0820e2bb4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyTabButtonUI
-  button: {fileID: 959438068}
-  label: {fileID: 747813630}
-  underline: {fileID: 688080434}
-  normalTextColor: {r: 1, g: 1, b: 1, a: 0.25}
-  selectedTextColor: {r: 0.8, g: 0.95, b: 1, a: 1}
-  tweenDuration: 0.15
-  logClickEvents: 1
 --- !u!114 &959438068
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -51240,6 +51196,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1014437516}
   m_CullTransparentMesh: 1
+--- !u!114 &1014476256 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8457520482018572298, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+  m_PrefabInstance: {fileID: 1904583795620904867}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &1016799081
 GameObject:
   m_ObjectHideFlags: 0
@@ -51417,7 +51384,6 @@ GameObject:
   - component: {fileID: 1020015758}
   - component: {fileID: 1020015757}
   - component: {fileID: 1020015756}
-  - component: {fileID: 1020015755}
   m_Layer: 5
   m_Name: Tab_Sell
   m_TagString: Untagged
@@ -51446,25 +51412,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 250.2459, y: 31.265}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1020015755
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1020015753}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb17b6ae473c08c4397a4e0820e2bb4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyTabButtonUI
-  button: {fileID: 1020015756}
-  label: {fileID: 1872944965}
-  underline: {fileID: 230874158}
-  normalTextColor: {r: 1, g: 1, b: 1, a: 0.25}
-  selectedTextColor: {r: 0.8, g: 0.95, b: 1, a: 1}
-  tweenDuration: 0.15
-  logClickEvents: 1
 --- !u!114 &1020015756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62321,7 +62268,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1228934554
 RectTransform:
   m_ObjectHideFlags: 0
@@ -87233,7 +87180,6 @@ GameObject:
   - component: {fileID: 1695244815}
   - component: {fileID: 1695244814}
   - component: {fileID: 1695244813}
-  - component: {fileID: 1695244812}
   m_Layer: 5
   m_Name: Tab_Igor
   m_TagString: Untagged
@@ -87263,25 +87209,6 @@ RectTransform:
   m_AnchoredPosition: {x: 239.875, y: -15.896}
   m_SizeDelta: {x: 479.75, y: 31.792}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1695244812
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1695244810}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb17b6ae473c08c4397a4e0820e2bb4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LobbyTabButtonUI
-  button: {fileID: 1695244813}
-  label: {fileID: 565162771}
-  underline: {fileID: 1587215335}
-  normalTextColor: {r: 1, g: 1, b: 1, a: 0.25}
-  selectedTextColor: {r: 0.8, g: 0.95, b: 1, a: 1}
-  tweenDuration: 0.15
-  logClickEvents: 1
 --- !u!114 &1695244813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108494,41 +108421,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f82803af0d75e58448c6c7981f6bb80b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.InventorySlotUI
---- !u!1 &2102688936
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2102688937}
-  m_Layer: 5
-  m_Name: ItemEntry
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &2102688937
+--- !u!224 &2102688937 stripped
 RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+  m_PrefabInstance: {fileID: 1904583795620904867}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2102688936}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 456264735}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2105323160
 GameObject:
   m_ObjectHideFlags: 0
@@ -110623,6 +110520,103 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2146985214}
   m_CullTransparentMesh: 1
+--- !u!1001 &1904583795620904867
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 456264735}
+    m_Modifications:
+    - target: {fileID: 2952945520984557548, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_Name
+      value: ItemEntry
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1400
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 150
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 239.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 374.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241526429558375119, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3084f800c9268f44789fd57fd52cf03c, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
