@@ -139,6 +139,12 @@ namespace DeadZone.Systems.Quests
             TryAutoAcceptSideQuests(clientId);
             return true;
         }
+        [ServerRpc(RequireOwnership = false)]
+        public void AcceptQuestServerRpc(string questId, ServerRpcParams rpcParams = default)
+        {
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            AcceptQuest(senderClientId, questId);
+        }
 
         private void TryAutoAcceptSideQuests(ulong clientId)
         {
