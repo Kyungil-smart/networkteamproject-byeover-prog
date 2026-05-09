@@ -90,7 +90,8 @@ namespace DeadZone.Actors.UI
         [Header("테스트 거래")]
 #endif
         [SerializeField] private bool useTestCurrency = true;
-        [SerializeField] private int testCurrency = 999999;
+        [SerializeField] private int testCurrency = 50000;
+        [SerializeField] private WalletSystem testWalletSystem;
         [SerializeField] private MonoBehaviour testInventoryTarget;
         [SerializeField] private StashGridUI stashGridUI;
 
@@ -326,15 +327,15 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            if (traderManager != null && traderManager.IsSpawned)
-            {
-                traderManager.BuyItemServerRpc(entry.item.itemID);
-                return;
-            }
-
             if (useTestCurrency)
             {
                 TryBuyWithTestCurrency(entry);
+                return;
+            }
+
+            if (traderManager != null && traderManager.IsSpawned)
+            {
+                traderManager.BuyItemServerRpc(entry.item.itemID);
                 return;
             }
 
@@ -366,7 +367,7 @@ namespace DeadZone.Actors.UI
 
             testPurchasedEntries.RemoveAt(entryIndex);
             int sellPrice = CalculateSellPrice(entry);
-            testCurrency += sellPrice;
+            EarnTestCurrency(sellPrice);
 
             Debug.Log($"[TraderPageView] 테스트 판매 완료. Item={entry.item.itemID}, Price={sellPrice}, TestCurrency={testCurrency}", this);
             RebuildSellList();
@@ -375,7 +376,7 @@ namespace DeadZone.Actors.UI
         private void TryBuyWithTestCurrency(TraderEntry entry)
         {
             int price = Mathf.Max(0, entry.basePrice);
-            if (testCurrency < price)
+            if (GetCurrentTestCurrency() < price)
             {
                 Debug.LogWarning($"[TraderPageView] 테스트 구매 실패: 테스트 재화가 부족합니다. 현재={testCurrency}, 필요={price}", this);
                 return;
@@ -394,7 +395,12 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            testCurrency -= price;
+            if (!TryPayTestCurrency(price))
+            {
+                inventory.ConsumeItem(entry.item.itemID, 1);
+                Debug.LogWarning($"[TraderPageView] 테스트 구매 실패: 재화 차감에 실패했습니다. Item={entry.item.itemID}, Price={price}", this);
+                return;
+            }
             testPurchasedEntries.Add(entry);
 
             Debug.Log($"[TraderPageView] 테스트 구매 완료. Item={entry.item.itemID}, Price={price}, TestCurrency={testCurrency}", this);
@@ -491,6 +497,9 @@ namespace DeadZone.Actors.UI
         {
             if (traderManager == null)
                 traderManager = FindObjectOfType<TraderManager>();
+
+            if (testWalletSystem == null)
+                testWalletSystem = FindObjectOfType<WalletSystem>(true);
 
             if (selectedTraderPortraitImage == null)
                 selectedTraderPortraitImage = FindImage("Img_SelectedTrader", "SelectedTrader", "Img_Igor", "Igor", "Portrait");
@@ -1096,6 +1105,41 @@ namespace DeadZone.Actors.UI
         private static int GetStockCount(TraderDataSO traderData)
         {
             return traderData != null && traderData.stock != null ? traderData.stock.Count : -1;
+        }
+
+        private int GetCurrentTestCurrency()
+        {
+            return testWalletSystem != null ? testWalletSystem.Credits.Value : testCurrency;
+        }
+
+        private bool TryPayTestCurrency(int price)
+        {
+            if (testWalletSystem != null)
+            {
+                if (!testWalletSystem.TryPayLocalTest(price))
+                    return false;
+
+                testCurrency = testWalletSystem.Credits.Value;
+                return true;
+            }
+
+            if (testCurrency < price)
+                return false;
+
+            testCurrency -= price;
+            return true;
+        }
+
+        private void EarnTestCurrency(int amount)
+        {
+            if (testWalletSystem != null)
+            {
+                testWalletSystem.EarnLocalTest(amount);
+                testCurrency = testWalletSystem.Credits.Value;
+                return;
+            }
+
+            testCurrency += amount;
         }
     }
 }
