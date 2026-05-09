@@ -90910,7 +90910,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   lobbyState: {fileID: 1780229061}
   gameManager: {fileID: 1780229062}
-  mapASceneName: LSH_Game_Scene_NetFlow
+  mapASceneName: Game_Stage_1
   mapBSceneName: Game_Stage_2
   offlineHasUnlockedMapB: 0
   logDebug: 0
