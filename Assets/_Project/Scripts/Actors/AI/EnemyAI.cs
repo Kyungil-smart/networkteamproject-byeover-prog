@@ -103,6 +103,7 @@ namespace DeadZone.Actors
         private EnemyStats stats;
         private EnemyVision vision;
         private EnemyShooter shooter;
+        private EnemyAnimHandler animHandler;
 
         private Vector3 spawnPosition;
         private Transform currentTarget;
@@ -141,6 +142,7 @@ namespace DeadZone.Actors
             stats = GetComponent<EnemyStats>();
             vision = GetComponent<EnemyVision>();
             shooter = GetComponent<EnemyShooter>();
+            animHandler = GetComponent<EnemyAnimHandler>();
             spawnPosition = transform.position;
             lastDestination = transform.position;
         }
@@ -328,12 +330,14 @@ namespace DeadZone.Actors
         {
             if (currentTarget == null)
             {
+                animHandler?.SetAimMode(false);
                 EnterInvestigate(lastKnownPos);
                 return;
             }
 
             if (IsOutsideChaseLimit(transform.position))
             {
+                animHandler?.SetAimMode(false);
                 EnterReturn();
                 return;
             }
@@ -341,6 +345,7 @@ namespace DeadZone.Actors
             bool canSeeTarget = vision != null && vision.CanSee(currentTarget);
             if (!canSeeTarget)
             {
+                animHandler?.SetAimMode(false);
                 if (TryGetVisionBlocker(currentTarget, out RaycastHit hit))
                 {
                     EnterSearchCover(lastKnownPos, hit.collider);
@@ -352,12 +357,14 @@ namespace DeadZone.Actors
                 return;
             }
 
+            animHandler?.SetAimMode(true);
             RememberTargetPosition(currentTarget.position);
 
             float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
 
             if (distanceToTarget > preferredRangeMax)
             {
+                animHandler?.SetAimMode(false);
                 EnterState(AIState.Chase);
                 return;
             }
