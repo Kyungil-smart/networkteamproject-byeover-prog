@@ -649,7 +649,7 @@ MonoBehaviour:
   inputCamera: {fileID: 0}
   aimMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 32769
   aimRayDistance: 200
 --- !u!114 &173030480013012939
 MonoBehaviour:
