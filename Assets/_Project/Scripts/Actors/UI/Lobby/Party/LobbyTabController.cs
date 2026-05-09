@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -43,6 +44,10 @@ namespace DeadZone.Actors.UI
 
         [Title("기본 탭")]
         [SerializeField] private int defaultTabIndex = 0;
+        
+        [Title("시설 씬 전환")]
+        [SerializeField] private string facilitySceneName = "HideOut";
+        [SerializeField] private int facilityTabIndex = 5;
 
         [Title("자동 연결")]
         [SerializeField] private bool autoCollectTabsInScene = true;
@@ -117,11 +122,30 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
+            if (index == facilityTabIndex)
+            {
+                LoadFacilityScene();
+                return;
+            }
+
             if (logTabSelection)
                 Debug.Log($"[LobbyTabController] SelectTab({index}) 호출됨. Page={GetPageName(index)}", this);
 
             currentIndex = index;
             ApplyTabState(index, instant: false);
+        }
+        private void LoadFacilityScene()
+        {
+            if (string.IsNullOrWhiteSpace(facilitySceneName))
+            {
+                Debug.LogWarning("[LobbyTabController] 시설 씬 이름이 비어 있습니다.", this);
+                return;
+            }
+
+            if (logTabSelection)
+                Debug.Log($"[LobbyTabController] 시설 탭 클릭. 씬 전환: {facilitySceneName}", this);
+
+            SceneManager.LoadScene(facilitySceneName);
         }
 
         [Button("탭/페이지 자동 연결")]
