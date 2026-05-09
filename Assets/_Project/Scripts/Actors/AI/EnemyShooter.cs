@@ -22,6 +22,7 @@ namespace DeadZone.Actors
         [SerializeField] private GameObject enemyBulletPrefab;
 
         private EnemyStats stats;
+        private EnemyAnimHandler animHandler;
         private float nextShotAllowed;
         private int burstCount;
         private float muzzleVelocity;
@@ -29,6 +30,7 @@ namespace DeadZone.Actors
         private void Awake()
         {
             stats = GetComponent<EnemyStats>();
+            animHandler = GetComponent<EnemyAnimHandler>();
         }
 
         private void Start()
@@ -113,6 +115,7 @@ namespace DeadZone.Actors
                 loudness = 1f,
             });
 
+            animHandler?.TriggerFire();
             FireProjectile(spreadDir, so);
             UpdateBurstTiming(so);
         }
