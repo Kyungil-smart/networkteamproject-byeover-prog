@@ -94,6 +94,35 @@ namespace DeadZone.Actors
         [Tooltip("한 번의 엄폐 수색에서 사용할 최대 수색 후보 개수입니다.")]
         [SerializeField] private int maxCoverSearchPoints = 10;
 
+        [Header("스폰/NavMesh 안정화")]
+        [Tooltip("스폰 지점이 NavMesh에서 살짝 벗어났을 때 주변 NavMesh를 찾는 반경입니다.")]
+        [SerializeField] private float spawnNavMeshSampleRadius = 1.5f;
+
+        [Tooltip("스폰 지점을 NavMesh로 보정할 때 허용하는 최대 이동 거리입니다. 이 값보다 멀면 강제 워프하지 않습니다.")]
+        [SerializeField] private float maxSpawnWarpDistance = 1.25f;
+
+        [Tooltip("스폰 지점 주변에 유효한 NavMesh가 없을 때 경고 로그를 출력할지 여부입니다.")]
+        [SerializeField] private bool warnWhenSpawnOffNavMesh = true;
+
+        [Header("교전/회피 보정")]
+        [Tooltip("SO 값이 너무 작아도 플레이어에게 붙지 않도록 보장할 최소 교전 거리입니다.")]
+        [SerializeField] private float minimumPersonalSpaceDistance = 6f;
+
+        [Tooltip("SO 유효 사거리에 곱할 AI 교전 거리 배율입니다.")]
+        [SerializeField, Range(0.1f, 1f)] private float combatRangeMultiplier = 0.65f;
+
+        [Tooltip("AI가 실제 교전에 진입할 수 있는 최대 거리입니다.")]
+        [SerializeField] private float maxCombatDistance = 24f;
+
+        [Tooltip("NavMeshAgent 정지 거리가 너무 작을 때 사용할 최소 정지 거리입니다.")]
+        [SerializeField] private float minimumAgentStoppingDistance = 1.2f;
+
+        [Tooltip("AI끼리 비비는 현상을 줄이기 위해 사용할 NavMeshAgent 회피 품질입니다.")]
+        [SerializeField] private ObstacleAvoidanceType obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+
+        [Tooltip("AI끼리 같은 우선순위로 밀고 들어가지 않도록 개체별로 뽑을 회피 우선순위 범위입니다.")]
+        [SerializeField] private Vector2Int avoidancePriorityRange = new(30, 70);
+
         [Header("네트워크 상태")]
         [Tooltip("현재 AI 상태입니다. 서버가 값을 변경하고 클라이언트는 읽습니다.")]
         public NetworkVariable<AIState> State = new(AIState.Patrol);
@@ -134,7 +163,8 @@ namespace DeadZone.Actors
         private float activeSearchPointEnterTime;
         private Vector3 lastStuckCheckPosition;
 
-        private AIState CurrentState => IsSpawned ? State.Value : localState;
+        private bool CanUseNetworkState => IsSpawned && NetworkObject != null && NetworkObject.IsSpawned;
+        private AIState CurrentState => CanUseNetworkState ? State.Value : localState;
 
         private void Awake()
         {
@@ -154,8 +184,7 @@ namespace DeadZone.Actors
         {
             if (!IsServer) return;
 
-            spawnPosition = transform.position;
-            lastDestination = transform.position;
+            ResolveSpawnPositionOnNavMesh();
             CacheSOData();
             localState = State.Value;
             EnterPatrol();
@@ -165,6 +194,7 @@ namespace DeadZone.Actors
         {
             if (!IsSpawned)
             {
+                ResolveSpawnPositionOnNavMesh();
                 CacheSOData();
                 EnterPatrol();
             }
@@ -229,15 +259,66 @@ namespace DeadZone.Actors
 
             var so = stats.StatsSO;
             isBoss = so.isBoss;
-            preferredRangeMin = so.preferredRangeMin;
-            preferredRangeMax = so.preferredRangeMax;
+            preferredRangeMin = Mathf.Max(so.preferredRangeMin, minimumPersonalSpaceDistance);
+            preferredRangeMax = Mathf.Min(so.preferredRangeMax, so.maxEffectiveRange * combatRangeMultiplier, maxCombatDistance);
+            preferredRangeMax = Mathf.Max(preferredRangeMax, preferredRangeMin + 2f);
 
             if (agent != null)
             {
                 agent.speed = so.moveSpeed;
                 pathProbeRadius = Mathf.Max(pathProbeRadius, agent.radius);
                 agent.autoRepath = true;
+                agent.autoBraking = true;
+                agent.stoppingDistance = Mathf.Max(agent.stoppingDistance, minimumAgentStoppingDistance);
+                agent.obstacleAvoidanceType = obstacleAvoidanceType;
+                int priorityMin = Mathf.Clamp(Mathf.Min(avoidancePriorityRange.x, avoidancePriorityRange.y), 0, 99);
+                int priorityMax = Mathf.Clamp(Mathf.Max(avoidancePriorityRange.x, avoidancePriorityRange.y), 0, 99);
+                agent.avoidancePriority = Random.Range(priorityMin, priorityMax + 1);
             }
+        }
+
+        private void ResolveSpawnPositionOnNavMesh()
+        {
+            if (agent == null)
+            {
+                spawnPosition = transform.position;
+                lastDestination = transform.position;
+                return;
+            }
+
+            if (agent.isOnNavMesh)
+            {
+                spawnPosition = transform.position;
+                lastDestination = transform.position;
+                return;
+            }
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, spawnNavMeshSampleRadius, NavMesh.AllAreas))
+            {
+                float warpDistance = Vector3.Distance(transform.position, hit.position);
+                if (warpDistance <= maxSpawnWarpDistance && agent.Warp(hit.position))
+                {
+                    spawnPosition = hit.position;
+                    lastDestination = hit.position;
+                    return;
+                }
+
+                if (warnWhenSpawnOffNavMesh)
+                {
+                    Debug.LogWarning(
+                        $"[EnemyAI] {name} 스폰 위치에서 가장 가까운 NavMesh가 {warpDistance:F2}m 떨어져 있어 자동 워프하지 않았습니다. 배치 위치 또는 NavMesh/Obstacle 설정을 확인하세요.",
+                        this);
+                }
+            }
+            else if (warnWhenSpawnOffNavMesh)
+            {
+                Debug.LogWarning(
+                    $"[EnemyAI] {name} 스폰 위치 주변 {spawnNavMeshSampleRadius:F1}m 안에서 NavMesh를 찾지 못했습니다. 적이 이동하지 못하거나 다른 NavMesh로 튕길 수 있습니다.",
+                    this);
+            }
+
+            spawnPosition = transform.position;
+            lastDestination = transform.position;
         }
 
         private void TickPatrol()
@@ -556,7 +637,7 @@ namespace DeadZone.Actors
         {
             if (CurrentState == nextState) return;
 
-            if (IsSpawned)
+            if (CanUseNetworkState)
             {
                 State.Value = nextState;
             }

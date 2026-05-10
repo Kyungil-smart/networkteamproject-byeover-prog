@@ -7,17 +7,31 @@ using DeadZone.Systems;
 
 namespace DeadZone.Actors
 {
+    /// <summary>
+    /// 적 사망 후 생성되는 공용 시체 상호작용 컴포넌트입니다.
+    /// 장착 장비, 탄약, 추가 루팅을 CorpseInventory에 채워 루팅 UI와 연결합니다.
+    /// </summary>
     public class EnemyCorpse : NetworkBehaviour, IInteractable
     {
+        [Header("시체 상태")]
+        [Tooltip("루팅 UI와 상호작용 프롬프트에 표시할 적 이름입니다.")]
         public NetworkVariable<FixedString64Bytes> EnemyName = new("Enemy");
+
+        [Tooltip("시체 인벤토리가 비었는지 여부입니다.")]
         public NetworkVariable<bool> IsEmpty = new(false);
 
+        [Header("시체 인벤토리")]
+        [Tooltip("시체가 보유한 서버 권위 루팅 인벤토리입니다.")]
         [SerializeField] private CorpseInventory corpseInventory;
+
+        [Tooltip("아이템이 남아 있는 시체가 유지되는 시간입니다.")]
         [SerializeField] private float despawnWithItems = 120f;
+
+        [Tooltip("아이템이 모두 비워진 시체가 유지되는 시간입니다.")]
         [SerializeField] private float despawnWhenEmpty = 30f;
 
         [Header("장비 드랍")]
-        [Tooltip("적 장착 장비가 시체에 들어갈 때 남길 내구도 비율 범위입니다.")]
+        [Tooltip("적 장착 장비가 시체에 들어갈 때 소모된 내구도 비율 범위입니다.")]
         [SerializeField] private Vector2 durabilityRatioRange = new(0.3f, 0.8f);
 
         [Tooltip("적 기본 탄약이 시체에 들어갈 때 드랍할 총 탄 수 범위입니다.")]
@@ -26,6 +40,9 @@ namespace DeadZone.Actors
         private float spawnedAt;
         private float emptySince = -1f;
 
+        /// <summary>
+        /// 네트워크 스폰 시 시체 인벤토리 참조와 생성 시간을 초기화합니다.
+        /// </summary>
         public override void OnNetworkSpawn()
         {
             if (corpseInventory == null)
@@ -60,12 +77,20 @@ namespace DeadZone.Actors
 
         // ───────── IInteractable ─────────
 
+        /// <summary>
+        /// 플레이어가 시체를 바라볼 때 표시할 상호작용 문구를 반환합니다.
+        /// </summary>
+        /// <returns>시체가 비어 있지 않으면 루팅 프롬프트를 반환합니다.</returns>
         public string GetPromptText()
         {
             if (IsEmpty.Value) return "";
             return $"[F] {EnemyName.Value} 시체 루팅";
         }
 
+        /// <summary>
+        /// 상호작용한 클라이언트에게 시체 루팅 UI를 엽니다.
+        /// </summary>
+        /// <param name="clientId">상호작용한 클라이언트 ID입니다.</param>
         public void OnInteract(ulong clientId)
         {
             if (IsEmpty.Value) return;
@@ -78,7 +103,9 @@ namespace DeadZone.Actors
         /// <summary>
         /// 시체에 장비 + 추가 루팅 아이템을 채운다. 서버에서만 호출.
         /// </summary>
-        public void InitializeServer(EnemyStatsSO statsSO)
+        /// <param name="statsSO">시체 루팅 기준으로 사용할 적 스탯 SO입니다.</param>
+        /// <param name="sourceStats">사망 직전 실제 적 상태입니다. null이면 SO 기준으로만 드랍합니다.</param>
+        public void InitializeServer(EnemyStatsSO statsSO, EnemyStats sourceStats = null)
         {
             if (!IsServer || statsSO == null) return;
 
@@ -91,8 +118,8 @@ namespace DeadZone.Actors
             // 1. 장착 장비 드랍
             if (statsSO.dropEquippedGear)
             {
-                AddEquipmentToCorpse(statsSO.defaultWeapon);
-                AddEquipmentToCorpse(statsSO.defaultArmor);
+                AddEquipmentToCorpse(statsSO.defaultWeapon, sourceStats);
+                AddEquipmentToCorpse(statsSO.defaultArmor, sourceStats);
                 AddAmmoToCorpse(statsSO.defaultAmmo);
             }
 
@@ -123,14 +150,12 @@ namespace DeadZone.Actors
             });
         }
 
-        private void AddEquipmentToCorpse(ItemDataSO itemSO)
+        private void AddEquipmentToCorpse(ItemDataSO itemSO, EnemyStats sourceStats)
         {
             if (itemSO == null || corpseInventory == null) return;
 
             float maxDurability = GetMaxDurability(itemSO);
-            float currentDurability = maxDurability > 0f
-                ? Mathf.Round(maxDurability * Random.Range(GetDurabilityMin(), GetDurabilityMax()))
-                : 0f;
+            float currentDurability = BuildDroppedDurability(itemSO, sourceStats, maxDurability);
 
             corpseInventory.Slots.Add(new ItemSlotData
             {
@@ -179,6 +204,24 @@ namespace DeadZone.Actors
         private float GetDurabilityMax()
         {
             return Mathf.Clamp01(Mathf.Max(durabilityRatioRange.x, durabilityRatioRange.y));
+        }
+
+        private float BuildDroppedDurability(ItemDataSO itemSO, EnemyStats sourceStats, float maxDurability)
+        {
+            if (maxDurability <= 0f)
+            {
+                return 0f;
+            }
+
+            float consumedRatio = Random.Range(GetDurabilityMin(), GetDurabilityMax());
+            float generatedDurability = Mathf.Round(maxDurability * (1f - consumedRatio));
+
+            if (itemSO is ArmorDataSO && sourceStats != null)
+            {
+                generatedDurability = Mathf.Min(generatedDurability, sourceStats.GetArmorDurability());
+            }
+
+            return Mathf.Clamp(generatedDurability, 0f, maxDurability);
         }
 
         private static float GetMaxDurability(ItemDataSO itemSO)
