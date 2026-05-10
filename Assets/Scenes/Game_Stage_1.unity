@@ -1273,7 +1273,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5f45fa8d535015c4cacf6651fe713c2f, type: 2}
   - {fileID: 11400000, guid: f1c3e43f95d53a648b27691d6974927f, type: 2}
   - {fileID: 11400000, guid: b58ac944aa945094fb54cca950a5666a, type: 2}
-  enableDebugKeys: 1
+  enableDebugKeys: 0
 --- !u!4 &288303605
 Transform:
   m_ObjectHideFlags: 0
