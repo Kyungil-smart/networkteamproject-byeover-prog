@@ -18,6 +18,7 @@ namespace DeadZone.Network
     {
         private const int DefaultStashColumnCount = 10;
         private const int DefaultStartingCredits = 50000;
+        private const int EconomyStarterPackSchemaVersion = 3;
         private const string UsersCollection = "users";
         private const bool DisableFirestorePersistence = true;
 
@@ -219,6 +220,15 @@ namespace DeadZone.Network
                     // [FirestoreData] 어노테이션이 붙어있으면 ConvertTo<T>()로 자동 역직렬화
                     currentData = snapshot.ConvertTo<PlayerCloudData>();
                     if (currentData == null) currentData = NewPlayerData(uid, authManager.CurrentEmail);
+                    EnsureCloudDataContainers();
+
+                    if (TryApplyStarterPackMigration())
+                    {
+                        loadedFirebaseUid = uid;
+                        currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+                        Debug.Log("[CloudSaveSystem] 기존 Cloud Save 문서에 스타터팩 경제 데이터 마이그레이션을 적용했습니다.", this);
+                    }
                 }
                 else
                 {
@@ -579,6 +589,49 @@ namespace DeadZone.Network
             currentData.safePocket.slots.Clear();
             currentData.equipment = new EquipmentData();
             currentData.insurance.Clear();
+            currentData.schemaVersion = Mathf.Max(currentData.schemaVersion, EconomyStarterPackSchemaVersion);
+        }
+
+        private bool TryApplyStarterPackMigration()
+        {
+            if (bankruptcyStarterPack == null)
+                return false;
+
+            if (currentData.schemaVersion >= EconomyStarterPackSchemaVersion)
+                return false;
+
+            if (!IsEconomyEmptyForStarterPackMigration())
+            {
+                currentData.schemaVersion = EconomyStarterPackSchemaVersion;
+                return false;
+            }
+
+            ApplyBankruptcyStarterPack(bankruptcyStarterPack);
+            return true;
+        }
+
+        private bool IsEconomyEmptyForStarterPackMigration()
+        {
+            bool stashEmpty = currentData.stash == null ||
+                              currentData.stash.slots == null ||
+                              currentData.stash.slots.Count == 0;
+
+            bool safePocketEmpty = currentData.safePocket == null ||
+                                   currentData.safePocket.slots == null ||
+                                   currentData.safePocket.slots.Count == 0;
+
+            bool insuranceEmpty = currentData.insurance == null ||
+                                  currentData.insurance.Count == 0;
+
+            bool equipmentEmpty = currentData.equipment == null ||
+                                  (string.IsNullOrWhiteSpace(currentData.equipment.helmetId) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.armorId) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.primary1) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.primary2) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.secondary) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.melee));
+
+            return stashEmpty && safePocketEmpty && insuranceEmpty && equipmentEmpty;
         }
 
         private static List<StashSlot> BuildStarterPackStashSlots(StarterPackConfigSO starterPack)
@@ -667,6 +720,8 @@ namespace DeadZone.Network
 
             if (bankruptcyStarterPack != null)
                 data.stash.slots = BuildStarterPackStashSlots(bankruptcyStarterPack);
+
+            data.schemaVersion = EconomyStarterPackSchemaVersion;
 
             // facilities 는 생성자에서 모두 Lv1 기본값
             return data;

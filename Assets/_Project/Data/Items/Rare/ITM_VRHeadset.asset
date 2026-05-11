@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "VR\uAE30\uAE30"
   description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uB378\uD0C0\uD3EC\uC2A4
     \uAD70\uC0AC \uD6C8\uB828\uC5D0 \uC4F0\uC784"
-  icon: {fileID: 21300000, guid: 8ad448f76f014bb45a52bc625edcdfcd, type: 3}
+  icon: {fileID: 21300000, guid: d4ed34aa540440540be7678c0e30554f, type: 3}
   category: 7
   rarity: 2
   isValuable: 1

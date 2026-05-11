@@ -56,6 +56,9 @@ namespace DeadZone.Actors.UI
         [Tooltip("Cloud Save 로드 이벤트를 받으면 보관함 UI를 저장된 stash 데이터로 갱신합니다.")]
         [SerializeField] private bool loadCloudStashOnLoadedEvent = true;
 
+        [Tooltip("IItemDatabase 서비스가 아직 등록되지 않은 로비 씬에서 Cloud Save itemId를 해석할 보조 데이터베이스입니다.")]
+        [SerializeField] private ItemDatabaseSO cloudStashItemDatabase;
+
         [Tooltip("클라우드 보관함 데이터가 비어 있을 때 현재 UI 슬롯을 비울지 여부입니다.")]
         [SerializeField] private bool clearSlotsWhenCloudStashEmpty = true;
 
@@ -515,9 +518,9 @@ namespace DeadZone.Actors.UI
             }
 
             IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
-            if (itemDatabase == null)
+            if (itemDatabase == null && cloudStashItemDatabase == null)
             {
-                Debug.LogWarning("[StashGridUI] Cloud Save 보관함을 적용할 수 없습니다. IItemDatabase가 등록되지 않았습니다.", this);
+                Debug.LogWarning("[StashGridUI] Cloud Save 보관함을 적용할 수 없습니다. IItemDatabase 서비스 또는 보조 ItemDatabaseSO가 필요합니다.", this);
                 return;
             }
 
@@ -529,7 +532,7 @@ namespace DeadZone.Actors.UI
                 if (cloudSlot == null || string.IsNullOrWhiteSpace(cloudSlot.itemId) || cloudSlot.stackCount <= 0)
                     continue;
 
-                ItemDataSO itemData = itemDatabase.GetById(cloudSlot.itemId);
+                ItemDataSO itemData = ResolveCloudStashItemData(cloudSlot.itemId, itemDatabase);
                 if (itemData == null)
                 {
                     Debug.LogWarning($"[StashGridUI] Cloud Save 보관함 아이템을 찾을 수 없습니다. ItemId={cloudSlot.itemId}", this);
@@ -545,6 +548,20 @@ namespace DeadZone.Actors.UI
 
                 targetSlot.SetItem(itemData, cloudSlot.stackCount);
             }
+        }
+
+        private ItemDataSO ResolveCloudStashItemData(string itemId, IItemDatabase itemDatabase)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return null;
+
+            ItemDataSO itemData = itemDatabase?.GetById(itemId);
+            if (itemData != null)
+                return itemData;
+
+            return cloudStashItemDatabase != null
+                ? cloudStashItemDatabase.GetByID(itemId)
+                : null;
         }
 
         private InventorySlotUI FindSlotForCloudSlot(StashSlot cloudSlot)

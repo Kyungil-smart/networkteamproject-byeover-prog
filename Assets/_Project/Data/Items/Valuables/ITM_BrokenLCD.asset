@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\uBD80\uC11C\uC9C4 LCD"
   description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC6A9\uB3C4: LG\uAC00 \uBC84\uB9B0
     \uBD80\uC11C\uC9C4 LCD"
-  icon: {fileID: 21300000, guid: 71c607f8fd72a054ba314432ef0b4ad9, type: 3}
+  icon: {fileID: 21300000, guid: eff5e782f1afb264899b2118ef3e5c8a, type: 3}
   category: 7
   rarity: 0
   isValuable: 1
