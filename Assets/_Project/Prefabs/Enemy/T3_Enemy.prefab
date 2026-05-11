@@ -56,10 +56,22 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 243684140
       objectReference: {fileID: 0}
+    - target: {fileID: 4183854989116415764, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4567764049625413843, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7428428410717088562, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
       propertyPath: statsSO
       value: 
       objectReference: {fileID: 11400000, guid: d58c0c49a0fa73947ac1be63cec105d3, type: 2}
+    - target: {fileID: 8868758047998553697, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

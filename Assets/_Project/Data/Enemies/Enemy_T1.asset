@@ -30,10 +30,10 @@ MonoBehaviour:
   spreadAngleMax: 6
   rangeSpreadMultiplier: 2
   maxEffectiveRange: 25
-  visionRange: 30
-  fov: 110
+  visionRange: 22
+  fov: 130
   hearingRange: 15
-  reactionTime: 1.5
+  reactionTime: 1.8
   moveSpeed: 3.5
   preferredRangeMin: 5
   preferredRangeMax: 20
