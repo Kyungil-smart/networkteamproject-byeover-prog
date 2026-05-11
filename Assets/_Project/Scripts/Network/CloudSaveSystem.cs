@@ -37,6 +37,9 @@ namespace DeadZone.Network
             EventBus.Subscribe<AuthSignedOutEvent>(OnAuthSignedOut);
             EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
             EventBus.Subscribe<SceneChangedEvent>(OnSceneChanged);
+            EventBus.Subscribe<QuestAcceptedEvent>(OnQuestAccepted);
+            EventBus.Subscribe<QuestProgressEvent>(OnQuestProgress);
+            EventBus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         }
 
         private void OnDestroy()
@@ -45,6 +48,9 @@ namespace DeadZone.Network
             EventBus.Unsubscribe<AuthSignedOutEvent>(OnAuthSignedOut);
             EventBus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
             EventBus.Unsubscribe<SceneChangedEvent>(OnSceneChanged);
+            EventBus.Unsubscribe<QuestAcceptedEvent>(OnQuestAccepted);
+            EventBus.Unsubscribe<QuestProgressEvent>(OnQuestProgress);
+            EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
 
             ServiceLocator.Unregister<CloudSaveSystem>();
         }
@@ -164,6 +170,30 @@ namespace DeadZone.Network
             await UploadAsync();
         }
 
+        private async void OnQuestAccepted(QuestAcceptedEvent e)
+        {
+            if (!IsLocalClientEvent(e.clientId)) return;
+            await UploadAsync();
+        }
+
+        private async void OnQuestProgress(QuestProgressEvent e)
+        {
+            if (!IsLocalClientEvent(e.clientId)) return;
+            await UploadAsync();
+        }
+
+        private async void OnQuestCompleted(QuestCompletedEvent e)
+        {
+            if (!IsLocalClientEvent(e.clientId)) return;
+            await UploadAsync();
+        }
+
+        private static bool IsLocalClientEvent(ulong clientId)
+        {
+            return NetworkManager.Singleton == null ||
+                   clientId == NetworkManager.Singleton.LocalClientId;
+        }
+
         // =================================================================
         // 다운로드
         // =================================================================
@@ -223,6 +253,8 @@ namespace DeadZone.Network
                     firebaseUid = uid,
                     isNewUser = isNew,
                 });
+
+                RestoreQuestStateIfAvailable();
 
                 return currentData;
             }
@@ -557,6 +589,21 @@ namespace DeadZone.Network
             if (myState == null) return;
 
             myState.WriteToCloudProgress(currentData.progress);
+        }
+
+        private void RestoreQuestStateIfAvailable()
+        {
+            if (currentData?.progress == null)
+                return;
+
+            if (NetworkManager.Singleton == null)
+                return;
+
+            QuestManager quest = ServiceLocator.Get<QuestManager>();
+            if (quest == null)
+                return;
+
+            quest.RestorePlayerState(NetworkManager.Singleton.LocalClientId, currentData.progress);
         }
 
         // =================================================================
