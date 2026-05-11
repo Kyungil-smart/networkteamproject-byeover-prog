@@ -17,10 +17,10 @@ namespace DeadZone.Systems.Quests
         [Tooltip("true면 Home 키로 순차 퀘스트 강제 완료 가능")]
         [SerializeField] private bool enableDebugKeys = true;
 
-        /// <summary>clientId → 개인 퀘스트 상태. 서버에서만 Write.</summary>
+        
         private readonly Dictionary<ulong, PlayerQuestState> _playerStates = new();
 
-        /// <summary>questID → QuestDataSO 빠른 조회.</summary>
+       
         private readonly Dictionary<string, QuestDataSO> _questLookup = new();
 
         // ───────── 생명주기 ─────────
@@ -63,7 +63,7 @@ namespace DeadZone.Systems.Quests
 
         private void Update()
         {
-            // ───────── Home 키 디버그: 순차 퀘스트 강제 완료 ─────────
+           
             if (!enableDebugKeys || !IsServer) return;
 
             if (Input.GetKeyDown(KeyCode.Home))
@@ -71,8 +71,7 @@ namespace DeadZone.Systems.Quests
                 DebugForceCompleteNext();
             }
         }
-
-        // ───────── 플레이어 상태 접근 ─────────
+        
 
         public PlayerQuestState GetPlayerState(ulong clientId)
         {
@@ -96,7 +95,7 @@ namespace DeadZone.Systems.Quests
             RestorePlayerState(NetworkManager.Singleton.LocalClientId, cloudSaveSystem.CurrentData.progress);
         }
 
-        /// <summary>CloudSaveSystem이 Firestore 로드 후 호출.</summary>
+       
         public void RestorePlayerState(ulong clientId, ProgressData progress)
         {
             var state = GetPlayerState(clientId);
@@ -111,9 +110,6 @@ namespace DeadZone.Systems.Quests
                 AcceptQuest(clientId, "Q1");
         }
 
-        // ═══════════════════════════════════════════
-        //  퀘스트 수락
-        // ═══════════════════════════════════════════
 
         public bool AcceptQuest(ulong clientId, string questId)
         {
@@ -175,11 +171,6 @@ namespace DeadZone.Systems.Quests
             }
         }
 
-        // ═══════════════════════════════════════════
-        //  진행 보고 (IQuestQuery 구현)
-        //  레이드 중: 카운트만 올림. 완료는 Hideout에서.
-        // ═══════════════════════════════════════════
-
         public void ReportProgress(ulong clientId, ObjectiveType type, string targetId, int amount)
         {
             if (!IsServer) return;
@@ -212,8 +203,7 @@ namespace DeadZone.Systems.Quests
                         {
                             Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
                         });
-
-                    // 즉시 완료하지 않음 → 대기열에 추가
+                    
                     if (state.AreAllObjectivesComplete(questId)
                         && !state.PendingCompletionIds.Contains(questId))
                     {
@@ -237,8 +227,7 @@ namespace DeadZone.Systems.Quests
 
         public bool IsQuestActive(ulong clientId, string questId)
             => GetPlayerState(clientId).ActiveQuestIds.Contains(questId);
-
-        // 하위 호환 오버로드
+        
         public bool IsQuestCompleted(string questId)
         {
             if (NetworkManager.Singleton == null) return false;
@@ -250,10 +239,6 @@ namespace DeadZone.Systems.Quests
             if (NetworkManager.Singleton == null) return false;
             return IsQuestActive(NetworkManager.Singleton.LocalClientId, questId);
         }
-
-        // ═══════════════════════════════════════════
-        //  Hideout 복귀 시: 대기 중인 퀘스트 일괄 완료
-        // ═══════════════════════════════════════════
 
         private void OnSceneChanged(SceneChangedEvent e)
         {
@@ -267,8 +252,7 @@ namespace DeadZone.Systems.Quests
                 ProcessPendingCompletions(kvp.Key);
             }
         }
-
-        /// <summary>특정 플레이어의 대기 중인 퀘스트를 순차 완료 처리.</summary>
+        
         private void ProcessPendingCompletions(ulong clientId)
         {
             var state = GetPlayerState(clientId);
@@ -285,10 +269,6 @@ namespace DeadZone.Systems.Quests
             Debug.Log($"[QuestManager] Client {clientId}: {pendingSnapshot.Count}개 퀘스트 완료 처리됨");
         }
 
-        // ═══════════════════════════════════════════
-        //  퀘스트 완료 (내부)
-        // ═══════════════════════════════════════════
-
         private void CompleteQuest(ulong clientId, string questId)
         {
             if (!IsServer) return;
@@ -299,8 +279,7 @@ namespace DeadZone.Systems.Quests
             state.CompletedQuestIds.Add(questId);
 
             if (!_questLookup.TryGetValue(questId, out var questData)) return;
-
-            // 구역 해금 기록 (Firestore에 저장됨 → 다음 레이드에서 ZoneUnlockSystem이 읽음)
+            
             if (!string.IsNullOrEmpty(questData.unlockZoneID))
                 state.UnlockedZones.Add(questData.unlockZoneID);
 
@@ -336,8 +315,7 @@ namespace DeadZone.Systems.Quests
                 }
             }
         }
-
-        // ───────── 보상 지급 ─────────
+        
 
         private void GrantRewards(ulong clientId, QuestDataSO questData)
         {
@@ -359,10 +337,6 @@ namespace DeadZone.Systems.Quests
             }
         }
 
-        // ═══════════════════════════════════════════
-        //  EventBus 핸들러 (서버 전용)
-        // ═══════════════════════════════════════════
-
         private void OnEnemyKilled(EnemyKilledEvent e)
         {
             if (!IsServer) return;
@@ -376,15 +350,7 @@ namespace DeadZone.Systems.Quests
             if (!IsServer) return;
             ReportProgress(e.clientId, ObjectiveType.Reach, e.zoneId.ToString(), 1);
         }
-
-        // ═══════════════════════════════════════════
-        //  Home 키 디버그
-        // ═══════════════════════════════════════════
-
-        /// <summary>
-        /// Home 키 누를 때마다 다음 미완료 메인 퀘스트를 강제 완료.
-        /// 테스트용. enableDebugKeys=true일 때만 동작.
-        /// </summary>
+        
         private void DebugForceCompleteNext()
         {
             ulong localClientId = NetworkManager.Singleton.LocalClientId;

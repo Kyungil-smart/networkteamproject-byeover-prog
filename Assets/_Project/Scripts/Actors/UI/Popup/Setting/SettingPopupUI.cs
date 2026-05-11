@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems;
+using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors.UI
 {
@@ -212,9 +213,13 @@ namespace DeadZone.Actors.UI
                 return;
 
             HideBankruptcyConfirmation();
+            LobbySaveService lobbySaveService = ResolveLobbySaveService();
+            if (lobbySaveService != null)
+                lobbySaveService.LoadLobbyDataFromCloud();
+            else
+                Debug.LogWarning("[SettingPopupUI] 파산신청은 완료됐지만 LobbySaveService를 찾지 못해 현재 로비 UI를 즉시 갱신하지 못했습니다.", this);
 
-            if (closeAfterBankruptcySuccess)
-                Close();
+            Close();
         }
 
         private static CloudSaveSystem ResolveCloudSaveSystem()
@@ -224,6 +229,15 @@ namespace DeadZone.Actors.UI
                 return cloudSaveSystem;
 
             return Object.FindFirstObjectByType<CloudSaveSystem>(FindObjectsInactive.Include);
+        }
+
+        private static LobbySaveService ResolveLobbySaveService()
+        {
+            LobbySaveService lobbySaveService = ServiceLocator.Get<LobbySaveService>();
+            if (lobbySaveService != null)
+                return lobbySaveService;
+
+            return Object.FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
         }
 
         private void SetBankruptcyButtonsInteractable(bool interactable)
