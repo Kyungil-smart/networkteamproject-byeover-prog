@@ -474,17 +474,17 @@ GameObject:
   m_Component:
   - component: {fileID: 4077195986647316}
   - component: {fileID: 95481129507444498}
-  - component: {fileID: 3481043232388762985}
-  - component: {fileID: 401433369566927318}
-  - component: {fileID: 1522451728006267371}
-  - component: {fileID: 6274818321971710425}
-  - component: {fileID: 2639668021959950450}
-  - component: {fileID: 7428428410717088562}
-  - component: {fileID: 2295763769053663589}
   - component: {fileID: 6470881760734871325}
   - component: {fileID: 145792247652486230}
+  - component: {fileID: 3481043232388762985}
   - component: {fileID: 2969390804324641882}
   - component: {fileID: 5117117700546969185}
+  - component: {fileID: 401433369566927318}
+  - component: {fileID: 6274818321971710425}
+  - component: {fileID: 1522451728006267371}
+  - component: {fileID: 2295763769053663589}
+  - component: {fileID: 7428428410717088562}
+  - component: {fileID: 2639668021959950450}
   m_Layer: 9
   m_Name: T1_Enemy
   m_TagString: Enemy
@@ -536,191 +536,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &3481043232388762985
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3804293332
-  InScenePlacedSourceGlobalObjectIdHash: 3804293332
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!114 &401433369566927318
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 964be9df660844a47b6bf6e1cfebf661, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyAnimHandler
-  ShowTopMostFoldoutHeaderGroup: 1
-  flashRenderers: []
-  flashColor: {r: 1, g: 0.28773582, b: 0.28773582, a: 1}
-  flashDuration: 0.1
-  maxSpeedForNormalize: 0
-  weaponTypeIndex: 0
---- !u!114 &1522451728006267371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab71981075121eb4fb37ceb01289b44f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyHearing
-  ShowTopMostFoldoutHeaderGroup: 1
-  hearingRange: 20
-  minimumLoudnessMultiplier: 0.2
---- !u!114 &6274818321971710425
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac73539154b0e2544a2d6b5f854f1e69, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyVision
-  ShowTopMostFoldoutHeaderGroup: 1
-  fov: 110
-  visionRange: 30
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 128
-  playerMask:
-    serializedVersion: 2
-    m_Bits: 1024
-  checkInterval: 0.1
-  eyeTransform: {fileID: 8690911271754059101}
-  proximityRange: 5
-  proximityRequiresLOS: 1
---- !u!114 &2639668021959950450
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a3fd57ee1b9ba974281ef1beba18c69c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyAI
-  ShowTopMostFoldoutHeaderGroup: 1
-  wanderRadius: 15
-  wanderWait: {x: 2, y: 5}
-  maxChaseDistance: 40
-  lostTargetChaseDuration: 4
-  searchDuration: 5
-  repathInterval: 0.5
-  arrivalDistance: 1.2
-  pathSampleRadius: 4
-  retreatDistance: 3
-  retreatSampleAttempts: 7
-  pathObstacleMask:
-    serializedVersion: 2
-    m_Bits: 128
-  pathProbeRadius: 0.45
-  detourDistance: 4
-  stuckCheckInterval: 0.5
-  stuckMoveThreshold: 0.15
-  coverSearchDuration: 10
-  searchPointWaitTime: 0.8
-  coverCornerPadding: 3
-  predictedTargetLeadTime: 1.2
-  fallbackSearchRadius: 5
-  fallbackSearchPointCount: 8
-  maxCoverSearchPoints: 10
-  spawnNavMeshSampleRadius: 1.5
-  maxSpawnWarpDistance: 1.25
-  warnWhenSpawnOffNavMesh: 1
-  warnWhenInsideNavMeshObstacle: 1
-  minimumPersonalSpaceDistance: 6
-  combatRangeMultiplier: 0.65
-  maxCombatDistance: 24
-  minimumAgentStoppingDistance: 1.2
-  obstacleAvoidanceType: 4
-  avoidancePriorityRange: {x: 30, y: 70}
-  State:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 0
---- !u!114 &7428428410717088562
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 321bb8b3915a0cc4ca0581a8d669bfeb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyStats
-  ShowTopMostFoldoutHeaderGroup: 1
-  statsSO: {fileID: 11400000, guid: b671a8e945ac4bf4a9f0bd860eb6aa09, type: 2}
-  fallbackCorpsePrefab: {fileID: 0}
-  CurrentHP:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 80
-  CurrentArmorDurability:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 0
---- !u!114 &2295763769053663589
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d51668f914b96642a14cdb4c0befc12, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyShooter
-  ShowTopMostFoldoutHeaderGroup: 1
-  muzzle: {fileID: 7489591256997111823}
-  hitMask:
-    serializedVersion: 2
-    m_Bits: 1216
-  enemyBulletPrefab: {fileID: 7265609946348786657, guid: e60522a8903c9324995f96d86dd3fe8c, type: 3}
-  minimumReactionTime: 1.5
-  enemyRangeMultiplier: 0.65
-  maxEnemyEffectiveRange: 24
-  enemyMuzzleVelocityMultiplier: 0.35
-  maxEnemyMuzzleVelocity: 300
-  fallbackEnemyMuzzleVelocity: 220
-  targetMemoryResetDelay: 0.5
 --- !u!136 &6470881760734871325
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -766,6 +581,31 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &3481043232388762985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3804293332
+  InScenePlacedSourceGlobalObjectIdHash: 3804293332
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &2969390804324641882
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -861,22 +701,6 @@ MonoBehaviour:
       NameHash: 120489994
       Synchronize: 1
       ParameterType: 4
-    - name: IsSprinting
-      NameHash: -980523212
-      Synchronize: 1
-      ParameterType: 4
-    - name: IsRolling
-      NameHash: -1181490662
-      Synchronize: 1
-      ParameterType: 4
-    - name: IsKnocked
-      NameHash: -432808389
-      Synchronize: 1
-      ParameterType: 4
-    - name: Knockdown
-      NameHash: 1600680830
-      Synchronize: 1
-      ParameterType: 9
     - name: IsDead
       NameHash: 1270110494
       Synchronize: 1
@@ -898,6 +722,166 @@ MonoBehaviour:
       Synchronize: 1
       ParameterType: 9
   AnimatorParametersExpanded: 0
+--- !u!114 &401433369566927318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 964be9df660844a47b6bf6e1cfebf661, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyAnimHandler
+  ShowTopMostFoldoutHeaderGroup: 1
+  flashRenderers: []
+  flashColor: {r: 1, g: 0.28773582, b: 0.28773582, a: 1}
+  flashDuration: 0.1
+  maxSpeedForNormalize: 0
+  weaponTypeIndex: 0
+--- !u!114 &6274818321971710425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac73539154b0e2544a2d6b5f854f1e69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyVision
+  ShowTopMostFoldoutHeaderGroup: 1
+  fov: 110
+  visionRange: 30
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 128
+  playerMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  checkInterval: 0.1
+  eyeTransform: {fileID: 8690911271754059101}
+  proximityRange: 5
+  proximityRequiresLOS: 1
+--- !u!114 &1522451728006267371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab71981075121eb4fb37ceb01289b44f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyHearing
+  ShowTopMostFoldoutHeaderGroup: 1
+  hearingRange: 20
+  minimumLoudnessMultiplier: 0.2
+--- !u!114 &2295763769053663589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d51668f914b96642a14cdb4c0befc12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyShooter
+  ShowTopMostFoldoutHeaderGroup: 1
+  muzzle: {fileID: 7489591256997111823}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 1216
+  enemyBulletPrefab: {fileID: 7265609946348786657, guid: e60522a8903c9324995f96d86dd3fe8c, type: 3}
+  minimumReactionTime: 1.5
+  enemyRangeMultiplier: 0.65
+  maxEnemyEffectiveRange: 24
+  enemyMuzzleVelocityMultiplier: 0.35
+  maxEnemyMuzzleVelocity: 300
+  fallbackEnemyMuzzleVelocity: 220
+  targetMemoryResetDelay: 0.5
+--- !u!114 &7428428410717088562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 321bb8b3915a0cc4ca0581a8d669bfeb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyStats
+  ShowTopMostFoldoutHeaderGroup: 1
+  statsSO: {fileID: 11400000, guid: b671a8e945ac4bf4a9f0bd860eb6aa09, type: 2}
+  fallbackCorpsePrefab: {fileID: 0}
+  CurrentHP:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 80
+  CurrentArmorDurability:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+--- !u!114 &2639668021959950450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3fd57ee1b9ba974281ef1beba18c69c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyAI
+  ShowTopMostFoldoutHeaderGroup: 1
+  wanderRadius: 15
+  wanderWait: {x: 2, y: 5}
+  maxChaseDistance: 40
+  lostTargetChaseDuration: 4
+  searchDuration: 5
+  repathInterval: 0.5
+  arrivalDistance: 1.2
+  pathSampleRadius: 4
+  retreatDistance: 3
+  retreatSampleAttempts: 7
+  pathObstacleMask:
+    serializedVersion: 2
+    m_Bits: 128
+  pathProbeRadius: 0.45
+  detourDistance: 4
+  stuckCheckInterval: 0.5
+  stuckMoveThreshold: 0.15
+  coverSearchDuration: 10
+  searchPointWaitTime: 0.8
+  coverCornerPadding: 3
+  predictedTargetLeadTime: 1.2
+  fallbackSearchRadius: 5
+  fallbackSearchPointCount: 8
+  maxCoverSearchPoints: 10
+  spawnNavMeshSampleRadius: 1.5
+  maxSpawnWarpDistance: 1.25
+  warnWhenSpawnOffNavMesh: 1
+  warnWhenInsideNavMeshObstacle: 1
+  minimumPersonalSpaceDistance: 6
+  combatRangeMultiplier: 0.65
+  maxCombatDistance: 24
+  minimumAgentStoppingDistance: 1.2
+  obstacleAvoidanceType: 4
+  avoidancePriorityRange: {x: 30, y: 70}
+  State:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0
