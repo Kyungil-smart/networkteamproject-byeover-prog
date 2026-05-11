@@ -1,5 +1,8 @@
 ﻿using Unity.Netcode;
 
+using TMPro;
+using UnityEngine;
+
 using DeadZone.Core;
 
 namespace DeadZone.Systems
@@ -10,10 +13,42 @@ namespace DeadZone.Systems
     /// </summary>
     public class WalletSystem : NetworkBehaviour
     {
+        [Header("재화 UI")]
+        [SerializeField] private TMP_Text goodsText;
+        [SerializeField] private string goodsTextFormat = "{0}";
+
         public NetworkVariable<int> Credits = new(
-            value: 0,
+            value: 50000,
             readPerm: NetworkVariableReadPermission.Owner,
             writePerm: NetworkVariableWritePermission.Server);
+
+        private void Reset()
+        {
+            AutoBindReferences();
+        }
+
+        private void Awake()
+        {
+            AutoBindReferences();
+            RefreshGoodsText();
+        }
+
+        private void OnValidate()
+        {
+            AutoBindReferences();
+            RefreshGoodsText();
+        }
+
+        private void OnEnable()
+        {
+            Credits.OnValueChanged += HandleCreditsChanged;
+            RefreshGoodsText();
+        }
+
+        private void OnDisable()
+        {
+            Credits.OnValueChanged -= HandleCreditsChanged;
+        }
 
         public bool TryPay(int amount)
         {
@@ -22,6 +57,7 @@ namespace DeadZone.Systems
             if (Credits.Value < amount) return false;
             int oldVal = Credits.Value;
             Credits.Value -= amount;
+            RefreshGoodsText();
             EventBus.Publish(new CreditsChangedEvent
             {
                 clientId = OwnerClientId,
@@ -31,17 +67,66 @@ namespace DeadZone.Systems
             return true;
         }
 
+        public bool TryPayLocalTest(int amount)
+        {
+            if (amount < 0) return false;
+            if (Credits.Value < amount) return false;
+            Credits.Value -= amount;
+            RefreshGoodsText();
+            return true;
+        }
+
+        public void EarnLocalTest(int amount)
+        {
+            if (amount <= 0) return;
+            Credits.Value += amount;
+            RefreshGoodsText();
+        }
+
         public void Earn(int amount)
         {
             if (!IsServer) return;
             if (amount <= 0) return;
             Credits.Value += amount;
+            RefreshGoodsText();
             EventBus.Publish(new CreditsChangedEvent
             {
                 clientId = OwnerClientId,
                 delta = amount,
                 newBalance = Credits.Value,
             });
+        }
+
+        private void HandleCreditsChanged(int previousValue, int currentValue)
+        {
+            RefreshGoodsText();
+        }
+
+        private void RefreshGoodsText()
+        {
+            if (goodsText == null)
+                return;
+
+            goodsText.text = string.IsNullOrEmpty(goodsTextFormat)
+                ? Credits.Value.ToString()
+                : string.Format(goodsTextFormat, Credits.Value);
+        }
+
+        private void AutoBindReferences()
+        {
+            if (goodsText != null)
+                return;
+
+            TMP_Text[] texts = GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                TMP_Text text = texts[i];
+                if (text != null && text.name == "Text_goods")
+                {
+                    goodsText = text;
+                    return;
+                }
+            }
         }
     }
 }

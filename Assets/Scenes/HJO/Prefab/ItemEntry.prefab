@@ -369,11 +369,12 @@ MonoBehaviour:
   itemIcon: {fileID: 5634538117494614820}
   itemNameText: {fileID: 8457520482018572298}
   priceText: {fileID: 6831317239624698181}
-  actionButton: {fileID: 0}
+  actionButton: {fileID: 6795351401777310527}
   actionButtonText: {fileID: 6240571390812537712}
   lockRoot: {fileID: 1478242227200621267}
   lockIcon: {fileID: 2795640950264246027}
   lockReasonText: {fileID: 8126406619519297097}
+  fallbackEntryHeight: 72
 --- !u!1 &3134558759651132317
 GameObject:
   m_ObjectHideFlags: 0

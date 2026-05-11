@@ -273,6 +273,19 @@ namespace DeadZone.Network
 
             networkObject.SpawnAsPlayerObject(clientId, true);
 
+            // Owner 권위 NetworkTransform 보정: 서버가 정한 SpawnPoint를 Owner Client에 전달.
+            PlayerSpawnInitializer initializer = instance.GetComponent<PlayerSpawnInitializer>();
+            if (initializer != null)
+            {
+                initializer.SendSpawnPointToOwner(spawnPoint.position, spawnPoint.rotation, clientId);
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[플레이어 스폰] Player Prefab Root에 PlayerSpawnInitializer가 없습니다. ClientId={clientId}",
+                    this);
+            }
+
             LogDebug(
                 $"PlayerObject Spawn 완료. ClientId={clientId}, " +
                 $"SpawnPoint={spawnPoint.name}, OwnerClientId={networkObject.OwnerClientId}");
