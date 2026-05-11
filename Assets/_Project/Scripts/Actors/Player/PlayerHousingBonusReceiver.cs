@@ -5,48 +5,50 @@ using DeadZone.Core;
 
 namespace DeadZone.Actors
 {
-    // 하우징 시설 효과 이벤트를 받아 플레이어 능력치 시스템에 반영
-    // 하우징 시스템이 PlayerHealthSystem, PlayerStaminaSystem, PlayerCarryWeightSystem, UI를 직접 참조하지 않게 만드는 중간 수신자
+    // 하우징 시설 보너스 이벤트를 받아 실제 플레이어 스탯 시스템에 반영
+    // 시설 시스템은 보너스 계산만 담당하고, 실제 적용은 이 컴포넌트가 담당
     [DisallowMultipleComponent]
     public sealed class PlayerHousingBonusReceiver : NetworkBehaviour
     {
-        [Header("참조")]
+        [Header("적용 대상")]
         [SerializeField]
-        [Tooltip("플레이어 체력 시스템입니다. 비워두면 같은 오브젝트에서 자동으로 찾습니다.")]
         private PlayerHealthSystem healthSystem;
 
         [SerializeField]
-        [Tooltip("플레이어 스태미너 시스템입니다. 비워두면 같은 오브젝트에서 자동으로 찾습니다.")]
         private PlayerStaminaSystem staminaSystem;
 
         [SerializeField]
-        [Tooltip("플레이어 소지 무게 시스템입니다. 비워두면 같은 오브젝트에서 자동으로 찾습니다.")]
         private PlayerCarryWeightSystem carryWeightSystem;
 
-        [Header("적용 설정")]
+        [Header("적용 옵션")]
         [SerializeField]
-        [Tooltip("최대 체력 증가 시 현재 체력도 증가분만큼 채웁니다.")]
         private bool fillHpWhenMaxHpIncreased = true;
 
         [SerializeField]
-        [Tooltip("최대 스태미너 증가 시 현재 스태미너도 증가분만큼 채웁니다.")]
         private bool fillStaminaWhenMaxStaminaIncreased = true;
 
-        [Header("디버그")]
+        [Header("런타임 보너스 확인")]
         [SerializeField]
-        [Tooltip("하우징 보너스 수신 및 적용 로그를 출력합니다.")]
-        private bool logBonusChanged = true;
-
         private float medicalHealthBonus;
+
+        [SerializeField]
         private float kitchenStaminaBonus;
+
+        [SerializeField]
         private float bedStaminaBonus;
-        private float gymCarryWeightBonus;
+
+        [SerializeField]
+        private float gymCarryWeightBonusKg;
+
+        [Header("로그")]
+        [SerializeField]
+        private bool logBonusChanged = true;
 
         public float MedicalHealthBonus => medicalHealthBonus;
         public float KitchenStaminaBonus => kitchenStaminaBonus;
         public float BedStaminaBonus => bedStaminaBonus;
+        public float GymCarryWeightBonusKg => gymCarryWeightBonusKg;
         public float TotalStaminaBonus => kitchenStaminaBonus + bedStaminaBonus;
-        public float GymCarryWeightBonus => gymCarryWeightBonus;
 
         private void Reset()
         {
@@ -63,20 +65,25 @@ namespace DeadZone.Actors
             FindRequiredComponents();
         }
 
-        private void OnEnable()
+        public override void OnNetworkSpawn()
         {
-            EventBus.Subscribe<MedicalHealthBonusChangedEvent>(OnMedicalHealthBonusChanged);
-            EventBus.Subscribe<KitchenStaminaBonusChangedEvent>(OnKitchenStaminaBonusChanged);
-            EventBus.Subscribe<BedStaminaBonusChangedEvent>(OnBedStaminaBonusChanged);
-            EventBus.Subscribe<GymCarryWeightBonusChangedEvent>(OnGymCarryWeightBonusChanged);
+            FindRequiredComponents();
+
+            EventBus.Subscribe<MedicalHealthBonusChangedEvent>(HandleMedicalHealthBonusChanged);
+            EventBus.Subscribe<KitchenStaminaBonusChangedEvent>(HandleKitchenStaminaBonusChanged);
+            EventBus.Subscribe<BedStaminaBonusChangedEvent>(HandleBedStaminaBonusChanged);
+            EventBus.Subscribe<GymCarryWeightBonusChangedEvent>(HandleGymCarryWeightBonusChanged);
+
+            if (logBonusChanged)
+                Debug.Log("[PlayerHousingBonusReceiver] 하우징 보너스 이벤트 구독 완료", this);
         }
 
-        private void OnDisable()
+        public override void OnNetworkDespawn()
         {
-            EventBus.Unsubscribe<MedicalHealthBonusChangedEvent>(OnMedicalHealthBonusChanged);
-            EventBus.Unsubscribe<KitchenStaminaBonusChangedEvent>(OnKitchenStaminaBonusChanged);
-            EventBus.Unsubscribe<BedStaminaBonusChangedEvent>(OnBedStaminaBonusChanged);
-            EventBus.Unsubscribe<GymCarryWeightBonusChangedEvent>(OnGymCarryWeightBonusChanged);
+            EventBus.Unsubscribe<MedicalHealthBonusChangedEvent>(HandleMedicalHealthBonusChanged);
+            EventBus.Unsubscribe<KitchenStaminaBonusChangedEvent>(HandleKitchenStaminaBonusChanged);
+            EventBus.Unsubscribe<BedStaminaBonusChangedEvent>(HandleBedStaminaBonusChanged);
+            EventBus.Unsubscribe<GymCarryWeightBonusChangedEvent>(HandleGymCarryWeightBonusChanged);
         }
 
         private void FindRequiredComponents()
@@ -91,7 +98,7 @@ namespace DeadZone.Actors
                 carryWeightSystem = GetComponent<PlayerCarryWeightSystem>();
         }
 
-        private bool ShouldApplyToThisPlayer()
+        private bool CanApplyToThisPlayer()
         {
             if (!IsSpawned)
                 return true;
@@ -99,9 +106,9 @@ namespace DeadZone.Actors
             return IsServer || IsOwner;
         }
 
-        private void OnMedicalHealthBonusChanged(MedicalHealthBonusChangedEvent evt)
+        private void HandleMedicalHealthBonusChanged(MedicalHealthBonusChangedEvent evt)
         {
-            if (!ShouldApplyToThisPlayer())
+            if (!CanApplyToThisPlayer())
                 return;
 
             medicalHealthBonus = Mathf.Max(0f, evt.maxHealthBonus);
@@ -110,7 +117,7 @@ namespace DeadZone.Actors
             if (logBonusChanged)
             {
                 Debug.Log(
-                    $"[PlayerHousingBonusReceiver] 의료 시설 보너스 수신\n" +
+                    $"[PlayerHousingBonusReceiver] 의료시설 체력 보너스 수신\n" +
                     $"시설 레벨: Lv.{evt.level}\n" +
                     $"최대 체력 보너스: +{medicalHealthBonus:0.##}",
                     this
@@ -118,9 +125,9 @@ namespace DeadZone.Actors
             }
         }
 
-        private void OnKitchenStaminaBonusChanged(KitchenStaminaBonusChangedEvent evt)
+        private void HandleKitchenStaminaBonusChanged(KitchenStaminaBonusChangedEvent evt)
         {
-            if (!ShouldApplyToThisPlayer())
+            if (!CanApplyToThisPlayer())
                 return;
 
             kitchenStaminaBonus = Mathf.Max(0f, evt.maxStaminaBonus);
@@ -129,18 +136,18 @@ namespace DeadZone.Actors
             if (logBonusChanged)
             {
                 Debug.Log(
-                    $"[PlayerHousingBonusReceiver] 주방 보너스 수신\n" +
+                    $"[PlayerHousingBonusReceiver] 주방 스태미너 보너스 수신\n" +
                     $"시설 레벨: Lv.{evt.level}\n" +
                     $"주방 스태미너 보너스: +{kitchenStaminaBonus:0.##}\n" +
-                    $"현재 전체 스태미너 보너스: +{TotalStaminaBonus:0.##}",
+                    $"전체 스태미너 보너스: +{TotalStaminaBonus:0.##}",
                     this
                 );
             }
         }
 
-        private void OnBedStaminaBonusChanged(BedStaminaBonusChangedEvent evt)
+        private void HandleBedStaminaBonusChanged(BedStaminaBonusChangedEvent evt)
         {
-            if (!ShouldApplyToThisPlayer())
+            if (!CanApplyToThisPlayer())
                 return;
 
             bedStaminaBonus = Mathf.Max(0f, evt.maxStaminaBonus);
@@ -149,21 +156,21 @@ namespace DeadZone.Actors
             if (logBonusChanged)
             {
                 Debug.Log(
-                    $"[PlayerHousingBonusReceiver] 침실 보너스 수신\n" +
+                    $"[PlayerHousingBonusReceiver] 침대 스태미너 보너스 수신\n" +
                     $"시설 레벨: Lv.{evt.level}\n" +
-                    $"침실 스태미너 보너스: +{bedStaminaBonus:0.##}\n" +
-                    $"현재 전체 스태미너 보너스: +{TotalStaminaBonus:0.##}",
+                    $"침대 스태미너 보너스: +{bedStaminaBonus:0.##}\n" +
+                    $"전체 스태미너 보너스: +{TotalStaminaBonus:0.##}",
                     this
                 );
             }
         }
 
-        private void OnGymCarryWeightBonusChanged(GymCarryWeightBonusChangedEvent evt)
+        private void HandleGymCarryWeightBonusChanged(GymCarryWeightBonusChangedEvent evt)
         {
-            if (!ShouldApplyToThisPlayer())
+            if (!CanApplyToThisPlayer())
                 return;
 
-            gymCarryWeightBonus = Mathf.Max(0f, evt.carryWeightBonusKg);
+            gymCarryWeightBonusKg = Mathf.Max(0f, evt.carryWeightBonusKg);
             ApplyCarryWeightBonus();
 
             if (logBonusChanged)
@@ -171,7 +178,7 @@ namespace DeadZone.Actors
                 Debug.Log(
                     $"[PlayerHousingBonusReceiver] 헬스장 소지 무게 보너스 수신\n" +
                     $"시설 레벨: Lv.{evt.level}\n" +
-                    $"소지 무게 보너스: +{gymCarryWeightBonus:0.##}kg",
+                    $"소지 무게 보너스: +{gymCarryWeightBonusKg:0.##}kg",
                     this
                 );
             }
@@ -181,7 +188,7 @@ namespace DeadZone.Actors
         {
             if (healthSystem == null)
             {
-                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerHealthSystem이 연결되어 있지 않아 체력 보너스를 적용할 수 없습니다.", this);
+                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerHealthSystem이 없어 체력 보너스를 적용하지 못했습니다.", this);
                 return;
             }
 
@@ -192,7 +199,7 @@ namespace DeadZone.Actors
         {
             if (staminaSystem == null)
             {
-                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerStaminaSystem이 연결되어 있지 않아 스태미너 보너스를 적용할 수 없습니다.", this);
+                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerStaminaSystem이 없어 스태미너 보너스를 적용하지 못했습니다.", this);
                 return;
             }
 
@@ -203,35 +210,35 @@ namespace DeadZone.Actors
         {
             if (carryWeightSystem == null)
             {
-                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerCarryWeightSystem이 연결되어 있지 않아 소지 무게 보너스를 적용할 수 없습니다.", this);
+                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerCarryWeightSystem이 없어 소지 무게 보너스를 적용하지 못했습니다.", this);
                 return;
             }
 
-            carryWeightSystem.ApplyHousingCarryWeightBonus(gymCarryWeightBonus);
+            carryWeightSystem.ApplyHousingCarryWeightBonus(gymCarryWeightBonusKg);
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("디버그 현재 하우징 보너스 출력")]
+        [ContextMenu("현재 하우징 보너스 출력")]
         private void DebugPrintCurrentBonuses()
         {
             Debug.Log(
                 $"[PlayerHousingBonusReceiver] 현재 하우징 보너스\n" +
-                $"의료 최대 체력: +{medicalHealthBonus:0.##}\n" +
+                $"의료시설 최대 체력: +{medicalHealthBonus:0.##}\n" +
                 $"주방 스태미너: +{kitchenStaminaBonus:0.##}\n" +
-                $"침실 스태미너: +{bedStaminaBonus:0.##}\n" +
+                $"침대 스태미너: +{bedStaminaBonus:0.##}\n" +
                 $"전체 스태미너: +{TotalStaminaBonus:0.##}\n" +
-                $"헬스장 소지 무게: +{gymCarryWeightBonus:0.##}kg",
+                $"헬스장 소지 무게: +{gymCarryWeightBonusKg:0.##}kg",
                 this
             );
         }
 
-        [ContextMenu("디버그 하우징 보너스 초기화")]
+        [ContextMenu("하우징 보너스 초기화")]
         private void DebugResetBonuses()
         {
             medicalHealthBonus = 0f;
             kitchenStaminaBonus = 0f;
             bedStaminaBonus = 0f;
-            gymCarryWeightBonus = 0f;
+            gymCarryWeightBonusKg = 0f;
 
             ApplyHealthBonus();
             ApplyStaminaBonus();

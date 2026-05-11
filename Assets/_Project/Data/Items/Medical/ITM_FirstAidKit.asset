@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
   m_Name: ITM_FirstAidKit
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
-  itemID: FirstAidKit
+  itemID: ITM_FirstAidKit
   displayName: "\uAD6C\uAE09\uC0C1\uC790"
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC751\uAE09\uCC98\uCE58
     \uC6A9 \uAD6C\uAE09\uC0C1\uC790"
