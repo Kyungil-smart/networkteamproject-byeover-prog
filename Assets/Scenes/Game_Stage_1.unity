@@ -8459,6 +8459,10 @@ PrefabInstance:
       propertyPath: m_AnchorMin.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6728513792519004208, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
+      propertyPath: starterPackConfig
+      value: 
+      objectReference: {fileID: 11400000, guid: 2dc562d0d6426b346805646b94200313, type: 2}
     - target: {fileID: 7392058866433119634, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
       propertyPath: m_Name
       value: Popup_Setting

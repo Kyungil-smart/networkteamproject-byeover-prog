@@ -8,8 +8,6 @@ using DeadZone.Systems;
 
 namespace DeadZone.Systems.Housing
 {
-    // 작업대 제작 요청을 처리
-    // 실제 제작은 서버가 요청자 PlayerObject의 IInventory를 찾아서 처리
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Workbench))]
     [RequireComponent(typeof(WorkbenchRecipeCatalog))]
@@ -17,26 +15,14 @@ namespace DeadZone.Systems.Housing
     {
         [Header("작업대 레시피")]
         [SerializeField]
-        [Tooltip("작업대 레시피 목록과 레벨 제한을 관리하는 카탈로그입니다.")]
         private WorkbenchRecipeCatalog recipeCatalog;
-
-        [Header("테스트 인벤토리")]
-        [SerializeField]
-        [Tooltip("테스트 전용입니다. 실제 네트워크 플레이에서는 꺼야 합니다.")]
-        private bool useTestInventory = false;
-
-        [SerializeField]
-        [Tooltip("플레이어 인벤토리 완성 전까지 사용할 테스트용 인벤토리입니다.")]
-        private WorkbenchTestInventory testInventory;
 
         [Header("디버그 제작")]
         [SerializeField]
-        [Tooltip("Context Menu로 제작 테스트할 RecipeSO의 recipeID입니다.")]
         private string debugRecipeID;
 
         [Header("로그")]
         [SerializeField]
-        [Tooltip("제작 성공과 실패 사유를 Console에 출력합니다.")]
         private bool logCraftResult = true;
 
         private readonly List<ItemRequirement> consumedIngredients = new();
@@ -60,39 +46,6 @@ namespace DeadZone.Systems.Housing
         {
             if (recipeCatalog == null)
                 recipeCatalog = GetComponent<WorkbenchRecipeCatalog>();
-
-            if (testInventory == null)
-                testInventory = GetComponent<WorkbenchTestInventory>();
-        }
-
-        public bool CanCraft(string recipeID)
-        {
-            if (string.IsNullOrWhiteSpace(recipeID))
-                return false;
-
-            IInventory inventory = GetActiveInventoryForCheck();
-
-            if (inventory == null)
-                return false;
-
-            return CanCraftWithInventory(recipeID, inventory);
-        }
-
-        public bool CanCraftWithInventory(string recipeID, IInventory inventory)
-        {
-            if (inventory == null)
-                return false;
-
-            if (string.IsNullOrWhiteSpace(recipeID))
-                return false;
-
-            if (!TryGetUnlockedRecipe(recipeID, out RecipeSO recipe, out _))
-                return false;
-
-            if (!IsRecipeValid(recipe))
-                return false;
-
-            return HasAllIngredients(inventory, recipe);
         }
 
         public void RequestCraft(string recipeID)
@@ -103,21 +56,9 @@ namespace DeadZone.Systems.Housing
                 return;
             }
 
-            if (useTestInventory)
+            if (!HousingInventoryResolver.IsNetworkReady(out string failReason))
             {
-                TryCraftWithInventory(recipeID, testInventory);
-                return;
-            }
-
-            if (NetworkManager.Singleton == null)
-            {
-                FailCraft(recipeID, "NetworkManager가 없습니다.");
-                return;
-            }
-
-            if (!NetworkManager.Singleton.IsListening)
-            {
-                FailCraft(recipeID, "네트워크가 시작되지 않았습니다. Host 또는 Client 실행 후 제작해야 합니다.");
+                FailCraft(recipeID, failReason);
                 return;
             }
 
@@ -132,9 +73,12 @@ namespace DeadZone.Systems.Housing
 
             ulong requesterClientId = rpcParams.Receive.SenderClientId;
 
-            if (!TryGetRequesterInventory(requesterClientId, out IInventory inventory))
+            if (!HousingInventoryResolver.TryGetRequesterInventory(
+                    requesterClientId,
+                    out IInventory inventory,
+                    out string failReason))
             {
-                FailCraft(recipeID, $"제작 요청자의 인벤토리를 찾지 못했습니다. ClientId: {requesterClientId}");
+                FailCraft(recipeID, failReason);
                 return;
             }
 
@@ -143,9 +87,15 @@ namespace DeadZone.Systems.Housing
 
         public bool TryCraftWithInventory(string recipeID, IInventory inventory)
         {
+            if (!IsServer)
+            {
+                FailCraft(recipeID, "작업대 제작은 서버에서만 처리할 수 있습니다.");
+                return false;
+            }
+
             if (inventory == null)
             {
-                FailCraft(recipeID, "제작에 사용할 인벤토리가 없습니다.");
+                FailCraft(recipeID, "제작에 사용할 실제 인벤토리가 없습니다.");
                 return false;
             }
 
@@ -172,8 +122,9 @@ namespace DeadZone.Systems.Housing
 
             int resultCount = Mathf.Max(1, recipe.resultCount);
 
-            if (!inventory.TryAddItem(recipe.result, resultCount))
+            if (!TryAddCraftResult(inventory, recipe, resultCount, out int addedCount))
             {
+                RemoveAddedCraftResult(inventory, recipe, addedCount);
                 RestoreConsumedIngredients(inventory);
                 FailCraft(recipe.recipeID, "결과 아이템 지급에 실패했습니다. 소모한 재료를 되돌렸습니다.");
                 return false;
@@ -186,6 +137,16 @@ namespace DeadZone.Systems.Housing
                 recipeId = recipe.recipeID,
                 resultItemId = recipe.result.itemID,
                 resultCount = resultCount
+            });
+
+            EventBus.Publish(new HousingCraftResultEvent
+            {
+                facilityName = "Workbench",
+                recipeId = recipe.recipeID,
+                resultItemId = recipe.result.itemID,
+                resultCount = resultCount,
+                success = true,
+                reason = "제작 성공"
             });
 
             if (logCraftResult)
@@ -305,6 +266,40 @@ namespace DeadZone.Systems.Housing
             return true;
         }
 
+        private bool TryAddCraftResult(IInventory inventory, RecipeSO recipe, int resultCount, out int addedCount)
+        {
+            addedCount = 0;
+
+            if (inventory == null || recipe == null || recipe.result == null)
+                return false;
+
+            int safeResultCount = Mathf.Max(1, resultCount);
+
+            for (int i = 0; i < safeResultCount; i++)
+            {
+                if (!inventory.TryAddItem(recipe.result, 1))
+                    return false;
+
+                addedCount++;
+            }
+
+            return true;
+        }
+
+        private void RemoveAddedCraftResult(IInventory inventory, RecipeSO recipe, int addedCount)
+        {
+            if (inventory == null || recipe == null || recipe.result == null)
+                return;
+
+            if (addedCount <= 0)
+                return;
+
+            if (string.IsNullOrWhiteSpace(recipe.result.itemID))
+                return;
+
+            inventory.ConsumeItem(recipe.result.itemID, addedCount);
+        }
+
         private void RestoreConsumedIngredients(IInventory inventory)
         {
             if (inventory == null)
@@ -324,55 +319,21 @@ namespace DeadZone.Systems.Housing
             consumedIngredients.Clear();
         }
 
-        private IInventory GetActiveInventoryForCheck()
-        {
-            if (useTestInventory)
-                return testInventory;
-
-            if (NetworkManager.Singleton == null)
-                return null;
-
-            if (!NetworkManager.Singleton.IsListening)
-                return null;
-
-            if (!IsServer)
-                return null;
-
-            ulong localClientId = NetworkManager.Singleton.LocalClientId;
-
-            if (!TryGetRequesterInventory(localClientId, out IInventory inventory))
-                return null;
-
-            return inventory;
-        }
-
-        private bool TryGetRequesterInventory(ulong requesterClientId, out IInventory inventory)
-        {
-            inventory = null;
-
-            if (NetworkManager.Singleton == null)
-                return false;
-
-            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(requesterClientId, out NetworkClient client))
-                return false;
-
-            if (client.PlayerObject == null)
-                return false;
-
-            inventory = client.PlayerObject.GetComponent<IInventory>();
-
-            if (inventory != null)
-                return true;
-
-            inventory = client.PlayerObject.GetComponentInChildren<IInventory>(true);
-            return inventory != null;
-        }
-
         private void FailCraft(string recipeId, string reason)
         {
             EventBus.Publish(new WorkbenchCraftFailedEvent
             {
                 recipeId = recipeId,
+                reason = reason
+            });
+
+            EventBus.Publish(new HousingCraftResultEvent
+            {
+                facilityName = "Workbench",
+                recipeId = recipeId,
+                resultItemId = string.Empty,
+                resultCount = 0,
+                success = false,
                 reason = reason
             });
 

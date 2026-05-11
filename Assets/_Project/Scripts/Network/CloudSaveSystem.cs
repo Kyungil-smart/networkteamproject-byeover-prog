@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Firebase.Firestore;
@@ -12,18 +12,39 @@ using DeadZone.Systems.Save;
 
 namespace DeadZone.Network
 {
+    /// <summary>
+    /// Firebase Cloud Firestore에 플레이어 저장 데이터를 로드하고 업로드합니다.
+    /// </summary>
     public class CloudSaveSystem : MonoBehaviour
     {
+        private const int DefaultStashColumnCount = 10;
+        private const int DefaultStartingCredits = 50000;
+        private const int EconomyStarterPackSchemaVersion = 3;
         private const string UsersCollection = "users";
         private const bool DisableFirestorePersistence = true;
+
+        [Header("파산신청")]
+        [Tooltip("파산신청 시 적용할 스타터팩 설정입니다.")]
+        [SerializeField] private StarterPackConfigSO bankruptcyStarterPack;
 
         private FirebaseFirestore db;
         private FirebaseAuthManager authManager;
         private PlayerCloudData currentData;
         private string loadedFirebaseUid = string.Empty;
 
+        /// <summary>
+        /// 현재 로드된 플레이어 Cloud Save 데이터입니다.
+        /// </summary>
         public PlayerCloudData CurrentData => currentData;
+
+        /// <summary>
+        /// 현재 플레이어 Cloud Save 데이터가 로드되어 있는지 반환합니다.
+        /// </summary>
         public bool HasLoadedData => currentData != null;
+
+        /// <summary>
+        /// 현재 로드된 Cloud Save 데이터의 Firebase UID입니다.
+        /// </summary>
         public string LoadedFirebaseUid => loadedFirebaseUid;
 
         private void Awake()
@@ -230,6 +251,15 @@ namespace DeadZone.Network
                     // [FirestoreData] 어노테이션이 붙어있으면 ConvertTo<T>()로 자동 역직렬화
                     currentData = snapshot.ConvertTo<PlayerCloudData>();
                     if (currentData == null) currentData = NewPlayerData(uid, authManager.CurrentEmail);
+                    EnsureCloudDataContainers();
+
+                    if (TryApplyStarterPackMigration())
+                    {
+                        loadedFirebaseUid = uid;
+                        currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+                        Debug.Log("[CloudSaveSystem] 기존 Cloud Save 문서에 스타터팩 경제 데이터 마이그레이션을 적용했습니다.", this);
+                    }
                 }
                 else
                 {
@@ -404,6 +434,9 @@ namespace DeadZone.Network
             return CreateLobbySaveDTOFromLegacyCloudFields();
         }
 
+        /// <summary>
+        /// 지정한 구역 해금 상태를 저장 데이터에 반영하고 업로드합니다.
+        /// </summary>
         public async Task<bool> UnlockZoneAndUploadAsync(string zoneId)
         {
             if (string.IsNullOrWhiteSpace(zoneId))
@@ -479,13 +512,100 @@ namespace DeadZone.Network
             }
         }
 
+        /// <summary>
+        /// 퀘스트와 하이드아웃 진행도는 유지하고 경제 데이터만 스타터팩 상태로 초기화합니다.
+        /// </summary>
+        public async Task<bool> ApplyBankruptcyStarterPackAsync(StarterPackConfigSO starterPackOverride = null)
+        {
+            StarterPackConfigSO starterPack = starterPackOverride != null
+                ? starterPackOverride
+                : bankruptcyStarterPack;
+
+            if (starterPack == null)
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. StarterPackConfigSO가 연결되지 않았습니다.", this);
+                return false;
+            }
+
+            if (!TryGetSignedInAuth(out string uid, out _))
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. 로그인 상태가 아닙니다.", this);
+                return false;
+            }
+
+            if (!TryEnsureFirestoreReady())
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. Firestore가 준비되지 않았습니다.", this);
+                return false;
+            }
+
+            if (currentData == null)
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. Cloud Save 데이터가 아직 로드되지 않았습니다.", this);
+                return false;
+            }
+
+            if (loadedFirebaseUid != uid)
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. 현재 로그인 UID와 로드된 데이터 UID가 다릅니다.", this);
+                return false;
+            }
+
+            try
+            {
+                EnsureCloudDataContainers();
+
+                // 진행도 계열은 현재 씬에서 확인 가능한 최신 값만 먼저 반영한다.
+                CollectFacilities();
+                CollectPersonalQuestProgress();
+
+                EnsureCloudDataContainers();
+                ApplyBankruptcyStarterPack(starterPack);
+
+                currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = true,
+                });
+
+                EventBus.Publish(new CloudSaveLoadedEvent
+                {
+                    firebaseUid = uid,
+                    isNewUser = false,
+                });
+
+                Debug.Log("[CloudSaveSystem] 파산신청 완료. 경제 데이터만 스타터팩 상태로 초기화했습니다.", this);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[CloudSaveSystem] 파산신청 실패. Error={ex}", this);
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = false,
+                });
+                return false;
+            }
+        }
+
         private void EnsureCloudDataContainers()
         {
             currentData.profile ??= new ProfileData();
             currentData.progress ??= new ProgressData();
+            currentData.progress.personalActiveQuestIds ??= new List<string>();
+            currentData.progress.personalCompletedQuestIds ??= new List<string>();
             currentData.progress.unlockedZones ??= new List<string>();
+            currentData.progress.questObjectives ??= new List<QuestObjectiveProgress>();
+            currentData.progress.pendingCompletionIds ??= new List<string>();
             currentData.stash ??= new StashData();
+            currentData.stash.slots ??= new List<StashSlot>();
             currentData.safePocket ??= new SafePocketData();
+            currentData.safePocket.slots ??= new List<SafePocketSlot>();
             currentData.equipment ??= new EquipmentData();
             currentData.facilities ??= new FacilitiesData();
             currentData.insurance ??= new List<InsuranceEntry>();
@@ -510,6 +630,8 @@ namespace DeadZone.Network
         private void CollectDataFromScene()
         {
             if (currentData == null) return;
+
+            EnsureCloudDataContainers();
 
             // 1) 본인 PlayerPrefab 찾기 (있을 때만)
             var localPlayer = FindLocalPlayer();
@@ -606,11 +728,131 @@ namespace DeadZone.Network
             quest.RestorePlayerState(NetworkManager.Singleton.LocalClientId, currentData.progress);
         }
 
+        private void ApplyBankruptcyStarterPack(StarterPackConfigSO starterPack)
+        {
+            currentData.progress.credits = starterPack.StartingCredits;
+            currentData.stash.slots = BuildStarterPackStashSlots(starterPack);
+            currentData.safePocket.slots.Clear();
+            currentData.equipment = new EquipmentData();
+            currentData.insurance.Clear();
+            currentData.schemaVersion = Mathf.Max(currentData.schemaVersion, EconomyStarterPackSchemaVersion);
+        }
+
+        private bool TryApplyStarterPackMigration()
+        {
+            if (bankruptcyStarterPack == null)
+                return false;
+
+            if (currentData.schemaVersion >= EconomyStarterPackSchemaVersion)
+                return false;
+
+            if (!IsEconomyEmptyForStarterPackMigration())
+            {
+                currentData.schemaVersion = EconomyStarterPackSchemaVersion;
+                return false;
+            }
+
+            ApplyBankruptcyStarterPack(bankruptcyStarterPack);
+            return true;
+        }
+
+        private bool IsEconomyEmptyForStarterPackMigration()
+        {
+            bool stashEmpty = currentData.stash == null ||
+                              currentData.stash.slots == null ||
+                              currentData.stash.slots.Count == 0;
+
+            bool safePocketEmpty = currentData.safePocket == null ||
+                                   currentData.safePocket.slots == null ||
+                                   currentData.safePocket.slots.Count == 0;
+
+            bool insuranceEmpty = currentData.insurance == null ||
+                                  currentData.insurance.Count == 0;
+
+            bool equipmentEmpty = currentData.equipment == null ||
+                                  (string.IsNullOrWhiteSpace(currentData.equipment.helmetId) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.armorId) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.primary1) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.primary2) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.secondary) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.melee));
+
+            return stashEmpty && safePocketEmpty && insuranceEmpty && equipmentEmpty;
+        }
+
+        private static List<StashSlot> BuildStarterPackStashSlots(StarterPackConfigSO starterPack)
+        {
+            List<StashSlot> result = new List<StashSlot>();
+            int nextSlotIndex = 0;
+
+            IReadOnlyList<StarterPackEntry> entries = starterPack.Entries;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                AppendStarterPackEntry(result, entries[i], ref nextSlotIndex);
+            }
+
+            return result;
+        }
+
+        private static void AppendStarterPackEntry(List<StashSlot> result, StarterPackEntry entry, ref int nextSlotIndex)
+        {
+            if (entry == null || entry.Item == null)
+                return;
+
+            int remaining = entry.Amount;
+            int maxStack = Mathf.Max(1, entry.Item.maxStackSize);
+
+            while (remaining > 0)
+            {
+                int stackCount = Mathf.Min(maxStack, remaining);
+                result.Add(CreateStarterPackSlot(entry, stackCount, nextSlotIndex));
+                nextSlotIndex++;
+                remaining -= stackCount;
+            }
+        }
+
+        private static StashSlot CreateStarterPackSlot(StarterPackEntry entry, int stackCount, int slotIndex)
+        {
+            ItemDataSO item = entry.Item;
+
+            return new StashSlot
+            {
+                itemId = item.itemID,
+                stackCount = stackCount,
+                gridX = slotIndex % DefaultStashColumnCount,
+                gridY = slotIndex / DefaultStashColumnCount,
+                rotated = false,
+                currentDurability = GetDurabilityValue(item, entry.DurabilityRatio),
+                currentAmmo = GetCurrentAmmoValue(item, entry.CurrentAmmo),
+            };
+        }
+
+        private static int GetDurabilityValue(ItemDataSO item, float durabilityRatio)
+        {
+            float maxDurability = item switch
+            {
+                WeaponDataSO weapon => weapon.maxDurability,
+                ArmorDataSO armor => armor.maxDurability,
+                HelmetDataSO helmet => helmet.maxDurability,
+                _ => 0f,
+            };
+
+            if (maxDurability <= 0f)
+                return 0;
+
+            return Mathf.RoundToInt(maxDurability * Mathf.Clamp01(durabilityRatio));
+        }
+
+        private static int GetCurrentAmmoValue(ItemDataSO item, int currentAmmo)
+        {
+            return item is WeaponDataSO ? Mathf.Max(0, currentAmmo) : 0;
+        }
+
         // =================================================================
         // 신규 유저 기본값
         // =================================================================
 
-        private static PlayerCloudData NewPlayerData(string uid, string email)
+        private PlayerCloudData NewPlayerData(string uid, string email)
         {
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var data = new PlayerCloudData();
@@ -618,7 +860,15 @@ namespace DeadZone.Network
             data.profile.createdAtUnix = now;
             data.profile.lastPlayedAtUnix = now;
             data.profile.totalPlayTimeSec = 0;
-            data.progress.credits = 50000;
+            data.progress.credits = bankruptcyStarterPack != null
+                ? bankruptcyStarterPack.StartingCredits
+                : DefaultStartingCredits;
+
+            if (bankruptcyStarterPack != null)
+                data.stash.slots = BuildStarterPackStashSlots(bankruptcyStarterPack);
+
+            data.schemaVersion = EconomyStarterPackSchemaVersion;
+
             // facilities 는 생성자에서 모두 Lv1 기본값
             return data;
         }
