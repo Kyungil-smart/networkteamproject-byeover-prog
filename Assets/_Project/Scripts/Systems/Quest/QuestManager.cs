@@ -38,6 +38,7 @@ namespace DeadZone.Systems.Quests
             base.OnNetworkSpawn();
             ServiceLocator.Register(this);
             ServiceLocator.Register<IQuestQuery>(this);
+            RestoreLocalStateFromCloudIfAvailable();
 
             if (IsServer)
             {
@@ -81,6 +82,18 @@ namespace DeadZone.Systems.Quests
                 _playerStates[clientId] = state;
             }
             return state;
+        }
+
+        private void RestoreLocalStateFromCloudIfAvailable()
+        {
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData || cloudSaveSystem.CurrentData?.progress == null)
+                return;
+
+            if (NetworkManager.Singleton == null)
+                return;
+
+            RestorePlayerState(NetworkManager.Singleton.LocalClientId, cloudSaveSystem.CurrentData.progress);
         }
 
         /// <summary>CloudSaveSystem이 Firestore 로드 후 호출.</summary>

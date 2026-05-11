@@ -13,10 +13,11 @@ namespace DeadZone.Network
         [FirestoreProperty] public SafePocketData safePocket { get; set; } = new SafePocketData();
         [FirestoreProperty] public EquipmentData equipment { get; set; } = new EquipmentData();
         [FirestoreProperty] public FacilitiesData facilities { get; set; } = new FacilitiesData();
+        [FirestoreProperty] public LobbySaveCloudData lobbySave { get; set; } = new LobbySaveCloudData();
         [FirestoreProperty] public List<InsuranceEntry> insurance { get; set; } = new List<InsuranceEntry>();
 
-        /// <summary>스키마 버전. v1→v2: questObjectives 추가.</summary>
-        [FirestoreProperty] public int schemaVersion { get; set; } = 2;
+        /// <summary>스키마 버전. v3: lobbySave 추가.</summary>
+        [FirestoreProperty] public int schemaVersion { get; set; } = 3;
     }
 
     [FirestoreData]
@@ -72,6 +73,47 @@ namespace DeadZone.Network
     public class StashData
     {
         [FirestoreProperty] public List<StashSlot> slots { get; set; } = new List<StashSlot>();
+    }
+
+    [FirestoreData]
+    public class LobbySaveCloudData
+    {
+        [FirestoreProperty] public bool hasCredits { get; set; }
+        [FirestoreProperty] public int credits { get; set; }
+        [FirestoreProperty] public List<LobbyItemCloudData> inventoryItems { get; set; } = new List<LobbyItemCloudData>();
+        [FirestoreProperty] public List<LobbyItemCloudData> stashItems { get; set; } = new List<LobbyItemCloudData>();
+        [FirestoreProperty] public List<LobbyEquipmentCloudData> equipmentItems { get; set; } = new List<LobbyEquipmentCloudData>();
+        [FirestoreProperty] public List<LobbyFacilityCloudData> facilities { get; set; } = new List<LobbyFacilityCloudData>();
+    }
+
+    [FirestoreData]
+    public class LobbyItemCloudData
+    {
+        [FirestoreProperty] public string itemId { get; set; } = "";
+        [FirestoreProperty] public string instanceId { get; set; } = "";
+        [FirestoreProperty] public string containerId { get; set; } = "";
+        [FirestoreProperty] public int x { get; set; }
+        [FirestoreProperty] public int y { get; set; }
+        [FirestoreProperty] public bool rotated { get; set; }
+        [FirestoreProperty] public int stackCount { get; set; }
+    }
+
+    [FirestoreData]
+    public class LobbyEquipmentCloudData
+    {
+        [FirestoreProperty] public string slotId { get; set; } = "";
+        [FirestoreProperty] public string itemId { get; set; } = "";
+        [FirestoreProperty] public string instanceId { get; set; } = "";
+        [FirestoreProperty] public string loadedAmmoId { get; set; } = "";
+        [FirestoreProperty] public int currentAmmo { get; set; }
+        [FirestoreProperty] public float durability { get; set; }
+    }
+
+    [FirestoreData]
+    public class LobbyFacilityCloudData
+    {
+        [FirestoreProperty] public string facilityId { get; set; } = "";
+        [FirestoreProperty] public int level { get; set; }
     }
 
     [FirestoreData]
