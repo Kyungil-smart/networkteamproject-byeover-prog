@@ -21,6 +21,7 @@ namespace DeadZone.Systems.Save
         [Header("서버 저장")]
         [SerializeField] private CloudSaveSystem cloudSaveSystem;
         [SerializeField] private bool loadFromCloudOnStart = true;
+        [SerializeField] private bool loadFromCloudOnCloudSaveLoaded = true;
         [SerializeField] private bool saveToCloudOnApplicationPause = true;
         [SerializeField] private bool saveToCloudOnApplicationQuit = true;
 
@@ -29,11 +30,22 @@ namespace DeadZone.Systems.Save
         [SerializeField] private string lastJson;
 
         private bool isCloudSaveRunning;
+        private Coroutine pendingCloudLoadCoroutine;
+
+        private void OnEnable()
+        {
+            EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+        }
 
         private void Start()
         {
             if (loadFromCloudOnStart)
-                StartCoroutine(LoadLobbyDataFromCloudAfterUiReady());
+                QueueLoadLobbyDataFromCloudAfterUiReady();
         }
 
         private void OnApplicationPause(bool pauseStatus)
@@ -211,7 +223,24 @@ namespace DeadZone.Systems.Save
         {
             yield return null;
             yield return new WaitForEndOfFrame();
+            pendingCloudLoadCoroutine = null;
             LoadLobbyDataFromCloud();
+        }
+
+        private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
+        {
+            if (!loadFromCloudOnCloudSaveLoaded)
+                return;
+
+            QueueLoadLobbyDataFromCloudAfterUiReady();
+        }
+
+        private void QueueLoadLobbyDataFromCloudAfterUiReady()
+        {
+            if (pendingCloudLoadCoroutine != null)
+                StopCoroutine(pendingCloudLoadCoroutine);
+
+            pendingCloudLoadCoroutine = StartCoroutine(LoadLobbyDataFromCloudAfterUiReady());
         }
 
         private CloudSaveSystem ResolveCloudSaveSystem()

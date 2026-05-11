@@ -24988,6 +24988,9 @@ MonoBehaviour:
   scrollSensitivity: 35
   stashLevel: 1
   refreshOnAwake: 1
+  loadCloudStashOnLoadedEvent: 1
+  cloudStashItemDatabase: {fileID: 0}
+  clearSlotsWhenCloudStashEmpty: 1
   cellSize: {x: 100, y: 100}
   spacing: {x: 5, y: 5}
   paddingLeft: 0
@@ -41302,6 +41305,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Save.LobbyInventoryState
   dontDestroyOnLoad: 1
+  hasCredits: 0
   credits: 0
   inventoryItems: []
   stashItems: []
@@ -41353,6 +41357,7 @@ MonoBehaviour:
   inventoryStateUiBridge: {fileID: 788616056}
   cloudSaveSystem: {fileID: 0}
   loadFromCloudOnStart: 1
+  loadFromCloudOnCloudSaveLoaded: 1
   saveToCloudOnApplicationPause: 1
   saveToCloudOnApplicationQuit: 1
   lastJson: 
@@ -50182,7 +50187,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1350870821827260250, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
       propertyPath: m_SortingOrder
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1557847508007849849, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
       propertyPath: m_AnchorMax.x

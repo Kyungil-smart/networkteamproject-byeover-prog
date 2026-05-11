@@ -561,6 +561,13 @@ namespace DeadZone.Network
 
                 EnsureCloudDataContainers();
                 ApplyBankruptcyStarterPack(starterPack);
+                LobbySaveDTO bankruptcyLobbySave = CreateLobbySaveDTOFromLegacyCloudFields();
+                bankruptcyLobbySave.hasCredits = true;
+                bankruptcyLobbySave.credits = starterPack.StartingCredits;
+                bankruptcyLobbySave.inventoryItems.Clear();
+                bankruptcyLobbySave.equipmentItems.Clear();
+
+                currentData.lobbySave = ToLobbySaveCloudData(bankruptcyLobbySave);
 
                 currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -578,7 +585,7 @@ namespace DeadZone.Network
                     isNewUser = false,
                 });
 
-                Debug.Log("[CloudSaveSystem] 파산신청 완료. 경제 데이터만 스타터팩 상태로 초기화했습니다.", this);
+                Debug.Log("[CloudSaveSystem] 파산신청 완료. 크레딧, 인벤토리, 보관함, 장비 슬롯을 스타터팩 LobbySaveData로 초기화했습니다.", this);
                 return true;
             }
             catch (Exception ex)
@@ -1049,6 +1056,7 @@ namespace DeadZone.Network
         private void ApplyLobbySaveToLegacyCloudFields(LobbySaveDTO lobbySaveDto)
         {
             currentData.stash.slots.Clear();
+            currentData.equipment = new EquipmentData();
 
             if (lobbySaveDto.stashItems != null)
             {
@@ -1062,8 +1070,8 @@ namespace DeadZone.Network
                     {
                         itemId = item.itemId ?? "",
                         stackCount = item.stackCount,
-                        gridX = item.x,
-                        gridY = item.y,
+                        gridX = GetStashGridX(item),
+                        gridY = GetStashGridY(item),
                         rotated = item.rotated,
                     });
                 }
@@ -1154,8 +1162,8 @@ namespace DeadZone.Network
                     {
                         itemId = slot.itemId,
                         containerId = "stash",
-                        x = slot.gridX,
-                        y = slot.gridY,
+                        x = GetStashSlotIndex(slot),
+                        y = 0,
                         rotated = slot.rotated,
                         stackCount = slot.stackCount
                     });
@@ -1199,6 +1207,34 @@ namespace DeadZone.Network
                 facilityId = facilityId,
                 level = level
             });
+        }
+
+        private static int GetStashSlotIndex(StashSlot slot)
+        {
+            if (slot == null)
+                return 0;
+
+            return Mathf.Max(0, slot.gridY) * DefaultStashColumnCount + Mathf.Max(0, slot.gridX);
+        }
+
+        private static int GetStashGridX(ItemSaveDTO item)
+        {
+            if (item == null)
+                return 0;
+
+            return item.x >= DefaultStashColumnCount && item.y == 0
+                ? item.x % DefaultStashColumnCount
+                : item.x;
+        }
+
+        private static int GetStashGridY(ItemSaveDTO item)
+        {
+            if (item == null)
+                return 0;
+
+            return item.x >= DefaultStashColumnCount && item.y == 0
+                ? item.x / DefaultStashColumnCount
+                : item.y;
         }
     }
 }
