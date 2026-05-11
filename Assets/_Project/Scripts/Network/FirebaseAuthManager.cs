@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Firebase.Auth;
 using UnityEngine;
@@ -22,6 +22,7 @@ namespace DeadZone.Network
         public FirebaseUser CurrentUser => auth?.CurrentUser;
         public string CurrentUid => CurrentUser?.UserId ?? string.Empty;
         public string CurrentEmail => CurrentUser?.Email ?? string.Empty;
+        public bool IsReady => auth != null;
         public bool IsSignedIn => CurrentUser != null;
 
         private void Awake()
@@ -122,6 +123,62 @@ namespace DeadZone.Network
             }
         }
 
+        /// <summary>
+        /// 외부 인증 공급자의 Firebase Credential로 로그인합니다.
+        /// Google 로그인은 Google ID Token을 받아 이 메서드로 연결합니다.
+        /// </summary>
+        public async Task<FirebaseUser> SignInWithCredentialAsync(Credential credential)
+        {
+            if (auth == null)
+            {
+                Debug.LogError("[FirebaseAuthManager] Auth가 아직 연결되지 않았다");
+                return null;
+            }
+
+            if (credential == null)
+            {
+                Debug.LogError("[FirebaseAuthManager] Credential이 null입니다.");
+                return null;
+            }
+
+            try
+            {
+                FirebaseUser user = await auth.SignInWithCredentialAsync(credential);
+                PublishSignedInEvent(user);
+                return user;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[FirebaseAuthManager] Credential 로그인 실패: {e.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Firebase가 로컬에 보관한 기존 로그인 세션을 현재 게임 로그인 플로우로 복원합니다.
+        /// </summary>
+        public FirebaseUser RestoreCachedUser()
+        {
+            if (auth == null)
+            {
+                Debug.LogWarning("[FirebaseAuthManager] Auth가 아직 연결되지 않아 자동 로그인을 진행할 수 없습니다.");
+                return null;
+            }
+
+            FirebaseUser user = auth.CurrentUser;
+            if (user == null)
+            {
+                return null;
+            }
+
+            PublishSignedInEvent(user);
+            Debug.Log($"[FirebaseAuthManager] 자동 로그인 세션 복원 완료. Uid={user.UserId}");
+            return user;
+        }
+
+        /// <summary>
+        /// 현재 Firebase 계정에서 로그아웃합니다.
+        /// </summary>
         public void SignOut()
         {
             if (auth == null) return;

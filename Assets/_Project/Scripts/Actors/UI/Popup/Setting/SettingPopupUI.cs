@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Unity.Netcode;
 
 using DeadZone.Core;
 using DeadZone.Network;
@@ -17,6 +19,8 @@ namespace DeadZone.Actors.UI
         private const string BankruptcyConfirmButtonName = "Btn_BankruptcyConfirm";
         private const string BankruptcyCancelButtonName = "Btn_BankruptcyCancel";
         private const string BankruptcyConfirmRootName = "Popup_BankruptcyConfirm";
+        private const string LogoutButtonName = "Btn_Logout";
+        private const string ChangeAccountButtonName = "Btn_ChangeAccount";
 
         [Header("설정 팝업")]
         [Tooltip("설정 팝업을 닫는 버튼입니다.")]
@@ -43,6 +47,19 @@ namespace DeadZone.Actors.UI
 
         [Tooltip("파산신청 성공 후 설정 팝업을 자동으로 닫을지 여부입니다.")]
         [SerializeField] private bool closeAfterBankruptcySuccess;
+
+        [Header("계정")]
+        [Tooltip("현재 Firebase 계정에서 로그아웃하는 버튼입니다.")]
+        [SerializeField] private Button logoutButton;
+
+        [Tooltip("현재 Firebase 계정에서 로그아웃하고 타이틀로 돌아가 다른 계정 로그인을 준비하는 버튼입니다.")]
+        [SerializeField] private Button changeAccountButton;
+
+        [Tooltip("로그아웃 또는 계정 변경 후 이동할 타이틀 씬 이름입니다.")]
+        [SerializeField] private string titleSceneName = "Title";
+
+        [Tooltip("로그아웃 또는 계정 변경 시 진행 중인 Netcode 세션을 종료합니다.")]
+        [SerializeField] private bool shutdownNetworkOnSignOut = true;
 
         private bool isApplyingBankruptcy;
 
@@ -124,6 +141,18 @@ namespace DeadZone.Actors.UI
                 bankruptcyCancelButton.onClick.RemoveListener(HandleBankruptcyCanceled);
                 bankruptcyCancelButton.onClick.AddListener(HandleBankruptcyCanceled);
             }
+
+            if (logoutButton != null)
+            {
+                logoutButton.onClick.RemoveListener(HandleLogoutRequested);
+                logoutButton.onClick.AddListener(HandleLogoutRequested);
+            }
+
+            if (changeAccountButton != null)
+            {
+                changeAccountButton.onClick.RemoveListener(HandleChangeAccountRequested);
+                changeAccountButton.onClick.AddListener(HandleChangeAccountRequested);
+            }
         }
 
         private void UnbindButtons()
@@ -139,6 +168,12 @@ namespace DeadZone.Actors.UI
 
             if (bankruptcyCancelButton != null)
                 bankruptcyCancelButton.onClick.RemoveListener(HandleBankruptcyCanceled);
+
+            if (logoutButton != null)
+                logoutButton.onClick.RemoveListener(HandleLogoutRequested);
+
+            if (changeAccountButton != null)
+                changeAccountButton.onClick.RemoveListener(HandleChangeAccountRequested);
         }
 
         private void ResolveReferences()
@@ -147,6 +182,8 @@ namespace DeadZone.Actors.UI
             bankruptcyButton ??= FindButtonByName(BankruptcyButtonName);
             bankruptcyConfirmButton ??= FindButtonByName(BankruptcyConfirmButtonName);
             bankruptcyCancelButton ??= FindButtonByName(BankruptcyCancelButtonName);
+            logoutButton ??= FindButtonByName(LogoutButtonName);
+            changeAccountButton ??= FindButtonByName(ChangeAccountButtonName);
 
             if (bankruptcyConfirmRoot == null)
             {
@@ -186,6 +223,16 @@ namespace DeadZone.Actors.UI
         private void HandleBankruptcyCanceled()
         {
             HideBankruptcyConfirmation();
+        }
+
+        private void HandleLogoutRequested()
+        {
+            SignOutAndReturnToTitle();
+        }
+
+        private void HandleChangeAccountRequested()
+        {
+            SignOutAndReturnToTitle();
         }
 
         private async void HandleBankruptcyConfirmed()
@@ -236,6 +283,35 @@ namespace DeadZone.Actors.UI
 
             if (bankruptcyCancelButton != null)
                 bankruptcyCancelButton.interactable = interactable;
+        }
+
+        private void SignOutAndReturnToTitle()
+        {
+            FirebaseAuthManager authManager = ResolveFirebaseAuthManager();
+            if (authManager != null)
+                authManager.SignOut();
+
+            if (shutdownNetworkOnSignOut
+                && NetworkManager.Singleton != null
+                && NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+
+            Time.timeScale = 1f;
+            HideBankruptcyConfirmation();
+
+            if (!string.IsNullOrWhiteSpace(titleSceneName))
+                SceneManager.LoadScene(titleSceneName);
+        }
+
+        private static FirebaseAuthManager ResolveFirebaseAuthManager()
+        {
+            FirebaseAuthManager authManager = ServiceLocator.Get<FirebaseAuthManager>();
+            if (authManager != null)
+                return authManager;
+
+            return Object.FindFirstObjectByType<FirebaseAuthManager>(FindObjectsInactive.Include);
         }
 
         private void HideBankruptcyConfirmation()
