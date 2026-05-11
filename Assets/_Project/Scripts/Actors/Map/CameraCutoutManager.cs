@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 using DeadZone.Core;
 
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// 카메라 컷아웃 셰이더에 전역 컷아웃 위치를 전달하고,
-    /// 테스트용 레이캐스트 방식으로 카메라와 플레이어 사이를 가리는 오브젝트에 컷아웃 적용 여부를 설정한다.
+    /// 카메라 컷아웃 셰이더에 플레이어/마우스 기준 컷아웃 값을 전달하고,
+    /// 플레이어와 카메라 사이의 시야를 가리는 오브젝트에만 컷아웃 적용 여부를 설정한다.
     /// </summary>
     public class CameraCutoutManager : MonoBehaviour
     {
@@ -16,8 +17,10 @@ namespace DeadZone.Actors
         private static readonly int CutoutPlayerRadiusId = Shader.PropertyToID("_CutoutPlayerRadius");
         private static readonly int CutoutLookRadiusId = Shader.PropertyToID("_CutoutLookRadius");
         private static readonly int CutoutMinYId = Shader.PropertyToID("_CutoutMinY");
+        private static readonly int CutoutFeatherId = Shader.PropertyToID("_CutoutFeather");
+        private static readonly int CutoutHeightFeatherId = Shader.PropertyToID("_CutoutHeightFeather");
+        private static readonly int CutoutUseFullObjectHeightId = Shader.PropertyToID("_CutoutUseFullObjectHeight");
         private static readonly int UseCameraCutoutId = Shader.PropertyToID("_UseCameraCutout");
-        private static readonly int PlayerInsideId = Shader.PropertyToID("_PlayerInside");
 
         [Header("====추적 대상====")]
         [Tooltip("컷아웃 중심 계산 기준이 되는 로컬 Owner 플레이어 루트\n비워두면 OwnerPlayerRootRegisteredEvent로 자동 설정")]
@@ -43,12 +46,30 @@ namespace DeadZone.Actors
         [Tooltip("마우스 월드 위치 주변 컷아웃 반경")]
         [SerializeField, Min(0f)] private float lookCutoutRadius = 2.5f;
 
-        [Header("====레이캐스트 테스트====")]
+        [Tooltip("컷아웃 경계에만 적용할 디더 완충 폭")]
+        [SerializeField, Min(0f)] private float cutoutFeather = 0.35f;
+
+        [Tooltip("높이 기준 컷아웃 경계에만 적용할 디더 완충 폭")]
+        [SerializeField, Min(0f)] private float heightCutoutFeather = 0.3f;
+
+        [Tooltip("참이면 플레이어/마우스 주변 범위가 아니라 오브젝트 전체를 높이 기준으로 컷아웃한다")]
+        [SerializeField] private bool useFullObjectHeightCutout = false;
+
+        [Tooltip("전체 높이 컷아웃 모드로 전환되거나 복귀하는 데 걸리는 시간")]
+        [SerializeField, Min(0.01f)] private float fullObjectCutoutTransitionTime = 0.25f;
+
+        [Tooltip("전체 높이 컷아웃으로 전환되기 전까지 확장될 원형 컷아웃 반경")]
+        [SerializeField, Min(0f)] private float fullObjectCutoutExpandedRadius = 8f;
+
+        [Header("====가림 오브젝트 검출====")]
         [Tooltip("참이면 카메라와 플레이어 사이를 검사해 맞은 오브젝트에만 컷아웃을 적용한다")]
         [SerializeField] private bool useRaycastOccluderTest = true;
 
         [Tooltip("카메라와 플레이어 사이에서 시야를 가릴 수 있는 오브젝트 레이어")]
         [SerializeField] private LayerMask occluderMask = ~0;
+
+        [Tooltip("가림 오브젝트 검출 Raycast가 향할 플레이어 머리 위 높이")]
+        [SerializeField, Min(0f)] private float occluderTargetHeightOffset = 1.5f;
 
         [Tooltip("Raycast 대신 SphereCast를 사용할 반경. 0이면 Raycast처럼 동작한다")]
         [SerializeField, Min(0f)] private float occluderCastRadius = 0.3f;
@@ -60,13 +81,22 @@ namespace DeadZone.Actors
         private readonly HashSet<Renderer> registeredRenderers = new();
         private readonly HashSet<Renderer> activeOccluders = new();
         private readonly HashSet<Renderer> previousOccluders = new();
-        private readonly MaterialPropertyBlock propertyBlock = new();
+        private MaterialPropertyBlock propertyBlock;
 
         private RaycastHit[] occluderHits;
+        private Vector3 currentCutoutPlayerCenter;
+        private Vector3 currentCutoutLookCenter;
+        private float currentPlayerCutoutRadius;
+        private float currentLookCutoutRadius;
+        private float currentCutoutFeather;
+        private float currentHeightCutoutFeather;
+        private float currentFullObjectHeightBlend;
+        private float fullObjectCutoutProgress;
 
         private void Awake()
         {
             ResolveInputCameraIfNeeded();
+            propertyBlock = new MaterialPropertyBlock();
             occluderHits = new RaycastHit[maxOccluderHits];
         }
 
@@ -76,6 +106,8 @@ namespace DeadZone.Actors
             EventBus.Subscribe<CameraCutoutTargetUnregisteredEvent>(OnTargetUnregistered);
             EventBus.Subscribe<OwnerPlayerRootRegisteredEvent>(OnOwnerPlayerRootRegistered);
             EventBus.Subscribe<OwnerPlayerRootUnregisteredEvent>(OnOwnerPlayerRootUnregistered);
+            EventBus.Subscribe<OwnerPlayerCameraRegisteredEvent>(OnOwnerPlayerCameraRegistered);
+            EventBus.Subscribe<OwnerPlayerCameraUnregisteredEvent>(OnOwnerPlayerCameraUnregistered);
         }
 
         private void OnDisable()
@@ -84,13 +116,15 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<CameraCutoutTargetUnregisteredEvent>(OnTargetUnregistered);
             EventBus.Unsubscribe<OwnerPlayerRootRegisteredEvent>(OnOwnerPlayerRootRegistered);
             EventBus.Unsubscribe<OwnerPlayerRootUnregisteredEvent>(OnOwnerPlayerRootUnregistered);
+            EventBus.Unsubscribe<OwnerPlayerCameraRegisteredEvent>(OnOwnerPlayerCameraRegistered);
+            EventBus.Unsubscribe<OwnerPlayerCameraUnregisteredEvent>(OnOwnerPlayerCameraUnregistered);
 
             ClearActiveOccluders();
         }
 
         private void LateUpdate()
         {
-            UpdateShaderGlobals();
+            UpdateCutoutShaderState();
 
             if (useRaycastOccluderTest)
             {
@@ -123,6 +157,26 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
+        /// 로컬 Owner 플레이어 카메라를 마우스 Raycast와 가림 오브젝트 검사 기준 카메라로 설정한다.
+        /// </summary>
+        private void OnOwnerPlayerCameraRegistered(OwnerPlayerCameraRegisteredEvent e)
+        {
+            inputCamera = e.playerCamera;
+        }
+
+        /// <summary>
+        /// 현재 사용 중인 로컬 Owner 플레이어 카메라가 해제될 때 카메라 참조와 컷아웃 상태를 정리한다.
+        /// </summary>
+        private void OnOwnerPlayerCameraUnregistered(OwnerPlayerCameraUnregisteredEvent e)
+        {
+            if (inputCamera == e.playerCamera)
+            {
+                inputCamera = null;
+                ClearActiveOccluders();
+            }
+        }
+
+        /// <summary>
         /// 컷아웃 적용 후보 오브젝트가 활성화되면 해당 Renderer들을 등록한다.
         /// </summary>
         private void OnTargetRegistered(CameraCutoutTargetRegisteredEvent e)
@@ -145,12 +199,14 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// 셰이더가 플레이어와 마우스 월드 위치 기준 컷아웃을 계산할 수 있도록 전역 프로퍼티를 갱신한다.
+        /// 현재 플레이어와 마우스 월드 위치를 기준으로 Renderer별 MaterialPropertyBlock에 넣을 컷아웃 값을 갱신한다.
         /// </summary>
-        private void UpdateShaderGlobals()
+        private void UpdateCutoutShaderState()
         {
             if (followTarget == null)
                 return;
+
+            UpdateFullObjectCutoutProgress();
 
             Vector3 playerCenter = followTarget.position;
             Vector3 lookCenter = playerCenter;
@@ -158,13 +214,27 @@ namespace DeadZone.Actors
             if (TryResolveMouseWorldPosition(out Vector3 mouseWorldPosition))
                 lookCenter = mouseWorldPosition;
 
-            Shader.SetGlobalVector(CutoutPlayerCenterId, playerCenter);
-            Shader.SetGlobalVector(CutoutLookCenterId, lookCenter);
-            Shader.SetGlobalFloat(CutoutPlayerRadiusId, playerCutoutRadius);
-            Shader.SetGlobalFloat(CutoutLookRadiusId, lookCutoutRadius);
+            currentCutoutPlayerCenter = playerCenter;
+            currentCutoutLookCenter = lookCenter;
+            currentPlayerCutoutRadius = Mathf.Lerp(playerCutoutRadius, fullObjectCutoutExpandedRadius, fullObjectCutoutProgress);
+            currentLookCutoutRadius = Mathf.Lerp(lookCutoutRadius, fullObjectCutoutExpandedRadius, fullObjectCutoutProgress);
+            currentCutoutFeather = Mathf.Min(cutoutFeather, currentPlayerCutoutRadius, currentLookCutoutRadius);
+            currentHeightCutoutFeather = Mathf.Min(heightCutoutFeather, cutoutHeightOffset);
+            currentFullObjectHeightBlend = useFullObjectHeightCutout && Mathf.Approximately(fullObjectCutoutProgress, 1f) ? 1f : 0f;
+        }
 
-            // Generic_Basic 그래프는 CutoutPlayerCenter.y + CutoutMinY로 높이 기준을 계산한다.
-            Shader.SetGlobalFloat(CutoutMinYId, cutoutHeightOffset);
+        /// <summary>
+        /// 전체 높이 컷아웃 토글 상태에 맞춰 원형 확장과 전체 전환에 사용할 진행도를 갱신한다.
+        /// </summary>
+        private void UpdateFullObjectCutoutProgress()
+        {
+            float targetProgress = useFullObjectHeightCutout ? 1f : 0f;
+            float maxDelta = Time.deltaTime / fullObjectCutoutTransitionTime;
+
+            fullObjectCutoutProgress = Mathf.MoveTowards(
+                fullObjectCutoutProgress,
+                targetProgress,
+                maxDelta);
         }
 
         /// <summary>
@@ -178,7 +248,11 @@ namespace DeadZone.Actors
             if (inputCamera == null)
                 return false;
 
-            Ray ray = inputCamera.ScreenPointToRay(Input.mousePosition);
+            if (Mouse.current == null)
+                return false;
+
+            Vector2 mouseScreenPosition = Mouse.current.position.ReadValue();
+            Ray ray = inputCamera.ScreenPointToRay(mouseScreenPosition);
 
             if (!Physics.Raycast(
                     ray,
@@ -195,7 +269,8 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// 카메라와 플레이어 사이에 있는 등록된 Renderer를 찾고, 해당 Renderer에만 컷아웃 적용 플래그를 켠다.
+        /// 플레이어 머리 위 지점에서 카메라 위치 방향으로 시야선을 검사하고,
+        /// 해당 시야선에 걸린 CameraCutoutTarget의 Renderer에만 컷아웃 적용 플래그를 켠다.
         /// </summary>
         private void UpdateRaycastOccluders()
         {
@@ -214,8 +289,8 @@ namespace DeadZone.Actors
 
             activeOccluders.Clear();
 
-            Vector3 origin = inputCamera.transform.position;
-            Vector3 target = followTarget.position + Vector3.up * cutoutHeightOffset;
+            Vector3 origin = GetOccluderCastTargetPosition();
+            Vector3 target = inputCamera.transform.position;
             Vector3 direction = target - origin;
             float distance = direction.magnitude;
 
@@ -228,19 +303,23 @@ namespace DeadZone.Actors
 
             for (int i = 0; i < hitCount; i++)
             {
-                Renderer renderer = occluderHits[i].collider.GetComponentInParent<Renderer>();
-                if (renderer == null || !registeredRenderers.Contains(renderer))
+                RaycastHit hit = occluderHits[i];
+                CameraCutoutTarget cutoutTarget = hit.collider.GetComponentInParent<CameraCutoutTarget>();
+                if (cutoutTarget == null || !targets.Contains(cutoutTarget))
                     continue;
 
-                activeOccluders.Add(renderer);
-                SetRendererCutout(renderer, true);
-                previousOccluders.Remove(renderer);
+                SetTargetCutout(cutoutTarget, true);
             }
 
             foreach (Renderer renderer in previousOccluders)
             {
                 SetRendererCutout(renderer, false);
             }
+        }
+
+        private Vector3 GetOccluderCastTargetPosition()
+        {
+            return followTarget.position + Vector3.up * occluderTargetHeightOffset;
         }
 
         private int CastOccluders(Vector3 origin, Vector3 direction, float distance)
@@ -264,6 +343,33 @@ namespace DeadZone.Actors
                 distance,
                 occluderMask,
                 QueryTriggerInteraction.Ignore);
+        }
+
+        private void SetTargetCutout(CameraCutoutTarget target, bool active)
+        {
+            Renderer[] renderers = target.Renderers;
+            if (renderers == null)
+                return;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !registeredRenderers.Contains(renderer))
+                    continue;
+
+                if (active)
+                {
+                    activeOccluders.Add(renderer);
+                    previousOccluders.Remove(renderer);
+                }
+                else
+                {
+                    activeOccluders.Remove(renderer);
+                    previousOccluders.Remove(renderer);
+                }
+
+                SetRendererCutout(renderer, active);
+            }
         }
 
         private void RegisterTargetRenderers(CameraCutoutTarget target)
@@ -317,18 +423,27 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// Renderer별 MaterialPropertyBlock에 컷아웃 적용 여부와 내부 진입 플래그를 기록한다.
+        /// Renderer별 MaterialPropertyBlock에 컷아웃 중심, 반경, 적용 여부를 기록한다.
         /// </summary>
         private void SetRendererCutout(Renderer renderer, bool active)
         {
             if (renderer == null)
                 return;
 
+            propertyBlock ??= new MaterialPropertyBlock();
             renderer.GetPropertyBlock(propertyBlock);
-            propertyBlock.SetFloat(UseCameraCutoutId, active ? 1f : 0f);
 
-            // Generic_Basic에서 _PlayerInside는 마우스 위치 기반 컷아웃 반경 활성화에 사용된다.
-            propertyBlock.SetFloat(PlayerInsideId, active ? 1f : 0f);
+            // Shader Graph의 Blackboard 프로퍼티는 머티리얼 프로퍼티로 생성되므로,
+            // 전역 셰이더 값만으로는 머티리얼 값이 우선되어 반영되지 않을 수 있다.
+            propertyBlock.SetVector(CutoutPlayerCenterId, currentCutoutPlayerCenter);
+            propertyBlock.SetVector(CutoutLookCenterId, currentCutoutLookCenter);
+            propertyBlock.SetFloat(CutoutPlayerRadiusId, currentPlayerCutoutRadius);
+            propertyBlock.SetFloat(CutoutLookRadiusId, currentLookCutoutRadius);
+            propertyBlock.SetFloat(CutoutMinYId, cutoutHeightOffset);
+            propertyBlock.SetFloat(CutoutFeatherId, currentCutoutFeather);
+            propertyBlock.SetFloat(CutoutHeightFeatherId, currentHeightCutoutFeather);
+            propertyBlock.SetFloat(CutoutUseFullObjectHeightId, currentFullObjectHeightBlend);
+            propertyBlock.SetFloat(UseCameraCutoutId, active ? 1f : 0f);
             renderer.SetPropertyBlock(propertyBlock);
         }
 

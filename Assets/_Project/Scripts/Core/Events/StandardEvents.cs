@@ -186,6 +186,18 @@ namespace DeadZone.Core
         public Transform playerRoot;
     }
 
+    // 로컬 Owner 플레이어 카메라가 활성화되어 로컬 카메라/컷아웃 시스템에 Camera 참조를 제공할 때 발행된다.
+    public struct OwnerPlayerCameraRegisteredEvent : IGameEvent
+    {
+        public Camera playerCamera;
+    }
+
+    // 로컬 Owner 플레이어 카메라가 비활성화되거나 디스폰되어 로컬 카메라/컷아웃 시스템이 Camera 참조를 해제해야 할 때 발행된다.
+    public struct OwnerPlayerCameraUnregisteredEvent : IGameEvent
+    {
+        public Camera playerCamera;
+    }
+
     public struct ZoneEnteredEvent : IGameEvent
     {
         public ulong clientId;
