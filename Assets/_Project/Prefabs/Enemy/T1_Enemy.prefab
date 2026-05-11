@@ -659,6 +659,7 @@ MonoBehaviour:
   spawnNavMeshSampleRadius: 1.5
   maxSpawnWarpDistance: 1.25
   warnWhenSpawnOffNavMesh: 1
+  warnWhenInsideNavMeshObstacle: 1
   minimumPersonalSpaceDistance: 6
   combatRangeMultiplier: 0.65
   maxCombatDistance: 24
@@ -711,7 +712,7 @@ MonoBehaviour:
   muzzle: {fileID: 7489591256997111823}
   hitMask:
     serializedVersion: 2
-    m_Bits: 1152
+    m_Bits: 1216
   enemyBulletPrefab: {fileID: 7265609946348786657, guid: e60522a8903c9324995f96d86dd3fe8c, type: 3}
   minimumReactionTime: 1.5
   enemyRangeMultiplier: 0.65
