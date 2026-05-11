@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 using DeadZone.Actors.UI;
 using DeadZone.Core;
 using DeadZone.Network;
+using DeadZone.Systems;
 
 namespace DeadZone.EditorTools
 {
@@ -19,6 +20,7 @@ namespace DeadZone.EditorTools
     {
         private const string TargetFolder = "Assets/_Project/Data/StarterPacks";
         private const string TargetAssetPath = TargetFolder + "/StarterPack_Bankruptcy.asset";
+        private const string ItemDatabasePath = "Assets/_Project/Data/ItemDatabaseSO.asset";
         private const int StartingCredits = 50000;
 
         private static readonly StarterPackItemDef[] BankruptcyStarterPackItems =
@@ -148,10 +150,23 @@ namespace DeadZone.EditorTools
             int assignedCount = 0;
             assignedCount += AssignConfigToComponents<CloudSaveSystem>("bankruptcyStarterPack", config);
             assignedCount += AssignConfigToComponents<SettingPopupUI>("starterPackConfig", config);
+
+            ItemDatabaseSO itemDatabase = AssetDatabase.LoadAssetAtPath<ItemDatabaseSO>(ItemDatabasePath);
+            if (itemDatabase != null)
+                assignedCount += AssignObjectToComponents<StashGridUI>("cloudStashItemDatabase", itemDatabase);
+            else
+                Debug.LogWarning($"[StarterPackConfigGenerator] ItemDatabaseSO를 찾을 수 없습니다. 경로={ItemDatabasePath}");
+
             return assignedCount;
         }
 
         private static int AssignConfigToComponents<T>(string propertyName, StarterPackConfigSO config)
+            where T : Component
+        {
+            return AssignObjectToComponents<T>(propertyName, config);
+        }
+
+        private static int AssignObjectToComponents<T>(string propertyName, Object value)
             where T : Component
         {
             int assignedCount = 0;
@@ -172,13 +187,13 @@ namespace DeadZone.EditorTools
                     continue;
                 }
 
-                if (property.objectReferenceValue == config)
+                if (property.objectReferenceValue == value)
                 {
                     serializedObject.Dispose();
                     continue;
                 }
 
-                property.objectReferenceValue = config;
+                property.objectReferenceValue = value;
                 serializedObject.ApplyModifiedProperties();
                 serializedObject.Dispose();
 

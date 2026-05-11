@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\uC77C\uC790 \uB4DC\uB77C\uC774\uBC84"
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
     \uC6A9 \uC544\uC774\uD15C(\uC791\uC5C5\uB300)"
-  icon: {fileID: 21300000, guid: 82ee0bd184db96b499c09abffcbd9dfa, type: 3}
+  icon: {fileID: 21300000, guid: 13b36069af1fc2c46966cd49671ed040, type: 3}
   category: 9
   rarity: 1
   isValuable: 0
