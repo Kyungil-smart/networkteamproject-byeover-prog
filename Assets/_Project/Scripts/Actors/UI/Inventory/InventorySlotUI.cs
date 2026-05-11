@@ -228,9 +228,6 @@ namespace DeadZone.Actors.UI
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (debugTooltipEvents)
-                Debug.Log($"[InventorySlotUI] Pointer Exit: {name}, Tooltip={tooltipUI}", this);
-
             if (tooltipUI == null)
                 return;
 

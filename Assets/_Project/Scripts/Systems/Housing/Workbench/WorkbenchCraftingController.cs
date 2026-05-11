@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 using Unity.Netcode;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ using DeadZone.Systems;
 namespace DeadZone.Systems.Housing
 {
     // 작업대 제작 요청을 처리
-    // 제작 가능 레시피 확인은 WorkbenchRecipeCatalog가 담당하고, 이 스크립트는 IInventory 기준 재료 검사와 결과 지급만 담당
+    // 실제 제작은 서버가 요청자 PlayerObject의 IInventory를 찾아서 처리
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Workbench))]
     [RequireComponent(typeof(WorkbenchRecipeCatalog))]
@@ -16,13 +17,13 @@ namespace DeadZone.Systems.Housing
     {
         [Header("작업대 레시피")]
         [SerializeField]
-        [Tooltip("작업대 레시피 목록과 레벨 제한을 관리하는 카탈로그입니다. 비워두면 같은 오브젝트에서 자동으로 찾습니다.")]
+        [Tooltip("작업대 레시피 목록과 레벨 제한을 관리하는 카탈로그입니다.")]
         private WorkbenchRecipeCatalog recipeCatalog;
 
         [Header("테스트 인벤토리")]
         [SerializeField]
-        [Tooltip("실제 플레이어 인벤토리 대신 WorkbenchTestInventory로 제작을 테스트합니다.")]
-        private bool useTestInventory = true;
+        [Tooltip("테스트 전용입니다. 실제 네트워크 플레이에서는 꺼야 합니다.")]
+        private bool useTestInventory = false;
 
         [SerializeField]
         [Tooltip("플레이어 인벤토리 완성 전까지 사용할 테스트용 인벤토리입니다.")]
@@ -66,6 +67,9 @@ namespace DeadZone.Systems.Housing
 
         public bool CanCraft(string recipeID)
         {
+            if (string.IsNullOrWhiteSpace(recipeID))
+                return false;
+
             IInventory inventory = GetActiveInventoryForCheck();
 
             if (inventory == null)
@@ -77,6 +81,9 @@ namespace DeadZone.Systems.Housing
         public bool CanCraftWithInventory(string recipeID, IInventory inventory)
         {
             if (inventory == null)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(recipeID))
                 return false;
 
             if (!TryGetUnlockedRecipe(recipeID, out RecipeSO recipe, out _))
@@ -102,6 +109,18 @@ namespace DeadZone.Systems.Housing
                 return;
             }
 
+            if (NetworkManager.Singleton == null)
+            {
+                FailCraft(recipeID, "NetworkManager가 없습니다.");
+                return;
+            }
+
+            if (!NetworkManager.Singleton.IsListening)
+            {
+                FailCraft(recipeID, "네트워크가 시작되지 않았습니다. Host 또는 Client 실행 후 제작해야 합니다.");
+                return;
+            }
+
             RequestCraftRpc(recipeID);
         }
 
@@ -115,7 +134,7 @@ namespace DeadZone.Systems.Housing
 
             if (!TryGetRequesterInventory(requesterClientId, out IInventory inventory))
             {
-                FailCraft(recipeID, $"제작을 요청한 플레이어의 인벤토리를 찾지 못했습니다. ClientId: {requesterClientId}");
+                FailCraft(recipeID, $"제작 요청자의 인벤토리를 찾지 못했습니다. ClientId: {requesterClientId}");
                 return;
             }
 
@@ -212,6 +231,12 @@ namespace DeadZone.Systems.Housing
                 return false;
             }
 
+            if (string.IsNullOrWhiteSpace(recipe.result.itemID))
+            {
+                FailCraft(recipe.recipeID, "제작 결과 아이템의 itemID가 비어 있습니다.");
+                return false;
+            }
+
             return true;
         }
 
@@ -304,7 +329,13 @@ namespace DeadZone.Systems.Housing
             if (useTestInventory)
                 return testInventory;
 
-            if (NetworkManager.Singleton == null || !IsServer)
+            if (NetworkManager.Singleton == null)
+                return null;
+
+            if (!NetworkManager.Singleton.IsListening)
+                return null;
+
+            if (!IsServer)
                 return null;
 
             ulong localClientId = NetworkManager.Singleton.LocalClientId;
@@ -329,6 +360,11 @@ namespace DeadZone.Systems.Housing
                 return false;
 
             inventory = client.PlayerObject.GetComponent<IInventory>();
+
+            if (inventory != null)
+                return true;
+
+            inventory = client.PlayerObject.GetComponentInChildren<IInventory>(true);
             return inventory != null;
         }
 

@@ -307,7 +307,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4038291568995172
 Transform:
   m_ObjectHideFlags: 0
@@ -475,7 +475,6 @@ GameObject:
   - component: {fileID: 4077195986647316}
   - component: {fileID: 95481129507444498}
   - component: {fileID: 3481043232388762985}
-  - component: {fileID: 421164794565668502}
   - component: {fileID: 401433369566927318}
   - component: {fileID: 1522451728006267371}
   - component: {fileID: 6274818321971710425}
@@ -483,6 +482,9 @@ GameObject:
   - component: {fileID: 7428428410717088562}
   - component: {fileID: 2295763769053663589}
   - component: {fileID: 6470881760734871325}
+  - component: {fileID: 145792247652486230}
+  - component: {fileID: 2969390804324641882}
+  - component: {fileID: 5117117700546969185}
   m_Layer: 9
   m_Name: T1_Enemy
   m_TagString: Enemy
@@ -509,6 +511,7 @@ Transform:
   - {fileID: 4237019812813218}
   - {fileID: 203860936281497292}
   - {fileID: 8690911271754059101}
+  - {fileID: 1844455794049292096}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &95481129507444498
@@ -521,7 +524,7 @@ Animator:
   m_GameObject: {fileID: 1109705922278564}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 91028badc63f59f43a9c5bda64fbd608, type: 3}
-  m_Controller: {fileID: 9100000, guid: dd7b6783044f2e5499ee7374d8b835cd, type: 2}
+  m_Controller: {fileID: 9100000, guid: 93f86bd8c985aa842b7bb0005dcd309c, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -545,7 +548,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 232673985
+  GlobalObjectIdHash: 3804293332
   InScenePlacedSourceGlobalObjectIdHash: 3804293332
   DeferredDespawnTick: 0
   Ownership: 1
@@ -558,28 +561,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!195 &421164794565668502
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 2
-  m_BaseOffset: 0
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
 --- !u!114 &401433369566927318
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -675,6 +656,15 @@ MonoBehaviour:
   fallbackSearchRadius: 5
   fallbackSearchPointCount: 8
   maxCoverSearchPoints: 10
+  spawnNavMeshSampleRadius: 1.5
+  maxSpawnWarpDistance: 1.25
+  warnWhenSpawnOffNavMesh: 1
+  minimumPersonalSpaceDistance: 6
+  combatRangeMultiplier: 0.65
+  maxCombatDistance: 24
+  minimumAgentStoppingDistance: 1.2
+  obstacleAvoidanceType: 4
+  avoidancePriorityRange: {x: 30, y: 70}
   State:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -723,6 +713,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1152
   enemyBulletPrefab: {fileID: 7265609946348786657, guid: e60522a8903c9324995f96d86dd3fe8c, type: 3}
+  minimumReactionTime: 1.5
+  enemyRangeMultiplier: 0.65
+  maxEnemyEffectiveRange: 24
+  enemyMuzzleVelocityMultiplier: 0.35
+  maxEnemyMuzzleVelocity: 300
+  fallbackEnemyMuzzleVelocity: 220
+  targetMemoryResetDelay: 0.5
 --- !u!136 &6470881760734871325
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -746,6 +743,160 @@ CapsuleCollider:
   m_Height: 2.3665905
   m_Direction: 1
   m_Center: {x: 0, y: 0.68329525, z: 0}
+--- !u!195 &145792247652486230
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &2969390804324641882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 1
+  RotationInterpolationType: 1
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 0
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &5117117700546969185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
+  m_Animator: {fileID: 95481129507444498}
+  TransitionStateInfoList:
+  - IsCrossFadeExit: 0
+    Layer: 1
+    OriginatingState: -851405435
+    DestinationState: -118708495
+    TransitionDuration: 0.05
+    TriggerNameHash: -118708495
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 1
+    OriginatingState: -851405435
+    DestinationState: -1525363869
+    TransitionDuration: 0.1
+    TriggerNameHash: -1525363869
+    TransitionIndex: 1
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Speed
+      NameHash: -823668238
+      Synchronize: 1
+      ParameterType: 1
+    - name: MoveX
+      NameHash: 675470966
+      Synchronize: 1
+      ParameterType: 1
+    - name: MoveY
+      NameHash: 1598418656
+      Synchronize: 1
+      ParameterType: 1
+    - name: IsMoving
+      NameHash: 120489994
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsSprinting
+      NameHash: -980523212
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsRolling
+      NameHash: -1181490662
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsKnocked
+      NameHash: -432808389
+      Synchronize: 1
+      ParameterType: 4
+    - name: Knockdown
+      NameHash: 1600680830
+      Synchronize: 1
+      ParameterType: 9
+    - name: IsDead
+      NameHash: 1270110494
+      Synchronize: 1
+      ParameterType: 4
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 1
+      ParameterType: 3
+    - name: Fire
+      NameHash: -118708495
+      Synchronize: 1
+      ParameterType: 9
+    - name: Reload
+      NameHash: -1525363869
+      Synchronize: 1
+      ParameterType: 9
+    - name: Hit
+      NameHash: 1654612129
+      Synchronize: 1
+      ParameterType: 9
+  AnimatorParametersExpanded: 0
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0
@@ -2692,7 +2843,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4993424326468482
 Transform:
   m_ObjectHideFlags: 0
@@ -3118,6 +3269,37 @@ Transform:
   - {fileID: 4915671274104158}
   m_Father: {fileID: 4561940767309702}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &195556621327552725
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1844455794049292096}
+  m_Layer: 9
+  m_Name: EyePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1844455794049292096
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 195556621327552725}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.6, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4077195986647316}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &583586641907560999
 GameObject:
   m_ObjectHideFlags: 0
@@ -3130,7 +3312,7 @@ GameObject:
   - component: {fileID: 3761001769809381656}
   - component: {fileID: 2514790329455139048}
   - component: {fileID: 7787063733367754104}
-  m_Layer: 9
+  m_Layer: 6
   m_Name: Hitbox_Torso
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3146,7 +3328,7 @@ Transform:
   m_GameObject: {fileID: 583586641907560999}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00000056176054, y: -2.1038327e-13, z: -0.000000374507, w: 1}
-  m_LocalPosition: {x: 0, y: 0.8350001, z: 0}
+  m_LocalPosition: {x: 0.00000005942742, y: 0.8350001, z: 0.000000059604645}
   m_LocalScale: {x: 1.0905, y: 1.8127933, z: 1.0553}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3376,7 +3558,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 203860936281497292}
-  m_Layer: 9
+  m_Layer: 6
   m_Name: HitboxRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3412,7 +3594,7 @@ GameObject:
   - component: {fileID: 6082482119911403060}
   - component: {fileID: 7572825722357980052}
   - component: {fileID: 8436125829196079576}
-  m_Layer: 9
+  m_Layer: 6
   m_Name: Hitbox_Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3428,7 +3610,7 @@ Transform:
   m_GameObject: {fileID: 5704027637339536500}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.67, z: 0}
+  m_LocalPosition: {x: 2.0986118e-15, y: 1.67, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

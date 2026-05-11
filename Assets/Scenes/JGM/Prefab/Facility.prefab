@@ -743,7 +743,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 309419030282187945}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
@@ -772,9 +772,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 1423150775222453968}
-  facilityData: {fileID: 11400000, guid: 0d4782a6ac6c72f42ab36827b8cbfc79, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
+  useTestInventory: 0
   testInventory: {fileID: 6457312160022946967}
   logUpgradeResult: 1
 --- !u!1 &493684697578442070
@@ -1254,8 +1252,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 934244092912562096}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.3153048, y: 0.011572929, z: -0.0041835597, w: -0.9489107}
-  m_LocalPosition: {x: 0.027604043, y: 2.0248828, z: -0.9944224}
+  m_LocalRotation: {x: 0.25957757, y: -0.28257543, z: 0.07973129, w: 0.9200074}
+  m_LocalPosition: {x: 1.3445177, y: 2.0046139, z: -0.84169275}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3649,6 +3647,7 @@ GameObject:
   - component: {fileID: 3484775161990424072}
   - component: {fileID: 2860727178649618653}
   - component: {fileID: 107077246286210929}
+  - component: {fileID: 8847722623165534527}
   m_Layer: 0
   m_Name: Medical
   m_TagString: Untagged
@@ -3749,9 +3748,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 5084238007021454291}
-  facilityData: {fileID: 11400000, guid: 9d21d640925c46a4e99b689e856ae15e, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
+  useTestInventory: 0
   testInventory: {fileID: 107077246286210929}
   logUpgradeResult: 1
 --- !u!114 &3484775161990424072
@@ -3761,7 +3758,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2220792377414378791}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbc136f9579f4b54aa6a7363992c6ca0, type: 3}
   m_Name: 
@@ -3778,7 +3775,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2220792377414378791}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 529ed65eab8e4904495822a558f22cfe, type: 3}
   m_Name: 
@@ -3791,7 +3788,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2220792377414378791}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
@@ -3802,6 +3799,27 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: dafe881ee30592d4da6053db2bcf0ff4, type: 2}
     amount: 99
   logInventoryChange: 1
+--- !u!114 &8847722623165534527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2220792377414378791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eee923194841024fb0fcdaae3415536, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.MedicalCraftingController
+  ShowTopMostFoldoutHeaderGroup: 1
+  recipes:
+  - {fileID: 11400000, guid: 7a8d08d332580f94eb575b96ba7a1e28, type: 2}
+  - {fileID: 11400000, guid: a2d59e03490bc6a4c9653c3e85b25bfe, type: 2}
+  - {fileID: 11400000, guid: be4fc9ff7f5c2e74e8b45439dadacc48, type: 2}
+  - {fileID: 11400000, guid: 75444941930b93e49ae44388cb90f2bf, type: 2}
+  useTestInventory: 0
+  testInventory: {fileID: 0}
+  logCraftResult: 1
 --- !u!1 &2356304897223966483
 GameObject:
   m_ObjectHideFlags: 0
@@ -4036,9 +4054,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 3080370456784017343}
-  facilityData: {fileID: 11400000, guid: 06bcaa08bf4708743a2849fdb3b1916e, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
+  useTestInventory: 0
   testInventory: {fileID: 2824151517464154737}
   logUpgradeResult: 1
 --- !u!114 &2979632907896334124
@@ -4055,18 +4071,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.WorkbenchRecipeCatalog
   workbench: {fileID: 3080370456784017343}
   recipes:
-  - {fileID: 11400000, guid: 975fa961ffa55b24fba557e91c36af0d, type: 2}
-  - {fileID: 11400000, guid: 5141c3d2456da8448aa022406645a4b0, type: 2}
-  - {fileID: 11400000, guid: adf9e09668fae7d469f2f90473f23c07, type: 2}
-  - {fileID: 11400000, guid: b862eb5d5d3a28e4981430dd77c67bc4, type: 2}
-  - {fileID: 11400000, guid: 5c568dbd90b381d42a43ec2f4b6b3a4b, type: 2}
-  - {fileID: 11400000, guid: efe32216fe48abb448bef01e3ff57ffe, type: 2}
-  - {fileID: 11400000, guid: f266b1383b15bc9429c192830585842b, type: 2}
-  - {fileID: 11400000, guid: 85d761e30f12bbc47a4839971574ae45, type: 2}
-  - {fileID: 11400000, guid: 2bf424526c6b6c54c9378f53a4373798, type: 2}
-  - {fileID: 11400000, guid: 7624ad90643102944b232b9a548de9d2, type: 2}
-  - {fileID: 11400000, guid: ca229cc45b69d9d44b2fb72c260a0fa4, type: 2}
-  - {fileID: 11400000, guid: cf260d7218bd54c4d84fa8aa8a09a255, type: 2}
+  - {fileID: 11400000, guid: 1b1f4ca9b073bc14f87f77b363c0f20a, type: 2}
+  - {fileID: 11400000, guid: cbc9579637113ae4a95aee87a71e62b4, type: 2}
+  - {fileID: 11400000, guid: 4ef4551975d9b7642bb3d51062dc2483, type: 2}
+  - {fileID: 11400000, guid: 0cde3c6dbd43cda43a60b6be93cfd4ca, type: 2}
+  - {fileID: 11400000, guid: 34c29ad49aa105b48ad64bc35eb3eaf6, type: 2}
+  - {fileID: 11400000, guid: e1966d0a0d4731148abd0b51747d6da1, type: 2}
+  - {fileID: 11400000, guid: 06f777e03323e724d9f0aa19e0dc0dd3, type: 2}
   logRecipeValidation: 1
 --- !u!114 &8030682020163179700
 MonoBehaviour:
@@ -4082,7 +4093,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.WorkbenchCraftingController
   ShowTopMostFoldoutHeaderGroup: 1
   recipeCatalog: {fileID: 2979632907896334124}
-  useTestInventory: 1
+  useTestInventory: 0
   testInventory: {fileID: 2824151517464154737}
   debugRecipeID: 
   logCraftResult: 1
@@ -4093,7 +4104,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2417206895999137166}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f38305237d23fe44e9db83cc9a356f6d, type: 3}
   m_Name: 
@@ -4107,7 +4118,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2417206895999137166}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
@@ -4569,8 +4580,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2748339635132105399}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3707368, y: -0.0020076325, z: 0.001788793, w: 0.9287341}
-  m_LocalPosition: {x: 7.7651806, y: 6.905266, z: 1.1699591}
+  m_LocalRotation: {x: 0.2302081, y: 0.4766374, z: -0.13085836, w: 0.83827037}
+  m_LocalPosition: {x: 3.1415882, y: 8.161407, z: -1.6433163}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5122,9 +5133,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 4323647542667561507}
-  facilityData: {fileID: 11400000, guid: e972e27fb347ffc488b5fbd17588dcf5, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
+  useTestInventory: 0
   testInventory: {fileID: 3745009618557303531}
   logUpgradeResult: 1
 --- !u!114 &476611804830654667
@@ -5134,7 +5143,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3099241648797177602}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 751a6b17529c67c4b9befe11b626e56b, type: 3}
   m_Name: 
@@ -5142,7 +5151,7 @@ MonoBehaviour:
   bedFacility: {fileID: 4323647542667561507}
   bonusStartLevel: 2
   staminaBonusPerLevel: 5
-  useOfflineTestLevel: 0
+  useOfflineTestLevel: 1
   offlineTestLevel: 1
   currentBedLevel: 1
   currentMaxStaminaBonus: 0
@@ -5154,7 +5163,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3099241648797177602}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55f1e656decb911439a0fbdc5b7280b9, type: 3}
   m_Name: 
@@ -5171,7 +5180,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3099241648797177602}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
@@ -7749,8 +7758,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4702971990897371701}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0040945113, y: 0.93905383, z: -0.3436319, w: 0.00884471}
-  m_LocalPosition: {x: 1.9460393, y: 4.483206, z: 8.814106}
+  m_LocalRotation: {x: 0.04095942, y: 0.9560768, z: -0.24005616, w: 0.16313365}
+  m_LocalPosition: {x: -4.4423437, y: 3.6643817, z: 10.212764}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8389,7 +8398,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4920011878430243687}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 126a44d86c7e1ce4aa5a42c717a2307c, type: 3}
   m_Name: 
@@ -8409,7 +8418,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4920011878430243687}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4951251088468cb49b378a5847d48829, type: 3}
   m_Name: 
@@ -8429,7 +8438,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4920011878430243687}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e4732abd9bc19f408ed01c631de08f8, type: 3}
   m_Name: 
@@ -8468,7 +8477,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4920011878430243687}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d9152e1270bd314bafa67dc07f799cc, type: 3}
   m_Name: 
@@ -8487,7 +8496,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4920011878430243687}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
@@ -9973,8 +9982,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5780175077108082184}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0010367609, y: 0.94803077, z: -0.318177, w: 0.0001900623}
-  m_LocalPosition: {x: 3.1567342, y: 6.095921, z: 8.434277}
+  m_LocalRotation: {x: 0.12969728, y: -0.84216064, z: 0.23307498, w: 0.46863636}
+  m_LocalPosition: {x: 7.8516417, y: 6.8737416, z: 9.999891}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11610,7 +11619,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5537880694143933092
 Transform:
   m_ObjectHideFlags: 0
@@ -11681,7 +11690,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858407677941888398}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 50c892f841de72249b2b78aa645859ab, type: 3}
   m_Name: 
@@ -11701,7 +11710,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858407677941888398}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b604cf951dd64f49ab411eeda2e8833, type: 3}
   m_Name: 
@@ -11721,7 +11730,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858407677941888398}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2279a2f5b8d8a704dbccd710abe48a0f, type: 3}
   m_Name: 
@@ -11757,7 +11766,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858407677941888398}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 374e06118aa5c8a4c80286932f6ebb2d, type: 3}
   m_Name: 
@@ -11773,7 +11782,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858407677941888398}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e88e195be07964745b1e073805ef7e4e, type: 3}
   m_Name: 
@@ -11787,7 +11796,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858407677941888398}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d8850487f98d0a64fb5cbae8d9a7d38f, type: 3}
   m_Name: 
@@ -11800,7 +11809,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858407677941888398}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
@@ -12492,9 +12501,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 8284461573681137658}
-  facilityData: {fileID: 11400000, guid: 61c3433f50afa274f90ed52576bddff2, type: 2}
-  useTestInventory: 1
-  allowOfflineTestUpgrade: 1
+  useTestInventory: 0
   testInventory: {fileID: 6511453558979551739}
   logUpgradeResult: 1
 --- !u!114 &5321491569543065141
@@ -12504,7 +12511,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7182126194974234011}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8453139b2a8b11747a7813b535d96347, type: 3}
   m_Name: 
@@ -12512,7 +12519,7 @@ MonoBehaviour:
   kitchenFacility: {fileID: 8284461573681137658}
   bonusStartLevel: 2
   staminaBonusPerLevel: 5
-  useOfflineTestLevel: 0
+  useOfflineTestLevel: 1
   offlineTestLevel: 1
   currentKitchenLevel: 1
   currentMaxStaminaBonus: 0
@@ -12524,7 +12531,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7182126194974234011}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68178c46c84344c49b2a5f29c92b71c2, type: 3}
   m_Name: 
@@ -12543,7 +12550,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7182126194974234011}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46b7f02ded2d6a346a753ef9a2d2f097, type: 3}
   m_Name: 
@@ -14732,8 +14739,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8749397442762193354}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.28704002, y: 0.6465191, z: -0.28936625, w: -0.64489394}
-  m_LocalPosition: {x: 8.314132, y: 3.6336966, z: -5.926345}
+  m_LocalRotation: {x: 0.2906648, y: -0.27066815, z: 0.08610898, w: 0.91369474}
+  m_LocalPosition: {x: 11.099132, y: 4.064177, z: -10.24645}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
