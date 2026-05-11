@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
 
@@ -76,16 +77,28 @@ namespace DeadZone.Systems.Housing
             if (!HousingInventoryResolver.TryGetRequesterInventory(
                     requesterClientId,
                     out IInventory inventory,
-                    out string failReason))
+                    out string inventoryFailReason))
             {
-                FailCraft(recipeID, failReason);
+                FailCraft(recipeID, inventoryFailReason);
                 return;
             }
 
-            TryCraftWithInventory(recipeID, inventory);
+            if (!PlayerHousingProgressResolver.TryGetProgress(
+                    requesterClientId,
+                    out PlayerHousingProgress progress))
+            {
+                FailCraft(recipeID, "요청자의 하우징 진행도를 찾을 수 없습니다.");
+                return;
+            }
+
+            TryCraftWithRequesterData(recipeID, requesterClientId, inventory, progress);
         }
 
-        public bool TryCraftWithInventory(string recipeID, IInventory inventory)
+        private bool TryCraftWithRequesterData(
+            string recipeID,
+            ulong requesterClientId,
+            IInventory inventory,
+            PlayerHousingProgress progress)
         {
             if (!IsServer)
             {
@@ -95,11 +108,17 @@ namespace DeadZone.Systems.Housing
 
             if (inventory == null)
             {
-                FailCraft(recipeID, "제작에 사용할 실제 인벤토리가 없습니다.");
+                FailCraft(recipeID, "제작에 사용할 요청자 인벤토리가 없습니다.");
                 return false;
             }
 
-            if (!TryGetUnlockedRecipe(recipeID, out RecipeSO recipe, out string failReason))
+            if (progress == null)
+            {
+                FailCraft(recipeID, "요청자의 하우징 진행도가 없습니다.");
+                return false;
+            }
+
+            if (!TryGetRecipeByRequesterLevel(recipeID, progress, out RecipeSO recipe, out string failReason))
             {
                 FailCraft(recipeID, failReason);
                 return false;
@@ -132,6 +151,20 @@ namespace DeadZone.Systems.Housing
 
             consumedIngredients.Clear();
 
+            PlayerHousingSaveSyncer saveSyncer = progress.GetComponent<PlayerHousingSaveSyncer>();
+
+            if (saveSyncer != null)
+            {
+                saveSyncer.RequestSaveFromServer($"Workbench 제작 완료: {recipe.recipeID}");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[WorkbenchCraftingController] PlayerHousingSaveSyncer가 없어 제작 결과 저장 요청을 보낼 수 없습니다. ClientId: {requesterClientId}",
+                    progress
+                );
+            }
+
             EventBus.Publish(new WorkbenchCraftSucceededEvent
             {
                 recipeId = recipe.recipeID,
@@ -150,12 +183,24 @@ namespace DeadZone.Systems.Housing
             });
 
             if (logCraftResult)
-                Debug.Log($"[WorkbenchCraftingController] 제작 성공: {recipe.recipeID} → {recipe.result.itemID} x{resultCount}", this);
+            {
+                Debug.Log(
+                    $"[WorkbenchCraftingController] 플레이어별 작업대 제작 성공\n" +
+                    $"ClientId: {requesterClientId}\n" +
+                    $"RecipeID: {recipe.recipeID}\n" +
+                    $"Result: {recipe.result.itemID} x{resultCount}",
+                    this
+                );
+            }
 
             return true;
         }
 
-        private bool TryGetUnlockedRecipe(string recipeID, out RecipeSO recipe, out string failReason)
+        private bool TryGetRecipeByRequesterLevel(
+            string recipeID,
+            PlayerHousingProgress progress,
+            out RecipeSO recipe,
+            out string failReason)
         {
             recipe = null;
             failReason = string.Empty;
@@ -169,7 +214,28 @@ namespace DeadZone.Systems.Housing
                 return false;
             }
 
-            return recipeCatalog.TryGetUnlockedRecipe(recipeID, out recipe, out failReason);
+            if (!recipeCatalog.TryGetRecipe(recipeID, out recipe))
+            {
+                failReason = $"레시피를 찾지 못했습니다. RecipeID: {recipeID}";
+                return false;
+            }
+
+            if (recipe == null)
+            {
+                failReason = "레시피 데이터가 없습니다.";
+                return false;
+            }
+
+            int requesterWorkbenchLevel = progress.GetLevel(FacilityType.Workbench);
+            int requiredLevel = recipeCatalog.GetRequiredWorkbenchLevel(recipe);
+
+            if (requesterWorkbenchLevel < requiredLevel)
+            {
+                failReason = $"작업대 Lv.{requiredLevel} 이상이 필요합니다. 현재 내 작업대 Lv.{requesterWorkbenchLevel}";
+                return false;
+            }
+
+            return true;
         }
 
         private bool IsRecipeValid(RecipeSO recipe)
@@ -195,6 +261,12 @@ namespace DeadZone.Systems.Housing
             if (string.IsNullOrWhiteSpace(recipe.result.itemID))
             {
                 FailCraft(recipe.recipeID, "제작 결과 아이템의 itemID가 비어 있습니다.");
+                return false;
+            }
+
+            if (recipe.result.category == ItemCategory.Valuable || recipe.result.isValuable)
+            {
+                FailCraft(recipe.recipeID, "귀중품은 작업대에서 제작할 수 없습니다.");
                 return false;
             }
 
