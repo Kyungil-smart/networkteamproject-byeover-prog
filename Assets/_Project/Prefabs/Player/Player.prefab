@@ -477,15 +477,17 @@ GameObject:
   - component: {fileID: -1804149649411048333}
   - component: {fileID: 3481043232388762985}
   - component: {fileID: 2664804114799552292}
+  - component: {fileID: -1125630354745373428}
+  - component: {fileID: -1217626088885308983}
   - component: {fileID: 8480392820659206216}
   - component: {fileID: 173030480013012939}
+  - component: {fileID: 7542559861876712806}
   - component: {fileID: 5805277289091868248}
   - component: {fileID: 8354546832462354360}
   - component: {fileID: 1860151659725561128}
-  - component: {fileID: 1755801955162734937}
   - component: {fileID: -4358573395740997876}
   - component: {fileID: 8112840747869453086}
-  - component: {fileID: 7542559861876712806}
+  - component: {fileID: 1755801955162734937}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -601,8 +603,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
   AutoOwnerAuthorityTickOffset: 1
-  PositionInterpolationType: 0
-  RotationInterpolationType: 0
+  PositionInterpolationType: 1
+  RotationInterpolationType: 1
   ScaleInterpolationType: 0
   PositionLerpSmoothing: 1
   PositionMaxInterpolationTime: 0.1
@@ -632,6 +634,81 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &-1125630354745373428
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 1
+  m_Animator: {fileID: 95481129507444498}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Speed
+      NameHash: -823668238
+      Synchronize: 1
+      ParameterType: 1
+    - name: MoveX
+      NameHash: 675470966
+      Synchronize: 1
+      ParameterType: 1
+    - name: MoveY
+      NameHash: 1598418656
+      Synchronize: 1
+      ParameterType: 1
+    - name: IsMoving
+      NameHash: 120489994
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsSprinting
+      NameHash: -980523212
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsRolling
+      NameHash: -1181490662
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsKnocked
+      NameHash: -432808389
+      Synchronize: 0
+      ParameterType: 4
+    - name: Knockdown
+      NameHash: 1600680830
+      Synchronize: 0
+      ParameterType: 9
+    - name: IsDead
+      NameHash: 1270110494
+      Synchronize: 0
+      ParameterType: 4
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 0
+      ParameterType: 3
+  AnimatorParametersExpanded: 0
+--- !u!114 &-1217626088885308983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab6421d7e97b8c049b139a13e3160a67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Network.PlayerSpawnInitializer
+  ShowTopMostFoldoutHeaderGroup: 1
+  networkTransform: {fileID: 2664804114799552292}
+  logDebug: 0
 --- !u!114 &8480392820659206216
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -648,7 +725,7 @@ MonoBehaviour:
   inputCamera: {fileID: 0}
   aimMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 32769
   aimRayDistance: 200
 --- !u!114 &173030480013012939
 MonoBehaviour:
@@ -673,6 +750,34 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 1
+--- !u!114 &7542559861876712806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9677abdf25a1bde4b918331e5516afcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerCameraController
+  ShowTopMostFoldoutHeaderGroup: 1
+  cameraRoot: {fileID: 4816205507068741348}
+  playerCamera: {fileID: 5407602419556917540, guid: fa80e2e80af5d964cada75810bc84c70, type: 3}
+  audioListener: {fileID: 2333953656156875221, guid: fa80e2e80af5d964cada75810bc84c70, type: 3}
+  followTarget: {fileID: 4077195986647316}
+  worldOffset: {x: 0, y: 12, z: -8}
+  lookAtOffset: {x: 0, y: 1, z: 0}
+  defaultLookAheadDistance: 1.6
+  adsLookAheadDistance: 3
+  defaultAdsTransitionTime: 0.2
+  adsReleaseReturnTime: 0.1
+  inputController: {fileID: 8480392820659206216}
+  fpsController: {fileID: 173030480013012939}
+  adsSystem: {fileID: 0}
+  equipment: {fileID: 0}
+  enableDebugLogs: 0
 --- !u!114 &5805277289091868248
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -685,9 +790,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cffc98105aaa3ce4998d5623c3d841e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerAniController
+  ShowTopMostFoldoutHeaderGroup: 1
   animator: {fileID: 95481129507444498}
   characterController: {fileID: -1804149649411048333}
   rollSystem: {fileID: -4358573395740997876}
+  allowLocalAnimationWithoutNetworkSpawn: 1
   runSpeed: 7
   movingThreshold: 0.05
   sprintThreshold: 0.75
@@ -753,18 +860,6 @@ MonoBehaviour:
   fillStaminaWhenMaxStaminaIncreased: 1
   regenPerSecond: 8
   regenDelaySeconds: 1.5
---- !u!114 &1755801955162734937
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7ea9f4b67d0dc64591ab82a3dc85d0e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.HealthDebugCommands
 --- !u!114 &-4358573395740997876
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -822,34 +917,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerStateMachine
   ShowTopMostFoldoutHeaderGroup: 1
---- !u!114 &7542559861876712806
+--- !u!114 &1755801955162734937
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1109705922278564}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9677abdf25a1bde4b918331e5516afcc, type: 3}
+  m_Script: {fileID: 11500000, guid: d7ea9f4b67d0dc64591ab82a3dc85d0e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerCameraController
-  ShowTopMostFoldoutHeaderGroup: 1
-  cameraRoot: {fileID: 4816205507068741348}
-  playerCamera: {fileID: 5407602419556917540, guid: fa80e2e80af5d964cada75810bc84c70, type: 3}
-  audioListener: {fileID: 2333953656156875221, guid: fa80e2e80af5d964cada75810bc84c70, type: 3}
-  followTarget: {fileID: 4077195986647316}
-  worldOffset: {x: 0, y: 12, z: -8}
-  lookAtOffset: {x: 0, y: 1, z: 0}
-  defaultLookAheadDistance: 1.6
-  adsLookAheadDistance: 3
-  defaultAdsTransitionTime: 0.2
-  adsReleaseReturnTime: 0.1
-  inputController: {fileID: 8480392820659206216}
-  fpsController: {fileID: 173030480013012939}
-  adsSystem: {fileID: 0}
-  equipment: {fileID: 0}
-  enableDebugLogs: 0
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.HealthDebugCommands
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0

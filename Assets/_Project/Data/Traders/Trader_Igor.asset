@@ -20,9 +20,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 179fe61ddb5d6b84c96f8ab664f34ef3, type: 2}
     basePrice: 2400
     requiredCommLevel: 1
-  - item: {fileID: 11400000, guid: 7ef1f8660b1b95f469dada26ba4bd98a, type: 2}
-    basePrice: 6000
-    requiredCommLevel: 1
   - item: {fileID: 11400000, guid: 4e7f75c1d36e7004aa003eee4af8517c, type: 2}
     basePrice: 10000
     requiredCommLevel: 2

@@ -21,6 +21,9 @@ namespace DeadZone.Actors
         private static readonly int HashMoveY      = Animator.StringToHash("MoveY");
         private static readonly int HashIsMoving   = Animator.StringToHash("IsMoving");
         private static readonly int HashWeaponType = Animator.StringToHash("WeaponType");
+        private static readonly int HashFire       = Animator.StringToHash("Fire");
+        private static readonly int HashReload     = Animator.StringToHash("Reload");
+        private static readonly int HashHit        = Animator.StringToHash("Hit");
 
         // ───────── 컴포넌트 캐시 ─────────
 
@@ -54,6 +57,7 @@ namespace DeadZone.Actors
         private static readonly int ShaderColorID = Shader.PropertyToID("_Color");
         private static readonly int ShaderEmissionID = Shader.PropertyToID("_EmissionColor");
         private Coroutine _flashCoroutine;
+        private int _aimLayerIndex = -1;
 
         // ───────── 라이프사이클 ─────────
 
@@ -63,6 +67,7 @@ namespace DeadZone.Actors
             _agent = GetComponent<NavMeshAgent>();
             _stats = GetComponent<EnemyStats>();
             _propBlock = new MaterialPropertyBlock();
+            _aimLayerIndex = _animator.GetLayerIndex("Aim Layer");
 
             // Renderer가 Inspector에서 미할당이면 CharacterVisual 하위에서 자동 수집
             if (flashRenderers == null || flashRenderers.Length == 0)
@@ -89,13 +94,20 @@ namespace DeadZone.Actors
 
             // 무기 타입 초기 설정
             if (_animator != null)
-                _animator.SetFloat(HashWeaponType, weaponTypeIndex);
+            {
+                // WeaponType은 Animator Controller에서 Int 파라미터이므로 SetInteger를 사용한다.
+                _animator.SetInteger(HashWeaponType, weaponTypeIndex);
+                _aimLayerIndex = _animator.GetLayerIndex("Aim Layer");
+            }
         }
 
         // ───────── 이동 애니메이션 (매 프레임) ─────────
 
         private void LateUpdate()
         {
+            // 서버 권위 NetworkAnimator 사용 전제. 클라이언트는 동기화된 값만 표시한다.
+            // 클라가 자기 NavMeshAgent.velocity(=0)로 Speed/MoveX/MoveY를 덮어쓰는 것을 방지한다.
+            if (!IsServer) return;
             if (_animator == null || _agent == null) return;
 
             Vector3 velocity = _agent.velocity;
@@ -117,6 +129,35 @@ namespace DeadZone.Actors
                 _animator.SetFloat(HashMoveX, 0f);
                 _animator.SetFloat(HashMoveY, 0f);
             }
+        }
+
+        // ───────── Aim Layer 제어 ─────────
+
+        /// <summary>
+        /// Aim Layer 활성화/비활성화. Combat 진입 시 true, 이탈 시 false.
+        /// </summary>
+        public void SetAimMode(bool active)
+        {
+            if (_animator == null || _aimLayerIndex < 0) return;
+            _animator.SetLayerWeight(_aimLayerIndex, active ? 1f : 0f);
+        }
+
+        public void TriggerFire()
+        {
+            if (_animator == null) return;
+            _animator.SetTrigger(HashFire);
+        }
+
+        public void TriggerReload()
+        {
+            if (_animator == null) return;
+            _animator.SetTrigger(HashReload);
+        }
+
+        public void TriggerHit()
+        {
+            if (_animator == null) return;
+            _animator.SetTrigger(HashHit);
         }
 
         // ───────── 히트 플래시 API ─────────

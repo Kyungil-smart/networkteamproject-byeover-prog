@@ -8,18 +8,28 @@ namespace DeadZone.Actors.UI
     {
         public ContainerGridView GridView { get; private set; }
         public LootContainer Container { get; private set; }
+        public CorpseInventory CorpseInventory { get; private set; }
         public int SlotIndex { get; private set; } = -1;
 
         public void Bind(ContainerGridView gridView, LootContainer container, int slotIndex)
         {
             GridView = gridView;
             Container = container;
+            CorpseInventory = null;
+            SlotIndex = slotIndex;
+        }
+
+        public void Bind(ContainerGridView gridView, CorpseInventory corpseInventory, int slotIndex)
+        {
+            GridView = gridView;
+            Container = null;
+            CorpseInventory = corpseInventory;
             SlotIndex = slotIndex;
         }
 
         public bool TryHandleDrop(InventorySlotUI source, InventorySlotUI target)
         {
-            if (Container == null || GridView == null || source == null || target == null)
+            if ((Container == null && CorpseInventory == null) || GridView == null || source == null || target == null)
                 return false;
 
             bool sourceIsContainer = GridView.IsContainerSlot(source, out int sourceIndex);
@@ -27,6 +37,17 @@ namespace DeadZone.Actors.UI
 
             if (!sourceIsContainer && !targetIsContainer)
                 return false;
+
+            if (CorpseInventory != null)
+            {
+                if (sourceIsContainer && !targetIsContainer)
+                {
+                    CorpseInventory.RequestTakeSlotToPlayer(sourceIndex);
+                    return true;
+                }
+
+                return true;
+            }
 
             if (sourceIsContainer && targetIsContainer)
             {

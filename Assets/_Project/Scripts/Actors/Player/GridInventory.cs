@@ -1,4 +1,4 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections.Generic;
@@ -70,6 +70,43 @@ namespace DeadZone.Actors
             return addedAllRemaining;
         }
 
+        /// <summary>
+        /// 내구도와 장탄 수가 보존된 슬롯 데이터를 새 인벤토리 칸에 추가합니다.
+        /// 기존 TryAddItem 흐름은 유지하고, 시체 루팅처럼 개별 아이템 상태가 필요한 경우에만 사용합니다.
+        /// </summary>
+        /// <param name="item">추가할 아이템 데이터입니다.</param>
+        /// <param name="sourceSlot">보존할 슬롯 상태입니다.</param>
+        /// <returns>추가에 성공하면 true입니다.</returns>
+        public bool TryAddItemSlot(ItemDataSO item, ItemSlotData sourceSlot)
+        {
+            if (!IsServer || item == null || sourceSlot.stackCount <= 0)
+                return false;
+
+            if (CanMergeAsPlainStack(item, sourceSlot))
+                return TryAddItem(item, sourceSlot.stackCount);
+
+            List<ItemSlotData> simulatedSlots = new(ServerGrid.Count);
+            for (int i = 0; i < ServerGrid.Count; i++)
+                simulatedSlots.Add(ServerGrid[i]);
+
+            int amount = Mathf.Clamp(sourceSlot.stackCount, 1, Mathf.Max(1, item.maxStackSize));
+            if (!TryFindPlacement(simulatedSlots, item, amount, out ItemSlotData newSlot))
+                return false;
+
+            newSlot.currentDurability = Mathf.Max(0f, sourceSlot.currentDurability);
+            newSlot.currentAmmo = sourceSlot.currentAmmo;
+
+            ServerGrid.Add(newSlot);
+
+            EventBus.Publish(new ItemAddedEvent
+            {
+                clientId = OwnerClientId,
+                itemId = item.itemID
+            });
+
+            return true;
+        }
+
         public bool CanAddItem(ItemDataSO item, int amount = 1)
         {
             if (!IsServer || item == null || amount <= 0) return false;
@@ -105,6 +142,28 @@ namespace DeadZone.Actors
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 내구도와 장탄 수가 보존된 슬롯 데이터를 추가할 수 있는지 검사합니다.
+        /// </summary>
+        /// <param name="item">검사할 아이템 데이터입니다.</param>
+        /// <param name="sourceSlot">보존할 슬롯 상태입니다.</param>
+        /// <returns>추가 가능하면 true입니다.</returns>
+        public bool CanAddItemSlot(ItemDataSO item, ItemSlotData sourceSlot)
+        {
+            if (!IsServer || item == null || sourceSlot.stackCount <= 0)
+                return false;
+
+            if (CanMergeAsPlainStack(item, sourceSlot))
+                return CanAddItem(item, sourceSlot.stackCount);
+
+            List<ItemSlotData> simulatedSlots = new(ServerGrid.Count);
+            for (int i = 0; i < ServerGrid.Count; i++)
+                simulatedSlots.Add(ServerGrid[i]);
+
+            int amount = Mathf.Clamp(sourceSlot.stackCount, 1, Mathf.Max(1, item.maxStackSize));
+            return TryFindPlacement(simulatedSlots, item, amount, out _);
         }
 
         public bool HasItem(string itemId, int count)
@@ -598,6 +657,14 @@ namespace DeadZone.Actors
             }
 
             return true;
+        }
+
+        private bool CanMergeAsPlainStack(ItemDataSO item, ItemSlotData sourceSlot)
+        {
+            return item != null &&
+                   item.maxStackSize > 1 &&
+                   sourceSlot.currentDurability <= 0f &&
+                   sourceSlot.currentAmmo == 0;
         }
 
         private bool TryAddItemDataToNewSlot(ItemDataSO item, int amount)

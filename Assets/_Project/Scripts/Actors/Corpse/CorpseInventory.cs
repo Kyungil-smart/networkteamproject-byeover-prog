@@ -1,8 +1,9 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Actors.UI;
 
 namespace DeadZone.Actors
 {
@@ -74,6 +75,33 @@ namespace DeadZone.Actors
         {
         }
 
+        /// <summary>
+        /// 로컬 클라이언트의 루팅 UI를 이 시체 인벤토리로 엽니다.
+        /// </summary>
+        public void OpenLootingUI()
+        {
+            LootingUIController controller = LootingUIController.ActiveInstance != null
+                ? LootingUIController.ActiveInstance
+                : Object.FindFirstObjectByType<LootingUIController>(FindObjectsInactive.Include);
+
+            if (controller == null)
+            {
+                Debug.LogWarning("[CorpseInventory] LootingUIController를 찾지 못했습니다. 씬 UI에 LootingUIController를 배치하세요.", this);
+                return;
+            }
+
+            controller.Open(this);
+        }
+
+        /// <summary>
+        /// 지정한 시체 슬롯을 상호작용한 플레이어 인벤토리로 이동하도록 서버에 요청합니다.
+        /// </summary>
+        /// <param name="slotIndex">가져올 시체 슬롯 인덱스입니다.</param>
+        public void RequestTakeSlotToPlayer(int slotIndex)
+        {
+            TakeItemServerRpc(slotIndex);
+        }
+
         [ServerRpc(RequireOwnership = false)]
         public void TakeItemServerRpc(int slotIndex, ServerRpcParams rpc = default)
         {
@@ -85,14 +113,19 @@ namespace DeadZone.Actors
             var playerObj = client.PlayerObject;
             if (playerObj == null) return;
 
-            var inv = playerObj.GetComponent<IInventory>();
-            if (inv == null) return;
+            var gridInventory = playerObj.GetComponent<GridInventory>();
+            var fallbackInventory = playerObj.GetComponent<IInventory>();
+            if (gridInventory == null && fallbackInventory == null) return;
 
             var slot = Slots[slotIndex];
             var itemSO = LookupItem(slot.itemId.ToString());
             if (itemSO == null) return;
 
-            if (inv.TryAddItem(itemSO, slot.stackCount))
+            bool added = gridInventory != null
+                ? gridInventory.TryAddItemSlot(itemSO, slot)
+                : fallbackInventory.TryAddItem(itemSO, slot.stackCount);
+
+            if (added)
             {
                 Slots.RemoveAt(slotIndex);
                 EventBus.Publish(new CorpseLootedEvent
@@ -106,6 +139,14 @@ namespace DeadZone.Actors
 
         private ItemDataSO LookupItem(string id)
         {
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                IItemDatabase serviceDatabase = ServiceLocator.Get<IItemDatabase>();
+                ItemDataSO item = serviceDatabase?.GetById(id);
+                if (item != null)
+                    return item;
+            }
+
             if (itemDatabase == null) return null;
             foreach (var so in itemDatabase)
             {

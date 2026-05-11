@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DeadZone.Actors;
 using DeadZone.Core;
+using DeadZone.Systems;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -14,6 +15,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private bool autoCollectSlots = true;
 
         private LootContainer currentContainer;
+        private CorpseInventory currentCorpseInventory;
         private IItemDatabase itemDb;
 
         private void Awake()
@@ -41,6 +43,22 @@ namespace DeadZone.Actors.UI
 
             Unsubscribe();
             currentContainer = container;
+            currentCorpseInventory = null;
+            Subscribe();
+            Refresh();
+        }
+
+        public void Bind(CorpseInventory corpseInventory)
+        {
+            if (currentCorpseInventory == corpseInventory)
+            {
+                Refresh();
+                return;
+            }
+
+            Unsubscribe();
+            currentContainer = null;
+            currentCorpseInventory = corpseInventory;
             Subscribe();
             Refresh();
         }
@@ -49,6 +67,7 @@ namespace DeadZone.Actors.UI
         {
             Unsubscribe();
             currentContainer = null;
+            currentCorpseInventory = null;
             Refresh();
         }
 
@@ -83,39 +102,44 @@ namespace DeadZone.Actors.UI
                 if (marker == null)
                     marker = slot.gameObject.AddComponent<LootContainerSlotUI>();
 
-                marker.Bind(this, currentContainer, i);
+                if (currentCorpseInventory != null)
+                    marker.Bind(this, currentCorpseInventory, i);
+                else
+                    marker.Bind(this, currentContainer, i);
 
-                if (!TryGetSlotData(i, out ContainerSlotNetData slotData) || slotData.IsEmpty)
+                if (!TryGetSlotViewData(i, out string itemId, out int amount))
                 {
                     slot.ClearItem();
                     continue;
                 }
 
-                ItemDataSO itemData = ResolveItem(slotData.itemId.ToString());
+                ItemDataSO itemData = ResolveItem(itemId);
                 if (itemData == null)
                 {
                     slot.ClearItem();
                     continue;
                 }
 
-                slot.SetItem(itemData, slotData.amount);
+                slot.SetItem(itemData, amount);
             }
         }
 
         private void Subscribe()
         {
-            if (currentContainer == null || currentContainer.Slots == null)
-                return;
+            if (currentContainer != null && currentContainer.Slots != null)
+                currentContainer.Slots.OnListChanged += HandleSlotsChanged;
 
-            currentContainer.Slots.OnListChanged += HandleSlotsChanged;
+            if (currentCorpseInventory != null && currentCorpseInventory.Slots != null)
+                currentCorpseInventory.Slots.OnListChanged += HandleCorpseSlotsChanged;
         }
 
         private void Unsubscribe()
         {
-            if (currentContainer == null || currentContainer.Slots == null)
-                return;
+            if (currentContainer != null && currentContainer.Slots != null)
+                currentContainer.Slots.OnListChanged -= HandleSlotsChanged;
 
-            currentContainer.Slots.OnListChanged -= HandleSlotsChanged;
+            if (currentCorpseInventory != null && currentCorpseInventory.Slots != null)
+                currentCorpseInventory.Slots.OnListChanged -= HandleCorpseSlotsChanged;
         }
 
         private void HandleSlotsChanged(NetworkListEvent<ContainerSlotNetData> changeEvent)
@@ -123,20 +147,52 @@ namespace DeadZone.Actors.UI
             Refresh();
         }
 
-        private bool TryGetSlotData(int index, out ContainerSlotNetData slotData)
+        private void HandleCorpseSlotsChanged(NetworkListEvent<ItemSlotData> changeEvent)
         {
-            slotData = default;
+            Refresh();
+        }
+
+        private bool TryGetSlotViewData(int index, out string itemId, out int amount)
+        {
+            itemId = string.Empty;
+            amount = 0;
 
             if (currentContainer == null || index < 0)
-                return false;
+            {
+                return TryGetCorpseSlotViewData(index, out itemId, out amount);
+            }
 
             if (currentContainer.Slots != null && index < currentContainer.Slots.Count)
             {
-                slotData = currentContainer.Slots[index];
-                return true;
+                ContainerSlotNetData slotData = currentContainer.Slots[index];
+                if (slotData.IsEmpty)
+                    return false;
+
+                itemId = slotData.itemId.ToString();
+                amount = slotData.amount;
+                return amount > 0;
             }
 
-            return currentContainer.TryGetLocalSlot(index, out slotData);
+            if (!currentContainer.TryGetLocalSlot(index, out ContainerSlotNetData localSlotData) || localSlotData.IsEmpty)
+                return false;
+
+            itemId = localSlotData.itemId.ToString();
+            amount = localSlotData.amount;
+            return amount > 0;
+        }
+
+        private bool TryGetCorpseSlotViewData(int index, out string itemId, out int amount)
+        {
+            itemId = string.Empty;
+            amount = 0;
+
+            if (currentCorpseInventory == null || currentCorpseInventory.Slots == null || index < 0 || index >= currentCorpseInventory.Slots.Count)
+                return false;
+
+            ItemSlotData slotData = currentCorpseInventory.Slots[index];
+            itemId = slotData.itemId.ToString();
+            amount = slotData.stackCount;
+            return !string.IsNullOrEmpty(itemId) && amount > 0;
         }
 
         private ItemDataSO ResolveItem(string itemId)

@@ -3254,7 +3254,7 @@ MonoBehaviour:
   textDeadSurvivalTime: {fileID: 1056360021}
   btnGoLobbySurvived: {fileID: 1840222186}
   btnGoLobbyDead: {fileID: 890565571}
-  lobbySceneName: HJO_Lobby
+  lobbySceneName: Lobby
 --- !u!114 &1124118256
 MonoBehaviour:
   m_ObjectHideFlags: 0

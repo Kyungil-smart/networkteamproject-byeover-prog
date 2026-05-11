@@ -1,4 +1,4 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -61,6 +61,7 @@ namespace DeadZone.Actors
         {
             if (IsEmpty.Value) return;
             corpseInventory?.RequestOpenServerRpc(clientId);
+            corpseInventory?.OpenLootingUI();
         }
 
         public void InitializeServer(ulong ownerId, string name)
