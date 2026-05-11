@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems;
 using Sirenix.OdinInspector;
@@ -6,8 +6,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+using DeadZone.Network;
+
 namespace DeadZone.Actors.UI
 {
+    /// <summary>
+    /// 로비 보관함 그리드 UI를 생성하고 아이템 추가/소모 요청을 처리합니다.
+    /// </summary>
     public class StashGridUI : MonoBehaviour, IInventory
     {
         private const int BaseSlotCount = 50;
@@ -46,6 +51,13 @@ namespace DeadZone.Actors.UI
         [SerializeField] private int stashLevel = 1;
 
         [SerializeField] private bool refreshOnAwake = true;
+
+        [Title("클라우드 저장")]
+        [Tooltip("Cloud Save 로드 이벤트를 받으면 보관함 UI를 저장된 stash 데이터로 갱신합니다.")]
+        [SerializeField] private bool loadCloudStashOnLoadedEvent = true;
+
+        [Tooltip("클라우드 보관함 데이터가 비어 있을 때 현재 UI 슬롯을 비울지 여부입니다.")]
+        [SerializeField] private bool clearSlotsWhenCloudStashEmpty = true;
 
         [Title("그리드 설정")]
         [SerializeField] private Vector2 cellSize = new Vector2(100f, 100f);
@@ -97,9 +109,20 @@ namespace DeadZone.Actors.UI
                 RefreshSlots();
         }
 
+        private void OnEnable()
+        {
+            EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+        }
+
         private void Start()
         {
             RefreshSlots();
+            ApplyCloudStashIfAvailable();
         }
 
         private void OnValidate()
@@ -456,6 +479,85 @@ namespace DeadZone.Actors.UI
             scrollRect.inertia = true;
             scrollRect.movementType = ScrollRect.MovementType.Clamped;
             scrollRect.scrollSensitivity = scrollSensitivity;
+        }
+
+        private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
+        {
+            if (!loadCloudStashOnLoadedEvent)
+                return;
+
+            ApplyCloudStashIfAvailable();
+        }
+
+        private void ApplyCloudStashIfAvailable()
+        {
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData || cloudSaveSystem.CurrentData == null)
+                return;
+
+            StashData stashData = cloudSaveSystem.CurrentData.stash;
+            if (stashData == null || stashData.slots == null)
+                return;
+
+            ApplyCloudStash(stashData.slots);
+        }
+
+        private void ApplyCloudStash(IReadOnlyList<StashSlot> cloudSlots)
+        {
+            RefreshSlots();
+
+            if (cloudSlots == null || cloudSlots.Count == 0)
+            {
+                if (clearSlotsWhenCloudStashEmpty)
+                    ClearActiveSlots();
+
+                return;
+            }
+
+            IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+            {
+                Debug.LogWarning("[StashGridUI] Cloud Save 보관함을 적용할 수 없습니다. IItemDatabase가 등록되지 않았습니다.", this);
+                return;
+            }
+
+            ClearActiveSlots();
+
+            for (int i = 0; i < cloudSlots.Count; i++)
+            {
+                StashSlot cloudSlot = cloudSlots[i];
+                if (cloudSlot == null || string.IsNullOrWhiteSpace(cloudSlot.itemId) || cloudSlot.stackCount <= 0)
+                    continue;
+
+                ItemDataSO itemData = itemDatabase.GetById(cloudSlot.itemId);
+                if (itemData == null)
+                {
+                    Debug.LogWarning($"[StashGridUI] Cloud Save 보관함 아이템을 찾을 수 없습니다. ItemId={cloudSlot.itemId}", this);
+                    continue;
+                }
+
+                InventorySlotUI targetSlot = FindSlotForCloudSlot(cloudSlot);
+                if (targetSlot == null)
+                {
+                    Debug.LogWarning($"[StashGridUI] Cloud Save 보관함 슬롯이 부족합니다. ItemId={cloudSlot.itemId}", this);
+                    continue;
+                }
+
+                targetSlot.SetItem(itemData, cloudSlot.stackCount);
+            }
+        }
+
+        private InventorySlotUI FindSlotForCloudSlot(StashSlot cloudSlot)
+        {
+            int requestedIndex = cloudSlot.gridY * FixedColumnCount + cloudSlot.gridX;
+            if (requestedIndex >= 0 && requestedIndex < activeSlotCount && requestedIndex < slots.Count)
+            {
+                InventorySlotUI requestedSlot = slots[requestedIndex];
+                if (requestedSlot != null && requestedSlot != slotPrefab && !requestedSlot.HasItem)
+                    return requestedSlot;
+            }
+
+            return FindFirstEmptySlot();
         }
 
         private void RebuildSlotCache()

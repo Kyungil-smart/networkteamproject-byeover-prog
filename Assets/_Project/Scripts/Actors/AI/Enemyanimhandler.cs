@@ -95,7 +95,8 @@ namespace DeadZone.Actors
             // 무기 타입 초기 설정
             if (_animator != null)
             {
-                _animator.SetFloat(HashWeaponType, weaponTypeIndex);
+                // WeaponType은 Animator Controller에서 Int 파라미터이므로 SetInteger를 사용한다.
+                _animator.SetInteger(HashWeaponType, weaponTypeIndex);
                 _aimLayerIndex = _animator.GetLayerIndex("Aim Layer");
             }
         }
@@ -104,6 +105,9 @@ namespace DeadZone.Actors
 
         private void LateUpdate()
         {
+            // 서버 권위 NetworkAnimator 사용 전제. 클라이언트는 동기화된 값만 표시한다.
+            // 클라가 자기 NavMeshAgent.velocity(=0)로 Speed/MoveX/MoveY를 덮어쓰는 것을 방지한다.
+            if (!IsServer) return;
             if (_animator == null || _agent == null) return;
 
             Vector3 velocity = _agent.velocity;

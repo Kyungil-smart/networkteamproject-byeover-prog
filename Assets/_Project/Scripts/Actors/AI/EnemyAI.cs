@@ -94,6 +94,38 @@ namespace DeadZone.Actors
         [Tooltip("한 번의 엄폐 수색에서 사용할 최대 수색 후보 개수입니다.")]
         [SerializeField] private int maxCoverSearchPoints = 10;
 
+        [Header("스폰/NavMesh 안정화")]
+        [Tooltip("스폰 지점이 NavMesh에서 살짝 벗어났을 때 주변 NavMesh를 찾는 반경입니다.")]
+        [SerializeField] private float spawnNavMeshSampleRadius = 1.5f;
+
+        [Tooltip("스폰 지점을 NavMesh로 보정할 때 허용하는 최대 이동 거리입니다. 이 값보다 멀면 강제 워프하지 않습니다.")]
+        [SerializeField] private float maxSpawnWarpDistance = 1.25f;
+
+        [Tooltip("스폰 지점 주변에 유효한 NavMesh가 없을 때 경고 로그를 출력할지 여부입니다.")]
+        [SerializeField] private bool warnWhenSpawnOffNavMesh = true;
+
+        [Tooltip("스폰 위치가 큰 NavMeshObstacle 내부에 들어간 경우 경고를 출력할지 여부입니다.")]
+        [SerializeField] private bool warnWhenInsideNavMeshObstacle = true;
+
+        [Header("교전/회피 보정")]
+        [Tooltip("SO 값이 너무 작아도 플레이어에게 붙지 않도록 보장할 최소 교전 거리입니다.")]
+        [SerializeField] private float minimumPersonalSpaceDistance = 6f;
+
+        [Tooltip("SO 유효 사거리에 곱할 AI 교전 거리 배율입니다.")]
+        [SerializeField, Range(0.1f, 1f)] private float combatRangeMultiplier = 0.65f;
+
+        [Tooltip("AI가 실제 교전에 진입할 수 있는 최대 거리입니다.")]
+        [SerializeField] private float maxCombatDistance = 24f;
+
+        [Tooltip("NavMeshAgent 정지 거리가 너무 작을 때 사용할 최소 정지 거리입니다.")]
+        [SerializeField] private float minimumAgentStoppingDistance = 1.2f;
+
+        [Tooltip("AI끼리 비비는 현상을 줄이기 위해 사용할 NavMeshAgent 회피 품질입니다.")]
+        [SerializeField] private ObstacleAvoidanceType obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+
+        [Tooltip("AI끼리 같은 우선순위로 밀고 들어가지 않도록 개체별로 뽑을 회피 우선순위 범위입니다.")]
+        [SerializeField] private Vector2Int avoidancePriorityRange = new(30, 70);
+
         [Header("네트워크 상태")]
         [Tooltip("현재 AI 상태입니다. 서버가 값을 변경하고 클라이언트는 읽습니다.")]
         public NetworkVariable<AIState> State = new(AIState.Patrol);
@@ -118,6 +150,7 @@ namespace DeadZone.Actors
         private bool isBoss;
         private bool hasPreviousSeenPosition;
         private bool hasActiveSearchPoint;
+        private bool warnedInsideNavMeshObstacle;
         private float preferredRangeMin;
         private float preferredRangeMax;
 
@@ -134,7 +167,8 @@ namespace DeadZone.Actors
         private float activeSearchPointEnterTime;
         private Vector3 lastStuckCheckPosition;
 
-        private AIState CurrentState => IsSpawned ? State.Value : localState;
+        private bool CanUseNetworkState => IsSpawned && NetworkObject != null && NetworkObject.IsSpawned;
+        private AIState CurrentState => CanUseNetworkState ? State.Value : localState;
 
         private void Awake()
         {
@@ -154,8 +188,7 @@ namespace DeadZone.Actors
         {
             if (!IsServer) return;
 
-            spawnPosition = transform.position;
-            lastDestination = transform.position;
+            ResolveSpawnPositionOnNavMesh();
             CacheSOData();
             localState = State.Value;
             EnterPatrol();
@@ -165,6 +198,7 @@ namespace DeadZone.Actors
         {
             if (!IsSpawned)
             {
+                ResolveSpawnPositionOnNavMesh();
                 CacheSOData();
                 EnterPatrol();
             }
@@ -229,15 +263,119 @@ namespace DeadZone.Actors
 
             var so = stats.StatsSO;
             isBoss = so.isBoss;
-            preferredRangeMin = so.preferredRangeMin;
-            preferredRangeMax = so.preferredRangeMax;
+            preferredRangeMin = Mathf.Max(so.preferredRangeMin, minimumPersonalSpaceDistance);
+            preferredRangeMax = Mathf.Min(so.preferredRangeMax, so.maxEffectiveRange * combatRangeMultiplier, maxCombatDistance);
+            preferredRangeMax = Mathf.Max(preferredRangeMax, preferredRangeMin + 2f);
 
             if (agent != null)
             {
                 agent.speed = so.moveSpeed;
                 pathProbeRadius = Mathf.Max(pathProbeRadius, agent.radius);
                 agent.autoRepath = true;
+                agent.autoBraking = true;
+                agent.stoppingDistance = Mathf.Max(agent.stoppingDistance, minimumAgentStoppingDistance);
+                agent.obstacleAvoidanceType = obstacleAvoidanceType;
+                int priorityMin = Mathf.Clamp(Mathf.Min(avoidancePriorityRange.x, avoidancePriorityRange.y), 0, 99);
+                int priorityMax = Mathf.Clamp(Mathf.Max(avoidancePriorityRange.x, avoidancePriorityRange.y), 0, 99);
+                agent.avoidancePriority = Random.Range(priorityMin, priorityMax + 1);
             }
+        }
+
+        private void ResolveSpawnPositionOnNavMesh()
+        {
+            WarnIfInsideNavMeshObstacle();
+
+            if (agent == null)
+            {
+                spawnPosition = transform.position;
+                lastDestination = transform.position;
+                return;
+            }
+
+            if (agent.isOnNavMesh)
+            {
+                spawnPosition = transform.position;
+                lastDestination = transform.position;
+                return;
+            }
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, spawnNavMeshSampleRadius, NavMesh.AllAreas))
+            {
+                float warpDistance = Vector3.Distance(transform.position, hit.position);
+                if (warpDistance <= maxSpawnWarpDistance && agent.Warp(hit.position))
+                {
+                    spawnPosition = hit.position;
+                    lastDestination = hit.position;
+                    return;
+                }
+
+                if (warnWhenSpawnOffNavMesh)
+                {
+                    Debug.LogWarning(
+                        $"[EnemyAI] {name} 스폰 위치에서 가장 가까운 NavMesh가 {warpDistance:F2}m 떨어져 있어 자동 워프하지 않았습니다. 배치 위치 또는 NavMesh/Obstacle 설정을 확인하세요.",
+                        this);
+                }
+            }
+            else if (warnWhenSpawnOffNavMesh)
+            {
+                Debug.LogWarning(
+                    $"[EnemyAI] {name} 스폰 위치 주변 {spawnNavMeshSampleRadius:F1}m 안에서 NavMesh를 찾지 못했습니다. 적이 이동하지 못하거나 다른 NavMesh로 튕길 수 있습니다.",
+                    this);
+            }
+
+            spawnPosition = transform.position;
+            lastDestination = transform.position;
+        }
+
+        private void WarnIfInsideNavMeshObstacle()
+        {
+            if (!warnWhenInsideNavMeshObstacle || warnedInsideNavMeshObstacle)
+            {
+                return;
+            }
+
+            NavMeshObstacle[] obstacles = Object.FindObjectsByType<NavMeshObstacle>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < obstacles.Length; i++)
+            {
+                NavMeshObstacle obstacle = obstacles[i];
+                if (obstacle == null || !obstacle.enabled || obstacle.transform == transform || obstacle.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                if (!IsInsideObstacleBounds(obstacle))
+                {
+                    continue;
+                }
+
+                warnedInsideNavMeshObstacle = true;
+                Debug.LogWarning(
+                    $"[EnemyAI] {name}이(가) '{obstacle.name}' NavMeshObstacle 내부에서 시작했습니다. 빈 건물 전체를 덮는 Obstacle은 실내 NavMeshAgent를 밖으로 밀거나 이동을 막을 수 있습니다. 창고 부모 Obstacle을 제거하고 벽/기둥/소품 단위로 분리하세요.",
+                    this);
+                return;
+            }
+        }
+
+        private bool IsInsideObstacleBounds(NavMeshObstacle obstacle)
+        {
+            Vector3 localPoint = obstacle.transform.InverseTransformPoint(transform.position) - obstacle.center;
+
+            if (obstacle.shape == NavMeshObstacleShape.Box)
+            {
+                Vector3 halfSize = obstacle.size * 0.5f;
+                float padding = agent != null ? agent.radius : 0.5f;
+                return Mathf.Abs(localPoint.x) <= halfSize.x + padding &&
+                       Mathf.Abs(localPoint.y) <= halfSize.y + padding &&
+                       Mathf.Abs(localPoint.z) <= halfSize.z + padding;
+            }
+
+            float radius = obstacle.radius + (agent != null ? agent.radius : 0.5f);
+            Vector2 horizontal = new(localPoint.x, localPoint.z);
+            return horizontal.sqrMagnitude <= radius * radius &&
+                   Mathf.Abs(localPoint.y) <= obstacle.height * 0.5f;
         }
 
         private void TickPatrol()
@@ -371,7 +509,10 @@ namespace DeadZone.Actors
 
             if (distanceToTarget < preferredRangeMin)
             {
-                TryRetreat();
+                if (!TryRetreat())
+                {
+                    SetAgentStopped(true);
+                }
             }
             else
             {
@@ -556,7 +697,7 @@ namespace DeadZone.Actors
         {
             if (CurrentState == nextState) return;
 
-            if (IsSpawned)
+            if (CanUseNetworkState)
             {
                 State.Value = nextState;
             }
@@ -1166,12 +1307,12 @@ namespace DeadZone.Actors
             return length;
         }
 
-        private void TryRetreat()
+        private bool TryRetreat()
         {
             if (currentTarget == null)
             {
                 SetAgentStopped(true);
-                return;
+                return false;
             }
 
             Vector3 baseDirection = transform.position - currentTarget.position;
@@ -1193,10 +1334,11 @@ namespace DeadZone.Actors
                 Vector3 candidate = transform.position + direction * retreatDistance;
 
                 if (TrySetDestination(candidate))
-                    return;
+                    return true;
             }
 
             SetAgentStopped(true);
+            return false;
         }
 
         private void RecoverIfStuck(Vector3 rawDestination)
