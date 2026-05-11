@@ -104,11 +104,6 @@ namespace DeadZone.Actors
                 return;
             }
 
-            if (Time.time < nextShotAllowed)
-            {
-                return;
-            }
-
             if (muzzle == null || enemyBulletPrefab == null)
             {
                 return;
@@ -131,6 +126,11 @@ namespace DeadZone.Actors
             }
 
             if (!HasCompletedReactionDelay(target, so))
+            {
+                return;
+            }
+
+            if (Time.time < nextShotAllowed)
             {
                 return;
             }
@@ -232,7 +232,6 @@ namespace DeadZone.Actors
                 trackedTarget = target;
                 targetAcquiredTime = Time.time;
                 burstCount = 0;
-                nextShotAllowed = Mathf.Max(nextShotAllowed, Time.time + GetReactionDelay(so));
                 return false;
             }
 
@@ -252,6 +251,12 @@ namespace DeadZone.Actors
 
         private Vector3 GetTargetAimPoint(Transform target)
         {
+            Collider targetCollider = target.GetComponentInChildren<Collider>();
+            if (targetCollider != null)
+            {
+                return targetCollider.bounds.center;
+            }
+
             return target.position + Vector3.up;
         }
 
