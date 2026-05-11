@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Firebase.Firestore;
@@ -8,21 +8,43 @@ using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
 using DeadZone.Systems.Quests;
+using DeadZone.Systems.Save;
 
 namespace DeadZone.Network
 {
+    /// <summary>
+    /// Firebase Cloud Firestore에 플레이어 저장 데이터를 로드하고 업로드합니다.
+    /// </summary>
     public class CloudSaveSystem : MonoBehaviour
     {
+        private const int DefaultStashColumnCount = 10;
+        private const int DefaultStartingCredits = 50000;
+        private const int EconomyStarterPackSchemaVersion = 3;
         private const string UsersCollection = "users";
         private const bool DisableFirestorePersistence = true;
+
+        [Header("파산신청")]
+        [Tooltip("파산신청 시 적용할 스타터팩 설정입니다.")]
+        [SerializeField] private StarterPackConfigSO bankruptcyStarterPack;
 
         private FirebaseFirestore db;
         private FirebaseAuthManager authManager;
         private PlayerCloudData currentData;
         private string loadedFirebaseUid = string.Empty;
 
+        /// <summary>
+        /// 현재 로드된 플레이어 Cloud Save 데이터입니다.
+        /// </summary>
         public PlayerCloudData CurrentData => currentData;
+
+        /// <summary>
+        /// 현재 플레이어 Cloud Save 데이터가 로드되어 있는지 반환합니다.
+        /// </summary>
         public bool HasLoadedData => currentData != null;
+
+        /// <summary>
+        /// 현재 로드된 Cloud Save 데이터의 Firebase UID입니다.
+        /// </summary>
         public string LoadedFirebaseUid => loadedFirebaseUid;
 
         private void Awake()
@@ -36,6 +58,9 @@ namespace DeadZone.Network
             EventBus.Subscribe<AuthSignedOutEvent>(OnAuthSignedOut);
             EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
             EventBus.Subscribe<SceneChangedEvent>(OnSceneChanged);
+            EventBus.Subscribe<QuestAcceptedEvent>(OnQuestAccepted);
+            EventBus.Subscribe<QuestProgressEvent>(OnQuestProgress);
+            EventBus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         }
 
         private void OnDestroy()
@@ -44,6 +69,9 @@ namespace DeadZone.Network
             EventBus.Unsubscribe<AuthSignedOutEvent>(OnAuthSignedOut);
             EventBus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
             EventBus.Unsubscribe<SceneChangedEvent>(OnSceneChanged);
+            EventBus.Unsubscribe<QuestAcceptedEvent>(OnQuestAccepted);
+            EventBus.Unsubscribe<QuestProgressEvent>(OnQuestProgress);
+            EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
 
             ServiceLocator.Unregister<CloudSaveSystem>();
         }
@@ -163,6 +191,30 @@ namespace DeadZone.Network
             await UploadAsync();
         }
 
+        private async void OnQuestAccepted(QuestAcceptedEvent e)
+        {
+            if (!IsLocalClientEvent(e.clientId)) return;
+            await UploadAsync();
+        }
+
+        private async void OnQuestProgress(QuestProgressEvent e)
+        {
+            if (!IsLocalClientEvent(e.clientId)) return;
+            await UploadAsync();
+        }
+
+        private async void OnQuestCompleted(QuestCompletedEvent e)
+        {
+            if (!IsLocalClientEvent(e.clientId)) return;
+            await UploadAsync();
+        }
+
+        private static bool IsLocalClientEvent(ulong clientId)
+        {
+            return NetworkManager.Singleton == null ||
+                   clientId == NetworkManager.Singleton.LocalClientId;
+        }
+
         // =================================================================
         // 다운로드
         // =================================================================
@@ -199,6 +251,15 @@ namespace DeadZone.Network
                     // [FirestoreData] 어노테이션이 붙어있으면 ConvertTo<T>()로 자동 역직렬화
                     currentData = snapshot.ConvertTo<PlayerCloudData>();
                     if (currentData == null) currentData = NewPlayerData(uid, authManager.CurrentEmail);
+                    EnsureCloudDataContainers();
+
+                    if (TryApplyStarterPackMigration())
+                    {
+                        loadedFirebaseUid = uid;
+                        currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+                        Debug.Log("[CloudSaveSystem] 기존 Cloud Save 문서에 스타터팩 경제 데이터 마이그레이션을 적용했습니다.", this);
+                    }
                 }
                 else
                 {
@@ -222,6 +283,8 @@ namespace DeadZone.Network
                     firebaseUid = uid,
                     isNewUser = isNew,
                 });
+
+                RestoreQuestStateIfAvailable();
 
                 return currentData;
             }
@@ -285,6 +348,95 @@ namespace DeadZone.Network
             }
         }
 
+        public async Task<bool> SaveLobbyDataAsync(LobbySaveDTO lobbySaveDto)
+        {
+            if (lobbySaveDto == null)
+            {
+                Debug.LogWarning("[CloudSaveSystem] Lobby 저장 실패. DTO가 null입니다.");
+                return false;
+            }
+
+            if (!TryGetSignedInAuth(out string uid, out _))
+            {
+                Debug.LogWarning("[CloudSaveSystem] Lobby 저장 실패. 로그인 상태가 아닙니다.");
+                return false;
+            }
+
+            if (!TryEnsureFirestoreReady())
+            {
+                Debug.LogWarning("[CloudSaveSystem] Lobby 저장 실패. Firestore가 준비되지 않았습니다.");
+                return false;
+            }
+
+            if (currentData == null)
+            {
+                Debug.LogWarning("[CloudSaveSystem] Lobby 저장 실패. CurrentData가 없습니다.");
+                return false;
+            }
+
+            if (loadedFirebaseUid != uid)
+            {
+                Debug.LogWarning("[CloudSaveSystem] Lobby 저장 실패. 현재 로그인 UID와 로드된 데이터 UID가 다릅니다.");
+                return false;
+            }
+
+            try
+            {
+                EnsureCloudDataContainers();
+                EnsureLobbySaveContainers();
+
+                CollectPersonalQuestProgress();
+
+                currentData.lobbySave = ToLobbySaveCloudData(lobbySaveDto);
+                ApplyLobbySaveToLegacyCloudFields(lobbySaveDto);
+                if (lobbySaveDto.hasCredits)
+                    currentData.progress.credits = lobbySaveDto.credits;
+                currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                currentData.schemaVersion = Mathf.Max(currentData.schemaVersion, 3);
+
+                await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = true,
+                });
+
+                Debug.Log("[CloudSaveSystem] Lobby 저장 완료");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[CloudSaveSystem] Lobby 저장 실패: {ex}");
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = false,
+                });
+                return false;
+            }
+        }
+
+        public LobbySaveDTO CreateLobbySaveDTOFromCurrentData()
+        {
+            if (currentData == null)
+            {
+                Debug.LogWarning("[CloudSaveSystem] Lobby 로드 실패. CurrentData가 없습니다.");
+                return null;
+            }
+
+            EnsureCloudDataContainers();
+            EnsureLobbySaveContainers();
+
+            if (HasLobbySaveData(currentData.lobbySave))
+                return ToLobbySaveDTO(currentData.lobbySave);
+
+            return CreateLobbySaveDTOFromLegacyCloudFields();
+        }
+
+        /// <summary>
+        /// 지정한 구역 해금 상태를 저장 데이터에 반영하고 업로드합니다.
+        /// </summary>
         public async Task<bool> UnlockZoneAndUploadAsync(string zoneId)
         {
             if (string.IsNullOrWhiteSpace(zoneId))
@@ -360,11 +512,122 @@ namespace DeadZone.Network
             }
         }
 
+        /// <summary>
+        /// 퀘스트와 하이드아웃 진행도는 유지하고 경제 데이터만 스타터팩 상태로 초기화합니다.
+        /// </summary>
+        public async Task<bool> ApplyBankruptcyStarterPackAsync(StarterPackConfigSO starterPackOverride = null)
+        {
+            StarterPackConfigSO starterPack = starterPackOverride != null
+                ? starterPackOverride
+                : bankruptcyStarterPack;
+
+            if (starterPack == null)
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. StarterPackConfigSO가 연결되지 않았습니다.", this);
+                return false;
+            }
+
+            if (!TryGetSignedInAuth(out string uid, out _))
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. 로그인 상태가 아닙니다.", this);
+                return false;
+            }
+
+            if (!TryEnsureFirestoreReady())
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. Firestore가 준비되지 않았습니다.", this);
+                return false;
+            }
+
+            if (currentData == null)
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. Cloud Save 데이터가 아직 로드되지 않았습니다.", this);
+                return false;
+            }
+
+            if (loadedFirebaseUid != uid)
+            {
+                Debug.LogWarning("[CloudSaveSystem] 파산신청 실패. 현재 로그인 UID와 로드된 데이터 UID가 다릅니다.", this);
+                return false;
+            }
+
+            try
+            {
+                EnsureCloudDataContainers();
+
+                // 진행도 계열은 현재 씬에서 확인 가능한 최신 값만 먼저 반영한다.
+                CollectFacilities();
+                CollectPersonalQuestProgress();
+
+                EnsureCloudDataContainers();
+                ApplyBankruptcyStarterPack(starterPack);
+                LobbySaveDTO bankruptcyLobbySave = CreateLobbySaveDTOFromLegacyCloudFields();
+                bankruptcyLobbySave.hasCredits = true;
+                bankruptcyLobbySave.credits = starterPack.StartingCredits;
+                bankruptcyLobbySave.inventoryItems.Clear();
+                bankruptcyLobbySave.equipmentItems.Clear();
+
+                currentData.lobbySave = ToLobbySaveCloudData(bankruptcyLobbySave);
+
+                currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                await db.Collection(UsersCollection).Document(uid).SetAsync(currentData, SetOptions.Overwrite);
+
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = true,
+                });
+
+                EventBus.Publish(new CloudSaveLoadedEvent
+                {
+                    firebaseUid = uid,
+                    isNewUser = false,
+                });
+
+                Debug.Log("[CloudSaveSystem] 파산신청 완료. 크레딧, 인벤토리, 보관함, 장비 슬롯을 스타터팩 LobbySaveData로 초기화했습니다.", this);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[CloudSaveSystem] 파산신청 실패. Error={ex}", this);
+                EventBus.Publish(new CloudSaveUploadedEvent
+                {
+                    firebaseUid = uid,
+                    success = false,
+                });
+                return false;
+            }
+        }
+
         private void EnsureCloudDataContainers()
         {
             currentData.profile ??= new ProfileData();
             currentData.progress ??= new ProgressData();
+            currentData.progress.personalActiveQuestIds ??= new List<string>();
+            currentData.progress.personalCompletedQuestIds ??= new List<string>();
             currentData.progress.unlockedZones ??= new List<string>();
+            currentData.progress.questObjectives ??= new List<QuestObjectiveProgress>();
+            currentData.progress.pendingCompletionIds ??= new List<string>();
+            currentData.stash ??= new StashData();
+            currentData.stash.slots ??= new List<StashSlot>();
+            currentData.safePocket ??= new SafePocketData();
+            currentData.safePocket.slots ??= new List<SafePocketSlot>();
+            currentData.equipment ??= new EquipmentData();
+            currentData.facilities ??= new FacilitiesData();
+            currentData.insurance ??= new List<InsuranceEntry>();
+        }
+
+        private void EnsureLobbySaveContainers()
+        {
+            if (currentData == null)
+                return;
+
+            currentData.lobbySave ??= new LobbySaveCloudData();
+            currentData.lobbySave.inventoryItems ??= new List<LobbyItemCloudData>();
+            currentData.lobbySave.stashItems ??= new List<LobbyItemCloudData>();
+            currentData.lobbySave.equipmentItems ??= new List<LobbyEquipmentCloudData>();
+            currentData.lobbySave.facilities ??= new List<LobbyFacilityCloudData>();
         }
         
         // =================================================================
@@ -374,6 +637,8 @@ namespace DeadZone.Network
         private void CollectDataFromScene()
         {
             if (currentData == null) return;
+
+            EnsureCloudDataContainers();
 
             // 1) 본인 PlayerPrefab 찾기 (있을 때만)
             var localPlayer = FindLocalPlayer();
@@ -455,11 +720,146 @@ namespace DeadZone.Network
             myState.WriteToCloudProgress(currentData.progress);
         }
 
+        private void RestoreQuestStateIfAvailable()
+        {
+            if (currentData?.progress == null)
+                return;
+
+            if (NetworkManager.Singleton == null)
+                return;
+
+            QuestManager quest = ServiceLocator.Get<QuestManager>();
+            if (quest == null)
+                return;
+
+            quest.RestorePlayerState(NetworkManager.Singleton.LocalClientId, currentData.progress);
+        }
+
+        private void ApplyBankruptcyStarterPack(StarterPackConfigSO starterPack)
+        {
+            currentData.progress.credits = starterPack.StartingCredits;
+            currentData.stash.slots = BuildStarterPackStashSlots(starterPack);
+            currentData.safePocket.slots.Clear();
+            currentData.equipment = new EquipmentData();
+            currentData.insurance.Clear();
+            currentData.schemaVersion = Mathf.Max(currentData.schemaVersion, EconomyStarterPackSchemaVersion);
+        }
+
+        private bool TryApplyStarterPackMigration()
+        {
+            if (bankruptcyStarterPack == null)
+                return false;
+
+            if (currentData.schemaVersion >= EconomyStarterPackSchemaVersion)
+                return false;
+
+            if (!IsEconomyEmptyForStarterPackMigration())
+            {
+                currentData.schemaVersion = EconomyStarterPackSchemaVersion;
+                return false;
+            }
+
+            ApplyBankruptcyStarterPack(bankruptcyStarterPack);
+            return true;
+        }
+
+        private bool IsEconomyEmptyForStarterPackMigration()
+        {
+            bool stashEmpty = currentData.stash == null ||
+                              currentData.stash.slots == null ||
+                              currentData.stash.slots.Count == 0;
+
+            bool safePocketEmpty = currentData.safePocket == null ||
+                                   currentData.safePocket.slots == null ||
+                                   currentData.safePocket.slots.Count == 0;
+
+            bool insuranceEmpty = currentData.insurance == null ||
+                                  currentData.insurance.Count == 0;
+
+            bool equipmentEmpty = currentData.equipment == null ||
+                                  (string.IsNullOrWhiteSpace(currentData.equipment.helmetId) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.armorId) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.primary1) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.primary2) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.secondary) &&
+                                   string.IsNullOrWhiteSpace(currentData.equipment.melee));
+
+            return stashEmpty && safePocketEmpty && insuranceEmpty && equipmentEmpty;
+        }
+
+        private static List<StashSlot> BuildStarterPackStashSlots(StarterPackConfigSO starterPack)
+        {
+            List<StashSlot> result = new List<StashSlot>();
+            int nextSlotIndex = 0;
+
+            IReadOnlyList<StarterPackEntry> entries = starterPack.Entries;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                AppendStarterPackEntry(result, entries[i], ref nextSlotIndex);
+            }
+
+            return result;
+        }
+
+        private static void AppendStarterPackEntry(List<StashSlot> result, StarterPackEntry entry, ref int nextSlotIndex)
+        {
+            if (entry == null || entry.Item == null)
+                return;
+
+            int remaining = entry.Amount;
+            int maxStack = Mathf.Max(1, entry.Item.maxStackSize);
+
+            while (remaining > 0)
+            {
+                int stackCount = Mathf.Min(maxStack, remaining);
+                result.Add(CreateStarterPackSlot(entry, stackCount, nextSlotIndex));
+                nextSlotIndex++;
+                remaining -= stackCount;
+            }
+        }
+
+        private static StashSlot CreateStarterPackSlot(StarterPackEntry entry, int stackCount, int slotIndex)
+        {
+            ItemDataSO item = entry.Item;
+
+            return new StashSlot
+            {
+                itemId = item.itemID,
+                stackCount = stackCount,
+                gridX = slotIndex % DefaultStashColumnCount,
+                gridY = slotIndex / DefaultStashColumnCount,
+                rotated = false,
+                currentDurability = GetDurabilityValue(item, entry.DurabilityRatio),
+                currentAmmo = GetCurrentAmmoValue(item, entry.CurrentAmmo),
+            };
+        }
+
+        private static int GetDurabilityValue(ItemDataSO item, float durabilityRatio)
+        {
+            float maxDurability = item switch
+            {
+                WeaponDataSO weapon => weapon.maxDurability,
+                ArmorDataSO armor => armor.maxDurability,
+                HelmetDataSO helmet => helmet.maxDurability,
+                _ => 0f,
+            };
+
+            if (maxDurability <= 0f)
+                return 0;
+
+            return Mathf.RoundToInt(maxDurability * Mathf.Clamp01(durabilityRatio));
+        }
+
+        private static int GetCurrentAmmoValue(ItemDataSO item, int currentAmmo)
+        {
+            return item is WeaponDataSO ? Mathf.Max(0, currentAmmo) : 0;
+        }
+
         // =================================================================
         // 신규 유저 기본값
         // =================================================================
 
-        private static PlayerCloudData NewPlayerData(string uid, string email)
+        private PlayerCloudData NewPlayerData(string uid, string email)
         {
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var data = new PlayerCloudData();
@@ -467,9 +867,374 @@ namespace DeadZone.Network
             data.profile.createdAtUnix = now;
             data.profile.lastPlayedAtUnix = now;
             data.profile.totalPlayTimeSec = 0;
-            data.progress.credits = 0;
+            data.progress.credits = bankruptcyStarterPack != null
+                ? bankruptcyStarterPack.StartingCredits
+                : DefaultStartingCredits;
+
+            if (bankruptcyStarterPack != null)
+                data.stash.slots = BuildStarterPackStashSlots(bankruptcyStarterPack);
+
+            data.schemaVersion = EconomyStarterPackSchemaVersion;
+
             // facilities 는 생성자에서 모두 Lv1 기본값
             return data;
+        }
+
+        private static LobbySaveCloudData ToLobbySaveCloudData(LobbySaveDTO dto)
+        {
+            LobbySaveCloudData cloudData = new LobbySaveCloudData();
+            cloudData.hasCredits = dto.hasCredits;
+            cloudData.credits = dto.credits;
+
+            if (dto.inventoryItems != null)
+            {
+                for (int i = 0; i < dto.inventoryItems.Count; i++)
+                    cloudData.inventoryItems.Add(ToCloudItem(dto.inventoryItems[i]));
+            }
+
+            if (dto.stashItems != null)
+            {
+                for (int i = 0; i < dto.stashItems.Count; i++)
+                    cloudData.stashItems.Add(ToCloudItem(dto.stashItems[i]));
+            }
+
+            if (dto.equipmentItems != null)
+            {
+                for (int i = 0; i < dto.equipmentItems.Count; i++)
+                    cloudData.equipmentItems.Add(ToCloudEquipment(dto.equipmentItems[i]));
+            }
+
+            if (dto.facilities != null)
+            {
+                for (int i = 0; i < dto.facilities.Count; i++)
+                    cloudData.facilities.Add(ToCloudFacility(dto.facilities[i]));
+            }
+
+            return cloudData;
+        }
+
+        private static LobbySaveDTO ToLobbySaveDTO(LobbySaveCloudData cloudData)
+        {
+            LobbySaveDTO dto = new LobbySaveDTO();
+            dto.hasCredits = cloudData.hasCredits;
+            dto.credits = cloudData.credits;
+
+            if (cloudData.inventoryItems != null)
+            {
+                for (int i = 0; i < cloudData.inventoryItems.Count; i++)
+                    dto.inventoryItems.Add(ToItemSaveDTO(cloudData.inventoryItems[i]));
+            }
+
+            if (cloudData.stashItems != null)
+            {
+                for (int i = 0; i < cloudData.stashItems.Count; i++)
+                    dto.stashItems.Add(ToItemSaveDTO(cloudData.stashItems[i]));
+            }
+
+            if (cloudData.equipmentItems != null)
+            {
+                for (int i = 0; i < cloudData.equipmentItems.Count; i++)
+                    dto.equipmentItems.Add(ToEquipmentSaveDTO(cloudData.equipmentItems[i]));
+            }
+
+            if (cloudData.facilities != null)
+            {
+                for (int i = 0; i < cloudData.facilities.Count; i++)
+                    dto.facilities.Add(ToFacilitySaveDTO(cloudData.facilities[i]));
+            }
+
+            return dto;
+        }
+
+        private static LobbyItemCloudData ToCloudItem(ItemSaveDTO item)
+        {
+            if (item == null)
+                return new LobbyItemCloudData();
+
+            return new LobbyItemCloudData
+            {
+                itemId = item.itemId ?? "",
+                instanceId = item.instanceId ?? "",
+                containerId = item.containerId ?? "",
+                x = item.x,
+                y = item.y,
+                rotated = item.rotated,
+                stackCount = item.stackCount
+            };
+        }
+
+        private static LobbyEquipmentCloudData ToCloudEquipment(EquipmentSaveDTO equipment)
+        {
+            if (equipment == null)
+                return new LobbyEquipmentCloudData();
+
+            return new LobbyEquipmentCloudData
+            {
+                slotId = equipment.slotId ?? "",
+                itemId = equipment.itemId ?? "",
+                instanceId = equipment.instanceId ?? "",
+                loadedAmmoId = equipment.loadedAmmoId ?? "",
+                currentAmmo = equipment.currentAmmo,
+                durability = equipment.durability
+            };
+        }
+
+        private static LobbyFacilityCloudData ToCloudFacility(FacilitySaveDTO facility)
+        {
+            if (facility == null)
+                return new LobbyFacilityCloudData();
+
+            return new LobbyFacilityCloudData
+            {
+                facilityId = facility.facilityId ?? "",
+                level = facility.level
+            };
+        }
+
+        private static ItemSaveDTO ToItemSaveDTO(LobbyItemCloudData item)
+        {
+            if (item == null)
+                return new ItemSaveDTO();
+
+            return new ItemSaveDTO
+            {
+                itemId = item.itemId ?? "",
+                instanceId = item.instanceId ?? "",
+                containerId = item.containerId ?? "",
+                x = item.x,
+                y = item.y,
+                rotated = item.rotated,
+                stackCount = item.stackCount
+            };
+        }
+
+        private static EquipmentSaveDTO ToEquipmentSaveDTO(LobbyEquipmentCloudData equipment)
+        {
+            if (equipment == null)
+                return new EquipmentSaveDTO();
+
+            return new EquipmentSaveDTO
+            {
+                slotId = equipment.slotId ?? "",
+                itemId = equipment.itemId ?? "",
+                instanceId = equipment.instanceId ?? "",
+                loadedAmmoId = equipment.loadedAmmoId ?? "",
+                currentAmmo = equipment.currentAmmo,
+                durability = equipment.durability
+            };
+        }
+
+        private static FacilitySaveDTO ToFacilitySaveDTO(LobbyFacilityCloudData facility)
+        {
+            if (facility == null)
+                return new FacilitySaveDTO();
+
+            return new FacilitySaveDTO
+            {
+                facilityId = facility.facilityId ?? "",
+                level = facility.level
+            };
+        }
+
+        private static bool HasLobbySaveData(LobbySaveCloudData lobbySave)
+        {
+            if (lobbySave == null)
+                return false;
+
+            return lobbySave.hasCredits ||
+                   HasItems(lobbySave.inventoryItems) ||
+                   HasItems(lobbySave.stashItems) ||
+                   HasItems(lobbySave.equipmentItems) ||
+                   HasItems(lobbySave.facilities);
+        }
+
+        private static bool HasItems<T>(List<T> list)
+        {
+            return list != null && list.Count > 0;
+        }
+
+        private void ApplyLobbySaveToLegacyCloudFields(LobbySaveDTO lobbySaveDto)
+        {
+            currentData.stash.slots.Clear();
+            currentData.equipment = new EquipmentData();
+
+            if (lobbySaveDto.stashItems != null)
+            {
+                for (int i = 0; i < lobbySaveDto.stashItems.Count; i++)
+                {
+                    ItemSaveDTO item = lobbySaveDto.stashItems[i];
+                    if (item == null)
+                        continue;
+
+                    currentData.stash.slots.Add(new StashSlot
+                    {
+                        itemId = item.itemId ?? "",
+                        stackCount = item.stackCount,
+                        gridX = GetStashGridX(item),
+                        gridY = GetStashGridY(item),
+                        rotated = item.rotated,
+                    });
+                }
+            }
+
+            if (lobbySaveDto.equipmentItems != null)
+            {
+                for (int i = 0; i < lobbySaveDto.equipmentItems.Count; i++)
+                    ApplyEquipmentToLegacyField(lobbySaveDto.equipmentItems[i]);
+            }
+
+            if (lobbySaveDto.facilities != null)
+            {
+                for (int i = 0; i < lobbySaveDto.facilities.Count; i++)
+                    ApplyFacilityToLegacyField(lobbySaveDto.facilities[i]);
+            }
+        }
+
+        private void ApplyEquipmentToLegacyField(EquipmentSaveDTO equipmentItem)
+        {
+            if (equipmentItem == null)
+                return;
+
+            switch (equipmentItem.slotId)
+            {
+                case "EquipmentHead":
+                case "head":
+                    currentData.equipment.helmetId = equipmentItem.itemId ?? "";
+                    currentData.equipment.helmetDurability = equipmentItem.durability;
+                    break;
+                case "EquipmentArmor":
+                case "torso":
+                    currentData.equipment.armorId = equipmentItem.itemId ?? "";
+                    currentData.equipment.armorDurability = equipmentItem.durability;
+                    break;
+                case "EquipmentPrimaryWeapon":
+                case "primary1":
+                    if (string.IsNullOrWhiteSpace(currentData.equipment.primary1))
+                        currentData.equipment.primary1 = equipmentItem.itemId ?? "";
+                    else
+                        currentData.equipment.primary2 = equipmentItem.itemId ?? "";
+                    break;
+                case "primary2":
+                    currentData.equipment.primary2 = equipmentItem.itemId ?? "";
+                    break;
+                case "EquipmentSecondaryWeapon":
+                case "secondary":
+                    currentData.equipment.secondary = equipmentItem.itemId ?? "";
+                    break;
+                case "EquipmentMeleeWeapon":
+                case "melee":
+                    currentData.equipment.melee = equipmentItem.itemId ?? "";
+                    break;
+            }
+        }
+
+        private void ApplyFacilityToLegacyField(FacilitySaveDTO facility)
+        {
+            if (facility == null)
+                return;
+
+            switch (facility.facilityId)
+            {
+                case "Workbench": currentData.facilities.workbench = facility.level; break;
+                case "CommStation": currentData.facilities.commStation = facility.level; break;
+                case "Gym": currentData.facilities.gym = facility.level; break;
+                case "Stash": currentData.facilities.stash = facility.level; break;
+                case "Kitchen": currentData.facilities.kitchen = facility.level; break;
+                case "Bed": currentData.facilities.bed = facility.level; break;
+            }
+        }
+
+        private LobbySaveDTO CreateLobbySaveDTOFromLegacyCloudFields()
+        {
+            LobbySaveDTO dto = new LobbySaveDTO();
+            dto.hasCredits = false;
+            dto.credits = 0;
+
+            if (currentData.stash?.slots != null)
+            {
+                for (int i = 0; i < currentData.stash.slots.Count; i++)
+                {
+                    StashSlot slot = currentData.stash.slots[i];
+                    if (slot == null || string.IsNullOrWhiteSpace(slot.itemId))
+                        continue;
+
+                    dto.stashItems.Add(new ItemSaveDTO
+                    {
+                        itemId = slot.itemId,
+                        containerId = "stash",
+                        x = GetStashSlotIndex(slot),
+                        y = 0,
+                        rotated = slot.rotated,
+                        stackCount = slot.stackCount
+                    });
+                }
+            }
+
+            AddLegacyEquipment(dto, "EquipmentHead", currentData.equipment?.helmetId, currentData.equipment?.helmetDurability ?? 0f);
+            AddLegacyEquipment(dto, "EquipmentArmor", currentData.equipment?.armorId, currentData.equipment?.armorDurability ?? 0f);
+            AddLegacyEquipment(dto, "primary1", currentData.equipment?.primary1, 0f);
+            AddLegacyEquipment(dto, "primary2", currentData.equipment?.primary2, 0f);
+            AddLegacyEquipment(dto, "EquipmentSecondaryWeapon", currentData.equipment?.secondary, 0f);
+            AddLegacyEquipment(dto, "EquipmentMeleeWeapon", currentData.equipment?.melee, 0f);
+
+            AddLegacyFacility(dto, "Workbench", currentData.facilities?.workbench ?? 1);
+            AddLegacyFacility(dto, "CommStation", currentData.facilities?.commStation ?? 1);
+            AddLegacyFacility(dto, "Gym", currentData.facilities?.gym ?? 1);
+            AddLegacyFacility(dto, "Stash", currentData.facilities?.stash ?? 1);
+            AddLegacyFacility(dto, "Kitchen", currentData.facilities?.kitchen ?? 1);
+            AddLegacyFacility(dto, "Bed", currentData.facilities?.bed ?? 1);
+
+            return dto;
+        }
+
+        private static void AddLegacyEquipment(LobbySaveDTO dto, string slotId, string itemId, float durability)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            dto.equipmentItems.Add(new EquipmentSaveDTO
+            {
+                slotId = slotId,
+                itemId = itemId,
+                durability = durability
+            });
+        }
+
+        private static void AddLegacyFacility(LobbySaveDTO dto, string facilityId, int level)
+        {
+            dto.facilities.Add(new FacilitySaveDTO
+            {
+                facilityId = facilityId,
+                level = level
+            });
+        }
+
+        private static int GetStashSlotIndex(StashSlot slot)
+        {
+            if (slot == null)
+                return 0;
+
+            return Mathf.Max(0, slot.gridY) * DefaultStashColumnCount + Mathf.Max(0, slot.gridX);
+        }
+
+        private static int GetStashGridX(ItemSaveDTO item)
+        {
+            if (item == null)
+                return 0;
+
+            return item.x >= DefaultStashColumnCount && item.y == 0
+                ? item.x % DefaultStashColumnCount
+                : item.x;
+        }
+
+        private static int GetStashGridY(ItemSaveDTO item)
+        {
+            if (item == null)
+                return 0;
+
+            return item.x >= DefaultStashColumnCount && item.y == 0
+                ? item.x / DefaultStashColumnCount
+                : item.y;
         }
     }
 }

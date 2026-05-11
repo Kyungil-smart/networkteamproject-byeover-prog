@@ -12,7 +12,6 @@ namespace DeadZone.Actors.UI
     public class InGameMenuUI : MonoBehaviour
     {
         private const string SettingPopupName = "Popup_Setting";
-        private const int PopupSortingOrder = 10000;
 
         [Header("팝업")]
         [SerializeField] private GameObject popupPause;
@@ -210,7 +209,6 @@ namespace DeadZone.Actors.UI
                 canvas = popup.AddComponent<Canvas>();
 
             canvas.overrideSorting = true;
-            canvas.sortingOrder = PopupSortingOrder;
 
             if (popup.GetComponent<GraphicRaycaster>() == null)
                 popup.AddComponent<GraphicRaycaster>();

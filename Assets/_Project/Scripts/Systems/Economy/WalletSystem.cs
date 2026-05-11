@@ -83,6 +83,12 @@ namespace DeadZone.Systems
             RefreshGoodsText();
         }
 
+        public void SetCreditsLocalTest(int credits)
+        {
+            Credits.Value = Mathf.Max(0, credits);
+            RefreshGoodsText();
+        }
+
         public void Earn(int amount)
         {
             if (!IsServer) return;
