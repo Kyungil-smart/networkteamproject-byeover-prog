@@ -1,9 +1,11 @@
 ﻿using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections.Generic;
 
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Raid;
 
 namespace DeadZone.Actors
 {
@@ -98,6 +100,45 @@ namespace DeadZone.Actors
 
         public AmmoDataSO CurrentAmmoData
             => Lookup<AmmoDataSO>(CurrentWeaponState.loadedAmmoId.ToString());
+
+        public List<EquipmentSaveData> ExportSnapshot()
+        {
+            return new List<EquipmentSaveData>
+            {
+                CreateEquipmentSaveData("Head", HeadSlotId.Value, default, HelmetDurability.Value),
+                CreateEquipmentSaveData("Torso", TorsoSlotId.Value, default, ArmorDurability.Value),
+                CreateEquipmentSaveData("Backpack", BackpackSlotId.Value, default, 0f),
+                CreateEquipmentSaveData("Primary1", Primary1Id.Value, Primary1State.Value, 0f),
+                CreateEquipmentSaveData("Primary2", Primary2Id.Value, Primary2State.Value, 0f),
+                CreateEquipmentSaveData("Secondary", SecondaryId.Value, SecondaryState.Value, 0f),
+                CreateEquipmentSaveData("Melee", MeleeId.Value, default, 0f)
+            };
+        }
+
+        public int ImportSnapshot(
+            IReadOnlyList<EquipmentSaveData> snapshot,
+            string requestedCurrentEquippedItemId)
+        {
+            if (!IsServer)
+                return 0;
+
+            ClearAllSlots();
+
+            if (snapshot == null || snapshot.Count == 0)
+                return 0;
+
+            int appliedCount = 0;
+
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                if (TryApplyEquipmentSnapshot(snapshot[i]))
+                    appliedCount++;
+            }
+
+            CurrentEquipped.Value = ResolveCurrentEquipped(requestedCurrentEquippedItemId);
+
+            return appliedCount;
+        }
 
         /// <summary>
         /// 현재 장착된 무기가 어느 무기 슬롯에 해당하는지 확인한다.
@@ -257,6 +298,144 @@ namespace DeadZone.Actors
                 maxAmmo = weapon != null ? weapon.magSize : 0,
                 reason = (byte)reason
             });
+        }
+
+        private EquipmentSaveData CreateEquipmentSaveData(
+            string slotId,
+            FixedString64Bytes itemId,
+            WeaponState weaponState,
+            float durability)
+        {
+            string itemIdText = itemId.ToString();
+
+            return new EquipmentSaveData
+            {
+                slotId = slotId,
+                itemId = itemIdText,
+                instanceId = string.IsNullOrWhiteSpace(itemIdText) ? string.Empty : $"{slotId}_{itemIdText}",
+                loadedAmmoId = weaponState.loadedAmmoId.ToString(),
+                currentAmmo = weaponState.currentAmmo,
+                currentDurability = durability
+            };
+        }
+
+        private void ClearAllSlots()
+        {
+            HeadSlotId.Value = "";
+            TorsoSlotId.Value = "";
+            EquipBackpack(new FixedString64Bytes(""));
+            Primary1Id.Value = "";
+            Primary2Id.Value = "";
+            SecondaryId.Value = "";
+            MeleeId.Value = "";
+            CurrentEquipped.Value = "";
+
+            Primary1State.Value = default;
+            Primary2State.Value = default;
+            SecondaryState.Value = default;
+            HelmetDurability.Value = 0f;
+            ArmorDurability.Value = 0f;
+        }
+
+        private bool TryApplyEquipmentSnapshot(EquipmentSaveData savedItem)
+        {
+            if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.slotId))
+                return false;
+
+            FixedString64Bytes itemId = string.IsNullOrWhiteSpace(savedItem.itemId)
+                ? new FixedString64Bytes("")
+                : new FixedString64Bytes(savedItem.itemId);
+
+            switch (savedItem.slotId)
+            {
+                case "Head":
+                    HeadSlotId.Value = itemId;
+                    HelmetDurability.Value = ResolveDurability<HelmetDataSO>(savedItem.itemId, savedItem.currentDurability);
+                    return itemId.Length > 0;
+
+                case "Torso":
+                    TorsoSlotId.Value = itemId;
+                    ArmorDurability.Value = ResolveDurability<ArmorDataSO>(savedItem.itemId, savedItem.currentDurability);
+                    return itemId.Length > 0;
+
+                case "Backpack":
+                    EquipBackpack(itemId);
+                    return itemId.Length > 0;
+
+                case "Primary1":
+                    Primary1Id.Value = itemId;
+                    Primary1State.Value = CreateWeaponState(savedItem);
+                    return itemId.Length > 0;
+
+                case "Primary2":
+                    Primary2Id.Value = itemId;
+                    Primary2State.Value = CreateWeaponState(savedItem);
+                    return itemId.Length > 0;
+
+                case "Secondary":
+                    SecondaryId.Value = itemId;
+                    SecondaryState.Value = CreateWeaponState(savedItem);
+                    return itemId.Length > 0;
+
+                case "Melee":
+                    MeleeId.Value = itemId;
+                    return itemId.Length > 0;
+
+                default:
+                    Debug.LogWarning($"[RaidLoadout] Unknown equipment slotId={savedItem.slotId}, itemId={savedItem.itemId}", this);
+                    return false;
+            }
+        }
+
+        private WeaponState CreateWeaponState(EquipmentSaveData savedItem)
+        {
+            return new WeaponState
+            {
+                loadedAmmoId = string.IsNullOrWhiteSpace(savedItem.loadedAmmoId)
+                    ? new FixedString64Bytes("")
+                    : new FixedString64Bytes(savedItem.loadedAmmoId),
+                currentAmmo = Mathf.Max(0, savedItem.currentAmmo)
+            };
+        }
+
+        private float ResolveDurability<T>(string itemId, float savedDurability) where T : ItemDataSO
+        {
+            if (savedDurability > 0f)
+                return savedDurability;
+
+            if (string.IsNullOrWhiteSpace(itemId))
+                return 0f;
+
+            if (Lookup<T>(itemId) is HelmetDataSO helmet)
+                return helmet.maxDurability;
+
+            if (Lookup<T>(itemId) is ArmorDataSO armor)
+                return armor.maxDurability;
+
+            return 0f;
+        }
+
+        private FixedString64Bytes ResolveCurrentEquipped(string requestedItemId)
+        {
+            if (!string.IsNullOrWhiteSpace(requestedItemId))
+            {
+                FixedString64Bytes requested = new FixedString64Bytes(requestedItemId);
+
+                if (requested == Primary1Id.Value ||
+                    requested == Primary2Id.Value ||
+                    requested == SecondaryId.Value ||
+                    requested == MeleeId.Value)
+                {
+                    return requested;
+                }
+            }
+
+            if (Primary1Id.Value.Length > 0) return Primary1Id.Value;
+            if (Primary2Id.Value.Length > 0) return Primary2Id.Value;
+            if (SecondaryId.Value.Length > 0) return SecondaryId.Value;
+            if (MeleeId.Value.Length > 0) return MeleeId.Value;
+
+            return new FixedString64Bytes("");
         }
 
         // 임시 슬롯 업데이트함수 

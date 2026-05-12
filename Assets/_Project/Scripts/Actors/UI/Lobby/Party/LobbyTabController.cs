@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using DeadZone.Network._LSH_Temp;
 using DeadZone.Systems.Save;
 using TMPro;
 using UnityEngine;
@@ -157,6 +158,7 @@ namespace DeadZone.Actors.UI
                     Debug.LogWarning("[LobbyTabController] LobbySaveService를 찾지 못해 시설 씬 전환 전 저장을 건너뜁니다.", this);
             }
 
+            LocalNetworkTestBootstrap.SuppressNextAutoStart("Lobby to facility scene transition");
             LoadingScreenService.LoadSceneOrFallback(facilitySceneName);
         }
 

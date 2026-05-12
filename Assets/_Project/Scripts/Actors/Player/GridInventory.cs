@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Raid;
 
 namespace DeadZone.Actors
 {
@@ -71,6 +72,65 @@ namespace DeadZone.Actors
             }
 
             return addedAllRemaining;
+        }
+
+        public List<InventoryItemSaveData> ExportSnapshot()
+        {
+            List<InventoryItemSaveData> snapshot = new();
+
+            if (ServerGrid == null)
+                return snapshot;
+
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                ItemSlotData slot = ServerGrid[i];
+                string itemId = slot.itemId.ToString();
+
+                if (string.IsNullOrWhiteSpace(itemId))
+                    continue;
+
+                snapshot.Add(new InventoryItemSaveData
+                {
+                    itemId = itemId,
+                    instanceId = $"{itemId}_{slot.gridX}_{slot.gridY}_{i}",
+                    gridX = slot.gridX,
+                    gridY = slot.gridY,
+                    rotated = slot.rotated,
+                    stackCount = slot.stackCount,
+                    currentDurability = slot.currentDurability,
+                    currentAmmo = slot.currentAmmo
+                });
+            }
+
+            return snapshot;
+        }
+
+        public int ImportSnapshot(IReadOnlyList<InventoryItemSaveData> snapshot)
+        {
+            if (!IsServer)
+                return 0;
+
+            ServerGrid.Clear();
+
+            if (snapshot == null || snapshot.Count == 0)
+                return 0;
+
+            EnsureItemDatabase();
+
+            List<ItemSlotData> importedSlots = new(snapshot.Count);
+
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                InventoryItemSaveData savedItem = snapshot[i];
+
+                if (!TryCreateSlotFromSnapshot(savedItem, importedSlots, out ItemSlotData slot))
+                    continue;
+
+                ServerGrid.Add(slot);
+                importedSlots.Add(slot);
+            }
+
+            return importedSlots.Count;
         }
 
         /// <summary>
@@ -731,8 +791,7 @@ namespace DeadZone.Actors
 
         private bool TryGetAmmoData(FixedString64Bytes ammoId, out AmmoDataSO ammo)
         {
-            if (itemDb == null)
-                itemDb = ServiceLocator.Get<IItemDatabase>();
+            EnsureItemDatabase();
 
             ammo = itemDb?.GetById<AmmoDataSO>(ammoId.ToString());
             return ammo != null;
@@ -754,13 +813,66 @@ namespace DeadZone.Actors
                 return baseCapacity;
 
             if (itemDb == null)
-                itemDb = ServiceLocator.Get<IItemDatabase>();
+                EnsureItemDatabase();
 
             BackpackDataSO backpack = itemDb?.GetById<BackpackDataSO>(backpackId);
             if (backpack == null)
                 return baseCapacity;
 
             return Mathf.Clamp(baseCapacity + Mathf.Max(0, backpack.extraSlots), baseCapacity, 40);
+        }
+
+        private void EnsureItemDatabase()
+        {
+            if (itemDb == null)
+                itemDb = ServiceLocator.Get<IItemDatabase>();
+        }
+
+        private bool TryCreateSlotFromSnapshot(
+            InventoryItemSaveData savedItem,
+            List<ItemSlotData> importedSlots,
+            out ItemSlotData slot)
+        {
+            slot = default;
+
+            if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
+                return false;
+
+            ItemDataSO item = itemDb?.GetById(savedItem.itemId);
+            if (item == null)
+            {
+                Debug.LogWarning($"[RaidLoadout] Missing ItemDataSO while importing inventory. itemId={savedItem.itemId}", this);
+                return false;
+            }
+
+            if (savedItem.gridX < byte.MinValue || savedItem.gridX > byte.MaxValue ||
+                savedItem.gridY < byte.MinValue || savedItem.gridY > byte.MaxValue)
+            {
+                Debug.LogWarning($"[RaidLoadout] Invalid inventory position. itemId={savedItem.itemId}, x={savedItem.gridX}, y={savedItem.gridY}", this);
+                return false;
+            }
+
+            byte x = (byte)savedItem.gridX;
+            byte y = (byte)savedItem.gridY;
+
+            if (!CanPlaceAt(importedSlots, x, y, item.gridSize, savedItem.rotated))
+            {
+                Debug.LogWarning($"[RaidLoadout] Cannot place inventory snapshot item. itemId={savedItem.itemId}, x={x}, y={y}, rotated={savedItem.rotated}", this);
+                return false;
+            }
+
+            slot = new ItemSlotData
+            {
+                itemId = savedItem.itemId,
+                gridX = x,
+                gridY = y,
+                rotated = savedItem.rotated,
+                stackCount = (ushort)Mathf.Clamp(savedItem.stackCount, 1, Mathf.Max(1, item.maxStackSize)),
+                currentDurability = Mathf.Max(0f, savedItem.currentDurability),
+                currentAmmo = (ushort)Mathf.Clamp(savedItem.currentAmmo, 0, ushort.MaxValue)
+            };
+
+            return true;
         }
 
         private bool CanFitWithinActiveGrid(byte x, byte y, int width, int height)

@@ -138,9 +138,7 @@ namespace DeadZone.Network
 
                 if (DisableFirestorePersistence)
                 {
-                    Debug.Log("[CloudSaveSystem] Disabling Firestore persistence before first read/write");
-                    firestore.Settings.PersistenceEnabled = false;
-                    Debug.Log("[CloudSaveSystem] Firestore persistence disabled");
+                    TryDisableFirestorePersistence(firestore);
                 }
 
                 db = firestore;
@@ -152,6 +150,23 @@ namespace DeadZone.Network
                 db = null;
                 Debug.LogError($"[CloudSaveSystem] Firestore attach failed: {ex}");
                 return false;
+            }
+        }
+
+        private static void TryDisableFirestorePersistence(FirebaseFirestore firestore)
+        {
+            if (firestore == null)
+                return;
+
+            try
+            {
+                Debug.Log("[CloudSaveSystem] Disabling Firestore persistence before first read/write");
+                firestore.Settings.PersistenceEnabled = false;
+                Debug.Log("[CloudSaveSystem] Firestore persistence disabled");
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.LogWarning($"[CloudSaveSystem] Firestore persistence setting was already locked. Continuing with existing Firestore instance. Reason={exception.Message}");
             }
         }
 
@@ -220,8 +235,11 @@ namespace DeadZone.Network
             if (!HasLoadedData) return;
             if (string.IsNullOrWhiteSpace(loadedFirebaseUid)) return;
 
-            Debug.Log("[CloudSaveSystem] Returned to Hideout -> upload");
-            await UploadAsync();
+            bool isInParty = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+            Debug.Log($"[HideoutLoad] Enter Hideout. isInParty={isInParty}, userId={loadedFirebaseUid}");
+            Debug.Log("[Save] Save requested. reason=Enter Hideout auto upload");
+            Debug.LogWarning("[Save] Save skipped because load is not completed yet.");
+            await Task.CompletedTask;
         }
 
         private async void OnQuestAccepted(QuestAcceptedEvent e)
@@ -957,6 +975,13 @@ namespace DeadZone.Network
 
             PlayerHousingProgressDTO dto = progress.ToSaveData();
             dto.Normalize();
+
+            if (IsDefaultHousingProgress(dto) && HasNonDefaultHousingProgress())
+            {
+                Debug.LogWarning("[Save] Save skipped because load is not completed yet. Default PlayerHousingProgress would overwrite existing housing save.");
+                return false;
+            }
+
             ApplyHousingProgressToCloudFields(dto);
             return true;
         }
@@ -1345,7 +1370,9 @@ namespace DeadZone.Network
                 x = item.x,
                 y = item.y,
                 rotated = item.rotated,
-                stackCount = item.stackCount
+                stackCount = item.stackCount,
+                currentDurability = item.currentDurability,
+                currentAmmo = item.currentAmmo
             };
         }
 
@@ -1390,7 +1417,9 @@ namespace DeadZone.Network
                 x = item.x,
                 y = item.y,
                 rotated = item.rotated,
-                stackCount = item.stackCount
+                stackCount = item.stackCount,
+                currentDurability = item.currentDurability,
+                currentAmmo = item.currentAmmo
             };
         }
 
@@ -1458,6 +1487,8 @@ namespace DeadZone.Network
                         gridX = GetStashGridX(item),
                         gridY = GetStashGridY(item),
                         rotated = item.rotated,
+                        currentDurability = Mathf.RoundToInt(Mathf.Max(0f, item.currentDurability)),
+                        currentAmmo = Mathf.Max(0, item.currentAmmo),
                     });
                 }
             }
@@ -1547,6 +1578,18 @@ namespace DeadZone.Network
 
         private void ApplyHousingProgressToCloudFields(PlayerHousingProgressDTO dto)
         {
+            if (dto == null)
+                return;
+
+            dto.Normalize();
+
+            if (IsDefaultHousingProgress(dto) && HasNonDefaultHousingProgress())
+            {
+                Debug.LogWarning("[Party] WARNING: Save data reset attempted during party creation. caller=CloudSaveSystem.ApplyHousingProgressToCloudFields");
+                Debug.LogWarning("[Save] Save skipped because load is not completed yet.");
+                return;
+            }
+
             currentData.facilities.workbench = dto.workbenchLevel;
             currentData.facilities.medical = dto.medicalLevel;
             currentData.facilities.gym = dto.gymLevel;
@@ -1556,6 +1599,51 @@ namespace DeadZone.Network
             currentData.facilities.commStation = dto.commStationLevel;
 
             MirrorFacilitiesToLobbySave();
+        }
+
+        private bool HasNonDefaultHousingProgress()
+        {
+            if (currentData == null)
+                return false;
+
+            if (currentData.facilities != null &&
+                (currentData.facilities.workbench > 1 ||
+                 currentData.facilities.medical > 1 ||
+                 currentData.facilities.gym > 1 ||
+                 currentData.facilities.stash > 1 ||
+                 currentData.facilities.kitchen > 1 ||
+                 currentData.facilities.bed > 1 ||
+                 currentData.facilities.commStation > 1))
+            {
+                return true;
+            }
+
+            if (currentData.lobbySave?.facilities == null)
+                return false;
+
+            for (int i = 0; i < currentData.lobbySave.facilities.Count; i++)
+            {
+                LobbyFacilityCloudData facility = currentData.lobbySave.facilities[i];
+
+                if (facility != null && facility.level > 1)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDefaultHousingProgress(PlayerHousingProgressDTO dto)
+        {
+            if (dto == null)
+                return true;
+
+            return dto.workbenchLevel <= 1 &&
+                   dto.medicalLevel <= 1 &&
+                   dto.gymLevel <= 1 &&
+                   dto.stashLevel <= 1 &&
+                   dto.kitchenLevel <= 1 &&
+                   dto.bedLevel <= 1 &&
+                   dto.commStationLevel <= 1;
         }
 
         private void ApplyFacilityToHousingProgressDTO(PlayerHousingProgressDTO dto, LobbyFacilityCloudData facility)
@@ -1760,7 +1848,9 @@ namespace DeadZone.Network
                         x = GetStashSlotIndex(slot),
                         y = 0,
                         rotated = slot.rotated,
-                        stackCount = slot.stackCount
+                        stackCount = slot.stackCount,
+                        currentDurability = Mathf.Max(0, slot.currentDurability),
+                        currentAmmo = Mathf.Max(0, slot.currentAmmo)
                     });
                 }
             }

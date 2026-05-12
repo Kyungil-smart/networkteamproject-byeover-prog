@@ -2,9 +2,11 @@ using System.Threading.Tasks;
 
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 using DeadZone.Core;
 using DeadZone.Network;
+using DeadZone.Systems;
 using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors
@@ -44,13 +46,20 @@ namespace DeadZone.Actors
                 return;
 
             EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+            EventBus.Subscribe<SceneChangedEvent>(HandleSceneChanged);
+            SceneManager.sceneLoaded += HandleUnitySceneLoaded;
             TryApplyLoadedCloudDataToServer("PlayerHousingSaveSyncer spawned");
+            TryApplyLoadedDataForCurrentHideoutScene("PlayerHousingSaveSyncer spawned in Hideout");
         }
 
         public override void OnNetworkDespawn()
         {
             if (IsOwner)
+            {
                 EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+                EventBus.Unsubscribe<SceneChangedEvent>(HandleSceneChanged);
+                SceneManager.sceneLoaded -= HandleUnitySceneLoaded;
+            }
 
             base.OnNetworkDespawn();
         }
@@ -62,6 +71,8 @@ namespace DeadZone.Actors
         {
             if (!IsServer)
                 return;
+
+            Debug.Log($"[Save] Save requested. reason={saveReason}", this);
 
             if (progress == null)
                 progress = GetComponent<PlayerHousingProgress>();
@@ -191,12 +202,62 @@ namespace DeadZone.Actors
             TryApplyLoadedCloudDataToServer("Cloud Save loaded");
         }
 
+        private void HandleSceneChanged(SceneChangedEvent e)
+        {
+            string sceneName = e.sceneName.ToString();
+
+            if (!IsHideoutScene(sceneName))
+                return;
+
+            TryApplyLoadedCloudDataToServer("Hideout network scene loaded");
+        }
+
+        private void HandleUnitySceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!IsOwner)
+                return;
+
+            if (!IsHideoutScene(scene.name))
+                return;
+
+            TryApplyLoadedCloudDataToServer("Hideout unity scene loaded");
+        }
+
+        private void TryApplyLoadedDataForCurrentHideoutScene(string reason)
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+
+            if (!IsHideoutScene(activeScene.name))
+                return;
+
+            TryApplyLoadedCloudDataToServer(reason);
+        }
+
         private void TryApplyLoadedCloudDataToServer(string reason)
         {
             if (!IsOwner)
                 return;
 
-            if (!TryCreateLoadedHousingProgressDTO(out PlayerHousingProgressDTO dto))
+            bool isInParty = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+            string userId = GetCurrentUserId();
+            bool serverSaveExists = HasLoadedServerHousingData();
+            bool localJsonExists = HasLocalJsonSave();
+
+            Debug.Log($"[HideoutLoad] Enter Hideout. isInParty={isInParty}, userId={userId}", this);
+            Debug.Log($"[HideoutLoad] Server save exists={serverSaveExists}", this);
+            Debug.Log($"[HideoutLoad] Local json exists={localJsonExists}", this);
+
+            if (!TryCreateLoadedHousingProgressDTO(out PlayerHousingProgressDTO dto, out string source))
+            {
+                dto = new PlayerHousingProgressDTO();
+                dto.Normalize();
+                source = "Default";
+                Debug.Log("[Facility] Default level generated. reason=No server or local facility save data", this);
+            }
+
+            Debug.Log($"[HideoutLoad] Applying facility levels from={source}", this);
+
+            if (dto == null)
                 return;
 
             ApplyHousingStateToLobbySave(dto, reason);
@@ -273,9 +334,10 @@ namespace DeadZone.Actors
                 this);
         }
 
-        private bool TryCreateLoadedHousingProgressDTO(out PlayerHousingProgressDTO dto)
+        private bool TryCreateLoadedHousingProgressDTO(out PlayerHousingProgressDTO dto, out string source)
         {
             dto = null;
+            source = string.Empty;
 
             CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
 
@@ -286,6 +348,7 @@ namespace DeadZone.Actors
                 if (dto != null)
                 {
                     dto.Normalize();
+                    source = "Server";
                     return true;
                 }
             }
@@ -301,6 +364,7 @@ namespace DeadZone.Actors
                 ApplyFacilityStateToDTO(dto, facilityState.Facilities[i]);
 
             dto.Normalize();
+            source = "LocalJson";
             return true;
         }
 
@@ -314,17 +378,19 @@ namespace DeadZone.Actors
 
             if (progress == null)
             {
-                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress媛 ?놁뼱 ?섏슦吏?????곗씠?곕? ?곸슜?????놁뒿?덈떎.", this);
+                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress가 없어 하우징 저장 데이터를 적용할 수 없습니다.", this);
                 return;
             }
 
             progress.ApplySaveDataFromServer(dto);
+            ApplyToSceneFacilities(dto);
+            RefreshOpenHideoutWindows();
 
             if (!logSaveRequest)
                 return;
 
             Debug.Log(
-                $"[PlayerHousingSaveSyncer] ?섏슦吏?????곗씠?곕? ?쒕쾭 PlayerHousingProgress???곸슜?덉뒿?덈떎. ?ъ쑀: {reason}",
+                $"[PlayerHousingSaveSyncer] 하우징 저장 데이터를 서버 PlayerHousingProgress에 적용했습니다. 사유: {reason}",
                 this);
         }
 
@@ -345,6 +411,105 @@ namespace DeadZone.Actors
                 case "kitchen": dto.kitchenLevel = Mathf.Max(dto.kitchenLevel, safeLevel); break;
                 case "bed": dto.bedLevel = Mathf.Max(dto.bedLevel, safeLevel); break;
             }
+        }
+
+        private static void ApplyToSceneFacilities(PlayerHousingProgressDTO dto)
+        {
+            if (dto == null)
+                return;
+
+            FacilityBase[] facilities = FindObjectsByType<FacilityBase>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < facilities.Length; i++)
+            {
+                FacilityBase facility = facilities[i];
+
+                if (facility == null)
+                    continue;
+
+                if (!CanWriteSceneFacilityLevel(facility))
+                    continue;
+
+                int previousLevel = facility.GetCurrentLevel();
+                int loadedLevel = dto.GetLevel(facility.Type);
+                int finalLevel = facility.CanSetLevel(loadedLevel)
+                    ? loadedLevel
+                    : previousLevel;
+
+                if (facility.CanSetLevel(finalLevel))
+                    facility.CurrentLevel.Value = finalLevel;
+
+                Debug.Log(
+                    $"[Facility] Apply level. type={facility.Type}, loadedLevel={loadedLevel}, previousLevel={previousLevel}, finalLevel={finalLevel}",
+                    facility);
+            }
+        }
+
+        private static bool CanWriteSceneFacilityLevel(FacilityBase facility)
+        {
+            if (facility == null)
+                return false;
+
+            if (!facility.IsSpawned)
+                return true;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            return networkManager != null && networkManager.IsServer;
+        }
+
+        private static void RefreshOpenHideoutWindows()
+        {
+            DeadZone.Actors.UI.Hideout.FacilityUpgradeWindowUI[] upgradeWindows =
+                FindObjectsByType<DeadZone.Actors.UI.Hideout.FacilityUpgradeWindowUI>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+            for (int i = 0; i < upgradeWindows.Length; i++)
+            {
+                if (upgradeWindows[i] != null && upgradeWindows[i].IsOpen)
+                    upgradeWindows[i].Refresh();
+            }
+
+            DeadZone.Actors.UI.Hideout.FacilityCraftWindowUI[] craftWindows =
+                FindObjectsByType<DeadZone.Actors.UI.Hideout.FacilityCraftWindowUI>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+            for (int i = 0; i < craftWindows.Length; i++)
+            {
+                if (craftWindows[i] != null && craftWindows[i].IsOpen)
+                    craftWindows[i].Refresh();
+            }
+        }
+
+        private static bool IsHideoutScene(string sceneName)
+        {
+            return string.Equals(sceneName, "Hideout", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(sceneName, "HideOut", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetCurrentUserId()
+        {
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
+
+            if (cloudSaveSystem != null && !string.IsNullOrWhiteSpace(cloudSaveSystem.LoadedFirebaseUid))
+                return cloudSaveSystem.LoadedFirebaseUid;
+
+            return "unknown";
+        }
+
+        private static bool HasLoadedServerHousingData()
+        {
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
+            return cloudSaveSystem != null && cloudSaveSystem.HasLoadedData;
+        }
+
+        private static bool HasLocalJsonSave()
+        {
+            LobbySaveService saveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            return saveService != null && saveService.LocalJsonExists();
         }
 
         private static string NormalizeFacilityId(string facilityId)

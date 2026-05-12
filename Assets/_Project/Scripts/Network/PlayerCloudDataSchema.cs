@@ -96,6 +96,8 @@ namespace DeadZone.Network
         [FirestoreProperty] public int y { get; set; }
         [FirestoreProperty] public bool rotated { get; set; }
         [FirestoreProperty] public int stackCount { get; set; }
+        [FirestoreProperty] public float currentDurability { get; set; }
+        [FirestoreProperty] public int currentAmmo { get; set; }
     }
 
     [FirestoreData]
