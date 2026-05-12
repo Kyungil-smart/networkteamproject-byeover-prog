@@ -19,7 +19,12 @@ namespace DeadZone.Systems.Save
 
         private void Start()
         {
-            if (captureOnStart)
+            if (!captureOnStart)
+                return;
+
+            if (HasSavedFacilityState())
+                ApplyStateToFacilities();
+            else
                 CaptureFacilitiesToState();
         }
 
@@ -57,6 +62,74 @@ namespace DeadZone.Systems.Save
             facilityState.SetFacilities(capturedFacilities);
         }
 
+        [Button("????곹깭瑜??쒖꽕濡??곸슜")]
+        public void ApplyStateToFacilities()
+        {
+            if (facilityState == null)
+            {
+                Debug.LogWarning("[HideoutFacilitySaveBinder] LobbyFacilityState媛 ?곌껐?섏? ?딆븯?듬땲??", this);
+                return;
+            }
+
+            if (facilities == null || facilities.Length == 0)
+            {
+                Debug.LogWarning("[HideoutFacilitySaveBinder] FacilityBase ?뚯깮 ?쒖꽕 李몄“媛 鍮꾩뼱 ?덉뒿?덈떎.", this);
+                return;
+            }
+
+            for (int i = 0; i < facilities.Length; i++)
+            {
+                FacilityBase facility = facilities[i];
+
+                if (facility == null)
+                    continue;
+
+                if (!TryGetSavedLevel(facility, out int savedLevel))
+                    continue;
+
+                if (!facility.CanSetLevel(savedLevel))
+                    continue;
+
+                if (facility.IsSpawned && !facility.IsServer)
+                    continue;
+
+                facility.CurrentLevel.Value = savedLevel;
+            }
+        }
+
+        private bool HasSavedFacilityState()
+        {
+            return facilityState != null &&
+                   facilityState.Facilities != null &&
+                   facilityState.Facilities.Count > 0;
+        }
+
+        private bool TryGetSavedLevel(FacilityBase facility, out int level)
+        {
+            level = 1;
+
+            if (facility == null || facilityState == null || facilityState.Facilities == null)
+                return false;
+
+            string facilityId = NormalizeFacilityId(GetFacilityId(facility));
+
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+            {
+                FacilitySaveDTO savedFacility = facilityState.Facilities[i];
+
+                if (savedFacility == null)
+                    continue;
+
+                if (NormalizeFacilityId(savedFacility.facilityId) != facilityId)
+                    continue;
+
+                level = savedFacility.level;
+                return true;
+            }
+
+            return false;
+        }
+
         private static string GetFacilityId(FacilityBase facility)
         {
             if (facility == null)
@@ -67,6 +140,13 @@ namespace DeadZone.Systems.Save
                 return facilityData.type.ToString();
 
             return facility.GetType().Name;
+        }
+
+        private static string NormalizeFacilityId(string facilityId)
+        {
+            return string.IsNullOrWhiteSpace(facilityId)
+                ? string.Empty
+                : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
         }
 
 #if UNITY_EDITOR

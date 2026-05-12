@@ -501,10 +501,12 @@ namespace DeadZone.Network
             EnsureCloudDataContainers();
             EnsureLobbySaveContainers();
 
-            if (HasLobbySaveData(currentData.lobbySave))
-                return ToLobbySaveDTO(currentData.lobbySave);
+            LobbySaveDTO dto = HasLobbySaveData(currentData.lobbySave)
+                ? ToLobbySaveDTO(currentData.lobbySave)
+                : CreateLobbySaveDTOFromLegacyCloudFields();
 
-            return CreateLobbySaveDTOFromLegacyCloudFields();
+            ReconcileLegacyFacilitiesIntoLobbySaveDTO(dto);
+            return dto;
         }
 
         /// <summary>
@@ -1370,13 +1372,13 @@ namespace DeadZone.Network
 
             switch (NormalizeFacilityId(facility.facilityId))
             {
-                case "workbench": dto.workbenchLevel = safeLevel; break;
-                case "commstation": dto.commStationLevel = safeLevel; break;
-                case "medical": dto.medicalLevel = safeLevel; break;
-                case "gym": dto.gymLevel = safeLevel; break;
-                case "stash": dto.stashLevel = safeLevel; break;
-                case "kitchen": dto.kitchenLevel = safeLevel; break;
-                case "bed": dto.bedLevel = safeLevel; break;
+                case "workbench": dto.workbenchLevel = Mathf.Max(dto.workbenchLevel, safeLevel); break;
+                case "commstation": dto.commStationLevel = Mathf.Max(dto.commStationLevel, safeLevel); break;
+                case "medical": dto.medicalLevel = Mathf.Max(dto.medicalLevel, safeLevel); break;
+                case "gym": dto.gymLevel = Mathf.Max(dto.gymLevel, safeLevel); break;
+                case "stash": dto.stashLevel = Mathf.Max(dto.stashLevel, safeLevel); break;
+                case "kitchen": dto.kitchenLevel = Mathf.Max(dto.kitchenLevel, safeLevel); break;
+                case "bed": dto.bedLevel = Mathf.Max(dto.bedLevel, safeLevel); break;
             }
         }
 
@@ -1482,6 +1484,52 @@ namespace DeadZone.Network
             {
                 facilityId = facilityId,
                 level = level
+            });
+        }
+
+        private void ReconcileLegacyFacilitiesIntoLobbySaveDTO(LobbySaveDTO dto)
+        {
+            if (dto == null || currentData?.facilities == null)
+                return;
+
+            UpsertFacilitySaveDTO(dto, "Workbench", currentData.facilities.workbench);
+            UpsertFacilitySaveDTO(dto, "CommStation", currentData.facilities.commStation);
+            UpsertFacilitySaveDTO(dto, "Medical", currentData.facilities.medical);
+            UpsertFacilitySaveDTO(dto, "Gym", currentData.facilities.gym);
+            UpsertFacilitySaveDTO(dto, "Stash", currentData.facilities.stash);
+            UpsertFacilitySaveDTO(dto, "Kitchen", currentData.facilities.kitchen);
+            UpsertFacilitySaveDTO(dto, "Bed", currentData.facilities.bed);
+        }
+
+        private static void UpsertFacilitySaveDTO(LobbySaveDTO dto, string facilityId, int level)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(facilityId))
+                return;
+
+            dto.facilities ??= new List<FacilitySaveDTO>();
+
+            string normalizedId = NormalizeFacilityId(facilityId);
+            int safeLevel = Mathf.Max(1, level);
+
+            for (int i = 0; i < dto.facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = dto.facilities[i];
+
+                if (facility == null)
+                    continue;
+
+                if (NormalizeFacilityId(facility.facilityId) != normalizedId)
+                    continue;
+
+                facility.facilityId = facilityId;
+                facility.level = Mathf.Max(Mathf.Max(1, facility.level), safeLevel);
+                return;
+            }
+
+            dto.facilities.Add(new FacilitySaveDTO
+            {
+                facilityId = facilityId,
+                level = safeLevel
             });
         }
 
