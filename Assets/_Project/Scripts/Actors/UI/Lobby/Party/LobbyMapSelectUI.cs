@@ -161,7 +161,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            if (!raidStartController.CanStartRaid(out string reason))
+            if (IsNetworkSessionActive() && !raidStartController.CanStartRaid(out string reason))
             {
                 SetStatus(reason);
                 Refresh();
@@ -213,7 +213,7 @@ namespace DeadZone.Actors.UI
                 btnReady.interactable = IsNetworkSessionActive();
 
             if (btnStart != null)
-                btnStart.interactable = hasController && canLocalStartRaid && raidStartController.CanStartRaid();
+                btnStart.interactable = hasController && canLocalStartRaid && (!IsNetworkSessionActive() || raidStartController.CanStartRaid());
 
             if (iconLock != null)
                 iconLock.SetActive(!canMapB);
@@ -396,7 +396,7 @@ namespace DeadZone.Actors.UI
         private bool CanLocalPlayerStartRaid()
         {
             if (!IsNetworkSessionActive())
-                return false;
+                return true;
 
             if (Unity.Netcode.NetworkManager.Singleton == null ||
                 !Unity.Netcode.NetworkManager.Singleton.IsClient)

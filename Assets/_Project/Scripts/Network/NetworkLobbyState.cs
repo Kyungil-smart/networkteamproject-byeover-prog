@@ -223,7 +223,8 @@ namespace DeadZone.Network
                 DisplayName = ToFixedDisplayName(fallbackDisplayName),
                 IsHost = clientId == NetworkManager.ServerClientId,
                 IsReady = false,
-                HasUnlockedMapB = false
+                HasUnlockedMapB = false,
+                IconColorRgba = CreateRandomIconColor()
             });
 
             LogDebug($"플레이어 등록. ClientId={clientId}");
@@ -301,6 +302,16 @@ namespace DeadZone.Network
                 sanitized = sanitized.Substring(0, maxDisplayNameCharacters);
 
             return new FixedString64Bytes(sanitized);
+        }
+
+        private uint CreateRandomIconColor()
+        {
+            Color color = Color.HSVToRGB(UnityEngine.Random.value, 0.7f, 0.95f);
+            return PartyPlayerColorCache.ToRgba(new Color32(
+                (byte)Mathf.RoundToInt(color.r * byte.MaxValue),
+                (byte)Mathf.RoundToInt(color.g * byte.MaxValue),
+                (byte)Mathf.RoundToInt(color.b * byte.MaxValue),
+                byte.MaxValue));
         }
 
         private void LogDebug(string msg)

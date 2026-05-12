@@ -14,6 +14,7 @@ namespace DeadZone.Network
         public bool IsHost;
         public bool IsReady;
         public bool HasUnlockedMapB;
+        public uint IconColorRgba;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -22,6 +23,7 @@ namespace DeadZone.Network
             serializer.SerializeValue(ref IsHost);
             serializer.SerializeValue(ref IsReady);
             serializer.SerializeValue(ref HasUnlockedMapB);
+            serializer.SerializeValue(ref IconColorRgba);
         }
 
         public bool Equals(LobbyPlayerState other)
@@ -30,7 +32,8 @@ namespace DeadZone.Network
                    && DisplayName.Equals(other.DisplayName)
                    && IsHost == other.IsHost
                    && IsReady == other.IsReady
-                   && HasUnlockedMapB == other.HasUnlockedMapB;
+                   && HasUnlockedMapB == other.HasUnlockedMapB
+                   && IconColorRgba == other.IconColorRgba;
         }
 
         public override bool Equals(object obj)
@@ -47,6 +50,7 @@ namespace DeadZone.Network
                 hash = (hash * 397) ^ IsHost.GetHashCode();
                 hash = (hash * 397) ^ IsReady.GetHashCode();
                 hash = (hash * 397) ^ HasUnlockedMapB.GetHashCode();
+                hash = (hash * 397) ^ IconColorRgba.GetHashCode();
                 return hash;
             }
         }

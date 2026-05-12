@@ -57,6 +57,7 @@ namespace DeadZone.Actors.UI
 
         private void OnEnable()
         {
+            LobbyRoomController.PartyRoomVisibilityChanged += HandlePartyRoomVisibilityChanged;
             EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
 
             ResolveReferences();
@@ -77,6 +78,7 @@ namespace DeadZone.Actors.UI
 
         private void OnDisable()
         {
+            LobbyRoomController.PartyRoomVisibilityChanged -= HandlePartyRoomVisibilityChanged;
             EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
 
             UnbindLobbyState();
@@ -96,6 +98,9 @@ namespace DeadZone.Actors.UI
 
         private void ResolveReferences()
         {
+            if (lobbyState == null)
+                lobbyState = FindObjectOfType<NetworkLobbyState>();
+
             if (partyView == null)
                 partyView = GetComponent<LobbyPartyView>();
         }
@@ -218,10 +223,19 @@ namespace DeadZone.Actors.UI
             RefreshView();
         }
 
+        private void HandlePartyRoomVisibilityChanged()
+        {
+            ResolveReferences();
+            BindLobbyState();
+            TrySubmitLobbyPlayerState();
+            RefreshView();
+        }
+
         private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
         {
             // Cloud Save 로드 이후 표시 이름과 MapB 해금 상태를 다시 제출합니다.
             TrySubmitLobbyPlayerState();
+            RefreshView();
         }
 
         /// <summary>
@@ -232,6 +246,13 @@ namespace DeadZone.Actors.UI
             if (partyView == null)
             {
                 LogDebug("Party View가 없어 파티 화면 갱신을 건너뜁니다.");
+                return;
+            }
+
+            if (!LobbyRoomController.IsPartyRoomVisible)
+            {
+                PartyPlayerColorCache.Clear();
+                partyView.RenderEmpty();
                 return;
             }
 
@@ -275,6 +296,7 @@ namespace DeadZone.Actors.UI
         private void BuildSlotViewData(ulong localClientId, int slotCount)
         {
             slotViewDataBuffer.Clear();
+            PartyPlayerColorCache.Clear();
 
             for (int i = 0; i < slotCount; i++)
             {
@@ -285,15 +307,26 @@ namespace DeadZone.Actors.UI
                 }
 
                 LobbyPlayerState player = sortedPlayers[i];
+                PartyPlayerColorCache.Set(player.ClientId, player.IconColorRgba);
+                string displayName = player.DisplayName.ToString();
+
+                if (player.ClientId == localClientId)
+                {
+                    string localDisplayName = ResolveLocalDisplayName();
+
+                    if (!string.IsNullOrWhiteSpace(localDisplayName))
+                        displayName = localDisplayName;
+                }
 
                 slotViewDataBuffer.Add(new LobbyPartySlotViewData
                 {
                     HasPlayer = true,
                     ClientId = player.ClientId,
-                    DisplayName = player.DisplayName.ToString(),
+                    DisplayName = displayName,
                     IsHost = player.IsHost,
                     IsReady = player.IsReady,
-                    IsLocalPlayer = player.ClientId == localClientId
+                    IsLocalPlayer = player.ClientId == localClientId,
+                    IconColor = PartyPlayerColorCache.ToColor32(player.IconColorRgba)
                 });
             }
         }
