@@ -378,7 +378,7 @@ namespace DeadZone.Actors
 
             if (progress == null)
             {
-                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress媛 ?놁뼱 ?섏슦吏?????곗씠?곕? ?곸슜?????놁뒿?덈떎.", this);
+                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress가 없어 하우징 저장 데이터를 적용할 수 없습니다.", this);
                 return;
             }
 
@@ -390,7 +390,7 @@ namespace DeadZone.Actors
                 return;
 
             Debug.Log(
-                $"[PlayerHousingSaveSyncer] ?섏슦吏?????곗씠?곕? ?쒕쾭 PlayerHousingProgress???곸슜?덉뒿?덈떎. ?ъ쑀: {reason}",
+                $"[PlayerHousingSaveSyncer] 하우징 저장 데이터를 서버 PlayerHousingProgress에 적용했습니다. 사유: {reason}",
                 this);
         }
 

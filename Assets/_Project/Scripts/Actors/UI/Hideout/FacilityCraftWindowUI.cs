@@ -59,6 +59,7 @@ namespace DeadZone.Actors.UI.Hideout
         private IInventory inventory;
         private PlayerHousingProgress localHousingProgress;
         private bool isInitialized;
+        private PlayerHousingProgress subscribedHousingProgress;
 
         public bool IsOpen => windowRoot != null && windowRoot.activeSelf;
         public GameObject WindowRoot => windowRoot != null ? windowRoot : gameObject;
@@ -71,6 +72,11 @@ namespace DeadZone.Actors.UI.Hideout
         private void Awake()
         {
             Initialize();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeHousingProgress();
         }
 
         public void Open(HideoutCameraFacilitySelector.FacilityView facilityView)
@@ -93,6 +99,7 @@ namespace DeadZone.Actors.UI.Hideout
             currentFacility = facility;
 
             ResolveInventory();
+            UpdateHousingProgressSubscription();
 
             if (windowRoot != null)
                 windowRoot.SetActive(true);
@@ -105,6 +112,7 @@ namespace DeadZone.Actors.UI.Hideout
         public void Close()
         {
             Initialize();
+            UnsubscribeHousingProgress();
 
             currentFacilityView = HideoutCameraFacilitySelector.FacilityView.None;
             currentFacility = null;
@@ -121,6 +129,7 @@ namespace DeadZone.Actors.UI.Hideout
         public void Refresh()
         {
             ResolveInventory();
+            UpdateHousingProgressSubscription();
 
             if (currentFacility == null)
             {
@@ -172,9 +181,39 @@ namespace DeadZone.Actors.UI.Hideout
 
             SetMessage($"{resultName} 제작을 서버에 요청했습니다.");
             DebugLog($"제작 요청: {recipe.recipeID}");
+        }
+
+        private void UpdateHousingProgressSubscription()
+        {
+            if (subscribedHousingProgress == localHousingProgress)
+                return;
+
+            UnsubscribeHousingProgress();
+
+            subscribedHousingProgress = localHousingProgress;
+            if (subscribedHousingProgress != null)
+                subscribedHousingProgress.FacilityLevelChanged += HandleLocalHousingLevelChanged;
+        }
+
+        private void UnsubscribeHousingProgress()
+        {
+            if (subscribedHousingProgress != null)
+                subscribedHousingProgress.FacilityLevelChanged -= HandleLocalHousingLevelChanged;
+
+            subscribedHousingProgress = null;
+        }
+
+        private void HandleLocalHousingLevelChanged(FacilityType facilityType, int oldLevel, int newLevel)
+        {
+            if (!IsOpen || currentFacility == null)
+                return;
+
+            if (currentFacility.Type != facilityType)
+                return;
 
             Refresh();
         }
+
 
         private bool RequestCraftToCurrentFacility(string recipeID)
         {

@@ -178,8 +178,40 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 562318391142008777, guid: b04ee3aba1426704e97a4b2e44d14bc2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2137333265164542823}
   m_SourcePrefab: {fileID: 100100000, guid: b04ee3aba1426704e97a4b2e44d14bc2, type: 3}
+--- !u!1 &2137333265164542822 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 562318391142008777, guid: b04ee3aba1426704e97a4b2e44d14bc2, type: 3}
+  m_PrefabInstance: {fileID: 2137333265164542821}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2137333265164542823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137333265164542822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd12b85d5289e644888b54344025cfbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.LoadingScreenService
+  loadingPrefab: {fileID: 7349448437372634862, guid: 85b07e1a162de064db5d5f86ae244d72, type: 3}
+  instantiatePrefabOnAwake: 1
+  dontDestroyOnLoad: 1
+  loadingRoot: {fileID: 0}
+  canvasGroup: {fileID: 0}
+  progressSlider: {fileID: 0}
+  progressText: {fileID: 0}
+  progressFormat: '{0}%'
+  minimumVisibleSeconds: 0.35
+  hideOnUnitySceneLoaded: 1
+  hideOnNetworkSceneChanged: 1
+  logDebug: 0
 --- !u!1001 &5539824721417114084
 PrefabInstance:
   m_ObjectHideFlags: 0
