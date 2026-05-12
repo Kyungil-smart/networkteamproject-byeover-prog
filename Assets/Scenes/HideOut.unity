@@ -1983,11 +1983,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4457217087277678, guid: 1b02492fc66581741a9c5fd08841f769, type: 3}
   m_PrefabInstance: {fileID: 970198130}
   m_PrefabAsset: {fileID: 0}
---- !u!20 &988612459 stripped
-Camera:
-  m_CorrespondingSourceObject: {fileID: 2616895269391582515, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-  m_PrefabInstance: {fileID: 2031488922}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1020879744
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4147,14 +4142,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1195481480521326198, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_TagString
-      value: MainCamera
-      objectReference: {fileID: 0}
-    - target: {fileID: 1457115606456956066, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: controlledCamera
-      value: 
-      objectReference: {fileID: 988612459}
     - target: {fileID: 3802142383716412793, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
       propertyPath: bedTarget
       value: 
@@ -4223,45 +4210,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6353574376374244974, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 13.9
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353574376374244974, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -25.6
-      objectReference: {fileID: 0}
     - target: {fileID: 7560207919319943606, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
       propertyPath: m_Name
       value: Cameras
-      objectReference: {fileID: 0}
-    - target: {fileID: 8339427906099545458, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 20.396545
-      objectReference: {fileID: 0}
-    - target: {fileID: 8339427906099545458, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 22.879744
-      objectReference: {fileID: 0}
-    - target: {fileID: 8339427906099545458, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -16.682325
-      objectReference: {fileID: 0}
-    - target: {fileID: 8339427906099545458, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.6399926
-      objectReference: {fileID: 0}
-    - target: {fileID: 8339427906099545458, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0.2751029
-      objectReference: {fileID: 0}
-    - target: {fileID: 8339427906099545458, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.6586714
-      objectReference: {fileID: 0}
-    - target: {fileID: 8339427906099545458, guid: 11b3ba1caa642dc4fb5c4b6f473e21e1, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0.2843939
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6528,6 +6479,10 @@ PrefabInstance:
       value: -8.999878
       objectReference: {fileID: 0}
     - target: {fileID: 2331371220173138766, guid: 6b515fb025512ac47b3f09b822bdf28d, type: 3}
+      propertyPath: showDebugLog
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2331371220173138766, guid: 6b515fb025512ac47b3f09b822bdf28d, type: 3}
       propertyPath: facilityBindings.Array.data[0].facility
       value: 
       objectReference: {fileID: 8856309862415234325}
@@ -6982,7 +6937,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 75444941930b93e49ae44388cb90f2bf, type: 2}
   recipeListRoot: {fileID: 789201109746191737}
   recipeRowPrefab: {fileID: 3376435776952577740, guid: a2066705e39311943a20aa104a8d4830, type: 3}
-  showDebugLog: 1
+  showDebugLog: 0
 --- !u!114 &5916121973174569975
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7074,7 +7029,7 @@ MonoBehaviour:
   lobbySceneName: Lobby
   clearStateBeforeReturnToLobby: 1
   closeContentWhenSelectFacility: 1
-  showDebugLog: 1
+  showDebugLog: 0
 --- !u!222 &6259520587624177772
 CanvasRenderer:
   m_ObjectHideFlags: 0
