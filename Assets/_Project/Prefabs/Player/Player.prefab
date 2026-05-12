@@ -488,6 +488,7 @@ GameObject:
   - component: {fileID: -4358573395740997876}
   - component: {fileID: 8112840747869453086}
   - component: {fileID: 1755801955162734937}
+  - component: {fileID: 6102483567629689994}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -929,6 +930,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7ea9f4b67d0dc64591ab82a3dc85d0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.HealthDebugCommands
+--- !u!114 &6102483567629689994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61b1c100690fcbb49b7ee68fbfa93e40, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.Player.PlayerTeamIdentity
+  ShowTopMostFoldoutHeaderGroup: 1
+  fallbackColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  TeamColor:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0

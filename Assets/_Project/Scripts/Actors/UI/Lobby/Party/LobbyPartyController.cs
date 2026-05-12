@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -213,6 +214,9 @@ namespace DeadZone.Actors.UI
             UnsubscribePlayersList();
             ResetLobbyPlayerStateSubmission();
 
+            PartyPlayerColorCache.Clear();
+            LobbyTeamColorCache.Clear();
+
             if (partyView != null)
                 partyView.RenderEmpty();
         }
@@ -234,6 +238,7 @@ namespace DeadZone.Actors.UI
         private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
         {
             // Cloud Save 로드 이후 표시 이름과 MapB 해금 상태를 다시 제출합니다.
+            ResetLobbyPlayerStateSubmission();
             TrySubmitLobbyPlayerState();
             RefreshView();
         }
@@ -252,6 +257,7 @@ namespace DeadZone.Actors.UI
             if (!LobbyRoomController.IsPartyRoomVisible)
             {
                 PartyPlayerColorCache.Clear();
+                LobbyTeamColorCache.Clear();
                 partyView.RenderEmpty();
                 return;
             }
@@ -307,7 +313,12 @@ namespace DeadZone.Actors.UI
                 }
 
                 LobbyPlayerState player = sortedPlayers[i];
+
                 PartyPlayerColorCache.Set(player.ClientId, player.IconColorRgba);
+
+                Color32 iconColor = PartyPlayerColorCache.ToColor32(player.IconColorRgba);
+                LobbyTeamColorCache.SetColor(player.ClientId, iconColor);
+
                 string displayName = player.DisplayName.ToString();
 
                 if (player.ClientId == localClientId)
@@ -318,6 +329,9 @@ namespace DeadZone.Actors.UI
                         displayName = localDisplayName;
                 }
 
+                if (string.IsNullOrWhiteSpace(displayName))
+                    displayName = player.ClientId == localClientId ? ResolveLocalDisplayName() : fallbackDisplayName;
+
                 slotViewDataBuffer.Add(new LobbyPartySlotViewData
                 {
                     HasPlayer = true,
@@ -326,7 +340,7 @@ namespace DeadZone.Actors.UI
                     IsHost = player.IsHost,
                     IsReady = player.IsReady,
                     IsLocalPlayer = player.ClientId == localClientId,
-                    IconColor = PartyPlayerColorCache.ToColor32(player.IconColorRgba)
+                    IconColor = iconColor
                 });
             }
         }
