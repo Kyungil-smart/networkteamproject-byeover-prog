@@ -31,6 +31,7 @@ namespace DeadZone.Network
         private FirebaseAuthManager authManager;
         private PlayerCloudData currentData;
         private string loadedFirebaseUid = string.Empty;
+        private bool isRegistered;
 
         /// <summary>
         /// 현재 로드된 플레이어 Cloud Save 데이터입니다.
@@ -49,11 +50,23 @@ namespace DeadZone.Network
 
         private void Awake()
         {
+            CloudSaveSystem existing = ServiceLocator.Get<CloudSaveSystem>();
+            if (existing != null && existing != this)
+            {
+                Debug.LogWarning("[CloudSaveSystem] Duplicate instance ignored. Cloud Save must be owned by one active service instance.", this);
+                enabled = false;
+                return;
+            }
+
             ServiceLocator.Register(this);
+            isRegistered = true;
         }
 
         private void Start()
         {
+            if (!isRegistered)
+                return;
+
             EventBus.Subscribe<AuthSignedInEvent>(OnAuthSignedIn);
             EventBus.Subscribe<AuthSignedOutEvent>(OnAuthSignedOut);
             EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
@@ -65,6 +78,9 @@ namespace DeadZone.Network
 
         private void OnDestroy()
         {
+            if (!isRegistered)
+                return;
+
             EventBus.Unsubscribe<AuthSignedInEvent>(OnAuthSignedIn);
             EventBus.Unsubscribe<AuthSignedOutEvent>(OnAuthSignedOut);
             EventBus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
@@ -74,10 +90,14 @@ namespace DeadZone.Network
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
 
             ServiceLocator.Unregister<CloudSaveSystem>();
+            isRegistered = false;
         }
 
         private void OnApplicationQuit()
         {
+            if (!isRegistered)
+                return;
+
             // 동기 대기. 3초 타임아웃 초과 시 포기하고 앱 종료.
             if (!HasLoadedData || authManager == null || !authManager.IsSignedIn) return;
             if (loadedFirebaseUid != authManager.CurrentUid) return;
@@ -257,8 +277,12 @@ namespace DeadZone.Network
                     currentData = snapshot.ConvertTo<PlayerCloudData>();
                     if (currentData == null) currentData = NewPlayerData(uid, authManager.CurrentEmail);
                     EnsureCloudDataContainers();
+                    EnsureLobbySaveContainers();
 
-                    if (TryApplyStarterPackMigration())
+                    bool shouldWriteBack = NormalizeFacilityProgressFromLegacyFields();
+                    shouldWriteBack |= TryApplyStarterPackMigration();
+
+                    if (shouldWriteBack)
                     {
                         loadedFirebaseUid = uid;
                         currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -391,7 +415,7 @@ namespace DeadZone.Network
                 EnsureLobbySaveContainers();
 
                 CollectPersonalQuestProgress();
-                PreserveCurrentFacilityProgress(lobbySaveDto);
+                ReplaceLobbyDtoFacilitiesFromCurrentData(lobbySaveDto);
 
                 currentData.lobbySave = ToLobbySaveCloudData(lobbySaveDto);
                 ApplyLobbySaveToLegacyCloudFields(lobbySaveDto);
@@ -534,12 +558,6 @@ namespace DeadZone.Network
                 bedLevel = currentData.facilities.bed,
                 commStationLevel = currentData.facilities.commStation
             };
-
-            if (currentData.lobbySave.facilities != null)
-            {
-                for (int i = 0; i < currentData.lobbySave.facilities.Count; i++)
-                    ApplyFacilityToHousingProgressDTO(dto, currentData.lobbySave.facilities[i]);
-            }
 
             dto.Normalize();
             return dto;
@@ -801,6 +819,12 @@ namespace DeadZone.Network
         {
             if (TryCollectPlayerHousingProgress())
                 return;
+
+            if (currentData?.facilities != null)
+            {
+                MirrorFacilitiesToLobbySave();
+                return;
+            }
 
             if (TryCollectLobbyFacilityState())
                 return;
@@ -1266,11 +1290,7 @@ namespace DeadZone.Network
                     ApplyEquipmentToLegacyField(lobbySaveDto.equipmentItems[i]);
             }
 
-            if (lobbySaveDto.facilities != null)
-            {
-                for (int i = 0; i < lobbySaveDto.facilities.Count; i++)
-                    ApplyFacilityToLegacyField(lobbySaveDto.facilities[i]);
-            }
+            MirrorFacilitiesToLobbySave();
         }
 
         private void ApplyEquipmentToLegacyField(EquipmentSaveDTO equipmentItem)
@@ -1355,13 +1375,7 @@ namespace DeadZone.Network
             currentData.facilities.bed = dto.bedLevel;
             currentData.facilities.commStation = dto.commStationLevel;
 
-            UpsertLobbyFacility("Workbench", dto.workbenchLevel, allowDowngrade: true);
-            UpsertLobbyFacility("Medical", dto.medicalLevel, allowDowngrade: true);
-            UpsertLobbyFacility("Gym", dto.gymLevel, allowDowngrade: true);
-            UpsertLobbyFacility("Stash", dto.stashLevel, allowDowngrade: true);
-            UpsertLobbyFacility("Kitchen", dto.kitchenLevel, allowDowngrade: true);
-            UpsertLobbyFacility("Bed", dto.bedLevel, allowDowngrade: true);
-            UpsertLobbyFacility("CommStation", dto.commStationLevel, allowDowngrade: true);
+            MirrorFacilitiesToLobbySave();
         }
 
         private void ApplyFacilityToHousingProgressDTO(PlayerHousingProgressDTO dto, LobbyFacilityCloudData facility)
@@ -1420,6 +1434,103 @@ namespace DeadZone.Network
             return string.IsNullOrWhiteSpace(facilityId)
                 ? string.Empty
                 : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
+        }
+
+        private bool NormalizeFacilityProgressFromLegacyFields()
+        {
+            if (currentData?.facilities == null)
+                return false;
+
+            bool changed = false;
+
+            if (currentData.lobbySave?.facilities != null)
+            {
+                for (int i = 0; i < currentData.lobbySave.facilities.Count; i++)
+                {
+                    LobbyFacilityCloudData facility = currentData.lobbySave.facilities[i];
+                    if (facility == null || string.IsNullOrWhiteSpace(facility.facilityId))
+                        continue;
+
+                    changed |= MergeFacilityIntoAuthoritativeProgress(facility.facilityId, facility.level);
+                }
+            }
+
+            MirrorFacilitiesToLobbySave();
+            return changed;
+        }
+
+        private bool MergeFacilityIntoAuthoritativeProgress(string facilityId, int level)
+        {
+            int safeLevel = Mathf.Max(1, level);
+
+            switch (NormalizeFacilityId(facilityId))
+            {
+                case "workbench":
+                    return TryAssignMaxFacilityLevel(currentData.facilities.workbench, safeLevel, value => currentData.facilities.workbench = value);
+                case "commstation":
+                    return TryAssignMaxFacilityLevel(currentData.facilities.commStation, safeLevel, value => currentData.facilities.commStation = value);
+                case "medical":
+                    return TryAssignMaxFacilityLevel(currentData.facilities.medical, safeLevel, value => currentData.facilities.medical = value);
+                case "gym":
+                    return TryAssignMaxFacilityLevel(currentData.facilities.gym, safeLevel, value => currentData.facilities.gym = value);
+                case "stash":
+                    return TryAssignMaxFacilityLevel(currentData.facilities.stash, safeLevel, value => currentData.facilities.stash = value);
+                case "kitchen":
+                    return TryAssignMaxFacilityLevel(currentData.facilities.kitchen, safeLevel, value => currentData.facilities.kitchen = value);
+                case "bed":
+                    return TryAssignMaxFacilityLevel(currentData.facilities.bed, safeLevel, value => currentData.facilities.bed = value);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool TryAssignMaxFacilityLevel(int currentLevel, int incomingLevel, Action<int> assign)
+        {
+            int safeCurrent = Mathf.Max(1, currentLevel);
+            int merged = Mathf.Max(safeCurrent, incomingLevel);
+
+            if (currentLevel == merged)
+                return false;
+
+            assign?.Invoke(merged);
+            return true;
+        }
+
+        private void MirrorFacilitiesToLobbySave()
+        {
+            if (currentData?.facilities == null)
+                return;
+
+            EnsureLobbySaveContainers();
+            currentData.lobbySave.facilities.Clear();
+
+            UpsertLobbyFacility("Workbench", currentData.facilities.workbench, allowDowngrade: true);
+            UpsertLobbyFacility("CommStation", currentData.facilities.commStation, allowDowngrade: true);
+            UpsertLobbyFacility("Medical", currentData.facilities.medical, allowDowngrade: true);
+            UpsertLobbyFacility("Gym", currentData.facilities.gym, allowDowngrade: true);
+            UpsertLobbyFacility("Stash", currentData.facilities.stash, allowDowngrade: true);
+            UpsertLobbyFacility("Kitchen", currentData.facilities.kitchen, allowDowngrade: true);
+            UpsertLobbyFacility("Bed", currentData.facilities.bed, allowDowngrade: true);
+        }
+
+        private void ReplaceLobbyDtoFacilitiesFromCurrentData(LobbySaveDTO dto)
+        {
+            if (dto == null)
+                return;
+
+            dto.facilities ??= new List<FacilitySaveDTO>();
+            dto.facilities.Clear();
+
+            if (currentData?.facilities == null)
+                return;
+
+            AddLegacyFacility(dto, "Workbench", currentData.facilities.workbench);
+            AddLegacyFacility(dto, "CommStation", currentData.facilities.commStation);
+            AddLegacyFacility(dto, "Medical", currentData.facilities.medical);
+            AddLegacyFacility(dto, "Gym", currentData.facilities.gym);
+            AddLegacyFacility(dto, "Stash", currentData.facilities.stash);
+            AddLegacyFacility(dto, "Kitchen", currentData.facilities.kitchen);
+            AddLegacyFacility(dto, "Bed", currentData.facilities.bed);
         }
 
         private void PreserveCurrentFacilityProgress(LobbySaveDTO dto)

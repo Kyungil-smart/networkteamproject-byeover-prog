@@ -17,8 +17,15 @@ namespace DeadZone.Systems.Save
         [Header("동기화")]
         [SerializeField] private bool captureOnStart = true;
 
+        [SerializeField]
+        [Tooltip("Cloud Save 기반 하우징 저장에서는 꺼둡니다. 켜면 LobbyFacilityState와 씬 FacilityBase 레벨을 시작 시 상호 동기화합니다.")]
+        private bool syncSceneFacilitiesFromLobbyCache;
+
         private void Start()
         {
+            if (!syncSceneFacilitiesFromLobbyCache)
+                return;
+
             if (!captureOnStart)
                 return;
 
