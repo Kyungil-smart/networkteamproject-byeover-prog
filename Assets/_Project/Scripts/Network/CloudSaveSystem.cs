@@ -48,6 +48,12 @@ namespace DeadZone.Network
         /// </summary>
         public string LoadedFirebaseUid => loadedFirebaseUid;
 
+        public void ClearLoadedData()
+        {
+            currentData = null;
+            loadedFirebaseUid = string.Empty;
+        }
+
         private void Awake()
         {
             CloudSaveSystem existing = ServiceLocator.Get<CloudSaveSystem>();
@@ -185,8 +191,7 @@ namespace DeadZone.Network
 
         private void OnAuthSignedOut(AuthSignedOutEvent e)
         {
-            currentData = null;
-            loadedFirebaseUid = string.Empty;
+            ClearLoadedData();
         }
 
         private async void OnPlayerDied(PlayerDiedEvent e)
