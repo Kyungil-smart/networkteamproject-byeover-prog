@@ -5939,7 +5939,7 @@ MonoBehaviour:
       - m_Target: {fileID: 6148772876351684629}
         m_TargetAssemblyTypeName: DeadZone.Actors.UI.Hideout.HideoutFacilityUIController,
           Assembly-CSharp
-        m_MethodName: CloseFacilityView
+        m_MethodName: HandleBackButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -7071,6 +7071,8 @@ MonoBehaviour:
   facilityContentRoot: {fileID: 0}
   leftFacilityPanelRoot: {fileID: 0}
   rightInventoryPanelRoot: {fileID: 0}
+  lobbySceneName: Lobby
+  clearStateBeforeReturnToLobby: 1
   closeContentWhenSelectFacility: 1
   showDebugLog: 1
 --- !u!222 &6259520587624177772
