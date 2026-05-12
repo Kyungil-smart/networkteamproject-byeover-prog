@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using DeadZone.Systems.Save;
 using TMPro;
@@ -157,7 +157,7 @@ namespace DeadZone.Actors.UI
                     Debug.LogWarning("[LobbyTabController] LobbySaveService를 찾지 못해 시설 씬 전환 전 저장을 건너뜁니다.", this);
             }
 
-            SceneManager.LoadScene(facilitySceneName);
+            LoadingScreenService.LoadSceneOrFallback(facilitySceneName);
         }
 
         [Button("탭/페이지 자동 연결")]
