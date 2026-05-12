@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DeadZone.Actors.UI;
 using DeadZone.Core;
@@ -31,6 +32,17 @@ namespace DeadZone.Systems.Save
 
         private void Start()
         {
+            ResolveMissingReferences();
+
+            if (!captureOnStart)
+                return;
+
+            if (HasExistingInventoryState())
+            {
+                Debug.Log("[LobbyInventoryStateUiBridge] Existing lobby inventory state found. Skipping Start capture to avoid overwriting saved inventory with empty UI.", this);
+                return;
+            }
+
             if (captureOnStart)
             {
                 Debug.LogWarning(
@@ -39,9 +51,19 @@ namespace DeadZone.Systems.Save
             }
         }
 
+        private bool HasExistingInventoryState()
+        {
+            return inventoryState != null &&
+                   ((inventoryState.InventoryItems != null && inventoryState.InventoryItems.Count > 0) ||
+                    (inventoryState.StashItems != null && inventoryState.StashItems.Count > 0) ||
+                    (inventoryState.EquipmentItems != null && inventoryState.EquipmentItems.Count > 0));
+        }
+
         [Button("UI 상태를 저장 상태로 반영")]
         public void CaptureUiToState()
         {
+            ResolveMissingReferences();
+
             if (inventoryState == null)
             {
                 Debug.LogWarning("[LobbyInventoryStateUiBridge] LobbyInventoryState가 연결되지 않았습니다.", this);
@@ -51,14 +73,27 @@ namespace DeadZone.Systems.Save
             if (walletSystem != null)
                 inventoryState.SetCredits(walletSystem.Credits.Value);
 
-            inventoryState.SetInventoryItems(CollectItemSlots(inventorySlotsRoot, InventoryContainerId));
-            inventoryState.SetStashItems(CollectItemSlots(stashSlotsRoot, StashContainerId));
-            inventoryState.SetEquipmentItems(CollectEquipmentSlots(equipmentSlotsRoot));
+            if (inventorySlotsRoot != null)
+                inventoryState.SetInventoryItems(CollectItemSlots(inventorySlotsRoot, InventoryContainerId));
+            else
+                Debug.LogWarning("[LobbyInventoryStateUiBridge] Inventory slots root missing. Keeping existing inventory state.", this);
+
+            if (stashSlotsRoot != null)
+                inventoryState.SetStashItems(CollectItemSlots(stashSlotsRoot, StashContainerId));
+            else
+                Debug.LogWarning("[LobbyInventoryStateUiBridge] Stash slots root missing. Keeping existing stash state.", this);
+
+            if (equipmentSlotsRoot != null)
+                inventoryState.SetEquipmentItems(CollectEquipmentSlots(equipmentSlotsRoot));
+            else
+                Debug.LogWarning("[LobbyInventoryStateUiBridge] Equipment slots root missing. Keeping existing equipment state.", this);
         }
 
         [Button("저장 상태를 UI에 반영")]
         public void ApplyStateToUi()
         {
+            ResolveMissingReferences();
+
             if (inventoryState == null)
             {
                 Debug.LogWarning("[LobbyInventoryStateUiBridge] LobbyInventoryState가 연결되지 않았습니다.", this);
@@ -95,6 +130,12 @@ namespace DeadZone.Systems.Save
                 InventorySlotUI slot = slots[i];
                 if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
                     continue;
+
+                if (string.Equals(containerId, InventoryContainerId, StringComparison.OrdinalIgnoreCase) &&
+                    slot.SlotKind != InventorySlotKind.Bag)
+                {
+                    continue;
+                }
 
                 items.Add(new ItemSaveDTO
                 {
@@ -240,7 +281,59 @@ namespace DeadZone.Systems.Save
                     return slot;
             }
 
+            if (string.Equals(slotId, "primary1", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(slotId, "EquipmentPrimaryWeapon", StringComparison.OrdinalIgnoreCase))
+            {
+                return FindPrimaryWeaponSlot(slots, false);
+            }
+
+            if (string.Equals(slotId, "primary2", StringComparison.OrdinalIgnoreCase))
+            {
+                return FindPrimaryWeaponSlot(slots, true);
+            }
+
             return null;
+        }
+
+        private static InventorySlotUI FindPrimaryWeaponSlot(InventorySlotUI[] slots, bool secondSlot)
+        {
+            InventorySlotUI fallback = null;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null || slot.SlotKind != InventorySlotKind.EquipmentPrimaryWeapon)
+                    continue;
+
+                fallback ??= slot;
+
+                string path = BuildTransformPath(slot.transform);
+                bool looksLikeSecondSlot =
+                    path.Contains("primary2", StringComparison.OrdinalIgnoreCase) ||
+                    path.Contains("_2", StringComparison.OrdinalIgnoreCase);
+
+                if (secondSlot == looksLikeSecondSlot)
+                    return slot;
+            }
+
+            return secondSlot ? null : fallback;
+        }
+
+        private static string BuildTransformPath(Transform transform)
+        {
+            if (transform == null)
+                return string.Empty;
+
+            string path = transform.name;
+            Transform parent = transform.parent;
+
+            while (parent != null)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+
+            return path;
         }
 
         private IItemDatabase ResolveItemDatabase()
@@ -254,6 +347,35 @@ namespace DeadZone.Systems.Save
 
             itemDatabase = FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
             return itemDatabase;
+        }
+
+        private void ResolveMissingReferences()
+        {
+            if (inventoryState == null)
+                inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+
+            if (inventorySlotsRoot == null)
+            {
+                LobbyPlayerInventoryUI inventoryUI = FindFirstObjectByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include);
+                if (inventoryUI != null)
+                {
+                    inventorySlotsRoot = inventoryUI.transform;
+                    Debug.Log($"[LobbyInventoryStateUiBridge] Auto-bound player inventory root={BuildTransformPath(inventorySlotsRoot)}", this);
+                }
+            }
+
+            if (stashSlotsRoot == null)
+            {
+                StashGridUI stashGridUI = FindFirstObjectByType<StashGridUI>(FindObjectsInactive.Include);
+                if (stashGridUI != null)
+                {
+                    stashSlotsRoot = stashGridUI.transform;
+                    Debug.Log($"[LobbyInventoryStateUiBridge] Auto-bound stash root={BuildTransformPath(stashSlotsRoot)}", this);
+                }
+            }
+
+            if (itemDatabase == null)
+                itemDatabase = FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
         }
 
         private void RefreshSlotViews()

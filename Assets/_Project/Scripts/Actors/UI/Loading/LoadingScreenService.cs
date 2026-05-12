@@ -8,6 +8,10 @@ using UnityEngine.UI;
 
 using DeadZone.Core;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace DeadZone.Actors.UI
 {
     /// <summary>
@@ -89,17 +93,25 @@ namespace DeadZone.Actors.UI
             }
         }
 
-        public static void LoadSceneOrFallback(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
+        public static void LoadSceneOrFallback(
+            string sceneName,
+            LoadSceneMode mode = LoadSceneMode.Single,
+            string fallbackSceneName = null)
         {
+            Debug.Log($"[SceneLoad] Request scene={sceneName}");
+
+            if (!TryResolveLoadableScene(sceneName, fallbackSceneName, out string resolvedSceneName))
+                return;
+
             LoadingScreenService service = Resolve();
 
             if (service == null)
             {
-                SceneManager.LoadScene(sceneName, mode);
+                SceneManager.LoadScene(resolvedSceneName, mode);
                 return;
             }
 
-            _ = service.LoadSceneAsync(sceneName, mode);
+            _ = service.LoadSceneAsync(resolvedSceneName, mode);
         }
 
         public static void ShowForNetworkLoadOrFallback(string sceneName)
@@ -175,13 +187,16 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            Show(sceneName);
+            if (!TryResolveLoadableScene(sceneName, null, out string resolvedSceneName))
+                return;
 
-            AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName, mode);
+            Show(resolvedSceneName);
+
+            AsyncOperation operation = SceneManager.LoadSceneAsync(resolvedSceneName, mode);
 
             if (operation == null)
             {
-                SceneManager.LoadScene(sceneName, mode);
+                SceneManager.LoadScene(resolvedSceneName, mode);
                 return;
             }
 
@@ -288,6 +303,77 @@ namespace DeadZone.Actors.UI
                 return instance;
 
             return FindFirstObjectByType<LoadingScreenService>(FindObjectsInactive.Include);
+        }
+
+        private static bool TryResolveLoadableScene(
+            string sceneName,
+            string fallbackSceneName,
+            out string resolvedSceneName)
+        {
+            resolvedSceneName = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                Debug.LogError("[SceneLoad] Failed. No valid scene or fallback. scene is empty.");
+                return false;
+            }
+
+            bool canLoad = Application.CanStreamedLevelBeLoaded(sceneName);
+            Debug.Log($"[SceneLoad] CanStreamedLevelBeLoaded={canLoad}. scene={sceneName}");
+
+            if (canLoad)
+            {
+                resolvedSceneName = sceneName;
+                return true;
+            }
+
+            LogSceneNotRegistered(sceneName);
+
+            if (!string.IsNullOrWhiteSpace(fallbackSceneName) &&
+                !string.Equals(sceneName, fallbackSceneName, System.StringComparison.Ordinal))
+            {
+                bool canLoadFallback = Application.CanStreamedLevelBeLoaded(fallbackSceneName);
+                Debug.Log($"[SceneLoad] CanStreamedLevelBeLoaded={canLoadFallback}. scene={fallbackSceneName}");
+
+                if (canLoadFallback)
+                {
+                    Debug.Log($"[SceneLoad] Loading fallback scene={fallbackSceneName}");
+                    resolvedSceneName = fallbackSceneName;
+                    return true;
+                }
+
+                LogSceneNotRegistered(fallbackSceneName);
+            }
+
+            Debug.LogError("[SceneLoad] Failed. No valid scene or fallback.");
+            return false;
+        }
+
+        private static void LogSceneNotRegistered(string sceneName)
+        {
+#if UNITY_EDITOR
+            bool existsInBuildSettings = false;
+            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
+
+            for (int i = 0; i < scenes.Length; i++)
+            {
+                EditorBuildSettingsScene scene = scenes[i];
+                if (scene == null || !scene.enabled)
+                    continue;
+
+                string registeredName = System.IO.Path.GetFileNameWithoutExtension(scene.path);
+                if (string.Equals(registeredName, sceneName, System.StringComparison.Ordinal))
+                {
+                    existsInBuildSettings = true;
+                    break;
+                }
+            }
+
+            Debug.LogError(
+                $"[SceneLoad] Scene not registered in build profile/shared scene list. scene={sceneName}, editorBuildSettingsContainsEnabledScene={existsInBuildSettings}");
+#else
+            Debug.LogError($"[SceneLoad] Scene not registered in build profile/shared scene list. scene={sceneName}");
+#endif
         }
 
         private static async Task DelaySecondsRealtime(float seconds)

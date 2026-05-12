@@ -202,6 +202,7 @@ namespace DeadZone.Network
         {
             if (!IsServer) return;
 
+            Debug.Log($"[PartySession] Leave party. clientId={clientId}, reason=Disconnect", this);
             RemovePlayerServer(clientId);
         }
 

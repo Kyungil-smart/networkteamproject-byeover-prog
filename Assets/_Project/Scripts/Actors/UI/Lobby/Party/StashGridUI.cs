@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using DeadZone.Network;
+using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors.UI
 {
@@ -125,6 +126,10 @@ namespace DeadZone.Actors.UI
         private void Start()
         {
             RefreshSlots();
+
+            if (TryApplyLobbyInventoryState())
+                return;
+
             ApplyCloudStashIfAvailable();
         }
 
@@ -489,11 +494,96 @@ namespace DeadZone.Actors.UI
             if (!loadCloudStashOnLoadedEvent)
                 return;
 
+            if (TryApplyLobbyInventoryState())
+                return;
+
             ApplyCloudStashIfAvailable();
+        }
+
+        private bool TryApplyLobbyInventoryState()
+        {
+            LobbyInventoryState inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+
+            if (inventoryState == null ||
+                inventoryState.StashItems == null ||
+                inventoryState.StashItems.Count == 0)
+            {
+                return false;
+            }
+
+            IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
+
+            if (itemDatabase == null && cloudStashItemDatabase == null)
+            {
+                Debug.LogWarning("[StashGridUI] LobbyInventoryState has stash items, but no item database was found. Skipping legacy cloud stash apply to avoid wiping restored stash UI.", this);
+                return true;
+            }
+
+            Debug.Log($"[StashGridUI] Applying LobbyInventoryState stash items. Count={inventoryState.StashItems.Count}", this);
+            ApplyLobbyStashItems(inventoryState.StashItems, itemDatabase);
+            return true;
+        }
+
+        private void ApplyLobbyStashItems(IReadOnlyList<ItemSaveDTO> stashItems, IItemDatabase itemDatabase)
+        {
+            RefreshSlots();
+            ClearActiveSlots();
+
+            if (stashItems == null)
+                return;
+
+            int appliedCount = 0;
+
+            for (int i = 0; i < stashItems.Count; i++)
+            {
+                ItemSaveDTO savedItem = stashItems[i];
+
+                if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
+                    continue;
+
+                ItemDataSO itemData = ResolveCloudStashItemData(savedItem.itemId, itemDatabase);
+                if (itemData == null)
+                {
+                    Debug.LogWarning($"[StashGridUI] LobbyInventoryState stash item could not be resolved. itemId={savedItem.itemId}", this);
+                    continue;
+                }
+
+                InventorySlotUI targetSlot = FindSlotForLobbyItem(savedItem);
+                if (targetSlot == null)
+                {
+                    Debug.LogWarning($"[StashGridUI] LobbyInventoryState stash slot could not be resolved. itemId={savedItem.itemId}, x={savedItem.x}", this);
+                    continue;
+                }
+
+                targetSlot.SetItem(itemData, Mathf.Max(1, savedItem.stackCount));
+                appliedCount++;
+            }
+
+            Debug.Log($"[StashGridUI] Applied LobbyInventoryState stash items. Applied={appliedCount}/{stashItems.Count}", this);
+        }
+
+        private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem)
+        {
+            if (savedItem == null)
+                return null;
+
+            int requestedIndex = savedItem.x;
+
+            if (requestedIndex >= 0 && requestedIndex < activeSlotCount && requestedIndex < slots.Count)
+            {
+                InventorySlotUI requestedSlot = slots[requestedIndex];
+                if (requestedSlot != null && requestedSlot != slotPrefab)
+                    return requestedSlot;
+            }
+
+            return FindFirstEmptySlot();
         }
 
         private void ApplyCloudStashIfAvailable()
         {
+            if (HasLobbyStashState())
+                return;
+
             CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
             if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData || cloudSaveSystem.CurrentData == null)
                 return;
@@ -503,6 +593,14 @@ namespace DeadZone.Actors.UI
                 return;
 
             ApplyCloudStash(stashData.slots);
+        }
+
+        private static bool HasLobbyStashState()
+        {
+            LobbyInventoryState inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            return inventoryState != null &&
+                   inventoryState.StashItems != null &&
+                   inventoryState.StashItems.Count > 0;
         }
 
         private void ApplyCloudStash(IReadOnlyList<StashSlot> cloudSlots)
