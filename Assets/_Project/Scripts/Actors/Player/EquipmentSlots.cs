@@ -49,13 +49,6 @@ namespace DeadZone.Actors
         public NetworkVariable<FixedString64Bytes> SecondaryId     = new("");
         public NetworkVariable<FixedString64Bytes> MeleeId         = new("");
         public NetworkVariable<FixedString64Bytes> CurrentEquipped = new("");
-        [HideInInspector] public NetworkVariable<FixedString64Bytes> HeadSlotId      = new("");
-        [HideInInspector] public NetworkVariable<FixedString64Bytes> TorsoSlotId     = new("");
-        [HideInInspector] public NetworkVariable<FixedString64Bytes> Primary1Id      = new("");
-        [HideInInspector] public NetworkVariable<FixedString64Bytes> Primary2Id      = new("");
-        [HideInInspector] public NetworkVariable<FixedString64Bytes> SecondaryId     = new("");
-        [HideInInspector] public NetworkVariable<FixedString64Bytes> MeleeId         = new("");
-        [HideInInspector] public NetworkVariable<FixedString64Bytes> CurrentEquipped = new("");
 
         // ----------- 방어구 내구도 -----------
 
