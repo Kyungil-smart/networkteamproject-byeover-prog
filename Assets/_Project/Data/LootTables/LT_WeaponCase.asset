@@ -13,34 +13,34 @@ MonoBehaviour:
   m_Name: LT_WeaponCase
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.LootTableSO
   entries:
-  - item: {fileID: 11400000, guid: 53e8c8483cd7170409e581aa5c7459c0, type: 2}
+  - item: {fileID: 11400000, guid: 179fe61ddb5d6b84c96f8ab664f34ef3, type: 2}
     weight: 1166
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: 9e520553a6ab49d46a1c07979fa37862, type: 2}
+  - item: {fileID: 11400000, guid: 383b228f5316ed5459f0c624b4786842, type: 2}
     weight: 1166
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 6749d3919a2aaae4ea56f8fcac906f89, type: 2}
     weight: 1166
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: c7f4fc536e850834fbeef997a6980cad, type: 2}
+  - item: {fileID: 11400000, guid: 05fed358211994c48bb87d8052ac969f, type: 2}
     weight: 2250
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: 8135f9a46ea5bf44fb7b05fdeda07240, type: 2}
+  - item: {fileID: 11400000, guid: 4e7f75c1d36e7004aa003eee4af8517c, type: 2}
     weight: 2250
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: 317701d1174895a449bef30f75bfa2b7, type: 2}
+  - item: {fileID: 11400000, guid: 5dbc704d01bc662438998288b0482d8b, type: 2}
     weight: 600
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: 8cced0192102907469cad1af26d07c00, type: 2}
+  - item: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}
     weight: 600
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: 27b0dbfa61df0cf4ea09706484f8b2c9, type: 2}
+  - item: {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
     weight: 600
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: e3f5ac4f5c4ca6e44bf805ab44c7e5ec, type: 2}
+  - item: {fileID: 11400000, guid: 8aeaa47fb847b284c94f2a413a3699a3, type: 2}
     weight: 100
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: aaa1156877681054582b63c7b4a9f285, type: 2}
+  - item: {fileID: 11400000, guid: 2fbf9be39f6fcc245894b4b70b10ade4, type: 2}
     weight: 100
     countRange: {x: 1, y: 1}
   lockedZoneMultiplier: 1.5
