@@ -796,6 +796,15 @@ namespace DeadZone.Network
 
         private void CollectFacilities()
         {
+            if (TryCollectPlayerHousingProgress())
+                return;
+
+            if (TryCollectLobbyFacilityState())
+                return;
+
+            if (TryCollectCachedLobbyFacilities())
+                return;
+
             // FacilityBase는 Hideout 씬에만 존재. 다른 씬이면 찾기 못하고 기존 값 유지됨.
             var facilities = FindObjectsByType<FacilityBase>(FindObjectsSortMode.None);
             if (facilities == null || facilities.Length == 0) return;
@@ -806,12 +815,75 @@ namespace DeadZone.Network
                 {
                     case FacilityType.Workbench: currentData.facilities.workbench = f.CurrentLevel.Value; break;
                     case FacilityType.CommStation: currentData.facilities.commStation = f.CurrentLevel.Value; break;
+                    case FacilityType.Medical: currentData.facilities.medical = f.CurrentLevel.Value; break;
                     case FacilityType.Gym: currentData.facilities.gym = f.CurrentLevel.Value; break;
                     case FacilityType.Stash: currentData.facilities.stash = f.CurrentLevel.Value; break;
                     case FacilityType.Kitchen: currentData.facilities.kitchen = f.CurrentLevel.Value; break;
                     case FacilityType.Bed: currentData.facilities.bed = f.CurrentLevel.Value; break;
                 }
             }
+        }
+
+        private bool TryCollectPlayerHousingProgress()
+        {
+            NetworkObject localPlayer = FindLocalPlayer();
+
+            if (localPlayer == null)
+                return false;
+
+            PlayerHousingProgress progress = localPlayer.GetComponent<PlayerHousingProgress>();
+
+            if (progress == null)
+                progress = localPlayer.GetComponentInChildren<PlayerHousingProgress>(true);
+
+            if (progress == null)
+                return false;
+
+            PlayerHousingProgressDTO dto = progress.ToSaveData();
+            dto.Normalize();
+            ApplyHousingProgressToCloudFields(dto);
+            return true;
+        }
+
+        private bool TryCollectLobbyFacilityState()
+        {
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+
+            if (facilityState == null || facilityState.Facilities == null || facilityState.Facilities.Count == 0)
+                return false;
+
+            EnsureLobbySaveContainers();
+
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = facilityState.Facilities[i];
+
+                if (facility == null || string.IsNullOrWhiteSpace(facility.facilityId))
+                    continue;
+
+                ApplyFacilityToLegacyField(facility);
+                UpsertLobbyFacility(facility.facilityId, facility.level);
+            }
+
+            return true;
+        }
+
+        private bool TryCollectCachedLobbyFacilities()
+        {
+            if (currentData?.lobbySave?.facilities == null || currentData.lobbySave.facilities.Count == 0)
+                return false;
+
+            for (int i = 0; i < currentData.lobbySave.facilities.Count; i++)
+            {
+                LobbyFacilityCloudData facility = currentData.lobbySave.facilities[i];
+
+                if (facility == null || string.IsNullOrWhiteSpace(facility.facilityId))
+                    continue;
+
+                ApplyLobbyFacilityCloudToLegacyField(facility);
+            }
+
+            return true;
         }
 
         private void CollectPersonalQuestProgress()
@@ -1237,6 +1309,23 @@ namespace DeadZone.Network
         }
 
         private void ApplyFacilityToLegacyField(FacilitySaveDTO facility)
+        {
+            if (facility == null)
+                return;
+
+            switch (NormalizeFacilityId(facility.facilityId))
+            {
+                case "workbench": currentData.facilities.workbench = facility.level; break;
+                case "commstation": currentData.facilities.commStation = facility.level; break;
+                case "medical": currentData.facilities.medical = facility.level; break;
+                case "gym": currentData.facilities.gym = facility.level; break;
+                case "stash": currentData.facilities.stash = facility.level; break;
+                case "kitchen": currentData.facilities.kitchen = facility.level; break;
+                case "bed": currentData.facilities.bed = facility.level; break;
+            }
+        }
+
+        private void ApplyLobbyFacilityCloudToLegacyField(LobbyFacilityCloudData facility)
         {
             if (facility == null)
                 return;

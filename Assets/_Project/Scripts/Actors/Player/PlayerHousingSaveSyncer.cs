@@ -74,6 +74,16 @@ namespace DeadZone.Actors
 
             PlayerHousingProgressDTO dto = progress.ToSaveData();
 
+            if (IsOwner)
+            {
+                ApplyHousingStateToLobbySave(dto, saveReason);
+
+                if (saveToCloud)
+                    _ = SaveHousingProgressToCloudAsync(dto, saveReason);
+
+                return;
+            }
+
             ReceiveHousingSaveRequestRpc(
                 dto.workbenchLevel,
                 dto.medicalLevel,

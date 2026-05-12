@@ -180,6 +180,8 @@ namespace DeadZone.Systems.Housing
 
                 dto.Normalize();
                 ApplyToLobbyFacilityState(dto);
+                ApplyToSceneFacilities(dto);
+                RefreshOpenHideoutWindows();
 
                 bool success = await cloudSaveSystem.SaveHousingProgressAsync(dto);
 
@@ -233,6 +235,68 @@ namespace DeadZone.Systems.Housing
             facilityState.SetFacilityLevel("Kitchen", dto.kitchenLevel);
             facilityState.SetFacilityLevel("Bed", dto.bedLevel);
             facilityState.SetFacilityLevel("CommStation", dto.commStationLevel);
+        }
+
+        private static void ApplyToSceneFacilities(PlayerHousingProgressDTO dto)
+        {
+            FacilityBase[] facilities = FindObjectsByType<FacilityBase>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < facilities.Length; i++)
+            {
+                FacilityBase facility = facilities[i];
+
+                if (facility == null)
+                    continue;
+
+                if (!CanWriteSceneFacilityLevel(facility))
+                    continue;
+
+                int targetLevel = dto.GetLevel(facility.Type);
+
+                if (!facility.CanSetLevel(targetLevel))
+                    continue;
+
+                facility.CurrentLevel.Value = targetLevel;
+            }
+        }
+
+        private static bool CanWriteSceneFacilityLevel(FacilityBase facility)
+        {
+            if (facility == null)
+                return false;
+
+            if (!facility.IsSpawned)
+                return true;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            return networkManager != null && networkManager.IsServer;
+        }
+
+        private static void RefreshOpenHideoutWindows()
+        {
+            DeadZone.Actors.UI.Hideout.FacilityUpgradeWindowUI[] upgradeWindows =
+                FindObjectsByType<DeadZone.Actors.UI.Hideout.FacilityUpgradeWindowUI>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+            for (int i = 0; i < upgradeWindows.Length; i++)
+            {
+                if (upgradeWindows[i] != null && upgradeWindows[i].IsOpen)
+                    upgradeWindows[i].Refresh();
+            }
+
+            DeadZone.Actors.UI.Hideout.FacilityCraftWindowUI[] craftWindows =
+                FindObjectsByType<DeadZone.Actors.UI.Hideout.FacilityCraftWindowUI>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+            for (int i = 0; i < craftWindows.Length; i++)
+            {
+                if (craftWindows[i] != null && craftWindows[i].IsOpen)
+                    craftWindows[i].Refresh();
+            }
         }
 
         private static void IncrementLevel(PlayerHousingProgressDTO dto)
