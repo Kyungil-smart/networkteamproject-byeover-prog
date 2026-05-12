@@ -36,6 +36,7 @@ namespace DeadZone.Actors
         
         private NetworkObject netObj;
         private PlayerHealthSystem health;
+        private ShootingSystem shooting;
 
         private IPlayerInputContext currentContext;
         private IPlayerInputContext aliveCtx;
@@ -52,10 +53,11 @@ namespace DeadZone.Actors
         {
             netObj = GetComponent<NetworkObject>();
             health = GetComponent<PlayerHealthSystem>();
+            shooting = GetComponent<ShootingSystem>();
 
             aliveCtx = new AliveInputContext(
                 GetComponent<FPSController>(),
-                GetComponent<ShootingSystem>(),
+                shooting,
                 GetComponent<ADSSystem>(),
                 GetComponent<ReloadSystem>(),
                 GetComponent<RollSystem>(),
@@ -68,6 +70,7 @@ namespace DeadZone.Actors
             currentContext = aliveCtx;
             
             if (inputCamera == null) inputCamera = Camera.main;
+            if (inputCamera != null) shooting?.SetAimCamera(inputCamera);
         }
 
         private void Start()
@@ -77,6 +80,7 @@ namespace DeadZone.Actors
             health.State.OnValueChanged += OnPlayerStateChanged;
             ApplyContextForState(health.State.Value);
         }
+        
         private void OnEnable()
         {
             inputActions = new DeadZoneInputActions();
@@ -123,6 +127,7 @@ namespace DeadZone.Actors
         public void SetInputCamera(Camera cam)
         {
             inputCamera = cam;
+            shooting?.SetAimCamera(cam);
         }
         
         private bool CanProcessInput
@@ -219,6 +224,8 @@ namespace DeadZone.Actors
             if (inputCamera != null) return true;
 
             inputCamera = Camera.main;
+            if (inputCamera != null) shooting?.SetAimCamera(inputCamera);
+
             return inputCamera != null;
         }
 
