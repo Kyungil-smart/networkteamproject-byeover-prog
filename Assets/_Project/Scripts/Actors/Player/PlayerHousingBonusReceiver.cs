@@ -5,36 +5,36 @@ using DeadZone.Core;
 
 namespace DeadZone.Actors
 {
-    // Applies housing bonuses from this player's own PlayerHousingProgress.
-    // This keeps personal housing progress separate from shared hideout facility objects.
+    // 이 플레이어의 개인 PlayerHousingProgress를 기준으로 하우징 보너스를 적용합니다.
+    // 공유 은신처 시설 오브젝트와 플레이어별 하우징 진행도를 분리해서 관리합니다.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerHousingProgress))]
     public sealed class PlayerHousingBonusReceiver : NetworkBehaviour
     {
-        [Header("Apply Target")]
+        [Header("적용 대상")]
         [SerializeField] private PlayerHealthSystem healthSystem;
         [SerializeField] private PlayerStaminaSystem staminaSystem;
         [SerializeField] private PlayerCarryWeightSystem carryWeightSystem;
         [SerializeField] private PlayerHousingProgress housingProgress;
 
-        [Header("Apply Options")]
+        [Header("적용 옵션")]
         [SerializeField] private bool fillHpWhenMaxHpIncreased = true;
         [SerializeField] private bool fillStaminaWhenMaxStaminaIncreased = true;
 
-        [Header("Bonus Rules")]
+        [Header("보너스 규칙")]
         [SerializeField, Min(1)] private int bonusStartLevel = 2;
         [SerializeField, Min(0f)] private float medicalHealthBonusPerLevel = 5f;
         [SerializeField, Min(0f)] private float kitchenStaminaBonusPerLevel = 5f;
         [SerializeField, Min(0f)] private float bedStaminaBonusPerLevel = 5f;
         [SerializeField, Min(0f)] private float gymCarryWeightBonusPerLevelKg = 7.5f;
 
-        [Header("Runtime Bonuses")]
+        [Header("실행 중 보너스")]
         [SerializeField] private float medicalHealthBonus;
         [SerializeField] private float kitchenStaminaBonus;
         [SerializeField] private float bedStaminaBonus;
         [SerializeField] private float gymCarryWeightBonusKg;
 
-        [Header("Log")]
+        [Header("로그")]
         [SerializeField] private bool logBonusChanged = true;
 
         public float MedicalHealthBonus => medicalHealthBonus;
@@ -74,7 +74,7 @@ namespace DeadZone.Actors
             RecalculateAndApplyAllBonuses();
 
             if (logBonusChanged)
-                Debug.Log("[PlayerHousingBonusReceiver] Player housing bonus receiver is ready.", this);
+                Debug.Log("[PlayerHousingBonusReceiver] 플레이어 하우징 보너스 적용기가 준비되었습니다.", this);
         }
 
         public override void OnNetworkDespawn()
@@ -143,12 +143,12 @@ namespace DeadZone.Actors
             if (logBonusChanged)
             {
                 Debug.Log(
-                    $"[PlayerHousingBonusReceiver] Applied personal housing bonuses\n" +
-                    $"ClientId: {OwnerClientId}\n" +
-                    $"Medical HP: +{medicalHealthBonus:0.##}\n" +
-                    $"Kitchen stamina: +{kitchenStaminaBonus:0.##}\n" +
-                    $"Bed stamina: +{bedStaminaBonus:0.##}\n" +
-                    $"Gym carry weight: +{gymCarryWeightBonusKg:0.##}kg",
+                    $"[PlayerHousingBonusReceiver] 개인 하우징 보너스 적용 완료\n" +
+                    $"클라이언트 ID: {OwnerClientId}\n" +
+                    $"의료시설 최대 HP: +{medicalHealthBonus:0.##}\n" +
+                    $"주방 스태미나: +{kitchenStaminaBonus:0.##}\n" +
+                    $"침대 스태미나: +{bedStaminaBonus:0.##}\n" +
+                    $"체육관 소지 무게: +{gymCarryWeightBonusKg:0.##}kg",
                     this);
             }
         }
@@ -166,7 +166,7 @@ namespace DeadZone.Actors
         {
             if (healthSystem == null)
             {
-                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerHealthSystem is missing.", this);
+                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerHealthSystem을 찾을 수 없습니다.", this);
                 return;
             }
 
@@ -177,7 +177,7 @@ namespace DeadZone.Actors
         {
             if (staminaSystem == null)
             {
-                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerStaminaSystem is missing.", this);
+                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerStaminaSystem을 찾을 수 없습니다.", this);
                 return;
             }
 
@@ -188,7 +188,7 @@ namespace DeadZone.Actors
         {
             if (carryWeightSystem == null)
             {
-                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerCarryWeightSystem is missing.", this);
+                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerCarryWeightSystem을 찾을 수 없습니다.", this);
                 return;
             }
 
@@ -196,20 +196,20 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("Print Current Housing Bonuses")]
+        [ContextMenu("현재 하우징 보너스 출력")]
         private void DebugPrintCurrentBonuses()
         {
             Debug.Log(
-                $"[PlayerHousingBonusReceiver] Current housing bonuses\n" +
-                $"Medical max HP: +{medicalHealthBonus:0.##}\n" +
-                $"Kitchen stamina: +{kitchenStaminaBonus:0.##}\n" +
-                $"Bed stamina: +{bedStaminaBonus:0.##}\n" +
-                $"Total stamina: +{TotalStaminaBonus:0.##}\n" +
-                $"Gym carry weight: +{gymCarryWeightBonusKg:0.##}kg",
+                $"[PlayerHousingBonusReceiver] 현재 하우징 보너스\n" +
+                $"의료시설 최대 HP: +{medicalHealthBonus:0.##}\n" +
+                $"주방 스태미나: +{kitchenStaminaBonus:0.##}\n" +
+                $"침대 스태미나: +{bedStaminaBonus:0.##}\n" +
+                $"전체 스태미나: +{TotalStaminaBonus:0.##}\n" +
+                $"체육관 소지 무게: +{gymCarryWeightBonusKg:0.##}kg",
                 this);
         }
 
-        [ContextMenu("Reset Housing Bonuses")]
+        [ContextMenu("하우징 보너스 초기화")]
         private void DebugResetBonuses()
         {
             medicalHealthBonus = 0f;
