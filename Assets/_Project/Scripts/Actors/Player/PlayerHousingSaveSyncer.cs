@@ -2,9 +2,6 @@ using System.Threading.Tasks;
 
 using Unity.Netcode;
 using UnityEngine;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-using UnityEngine.InputSystem;
-#endif
 
 using DeadZone.Core;
 using DeadZone.Network;
@@ -32,15 +29,6 @@ namespace DeadZone.Actors
         [SerializeField]
         private bool logSaveRequest = true;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        [Header("Debug")]
-        [SerializeField]
-        private bool enableEndKeyUpgradeTest = true;
-
-        [SerializeField]
-        private bool shiftEndResetsHousingLevels = true;
-#endif
-
         private PlayerHousingProgress progress;
 
         private void Awake()
@@ -66,25 +54,6 @@ namespace DeadZone.Actors
 
             base.OnNetworkDespawn();
         }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private void Update()
-        {
-            if (!enableEndKeyUpgradeTest || !Application.isPlaying || !IsOwner)
-                return;
-
-            Keyboard keyboard = Keyboard.current;
-
-            if (keyboard == null || !keyboard.endKey.wasPressedThisFrame)
-                return;
-
-            bool resetToLevelOne =
-                shiftEndResetsHousingLevels &&
-                (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
-
-            RequestEndKeyHousingTestRpc(resetToLevelOne);
-        }
-#endif
 
         /// <summary>
         /// 서버에서 현재 플레이어 하우징 레벨을 소유 클라이언트의 Cloud Save에 저장하도록 요청합니다.
@@ -296,6 +265,15 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public bool TryRunDebugHousingLevelTest(bool resetToLevelOne)
+        {
+            if (!IsSpawned || !IsOwner)
+                return false;
+
+            RequestEndKeyHousingTestRpc(resetToLevelOne);
+            return true;
+        }
+
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void RequestEndKeyHousingTestRpc(bool resetToLevelOne, RpcParams rpcParams = default)
         {
