@@ -487,13 +487,15 @@ GameObject:
   - component: {fileID: 1860151659725561128}
   - component: {fileID: -4358573395740997876}
   - component: {fileID: 8112840747869453086}
-  - component: {fileID: 1755801955162734937}
-  - component: {fileID: 6102483567629689994}
   - component: {fileID: -8633860964739703053}
   - component: {fileID: 3096256922150323826}
   - component: {fileID: -3200219425098209382}
   - component: {fileID: 1186768812489299859}
   - component: {fileID: 6492204563506104235}
+  - component: {fileID: 9221063217793167294}
+  - component: {fileID: 6020859240896289732}
+  - component: {fileID: 2960883677210419207}
+  - component: {fileID: 8742465977128026345}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -581,7 +583,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2875219163
+  GlobalObjectIdHash: 146189795
   InScenePlacedSourceGlobalObjectIdHash: 146189795
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1109,6 +1111,78 @@ MonoBehaviour:
         byte0059: 0
         byte0060: 0
         byte0061: 0
+  BackpackSlotId:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue:
+      utf8LengthInBytes: 0
+      bytes:
+        offset0000:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        offset0016:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        offset0032:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        byte0048: 0
+        byte0049: 0
+        byte0050: 0
+        byte0051: 0
+        byte0052: 0
+        byte0053: 0
+        byte0054: 0
+        byte0055: 0
+        byte0056: 0
+        byte0057: 0
+        byte0058: 0
+        byte0059: 0
+        byte0060: 0
+        byte0061: 0
   Primary1Id:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -1491,8 +1565,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bde57c0cceb94d098c159b33426b6fb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.HealthDebugCommands
---- !u!114 &6102483567629689994
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.WeaponSwitching
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1186768812489299859
 MonoBehaviour:
@@ -1528,21 +1600,116 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
-  m_Script: {fileID: 11500000, guid: 9c9126248a615f84a9da6ee7089c5a78, type: 3}
+--- !u!114 &9221063217793167294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bd52185ded3c3f40ae6bd15e2ea3e23, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ShootingSystem
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHousingProgress
   ShowTopMostFoldoutHeaderGroup: 1
-  muzzleTransform: {fileID: 7489591256997111823}
-  hitMask:
-    serializedVersion: 2
-    m_Bits: 64
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 32768
-  maxRange: 600
-  shotgunProjectileCount: 25
-  shotgunSpreadAngle: 120
-  shotgunPelletAngleJitter: 3
+  WorkbenchLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  MedicalLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  GymLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  StashLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  KitchenLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  BedLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  CommStationLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  logLevelChanged: 1
+--- !u!114 &6020859240896289732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caccc38c307576043a6ce0b039ecb55a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHousingSaveSyncer
+  ShowTopMostFoldoutHeaderGroup: 1
+  saveToCloud: 1
+  logSaveRequest: 1
+--- !u!114 &2960883677210419207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af725fbcc18e649428b48be927095973, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHousingBonusReceiver
+  ShowTopMostFoldoutHeaderGroup: 1
+  healthSystem: {fileID: 8354546832462354360}
+  staminaSystem: {fileID: 1860151659725561128}
+  carryWeightSystem: {fileID: 8742465977128026345}
+  housingProgress: {fileID: 9221063217793167294}
+  fillHpWhenMaxHpIncreased: 1
+  fillStaminaWhenMaxStaminaIncreased: 1
+  bonusStartLevel: 2
+  medicalHealthBonusPerLevel: 5
+  kitchenStaminaBonusPerLevel: 5
+  bedStaminaBonusPerLevel: 5
+  gymCarryWeightBonusPerLevelKg: 7.5
+  medicalHealthBonus: 0
+  kitchenStaminaBonus: 0
+  bedStaminaBonus: 0
+  gymCarryWeightBonusKg: 0
+  logBonusChanged: 1
+--- !u!114 &8742465977128026345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b49ed507c4f5a544bb39a48d357ca83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerCarryWeightSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+  baseMaxCarryWeightKg: 60
+  housingCarryWeightBonusKg: 0
+  currentCarryWeightKg: 0
+  logBonusChanged: 1
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0
