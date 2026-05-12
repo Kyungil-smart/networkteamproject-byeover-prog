@@ -1,3 +1,5 @@
+using System;
+
 using Unity.Netcode;
 using UnityEngine;
 
@@ -24,6 +26,8 @@ namespace DeadZone.Actors
         [Header("·Î±×")]
         [SerializeField]
         private bool logLevelChanged = true;
+
+        public event Action<FacilityType, int, int> FacilityLevelChanged;
 
         public override void OnNetworkSpawn()
         {
@@ -172,6 +176,8 @@ namespace DeadZone.Actors
 
         private void LogLevelChanged(FacilityType facilityType, int oldLevel, int newLevel)
         {
+            FacilityLevelChanged?.Invoke(facilityType, oldLevel, newLevel);
+
             if (!logLevelChanged)
                 return;
 
