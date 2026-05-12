@@ -8,31 +8,35 @@ using DeadZone.Systems;
 
 namespace DeadZone.Systems.Housing
 {
-    // Àº½ÅÃ³ ½Ã¼³ ·¹º§À» JSON ÆÄÀÏ·Î ÀúÀåÇÏ°í ·Îµå
-    // ¼­¹ö°¡ ÀúÀå µ¥ÀÌÅÍ¸¦ ÀĞ¾î FacilityBase.CurrentLevel¿¡ Àû¿ëÇÏ¸é Å¬¶óÀÌ¾ğÆ®´Â NetworkVariable·Î ÀÚµ¿ µ¿±âÈ­
+    // ì€ì‹ ì²˜ ì‹œì„¤ ë ˆë²¨ì„ JSON íŒŒì¼ë¡œ ì €ì¥í•˜ê³  ë¡œë“œ
+    // ì„œë²„ê°€ ì €ì¥ ë°ì´í„°ë¥¼ ì½ì–´ FacilityBase.CurrentLevelì— ì ìš©í•˜ë©´ í´ë¼ì´ì–¸íŠ¸ëŠ” NetworkVariableë¡œ ìë™ ë™ê¸°í™”
     [DisallowMultipleComponent]
     public sealed class HideoutFacilitySaveSystem : NetworkBehaviour
     {
-        [Header("ÀúÀå ´ë»ó ½Ã¼³")]
+        [Header("ì €ì¥ ëŒ€ìƒ ì‹œì„¤")]
         [SerializeField]
         private List<FacilityBase> facilities = new();
 
-        [Header("ÀÚµ¿ ¼öÁı")]
+        [Header("ìë™ ìˆ˜ì§‘")]
         [SerializeField]
         private bool autoFindFacilitiesOnSpawn = true;
 
-        [Header("ÀúÀå ÆÄÀÏ")]
+        [Header("ì €ì¥ íŒŒì¼")]
         [SerializeField]
         private string saveFileName = "hideout_facility_save.json";
 
-        [Header("ÀúÀå ¿É¼Ç")]
+        [Header("ì €ì¥ ì˜µì…˜")]
+        [SerializeField]
+        [Tooltip("Cloud Save ê¸°ë°˜ í•˜ìš°ì§• ì €ì¥ì„ ì‚¬ìš©í•  ë•ŒëŠ” êº¼ë‘¡ë‹ˆë‹¤. ì¼œë©´ ë¡œì»¬ JSONì´ ì”¬ FacilityBase ë ˆë²¨ì„ ì§ì ‘ ì €ì¥/ë¡œë“œí•©ë‹ˆë‹¤.")]
+        private bool useLocalJsonSave;
+
         [SerializeField]
         private bool saveWhenFacilityLevelChanged = true;
 
         [SerializeField]
         private bool saveOnDespawn = true;
 
-        [Header("·Î±×")]
+        [Header("ë¡œê·¸")]
         [SerializeField]
         private bool logSaveLoad = true;
 
@@ -42,6 +46,9 @@ namespace DeadZone.Systems.Housing
 
         public override void OnNetworkSpawn()
         {
+            if (!useLocalJsonSave)
+                return;
+
             if (!IsServer)
                 return;
 
@@ -54,6 +61,9 @@ namespace DeadZone.Systems.Housing
 
         public override void OnNetworkDespawn()
         {
+            if (!useLocalJsonSave)
+                return;
+
             if (!IsServer)
                 return;
 
@@ -66,6 +76,9 @@ namespace DeadZone.Systems.Housing
         private void OnApplicationQuit()
         {
             if (!Application.isPlaying)
+                return;
+
+            if (!useLocalJsonSave)
                 return;
 
             if (!IsServer)
@@ -95,7 +108,7 @@ namespace DeadZone.Systems.Housing
                 if (saveKey == null || !saveKey.IsValid)
                 {
                     Debug.LogWarning(
-                        $"[HideoutFacilitySaveSystem] ÀúÀå Å°°¡ ¾ø´Â ½Ã¼³Àº ÀúÀå ´ë»ó¿¡¼­ Á¦¿ÜµË´Ï´Ù: {facility.name}",
+                        $"[HideoutFacilitySaveSystem] ì €ì¥ í‚¤ê°€ ì—†ëŠ” ì‹œì„¤ì€ ì €ì¥ ëŒ€ìƒì—ì„œ ì œì™¸ë©ë‹ˆë‹¤: {facility.name}",
                         facility
                     );
 
@@ -107,11 +120,14 @@ namespace DeadZone.Systems.Housing
             }
 
             if (logSaveLoad)
-                Debug.Log($"[HideoutFacilitySaveSystem] ÀúÀå ´ë»ó ½Ã¼³ ¼öÁı ¿Ï·á: {facilities.Count}°³", this);
+                Debug.Log($"[HideoutFacilitySaveSystem] ì €ì¥ ëŒ€ìƒ ì‹œì„¤ ìˆ˜ì§‘ ì™„ë£Œ: {facilities.Count}ê°œ", this);
         }
 
         public void SaveCurrentLevels()
         {
+            if (!useLocalJsonSave)
+                return;
+
             if (!IsServer)
                 return;
 
@@ -146,18 +162,21 @@ namespace DeadZone.Systems.Housing
             File.WriteAllText(SavePath, json);
 
             if (logSaveLoad)
-                Debug.Log($"[HideoutFacilitySaveSystem] ½Ã¼³ ·¹º§ ÀúÀå ¿Ï·á: {SavePath}", this);
+                Debug.Log($"[HideoutFacilitySaveSystem] ì‹œì„¤ ë ˆë²¨ ì €ì¥ ì™„ë£Œ: {SavePath}", this);
         }
 
         public void LoadAndApplyLevels()
         {
+            if (!useLocalJsonSave)
+                return;
+
             if (!IsServer)
                 return;
 
             if (!File.Exists(SavePath))
             {
                 if (logSaveLoad)
-                    Debug.Log($"[HideoutFacilitySaveSystem] ÀúÀå ÆÄÀÏÀÌ ¾ø½À´Ï´Ù. ±âº» ½Ã¼³ ·¹º§À» »ç¿ëÇÕ´Ï´Ù: {SavePath}", this);
+                    Debug.Log($"[HideoutFacilitySaveSystem] ì €ì¥ íŒŒì¼ì´ ì—†ìŠµë‹ˆë‹¤. ê¸°ë³¸ ì‹œì„¤ ë ˆë²¨ì„ ì‚¬ìš©í•©ë‹ˆë‹¤: {SavePath}", this);
 
                 return;
             }
@@ -166,7 +185,7 @@ namespace DeadZone.Systems.Housing
 
             if (string.IsNullOrWhiteSpace(json))
             {
-                Debug.LogWarning("[HideoutFacilitySaveSystem] ÀúÀå ÆÄÀÏÀÌ ºñ¾î ÀÖ½À´Ï´Ù.", this);
+                Debug.LogWarning("[HideoutFacilitySaveSystem] ì €ì¥ íŒŒì¼ì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
@@ -174,7 +193,7 @@ namespace DeadZone.Systems.Housing
 
             if (saveData == null || saveData.facilities == null)
             {
-                Debug.LogWarning("[HideoutFacilitySaveSystem] ÀúÀå µ¥ÀÌÅÍ ÆÄ½Ì¿¡ ½ÇÆĞÇß½À´Ï´Ù.", this);
+                Debug.LogWarning("[HideoutFacilitySaveSystem] ì €ì¥ ë°ì´í„° íŒŒì‹±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
@@ -216,7 +235,7 @@ namespace DeadZone.Systems.Housing
                 if (logSaveLoad)
                 {
                     Debug.Log(
-                        $"[HideoutFacilitySaveSystem] ½Ã¼³ ·¹º§ ·Îµå Àû¿ë: {saveKey.FacilityId} Lv.{clampedLevel}",
+                        $"[HideoutFacilitySaveSystem] ì‹œì„¤ ë ˆë²¨ ë¡œë“œ ì ìš©: {saveKey.FacilityId} Lv.{clampedLevel}",
                         facility
                     );
                 }
@@ -270,47 +289,47 @@ namespace DeadZone.Systems.Housing
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("ÀúÀå ´ë»ó ½Ã¼³ ´Ù½Ã ¼öÁı")]
+        [ContextMenu("ì €ì¥ ëŒ€ìƒ ì‹œì„¤ ë‹¤ì‹œ ìˆ˜ì§‘")]
         private void DebugCollectFacilities()
         {
             CollectFacilitiesInScene();
         }
 
-        [ContextMenu("ÇöÀç ½Ã¼³ ·¹º§ ÀúÀå")]
+        [ContextMenu("í˜„ì¬ ì‹œì„¤ ë ˆë²¨ ì €ì¥")]
         private void DebugSaveCurrentLevels()
         {
             if (!Application.isPlaying)
             {
-                Debug.LogWarning("[HideoutFacilitySaveSystem] ÇÃ·¹ÀÌ Áß¿¡¸¸ ÀúÀåÇÒ ¼ö ÀÖ½À´Ï´Ù.", this);
+                Debug.LogWarning("[HideoutFacilitySaveSystem] í”Œë ˆì´ ì¤‘ì—ë§Œ ì €ì¥í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             SaveCurrentLevels();
         }
 
-        [ContextMenu("ÀúÀåµÈ ½Ã¼³ ·¹º§ ·Îµå")]
+        [ContextMenu("ì €ì¥ëœ ì‹œì„¤ ë ˆë²¨ ë¡œë“œ")]
         private void DebugLoadCurrentLevels()
         {
             if (!Application.isPlaying)
             {
-                Debug.LogWarning("[HideoutFacilitySaveSystem] ÇÃ·¹ÀÌ Áß¿¡¸¸ ·ÎµåÇÒ ¼ö ÀÖ½À´Ï´Ù.", this);
+                Debug.LogWarning("[HideoutFacilitySaveSystem] í”Œë ˆì´ ì¤‘ì—ë§Œ ë¡œë“œí•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             LoadAndApplyLevels();
         }
 
-        [ContextMenu("½Ã¼³ ÀúÀå ÆÄÀÏ »èÁ¦")]
+        [ContextMenu("ì‹œì„¤ ì €ì¥ íŒŒì¼ ì‚­ì œ")]
         private void DebugDeleteSaveFile()
         {
             if (File.Exists(SavePath))
             {
                 File.Delete(SavePath);
-                Debug.Log($"[HideoutFacilitySaveSystem] ÀúÀå ÆÄÀÏ »èÁ¦ ¿Ï·á: {SavePath}", this);
+                Debug.Log($"[HideoutFacilitySaveSystem] ì €ì¥ íŒŒì¼ ì‚­ì œ ì™„ë£Œ: {SavePath}", this);
             }
             else
             {
-                Debug.Log($"[HideoutFacilitySaveSystem] »èÁ¦ÇÒ ÀúÀå ÆÄÀÏÀÌ ¾ø½À´Ï´Ù: {SavePath}", this);
+                Debug.Log($"[HideoutFacilitySaveSystem] ì‚­ì œí•  ì €ì¥ íŒŒì¼ì´ ì—†ìŠµë‹ˆë‹¤: {SavePath}", this);
             }
         }
 #endif

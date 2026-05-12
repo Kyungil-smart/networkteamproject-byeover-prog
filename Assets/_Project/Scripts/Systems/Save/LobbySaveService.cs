@@ -24,6 +24,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private bool loadFromCloudOnCloudSaveLoaded = true;
         [SerializeField] private bool saveToCloudOnApplicationPause = true;
         [SerializeField] private bool saveToCloudOnApplicationQuit = true;
+        [SerializeField] private bool allowLifecycleAutoSave;
 
         [Header("테스트 JSON")]
         [TextArea(8, 20)]
@@ -50,7 +51,7 @@ namespace DeadZone.Systems.Save
 
         private void OnApplicationPause(bool pauseStatus)
         {
-            if (!pauseStatus || !saveToCloudOnApplicationPause)
+            if (!allowLifecycleAutoSave || !pauseStatus || !saveToCloudOnApplicationPause)
                 return;
 
             SaveLobbyDataToCloud();
@@ -58,7 +59,7 @@ namespace DeadZone.Systems.Save
 
         private void OnApplicationQuit()
         {
-            if (!saveToCloudOnApplicationQuit)
+            if (!allowLifecycleAutoSave || !saveToCloudOnApplicationQuit)
                 return;
 
             SaveLobbyDataToCloud();
@@ -245,15 +246,63 @@ namespace DeadZone.Systems.Save
 
         private CloudSaveSystem ResolveCloudSaveSystem()
         {
-            if (cloudSaveSystem != null)
+            CloudSaveSystem registeredSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (registeredSaveSystem != null && registeredSaveSystem.enabled && registeredSaveSystem.HasLoadedData)
+            {
+                cloudSaveSystem = registeredSaveSystem;
+                return cloudSaveSystem;
+            }
+
+            if (cloudSaveSystem != null && cloudSaveSystem.enabled && cloudSaveSystem.HasLoadedData)
                 return cloudSaveSystem;
 
-            cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
-            if (cloudSaveSystem != null)
+            if (registeredSaveSystem != null && registeredSaveSystem.enabled)
+            {
+                cloudSaveSystem = registeredSaveSystem;
+                return cloudSaveSystem;
+            }
+
+            if (cloudSaveSystem != null && cloudSaveSystem.enabled)
                 return cloudSaveSystem;
 
-            cloudSaveSystem = FindFirstObjectByType<CloudSaveSystem>(FindObjectsInactive.Include);
-            return cloudSaveSystem;
+            if (cloudSaveSystem != null && !cloudSaveSystem.enabled)
+            {
+                Debug.LogWarning("[LobbySaveService] Ignoring disabled CloudSaveSystem reference and resolving the active save authority.", this);
+                cloudSaveSystem = null;
+            }
+
+            CloudSaveSystem[] saveSystems = FindObjectsByType<CloudSaveSystem>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            if (saveSystems.Length > 1)
+            {
+                Debug.LogWarning(
+                    $"[LobbySaveService] Found {saveSystems.Length} CloudSaveSystem instances. The loaded and enabled instance will be used as the save authority.",
+                    this);
+            }
+
+            for (int i = 0; i < saveSystems.Length; i++)
+            {
+                CloudSaveSystem saveSystem = saveSystems[i];
+                if (saveSystem != null && saveSystem.enabled && saveSystem.HasLoadedData)
+                {
+                    cloudSaveSystem = saveSystem;
+                    return cloudSaveSystem;
+                }
+            }
+
+            for (int i = 0; i < saveSystems.Length; i++)
+            {
+                CloudSaveSystem saveSystem = saveSystems[i];
+                if (saveSystem != null && saveSystem.enabled)
+                {
+                    cloudSaveSystem = saveSystem;
+                    return cloudSaveSystem;
+                }
+            }
+
+            return null;
         }
     }
 }

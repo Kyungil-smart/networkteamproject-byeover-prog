@@ -25,7 +25,11 @@ namespace DeadZone.Systems.Save
         private void Awake()
         {
             if (dontDestroyOnLoad)
-                DontDestroyOnLoad(gameObject);
+            {
+                Debug.LogWarning(
+                    "[LobbyInventoryState] dontDestroyOnLoad is ignored. Lobby inventory state is a scene-local cache; CloudSaveSystem is the persistent authority.",
+                    this);
+            }
         }
 
         public void SetInventoryItems(IEnumerable<ItemSaveDTO> items)

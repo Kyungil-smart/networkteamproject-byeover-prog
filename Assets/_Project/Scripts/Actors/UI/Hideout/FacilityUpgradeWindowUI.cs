@@ -66,6 +66,7 @@ namespace DeadZone.Actors.UI.Hideout
         private IInventory inventory;
         private PlayerHousingProgress localHousingProgress;
         private bool isInitialized;
+        private PlayerHousingProgress subscribedHousingProgress;
 
         public bool IsOpen => windowRoot != null && windowRoot.activeSelf;
         public FacilityBase CurrentFacility => currentFacility;
@@ -81,6 +82,11 @@ namespace DeadZone.Actors.UI.Hideout
             Initialize();
         }
 
+        private void OnDestroy()
+        {
+            UnsubscribeHousingProgress();
+        }
+
         public void Open(HideoutCameraFacilitySelector.FacilityView facilityView)
         {
             Initialize();
@@ -92,6 +98,7 @@ namespace DeadZone.Actors.UI.Hideout
             }
 
             ResolveLocalPlayerReferences();
+            UpdateHousingProgressSubscription();
 
             if (!TryFindFacility(facilityView, out FacilityBase facility))
             {
@@ -112,6 +119,7 @@ namespace DeadZone.Actors.UI.Hideout
 
         public void Close()
         {
+            UnsubscribeHousingProgress();
             currentFacilityView = HideoutCameraFacilitySelector.FacilityView.None;
             currentFacility = null;
 
@@ -127,6 +135,7 @@ namespace DeadZone.Actors.UI.Hideout
         public void Refresh()
         {
             ResolveLocalPlayerReferences();
+            UpdateHousingProgressSubscription();
 
             if (currentFacility == null)
             {
@@ -237,9 +246,39 @@ namespace DeadZone.Actors.UI.Hideout
             upgradeController.RequestUpgrade();
 
             DebugLog($"LV{targetLevel} 업그레이드를 서버에 요청했습니다.");
+        }
+
+        private void UpdateHousingProgressSubscription()
+        {
+            if (subscribedHousingProgress == localHousingProgress)
+                return;
+
+            UnsubscribeHousingProgress();
+
+            subscribedHousingProgress = localHousingProgress;
+            if (subscribedHousingProgress != null)
+                subscribedHousingProgress.FacilityLevelChanged += HandleLocalHousingLevelChanged;
+        }
+
+        private void UnsubscribeHousingProgress()
+        {
+            if (subscribedHousingProgress != null)
+                subscribedHousingProgress.FacilityLevelChanged -= HandleLocalHousingLevelChanged;
+
+            subscribedHousingProgress = null;
+        }
+
+        private void HandleLocalHousingLevelChanged(FacilityType facilityType, int oldLevel, int newLevel)
+        {
+            if (!IsOpen || currentFacility == null)
+                return;
+
+            if (currentFacility.Type != facilityType)
+                return;
 
             Refresh();
         }
+
 
         private bool TryGetUpgradeController(out FacilityUpgradeController upgradeController)
         {
