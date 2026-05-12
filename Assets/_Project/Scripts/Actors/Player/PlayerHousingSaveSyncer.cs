@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems;
+using DeadZone.Systems.Housing;
 using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors
@@ -31,7 +32,12 @@ namespace DeadZone.Actors
         [SerializeField]
         private bool logSaveRequest = true;
 
+        [SerializeField]
+        [Tooltip("서버가 해당 플레이어의 Cloud Save 원본을 직접 가지고 있지 않을 때, 소유 클라이언트가 보낸 로드 데이터를 임시 호환 경로로 허용할지 여부입니다.")]
+        private bool allowOwnerProvidedLoadDataWhenServerCloudDataMissing = true;
+
         private PlayerHousingProgress progress;
+        private string lastAppliedLoadSignature;
 
         private void Awake()
         {
@@ -65,7 +71,7 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// 서버에서 현재 플레이어 하우징 레벨을 소유 클라이언트의 Cloud Save에 저장하도록 요청합니다.
+        /// 서버의 현재 플레이어 하우징 진행도를 소유 클라이언트의 Cloud Save에 저장하도록 요청합니다.
         /// </summary>
         public void RequestSaveFromServer(string saveReason)
         {
@@ -183,6 +189,14 @@ namespace DeadZone.Actors
 
             bool success = await cloudSaveSystem.SaveHousingProgressAsync(dto);
 
+            EventBus.Publish(new HousingSaveResultEvent
+            {
+                success = success,
+                reason = success
+                    ? $"Housing Cloud Save 저장 완료. 사유: {saveReason}"
+                    : $"Housing Cloud Save 저장 실패. 사유: {saveReason}"
+            });
+
             if (!logSaveRequest)
                 return;
 
@@ -260,6 +274,14 @@ namespace DeadZone.Actors
             if (dto == null)
                 return;
 
+            string loadSignature = BuildLoadSignature(dto, source);
+            if (lastAppliedLoadSignature == loadSignature)
+            {
+                Debug.Log($"[HideoutLoad] Same housing data already applied. source={source}", this);
+                return;
+            }
+
+            lastAppliedLoadSignature = loadSignature;
             ApplyHousingStateToLobbySave(dto, reason);
 
             if (IsServer)
@@ -310,6 +332,21 @@ namespace DeadZone.Actors
                 Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress가 없어 하우징 저장 데이터를 적용할 수 없습니다.", this);
                 return;
             }
+
+            if (IsOwner && TryCreateServerAuthorityHousingProgressDTO(out PlayerHousingProgressDTO serverDto, out string serverSource))
+            {
+                ApplyHousingSaveDataOnServer(serverDto, $"{reason} / {serverSource}");
+                ApplyHousingStateToLobbySave(serverDto, reason);
+                return;
+            }
+
+            if (!allowOwnerProvidedLoadDataWhenServerCloudDataMissing)
+            {
+                Debug.LogWarning("[PlayerHousingSaveSyncer] 서버에 Cloud Save 원본이 없어 클라이언트 제공 하우징 데이터를 거부했습니다.", this);
+                return;
+            }
+
+            Debug.LogWarning("[PlayerHousingSaveSyncer] 서버 Cloud Save 원본이 없어 소유 클라이언트가 보낸 하우징 로드 데이터를 호환 경로로 적용합니다.", this);
 
             PlayerHousingProgressDTO dto = new PlayerHousingProgressDTO
             {
@@ -482,6 +519,32 @@ namespace DeadZone.Actors
                 if (craftWindows[i] != null && craftWindows[i].IsOpen)
                     craftWindows[i].Refresh();
             }
+        }
+
+        private static bool TryCreateServerAuthorityHousingProgressDTO(out PlayerHousingProgressDTO dto, out string source)
+        {
+            dto = null;
+            source = string.Empty;
+
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
+            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData)
+                return false;
+
+            dto = cloudSaveSystem.CreateHousingProgressDTOFromCurrentData();
+            if (dto == null)
+                return false;
+
+            dto.Normalize();
+            source = "ServerAuthorityCloudSave";
+            return true;
+        }
+
+        private static string BuildLoadSignature(PlayerHousingProgressDTO dto, string source)
+        {
+            if (dto == null)
+                return "null";
+
+            return $"{dto.workbenchLevel}|{dto.medicalLevel}|{dto.gymLevel}|{dto.stashLevel}|{dto.kitchenLevel}|{dto.bedLevel}|{dto.commStationLevel}";
         }
 
         private static bool IsHideoutScene(string sceneName)

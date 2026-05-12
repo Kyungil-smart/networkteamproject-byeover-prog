@@ -133,19 +133,25 @@ namespace DeadZone.Systems.Housing
                 return false;
             }
 
+            int resultCount = Mathf.Max(1, recipe.resultCount);
+
+            if (!CanAcceptCraftResult(inventory, recipe, resultCount))
+            {
+                FailCraft(recipe.recipeID, "결과 아이템을 받을 인벤토리 공간이 부족합니다.");
+                return false;
+            }
+
             if (!ConsumeAllIngredients(inventory, recipe))
             {
                 FailCraft(recipe.recipeID, "제작 재료 소모에 실패했습니다.");
                 return false;
             }
 
-            int resultCount = Mathf.Max(1, recipe.resultCount);
-
             if (!TryAddCraftResult(inventory, recipe, resultCount, out int addedCount))
             {
                 RemoveAddedCraftResult(inventory, recipe, addedCount);
                 RestoreConsumedIngredients(inventory);
-                FailCraft(recipe.recipeID, "결과 아이템 지급에 실패했습니다. 소모한 재료를 되돌렸습니다.");
+                FailCraft(recipe.recipeID, "결과 아이템 지급에 실패했습니다. 소모된 재료를 되돌렸습니다.");
                 return false;
             }
 
@@ -155,7 +161,7 @@ namespace DeadZone.Systems.Housing
 
             if (saveSyncer != null)
             {
-                saveSyncer.RequestSaveFromServer($"Workbench 제작 완료: {recipe.recipeID}");
+                saveSyncer.RequestSaveFromServer($"Workbench 제작 성공: {recipe.recipeID}");
             }
             else
             {
@@ -231,7 +237,7 @@ namespace DeadZone.Systems.Housing
 
             if (requesterWorkbenchLevel < requiredLevel)
             {
-                failReason = $"작업대 Lv.{requiredLevel} 이상이 필요합니다. 현재 내 작업대 Lv.{requesterWorkbenchLevel}";
+                failReason = $"작업대 Lv.{requiredLevel} 이상이 필요합니다. 현재 작업대 Lv.{requesterWorkbenchLevel}";
                 return false;
             }
 
@@ -334,6 +340,19 @@ namespace DeadZone.Systems.Housing
                     amount = amount
                 });
             }
+
+            return true;
+        }
+
+        private bool CanAcceptCraftResult(IInventory inventory, RecipeSO recipe, int resultCount)
+        {
+            if (inventory == null || recipe == null || recipe.result == null)
+                return false;
+
+            int safeResultCount = Mathf.Max(1, resultCount);
+
+            if (inventory is GridInventory gridInventory)
+                return gridInventory.CanAddItem(recipe.result, safeResultCount);
 
             return true;
         }

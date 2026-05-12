@@ -12,8 +12,8 @@ using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors.UI.Hideout
 {
-    // 작업대/의료시설 제작 창 UI
-    // UI는 레시피 표시와 제작 요청만 담당하고, 재료 소모와 결과 지급은 서버 제작 컨트롤러가 처리
+    // 작업대/의료시설 제작 창 UI입니다.
+    // UI는 레시피 표시와 제작 요청만 담당하고, 재료 소모와 결과 지급은 서버 제작 컨트롤러가 처리합니다.
     [DisallowMultipleComponent]
     public sealed class FacilityCraftWindowUI : MonoBehaviour
     {
@@ -72,6 +72,18 @@ namespace DeadZone.Actors.UI.Hideout
         private void Awake()
         {
             Initialize();
+        }
+
+        private void OnEnable()
+        {
+            EventBus.Subscribe<HousingCraftResultEvent>(HandleCraftResult);
+            EventBus.Subscribe<HousingSaveResultEvent>(HandleSaveResult);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<HousingCraftResultEvent>(HandleCraftResult);
+            EventBus.Unsubscribe<HousingSaveResultEvent>(HandleSaveResult);
         }
 
         private void OnDestroy()
@@ -214,6 +226,22 @@ namespace DeadZone.Actors.UI.Hideout
             Refresh();
         }
 
+        private void HandleCraftResult(HousingCraftResultEvent evt)
+        {
+            if (!IsOpen)
+                return;
+
+            SetMessage(evt.success ? $"제작 완료: {evt.resultItemId} x{evt.resultCount}" : evt.reason);
+            Refresh();
+        }
+
+        private void HandleSaveResult(HousingSaveResultEvent evt)
+        {
+            if (!IsOpen || evt.success)
+                return;
+
+            SetMessage(evt.reason);
+        }
 
         private bool RequestCraftToCurrentFacility(string recipeID)
         {
@@ -278,7 +306,6 @@ namespace DeadZone.Actors.UI.Hideout
             if (windowRoot == null)
                 windowRoot = gameObject;
 
-            ResolveInventory();
             isInitialized = true;
         }
 
@@ -287,7 +314,7 @@ namespace DeadZone.Actors.UI.Hideout
             inventory = null;
             localHousingProgress = null;
 
-            // 네트워크 실사용 기준: 현재 로컬 플레이어의 PlayerObject 인벤토리를 가장 먼저 찾는다.
+            // 네트워크 우선 기준: 현재 로컬 플레이어의 PlayerObject 인벤토리를 가장 먼저 찾습니다.
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 ulong localClientId = NetworkManager.Singleton.LocalClientId;
@@ -321,7 +348,7 @@ namespace DeadZone.Actors.UI.Hideout
                 }
             }
 
-            // 인스펙터에 직접 연결된 인벤토리
+            // 인스펙터에 직접 연결된 인벤토리입니다.
             if (inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
@@ -350,7 +377,7 @@ namespace DeadZone.Actors.UI.Hideout
                 }
             }
 
-            // 최후의 자동 검색
+            // 최후의 자동 검색입니다.
             MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
@@ -571,7 +598,7 @@ namespace DeadZone.Actors.UI.Hideout
         {
             return facilityView switch
             {
-                HideoutCameraFacilitySelector.FacilityView.Workbench => "총기 작업대 제작",
+                HideoutCameraFacilitySelector.FacilityView.Workbench => "작업대 제작",
                 HideoutCameraFacilitySelector.FacilityView.Medical => "의료시설 제작",
                 _ => "제작"
             };
@@ -582,10 +609,10 @@ namespace DeadZone.Actors.UI.Hideout
             return facilityView switch
             {
                 HideoutCameraFacilitySelector.FacilityView.Workbench =>
-                    "시설 레벨에 따라 총기 제작 레시피가 표시됩니다.",
+                    "시설 레벨에 따라 작업대 제작 레시피를 표시합니다.",
 
                 HideoutCameraFacilitySelector.FacilityView.Medical =>
-                    "시설 레벨에 따라 의료품 제작 레시피가 표시됩니다.",
+                    "시설 레벨에 따라 의료품 제작 레시피를 표시합니다.",
 
                 _ => string.Empty
             };
