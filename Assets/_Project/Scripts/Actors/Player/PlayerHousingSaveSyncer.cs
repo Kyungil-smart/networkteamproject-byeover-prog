@@ -3,20 +3,24 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors
 {
+    /// <summary>
+    /// í”Œë ˆì´ì–´ë³„ í•˜ìš°ì§• ì§„í–‰ë„ë¥¼ Cloud Saveì™€ NetworkVariable ì‚¬ì´ì—ì„œ ë™ê¸°í™”í•©ë‹ˆë‹¤.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerHousingProgress))]
     public sealed class PlayerHousingSaveSyncer : NetworkBehaviour
     {
-        [Header("ÀúÀå ¿É¼Ç")]
+        [Header("ì €ì¥ ì˜µì…˜")]
         [SerializeField]
         private bool saveToCloud = true;
 
-        [Header("·Î±×")]
+        [Header("ë¡œê·¸")]
         [SerializeField]
         private bool logSaveRequest = true;
 
@@ -27,6 +31,28 @@ namespace DeadZone.Actors
             progress = GetComponent<PlayerHousingProgress>();
         }
 
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            if (!IsOwner)
+                return;
+
+            EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+            TryApplyLoadedCloudDataToServer("PlayerHousingSaveSyncer spawned");
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (IsOwner)
+                EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+
+            base.OnNetworkDespawn();
+        }
+
+        /// <summary>
+        /// ì„œë²„ì—ì„œ í˜„ì¬ í”Œë ˆì´ì–´ í•˜ìš°ì§• ë ˆë²¨ì„ ì†Œìœ  í´ë¼ì´ì–¸íŠ¸ì˜ Cloud Saveì— ì €ì¥í•˜ë„ë¡ ìš”ì²­í•©ë‹ˆë‹¤.
+        /// </summary>
         public void RequestSaveFromServer(string saveReason)
         {
             if (!IsServer)
@@ -37,7 +63,7 @@ namespace DeadZone.Actors
 
             if (progress == null)
             {
-                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress°¡ ¾ø½À´Ï´Ù.", this);
+                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgressê°€ ì—†ìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
@@ -83,11 +109,10 @@ namespace DeadZone.Actors
             };
 
             dto.Normalize();
-
             ApplyHousingStateToLobbySave(dto, saveReason);
 
             if (saveToCloud)
-                _ = SaveLobbyDataToCloudAsync(saveReason);
+                _ = SaveHousingProgressToCloudAsync(dto, saveReason);
         }
 
         private void ApplyHousingStateToLobbySave(PlayerHousingProgressDTO dto, string saveReason)
@@ -96,7 +121,7 @@ namespace DeadZone.Actors
 
             if (facilityState == null)
             {
-                Debug.LogWarning("[PlayerHousingSaveSyncer] LobbyFacilityState¸¦ Ã£Áö ¸øÇß½À´Ï´Ù. PersistentSystems ¶Ç´Â Save ¿ÀºêÁ§Æ® ¼³Á¤À» È®ÀÎÇÏ¼¼¿ä.", this);
+                Debug.LogWarning("[PlayerHousingSaveSyncer] LobbyFacilityStateë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. PersistentSystems ë˜ëŠ” Save ì˜¤ë¸Œì íŠ¸ ì„¤ì •ì„ í™•ì¸í•˜ì„¸ìš”.", this);
                 return;
             }
 
@@ -112,52 +137,154 @@ namespace DeadZone.Actors
                 return;
 
             Debug.Log(
-                $"[PlayerHousingSaveSyncer] ÇÃ·¹ÀÌ¾îº° ½Ã¼³ ·¹º§ ÀúÀå »óÅÂ ¹İ¿µ ¿Ï·á\n" +
-                $"»çÀ¯: {saveReason}\n" +
+                $"[PlayerHousingSaveSyncer] í”Œë ˆì´ì–´ë³„ ì‹œì„¤ ë ˆë²¨ ì €ì¥ ìƒíƒœ ë°˜ì˜ ì™„ë£Œ\n" +
+                $"ì‚¬ìœ : {saveReason}\n" +
                 $"Workbench Lv.{dto.workbenchLevel}, Medical Lv.{dto.medicalLevel}, Gym Lv.{dto.gymLevel}, " +
                 $"Stash Lv.{dto.stashLevel}, Kitchen Lv.{dto.kitchenLevel}, Bed Lv.{dto.bedLevel}, CommStation Lv.{dto.commStationLevel}",
                 this
             );
         }
 
-        private async Task SaveLobbyDataToCloudAsync(string saveReason)
+        private async Task SaveHousingProgressToCloudAsync(PlayerHousingProgressDTO dto, string saveReason)
         {
-            FirebaseAnonymousLoginSystem loginSystem =
-                FindFirstObjectByType<FirebaseAnonymousLoginSystem>(FindObjectsInactive.Include);
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
 
-            if (loginSystem == null)
+            if (cloudSaveSystem == null)
             {
-                Debug.LogWarning("[PlayerHousingSaveSyncer] FirebaseAnonymousLoginSystemÀ» Ã£Áö ¸øÇß½À´Ï´Ù. Cloud Save ÀúÀåÀ» °Ç³Ê¶İ´Ï´Ù.", this);
+                Debug.LogWarning("[PlayerHousingSaveSyncer] CloudSaveSystemì„ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. Housing ì €ì¥ì„ ê±´ë„ˆëœë‹ˆë‹¤.", this);
                 return;
             }
 
-            bool signedIn = await loginSystem.EnsureSignedInAsync();
-
-            if (!signedIn)
-            {
-                Debug.LogWarning($"[PlayerHousingSaveSyncer] Firebase ·Î±×ÀÎ ½ÇÆĞ·Î ÀúÀåÀ» °Ç³Ê¶İ´Ï´Ù. »çÀ¯: {saveReason}", this);
-                return;
-            }
-
-            LobbySaveService saveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
-
-            if (saveService == null)
-            {
-                Debug.LogWarning("[PlayerHousingSaveSyncer] LobbySaveService¸¦ Ã£Áö ¸øÇß½À´Ï´Ù. Cloud Save ÀúÀåÀ» °Ç³Ê¶İ´Ï´Ù.", this);
-                return;
-            }
-
-            bool success = await saveService.SaveLobbyDataToCloudAsync();
+            bool success = await cloudSaveSystem.SaveHousingProgressAsync(dto);
 
             if (!logSaveRequest)
                 return;
 
             Debug.Log(
                 success
-                    ? $"[PlayerHousingSaveSyncer] Cloud Save ÀúÀå ¿Ï·á. »çÀ¯: {saveReason}"
-                    : $"[PlayerHousingSaveSyncer] Cloud Save ÀúÀå ½ÇÆĞ. »çÀ¯: {saveReason}",
+                    ? $"[PlayerHousingSaveSyncer] Housing Cloud Save ì €ì¥ ì™„ë£Œ. ì‚¬ìœ : {saveReason}"
+                    : $"[PlayerHousingSaveSyncer] Housing Cloud Save ì €ì¥ ì‹¤íŒ¨. ì‚¬ìœ : {saveReason}",
                 this
             );
+        }
+
+        private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
+        {
+            if (!IsOwner)
+                return;
+
+            TryApplyLoadedCloudDataToServer("Cloud Save loaded");
+        }
+
+        private void TryApplyLoadedCloudDataToServer(string reason)
+        {
+            if (!IsOwner)
+                return;
+
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
+
+            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData)
+                return;
+
+            PlayerHousingProgressDTO dto = cloudSaveSystem.CreateHousingProgressDTOFromCurrentData();
+
+            if (dto == null)
+                return;
+
+            ApplyHousingStateToLobbySave(dto, reason);
+
+            ApplyHousingSaveDataRpc(
+                dto.workbenchLevel,
+                dto.medicalLevel,
+                dto.gymLevel,
+                dto.stashLevel,
+                dto.kitchenLevel,
+                dto.bedLevel,
+                dto.commStationLevel,
+                reason);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void ApplyHousingSaveDataRpc(
+            int workbenchLevel,
+            int medicalLevel,
+            int gymLevel,
+            int stashLevel,
+            int kitchenLevel,
+            int bedLevel,
+            int commStationLevel,
+            string reason,
+            RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+            {
+                Debug.LogWarning(
+                    $"[PlayerHousingSaveSyncer] ì†Œìœ ìê°€ ì•„ë‹Œ í´ë¼ì´ì–¸íŠ¸ì˜ í•˜ìš°ì§• ë³µì› ìš”ì²­ì„ ê±°ë¶€í–ˆìŠµë‹ˆë‹¤. Sender={rpcParams.Receive.SenderClientId}, Owner={OwnerClientId}",
+                    this);
+                return;
+            }
+
+            if (progress == null)
+                progress = GetComponent<PlayerHousingProgress>();
+
+            if (progress == null)
+            {
+                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgressê°€ ì—†ì–´ í•˜ìš°ì§• ì €ì¥ ë°ì´í„°ë¥¼ ì ìš©í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.", this);
+                return;
+            }
+
+            PlayerHousingProgressDTO dto = new PlayerHousingProgressDTO
+            {
+                workbenchLevel = workbenchLevel,
+                medicalLevel = medicalLevel,
+                gymLevel = gymLevel,
+                stashLevel = stashLevel,
+                kitchenLevel = kitchenLevel,
+                bedLevel = bedLevel,
+                commStationLevel = commStationLevel
+            };
+
+            dto.Normalize();
+            progress.ApplySaveDataFromServer(dto);
+            ApplyHousingStateToLobbySave(dto, reason);
+
+            if (!logSaveRequest)
+                return;
+
+            Debug.Log(
+                $"[PlayerHousingSaveSyncer] Cloud Save í•˜ìš°ì§• ë°ì´í„°ë¥¼ ì„œë²„ PlayerHousingProgressì— ì ìš©í–ˆìŠµë‹ˆë‹¤. ì‚¬ìœ : {reason}",
+                this);
+        }
+
+        private static CloudSaveSystem ResolveCloudSaveSystem(bool preferLoadedData)
+        {
+            CloudSaveSystem service = ServiceLocator.Get<CloudSaveSystem>();
+
+            if (!preferLoadedData)
+                return service != null
+                    ? service
+                    : UnityEngine.Object.FindFirstObjectByType<CloudSaveSystem>(FindObjectsInactive.Include);
+
+            if (service != null && service.HasLoadedData)
+                return service;
+
+            CloudSaveSystem[] systems = UnityEngine.Object.FindObjectsByType<CloudSaveSystem>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < systems.Length; i++)
+            {
+                if (systems[i] != null && systems[i].HasLoadedData)
+                    return systems[i];
+            }
+
+            if (service != null)
+                return service;
+
+            return systems != null && systems.Length > 0 ? systems[0] : null;
         }
     }
 }
