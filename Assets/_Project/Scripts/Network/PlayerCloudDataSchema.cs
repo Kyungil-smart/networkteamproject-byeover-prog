@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Firebase.Firestore;
 
 
@@ -145,9 +145,10 @@ namespace DeadZone.Network
     [FirestoreData]
     public class FacilitiesData
     {
-        // 개인 은신처 6시설 레벨 (0~4). 팀장 결정: 각자 자기 하우징을 가짐.
+        // 개인 은신처 시설 레벨 (0~4). 팀장 결정: 각자 자기 하우징을 가짐.
         [FirestoreProperty] public int workbench { get; set; } = 1;
         [FirestoreProperty] public int commStation { get; set; } = 1;
+        [FirestoreProperty] public int medical { get; set; } = 1;
         [FirestoreProperty] public int gym { get; set; } = 1;
         [FirestoreProperty] public int stash { get; set; } = 1;
         [FirestoreProperty] public int kitchen { get; set; } = 1;
