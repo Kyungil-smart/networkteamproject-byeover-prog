@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using DeadZone.Core;
+using DeadZone.Systems;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -38,6 +40,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private List<InventorySlotUI> bagSlots = new List<InventorySlotUI>();
 
         private GridLayoutGroup originalRootGridLayout;
+        private IItemDatabase itemDatabase;
 
         private void Reset()
         {
@@ -46,9 +49,20 @@ namespace DeadZone.Actors.UI
 
         private void Awake()
         {
+            bagLevel = 0;
             AutoBindReferences();
             ConfigureScrollAndGrid();
             RefreshSlots();
+        }
+
+        private void OnEnable()
+        {
+            EventBus.Subscribe<BackpackChangedEvent>(HandleBackpackChanged);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<BackpackChangedEvent>(HandleBackpackChanged);
         }
 
         private void Start()
@@ -79,6 +93,11 @@ namespace DeadZone.Actors.UI
         {
             bagLevel = Mathf.Clamp(level, 0, 4);
             RefreshSlots();
+        }
+
+        private void HandleBackpackChanged(BackpackChangedEvent evt)
+        {
+            SetBagLevel(GetBagLevelFromBackpackId(evt.newBackpackId.ToString()));
         }
 
         public void RefreshSlots()
@@ -355,6 +374,16 @@ namespace DeadZone.Actors.UI
                 4 => level4Capacity,
                 _ => baseCapacity
             };
+        }
+
+        private int GetBagLevelFromBackpackId(string backpackId)
+        {
+            if (string.IsNullOrWhiteSpace(backpackId))
+                return 0;
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+            BackpackDataSO backpackData = itemDatabase?.GetById<BackpackDataSO>(backpackId);
+            return backpackData != null ? Mathf.Clamp(backpackData.backpackLevel, 0, 4) : 0;
         }
 
         private RectTransform FindDirectChildRect(string objectName)

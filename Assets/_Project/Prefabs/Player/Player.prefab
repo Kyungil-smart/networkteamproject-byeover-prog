@@ -487,6 +487,8 @@ GameObject:
   - component: {fileID: 1860151659725561128}
   - component: {fileID: -4358573395740997876}
   - component: {fileID: 8112840747869453086}
+  - component: {fileID: 1755801955162734937}
+  - component: {fileID: 6102483567629689994}
   - component: {fileID: -8633860964739703053}
   - component: {fileID: 3096256922150323826}
   - component: {fileID: -3200219425098209382}
@@ -1488,6 +1490,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bde57c0cceb94d098c159b33426b6fb9, type: 3}
   m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.HealthDebugCommands
+--- !u!114 &6102483567629689994
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.WeaponSwitching
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1186768812489299859
@@ -1513,6 +1517,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1109705922278564}
   m_Enabled: 1
   m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61b1c100690fcbb49b7ee68fbfa93e40, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.Player.PlayerTeamIdentity
+  ShowTopMostFoldoutHeaderGroup: 1
+  fallbackColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  TeamColor:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   m_Script: {fileID: 11500000, guid: 9c9126248a615f84a9da6ee7089c5a78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ShootingSystem

@@ -1,4 +1,5 @@
 using Sirenix.OdinInspector;
+using DeadZone.Network;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -93,6 +94,17 @@ namespace DeadZone.Actors
         private bool warnedTargetOutsideBounds;
         private MinimapStageConfig currentStageConfig;
 
+        private void OnEnable()
+        {
+            PartyPlayerColorCache.Changed += ApplyLocalPlayerMarkerColor;
+            ApplyLocalPlayerMarkerColor();
+        }
+
+        private void OnDisable()
+        {
+            PartyPlayerColorCache.Changed -= ApplyLocalPlayerMarkerColor;
+        }
+
         private void Awake()
         {
             ResolveBoundsProvider();
@@ -182,6 +194,7 @@ namespace DeadZone.Actors
 
             Image markerImage = GetOrAddImage(localPlayerMarker.gameObject);
             markerImage.raycastTarget = false;
+            ApplyLocalPlayerMarkerColor(markerImage);
             LogMarkerImage("Local marker", localPlayerMarker, markerImage);
 
             if (frameImage != null)
@@ -557,6 +570,21 @@ namespace DeadZone.Actors
 
             Vector2 markerOffset = desiredMapPosition - clampedMapPosition;
             localPlayerMarker.anchoredPosition = -markerOffset;
+        }
+
+        private void ApplyLocalPlayerMarkerColor()
+        {
+            Image markerImage = localPlayerMarker != null ? localPlayerMarker.GetComponent<Image>() : null;
+            ApplyLocalPlayerMarkerColor(markerImage);
+        }
+
+        private void ApplyLocalPlayerMarkerColor(Image markerImage)
+        {
+            if (markerImage == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient)
+                return;
+
+            if (PartyPlayerColorCache.TryGetColor(NetworkManager.Singleton.LocalClientId, out Color32 color))
+                markerImage.color = color;
         }
 
         private Vector2 GetCorrectedNormalizedTargetPosition()

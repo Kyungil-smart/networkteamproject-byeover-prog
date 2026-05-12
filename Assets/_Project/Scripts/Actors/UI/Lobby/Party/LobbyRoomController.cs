@@ -15,6 +15,9 @@ namespace DeadZone.Actors.UI
 {
     public class LobbyRoomController : MonoBehaviour
     {
+        public static event Action PartyRoomVisibilityChanged;
+        public static bool IsPartyRoomVisible { get; private set; }
+
         private enum RoomUiState
         {
             Idle,
@@ -42,6 +45,9 @@ namespace DeadZone.Actors.UI
         
         [Tooltip("현재 표시된 JoinCode를 클립보드에 복사하는 버튼")]
         [SerializeField] private Button copyJoinCodeButton;
+
+        [Tooltip("파티 생성 전에는 꺼지고, 파티 생성/참가 후 켜지는 Slot_Party 오브젝트")]
+        [SerializeField] private GameObject slotPartyRoot;
         
         [Header("====방 생성/참가 UI====")]
         [Tooltip("JoinCode 입력용 팝업 루트")]
@@ -135,6 +141,9 @@ namespace DeadZone.Actors.UI
         
         private void InitializeView()
         {
+            SetPartyRoomVisible(false);
+            SetPartyObjectsVisible(false);
+            PartyPlayerColorCache.Clear();
             currentJoinCode = string.Empty;
             SetJoinCodeText(emptyJoinCodeText);
             SetJoinPopupVisible(false);
@@ -305,6 +314,7 @@ namespace DeadZone.Actors.UI
             currentJoinCode = string.Empty;
             SetJoinCodeText(emptyJoinCodeText);
             SetJoinPopupVisible(false);
+            PartyPlayerColorCache.Clear();
             SetRoomState(RoomUiState.Idle);
             
             ShowStatus("방 연결을 종료했습니다.");
@@ -350,8 +360,29 @@ namespace DeadZone.Actors.UI
 
             bool isBusy = IsBusyState();
             SetLoadingBlocker(isBusy);
+            bool isPartyRoomState = state is RoomUiState.HostRoom or RoomUiState.ClientRoom;
+            SetPartyRoomVisible(isPartyRoomState);
+            SetPartyObjectsVisible(isPartyRoomState);
 
             ApplyButtonsForCurrentState();
+        }
+
+        private void SetPartyObjectsVisible(bool visible)
+        {
+            if (slotPartyRoot != null)
+                slotPartyRoot.SetActive(visible);
+
+            if (leaveRoomButton != null)
+                leaveRoomButton.gameObject.SetActive(visible);
+        }
+
+        private static void SetPartyRoomVisible(bool visible)
+        {
+            if (IsPartyRoomVisible == visible)
+                return;
+
+            IsPartyRoomVisible = visible;
+            PartyRoomVisibilityChanged?.Invoke();
         }
 
         private void ApplyButtonsForCurrentState()

@@ -1,5 +1,7 @@
 namespace DeadZone.Actors.UI
 {
+    using UnityEngine;
+
     /// <summary>
     /// 파티 슬롯 UI에 전달되는 표시 전용 데이터입니다.
     /// </summary>
@@ -11,6 +13,7 @@ namespace DeadZone.Actors.UI
         public bool IsHost;
         public bool IsReady;
         public bool IsLocalPlayer;
+        public Color32 IconColor;
 
         public static LobbyPartySlotViewData Empty => new LobbyPartySlotViewData
         {
@@ -23,7 +26,8 @@ namespace DeadZone.Actors.UI
             DisplayName = string.Empty,
             IsHost = false,
             IsReady = false,
-            IsLocalPlayer = false
+            IsLocalPlayer = false,
+            IconColor = Color.white
         };
     }
 }

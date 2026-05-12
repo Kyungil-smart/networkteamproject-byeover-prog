@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DeadZone.Core;
 using Unity.Netcode;
 using UnityEngine;
@@ -42,6 +43,7 @@ namespace DeadZone.Network
 
         private LobbyRaidMap offlineSelectedMap = LobbyRaidMap.MapA;
         private bool hasRaidStartRequested;
+        private bool isStartingSoloSession;
 
         public LobbyRaidMap SelectedMap => IsNetworkSessionActive() ? selectedMap.Value : offlineSelectedMap;
         public event Action<LobbyRaidMap, LobbyRaidMap> SelectedMapChanged;
@@ -111,10 +113,15 @@ namespace DeadZone.Network
 
         public void StartRaid()
         {
+            _ = StartRaidAsync();
+        }
+
+        private async Task StartRaidAsync()
+        {
             if (!IsNetworkSessionActive())
             {
-                LogDebug("네트워크 로비가 시작된 뒤 출격할 수 있습니다.");
-                return;
+                if (!await TryStartSoloSessionAsync())
+                    return;
             }
 
             if (!CanStartRaid(out string reason))
@@ -124,6 +131,60 @@ namespace DeadZone.Network
             }
 
             StartRaidServerRpc();
+        }
+
+        private async Task<bool> TryStartSoloSessionAsync()
+        {
+            if (isStartingSoloSession)
+                return false;
+
+            ResolveReferences();
+
+            SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
+            if (sessionManager == null)
+            {
+                Debug.LogWarning("[LobbyRaidStartController] 1인 출격을 시작할 SessionManager를 찾지 못했습니다.", this);
+                return false;
+            }
+
+            isStartingSoloSession = true;
+
+            try
+            {
+                if (!sessionManager.StartHost())
+                {
+                    Debug.LogWarning("[LobbyRaidStartController] 1인 출격용 로컬 호스트 시작에 실패했습니다.", this);
+                    return false;
+                }
+
+                return await WaitForLobbyStateReadyAsync();
+            }
+            finally
+            {
+                isStartingSoloSession = false;
+            }
+        }
+
+        private async Task<bool> WaitForLobbyStateReadyAsync()
+        {
+            for (int i = 0; i < 60; i++)
+            {
+                ResolveReferences();
+
+                if (IsNetworkSessionActive() &&
+                    lobbyState != null &&
+                    lobbyState.IsSpawned &&
+                    lobbyState.Players != null &&
+                    lobbyState.Players.Count > 0)
+                {
+                    return true;
+                }
+
+                await Task.Delay(50);
+            }
+
+            Debug.LogWarning("[LobbyRaidStartController] 1인 출격용 로비 상태가 준비되지 않았습니다.", this);
+            return false;
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -213,7 +274,7 @@ namespace DeadZone.Network
             if (!CanSelectMap(map, out reason))
                 return false;
 
-            if (!AreAllPlayersReady())
+            if (partyCount > 1 && !AreAllPlayersReady())
             {
                 reason = "모든 파티원이 준비 완료 상태여야 합니다.";
                 return false;

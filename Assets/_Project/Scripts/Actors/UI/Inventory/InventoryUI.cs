@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using DeadZone.Actors;
 using DeadZone.Core;
+using DeadZone.Systems;
 using Unity.Collections;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -54,6 +55,7 @@ namespace DeadZone.Actors.UI
 
         private bool warnedMissingEquipmentBridge;
         private bool warnedUnsupportedClear;
+        private IItemDatabase itemDatabase;
 
         [BoxGroup("ItemDataSO 테스트")]
         [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
@@ -64,6 +66,7 @@ namespace DeadZone.Actors.UI
         private void Awake()
         {
             ActiveInstance = this;
+            bagLevel = 0;
             ResolveTooltipUI();
             EnsureDropSlots();
             InitializeSlots();
@@ -75,6 +78,12 @@ namespace DeadZone.Actors.UI
         private void OnEnable()
         {
             ActiveInstance = this;
+            EventBus.Subscribe<BackpackChangedEvent>(HandleBackpackChanged);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<BackpackChangedEvent>(HandleBackpackChanged);
         }
 
         private void OnDestroy()
@@ -240,6 +249,14 @@ namespace DeadZone.Actors.UI
         {
             bagLevel = Mathf.Clamp(level, 0, 4);
             RefreshBagSlots();
+        }
+
+        private void HandleBackpackChanged(BackpackChangedEvent evt)
+        {
+            if (!ResolveEquipmentSlots() || equipmentSlots.OwnerClientId != evt.clientId)
+                return;
+
+            SetBagLevel(GetBagLevelFromBackpackId(evt.newBackpackId.ToString()));
         }
 
         [BoxGroup("디버그")]
@@ -680,6 +697,16 @@ namespace DeadZone.Actors.UI
                 4 => 40,
                 _ => 20
             };
+        }
+
+        private int GetBagLevelFromBackpackId(string backpackId)
+        {
+            if (string.IsNullOrWhiteSpace(backpackId))
+                return 0;
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+            BackpackDataSO backpackData = itemDatabase?.GetById<BackpackDataSO>(backpackId);
+            return backpackData != null ? Mathf.Clamp(backpackData.backpackLevel, 0, 4) : 0;
         }
     }
 }
