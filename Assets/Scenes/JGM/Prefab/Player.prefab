@@ -3134,7 +3134,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1930693857
+  GlobalObjectIdHash: 3806700152
   InScenePlacedSourceGlobalObjectIdHash: 1410919396
   DeferredDespawnTick: 0
   Ownership: 1
@@ -3410,42 +3410,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.GridInventoryDebugItemAdder
   gridInventory: {fileID: 4260008715252334417}
   testItems:
-  - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
-    amount: 20
-  - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
-    amount: 20
-  - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
-    amount: 15
-  - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
-    amount: 15
-  - item: {fileID: 11400000, guid: 228f7cdc946b06042960e1f6445bde2e, type: 2}
-    amount: 20
-  - item: {fileID: 11400000, guid: 0ad2af112dd8ad94192784a3dadaf54d, type: 2}
-    amount: 15
-  - item: {fileID: 11400000, guid: b0f7fba7e4e87a74c91f5c3d0cbd5f44, type: 2}
-    amount: 15
-  - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
-    amount: 15
-  - item: {fileID: 11400000, guid: 62bfb5be1f6350342aac4c5a39528dd9, type: 2}
-    amount: 5
-  - item: {fileID: 11400000, guid: b225481d750ccc04b803ebb051064af7, type: 2}
-    amount: 1
-  - item: {fileID: 11400000, guid: 5c2259d638199a34c87356386180e0fb, type: 2}
-    amount: 1
-  - item: {fileID: 11400000, guid: cd4e61cb257052b40ada50b9154659af, type: 2}
-    amount: 1
-  - item: {fileID: 11400000, guid: fb39cbbad24212c4db9c4e2476051643, type: 2}
-    amount: 1
-  - item: {fileID: 11400000, guid: 920d06dc601dcaf47895d1989f2968d6, type: 2}
-    amount: 1
-  - item: {fileID: 11400000, guid: 767b74ff11969224e8c3e739ffb9f6d2, type: 2}
-    amount: 1
-  - item: {fileID: 11400000, guid: be884a024d1ace14487ad8ca2af8974c, type: 2}
-    amount: 1
-  - item: {fileID: 11400000, guid: dafe881ee30592d4da6053db2bcf0ff4, type: 2}
-    amount: 1
   - item: {fileID: 11400000, guid: 3f26f68f6f0f19a4bbaf942bed6f42a7, type: 2}
+    amount: 16
+  - item: {fileID: 11400000, guid: d1bef906214968245aa2782265ea3f2c, type: 2}
+    amount: 4
+  - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
     amount: 2
+  - item: {fileID: 11400000, guid: 771885c03bd11074aa30d0110f6f6197, type: 2}
+    amount: 3
+  - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
+    amount: 6
 --- !u!114 &2260964690649159723
 MonoBehaviour:
   m_ObjectHideFlags: 0

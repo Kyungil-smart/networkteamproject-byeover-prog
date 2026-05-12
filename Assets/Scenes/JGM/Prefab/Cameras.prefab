@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1497968274469306434}
   m_Layer: 0
   m_Name: Camera
-  m_TagString: Untagged
+  m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 1195481480521326198}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 13.9, z: -25.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -183,12 +183,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73e7b4d0f7f3cd147bfa43ae97e24cde, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.Hideout.HideoutCameraController
-  controlledCamera: {fileID: 0}
+  controlledCamera: {fileID: 2616895269391582515}
   defaultViewPoint: {fileID: 8339427906099545458}
   moveDuration: 0.6
   applyDefaultViewOnStart: 1
   blockInputWhileMoving: 1
-  showDebugLog: 1
+  showDebugLog: 0
 --- !u!114 &3802142383716412793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -212,7 +212,7 @@ MonoBehaviour:
   gymTarget: {fileID: 0}
   commStationTarget: {fileID: 0}
   medicalTarget: {fileID: 0}
-  showDebugLog: 1
+  showDebugLog: 0
 --- !u!114 &2846831972288013486
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -257,8 +257,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5798726083340074421}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.22644337, y: 0.6790167, z: -0.23417458, w: -0.65789217}
-  m_LocalPosition: {x: 25.199009, y: 16.42588, z: -13.149704}
+  m_LocalRotation: {x: -0.2751029, y: 0.6586714, z: -0.2843939, w: -0.6399926}
+  m_LocalPosition: {x: 20.396545, y: 22.879744, z: -16.682325}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
