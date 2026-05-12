@@ -2,6 +2,9 @@ using System.Threading.Tasks;
 
 using Unity.Netcode;
 using UnityEngine;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using UnityEngine.InputSystem;
+#endif
 
 using DeadZone.Core;
 using DeadZone.Network;
@@ -16,6 +19,11 @@ namespace DeadZone.Actors
     [RequireComponent(typeof(PlayerHousingProgress))]
     public sealed class PlayerHousingSaveSyncer : NetworkBehaviour
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const int DebugMinHousingLevel = 1;
+        private const int DebugMaxHousingLevel = 4;
+#endif
+
         [Header("저장 옵션")]
         [SerializeField]
         private bool saveToCloud = true;
@@ -23,6 +31,15 @@ namespace DeadZone.Actors
         [Header("로그")]
         [SerializeField]
         private bool logSaveRequest = true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [Header("Debug")]
+        [SerializeField]
+        private bool enableEndKeyUpgradeTest = true;
+
+        [SerializeField]
+        private bool shiftEndResetsHousingLevels = true;
+#endif
 
         private PlayerHousingProgress progress;
 
@@ -49,6 +66,25 @@ namespace DeadZone.Actors
 
             base.OnNetworkDespawn();
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void Update()
+        {
+            if (!enableEndKeyUpgradeTest || !Application.isPlaying || !IsOwner)
+                return;
+
+            Keyboard keyboard = Keyboard.current;
+
+            if (keyboard == null || !keyboard.endKey.wasPressedThisFrame)
+                return;
+
+            bool resetToLevelOne =
+                shiftEndResetsHousingLevels &&
+                (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
+
+            RequestEndKeyHousingTestRpc(resetToLevelOne);
+        }
+#endif
 
         /// <summary>
         /// 서버에서 현재 플레이어 하우징 레벨을 소유 클라이언트의 Cloud Save에 저장하도록 요청합니다.
@@ -258,6 +294,78 @@ namespace DeadZone.Actors
                 $"[PlayerHousingSaveSyncer] Cloud Save 하우징 데이터를 서버 PlayerHousingProgress에 적용했습니다. 사유: {reason}",
                 this);
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void RequestEndKeyHousingTestRpc(bool resetToLevelOne, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+            {
+                Debug.LogWarning(
+                    $"[PlayerHousingSaveSyncer] End 키 하우징 테스트 요청을 거부했습니다. Sender={rpcParams.Receive.SenderClientId}, Owner={OwnerClientId}",
+                    this);
+                return;
+            }
+
+            if (progress == null)
+                progress = GetComponent<PlayerHousingProgress>();
+
+            if (progress == null)
+            {
+                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress가 없어 End 키 하우징 테스트를 실행할 수 없습니다.", this);
+                return;
+            }
+
+            PlayerHousingProgressDTO dto = progress.ToSaveData();
+
+            if (resetToLevelOne)
+                SetDebugHousingLevel(dto, DebugMinHousingLevel);
+            else
+                IncrementDebugHousingLevel(dto);
+
+            dto.Normalize();
+            string reason = resetToLevelOne ? "Shift+End 하우징 테스트 초기화" : "End 키 하우징 테스트 업그레이드";
+
+            progress.ApplySaveDataFromServer(dto);
+            ApplyHousingStateToLobbySave(dto, reason);
+            RequestSaveFromServer(reason);
+
+            if (!logSaveRequest)
+                return;
+
+            Debug.Log(
+                resetToLevelOne
+                    ? "[PlayerHousingSaveSyncer] Shift+End 테스트로 모든 하우징 시설을 Lv.1로 초기화했습니다."
+                    : "[PlayerHousingSaveSyncer] End 테스트로 모든 하우징 시설을 한 단계 업그레이드했습니다.",
+                this);
+        }
+
+        private static void IncrementDebugHousingLevel(PlayerHousingProgressDTO dto)
+        {
+            dto.workbenchLevel = Mathf.Clamp(dto.workbenchLevel + 1, DebugMinHousingLevel, DebugMaxHousingLevel);
+            dto.medicalLevel = Mathf.Clamp(dto.medicalLevel + 1, DebugMinHousingLevel, DebugMaxHousingLevel);
+            dto.gymLevel = Mathf.Clamp(dto.gymLevel + 1, DebugMinHousingLevel, DebugMaxHousingLevel);
+            dto.stashLevel = Mathf.Clamp(dto.stashLevel + 1, DebugMinHousingLevel, DebugMaxHousingLevel);
+            dto.kitchenLevel = Mathf.Clamp(dto.kitchenLevel + 1, DebugMinHousingLevel, DebugMaxHousingLevel);
+            dto.bedLevel = Mathf.Clamp(dto.bedLevel + 1, DebugMinHousingLevel, DebugMaxHousingLevel);
+            dto.commStationLevel = Mathf.Clamp(dto.commStationLevel + 1, DebugMinHousingLevel, DebugMaxHousingLevel);
+        }
+
+        private static void SetDebugHousingLevel(PlayerHousingProgressDTO dto, int level)
+        {
+            int safeLevel = Mathf.Clamp(level, DebugMinHousingLevel, DebugMaxHousingLevel);
+            dto.workbenchLevel = safeLevel;
+            dto.medicalLevel = safeLevel;
+            dto.gymLevel = safeLevel;
+            dto.stashLevel = safeLevel;
+            dto.kitchenLevel = safeLevel;
+            dto.bedLevel = safeLevel;
+            dto.commStationLevel = safeLevel;
+        }
+#endif
 
         private static CloudSaveSystem ResolveCloudSaveSystem(bool preferLoadedData)
         {
