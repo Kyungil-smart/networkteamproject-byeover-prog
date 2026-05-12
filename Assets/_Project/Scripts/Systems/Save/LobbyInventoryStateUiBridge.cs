@@ -32,7 +32,11 @@ namespace DeadZone.Systems.Save
         private void Start()
         {
             if (captureOnStart)
-                CaptureUiToState();
+            {
+                Debug.LogWarning(
+                    "[LobbyInventoryStateUiBridge] captureOnStart is ignored. UI state is restored from CloudSaveSystem first and captured only when an explicit save is requested.",
+                    this);
+            }
         }
 
         [Button("UI 상태를 저장 상태로 반영")]
