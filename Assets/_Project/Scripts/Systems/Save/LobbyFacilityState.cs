@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DeadZone.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -18,6 +19,16 @@ namespace DeadZone.Systems.Save
         {
             if (dontDestroyOnLoad)
                 DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnEnable()
+        {
+            EventBus.Subscribe<AuthSignedOutEvent>(HandleAuthSignedOut);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<AuthSignedOutEvent>(HandleAuthSignedOut);
         }
 
         public void SetFacilities(IEnumerable<FacilitySaveDTO> nextFacilities)
@@ -55,6 +66,11 @@ namespace DeadZone.Systems.Save
         public void Clear()
         {
             facilities.Clear();
+        }
+
+        private void HandleAuthSignedOut(AuthSignedOutEvent e)
+        {
+            Clear();
         }
     }
 }
