@@ -30,15 +30,14 @@ namespace DeadZone.Actors
         // 서버 상태를 기준으로 클라이언트 표시 정보를 다시 맞췄을 때 사용한다.
         Synced
     }
-
     
     public class EquipmentSlots : NetworkBehaviour, IArmored
     {
         // ----------- 무기 런타임 상태 -----------
 
-        public NetworkVariable<WeaponState> Primary1State  = new();
-        public NetworkVariable<WeaponState> Primary2State  = new();
-        public NetworkVariable<WeaponState> SecondaryState = new();
+        [HideInInspector] public NetworkVariable<WeaponState> Primary1State  = new();
+        [HideInInspector] public NetworkVariable<WeaponState> Primary2State  = new();
+        [HideInInspector] public NetworkVariable<WeaponState> SecondaryState = new();
 
         // ----------- 슬롯 ID -----------
 
@@ -50,6 +49,13 @@ namespace DeadZone.Actors
         public NetworkVariable<FixedString64Bytes> SecondaryId     = new("");
         public NetworkVariable<FixedString64Bytes> MeleeId         = new("");
         public NetworkVariable<FixedString64Bytes> CurrentEquipped = new("");
+        [HideInInspector] public NetworkVariable<FixedString64Bytes> HeadSlotId      = new("");
+        [HideInInspector] public NetworkVariable<FixedString64Bytes> TorsoSlotId     = new("");
+        [HideInInspector] public NetworkVariable<FixedString64Bytes> Primary1Id      = new("");
+        [HideInInspector] public NetworkVariable<FixedString64Bytes> Primary2Id      = new("");
+        [HideInInspector] public NetworkVariable<FixedString64Bytes> SecondaryId     = new("");
+        [HideInInspector] public NetworkVariable<FixedString64Bytes> MeleeId         = new("");
+        [HideInInspector] public NetworkVariable<FixedString64Bytes> CurrentEquipped = new("");
 
         // ----------- 방어구 내구도 -----------
 

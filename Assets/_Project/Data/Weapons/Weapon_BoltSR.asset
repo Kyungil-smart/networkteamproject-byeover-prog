@@ -25,7 +25,7 @@ MonoBehaviour:
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 35000
-  worldPrefab: {fileID: 5012478770829545033, guid: 92963e6931496a54cbba79fd2cb71bca, type: 3}
+  worldPrefab: {fileID: 216199041615530470, guid: 92963e6931496a54cbba79fd2cb71bca, type: 3}
   weaponCategory: 3
   damage: 95
   fireRate: 1.5
@@ -34,7 +34,7 @@ MonoBehaviour:
   ammoType: 3
   availableModes: 02
   muzzleVelocity: 830
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.3
   adsTransitionTime: 0.3
   spreadAngle: {x: 0.1, y: 1}

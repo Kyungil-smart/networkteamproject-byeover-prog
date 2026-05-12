@@ -12,6 +12,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boss_S2_02_Enemy
       objectReference: {fileID: 0}
+    - target: {fileID: 1363632263242790, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1645629294910300, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1888928241360878, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4077195986647316, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -55,6 +67,10 @@ PrefabInstance:
     - target: {fileID: 3481043232388762985, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 4031219224
+      objectReference: {fileID: 0}
+    - target: {fileID: 4183854989116415764, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7428428410717088562, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
       propertyPath: statsSO

@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
 
 namespace DeadZone.Systems.Housing
 {
+    // 의료시설 제작을 서버에서 처리
+    // 시설 오브젝트의 공용 레벨이 아니라, 요청한 플레이어의 의료시설 레벨을 기준으로 제작
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MedicalFacility))]
     public sealed class MedicalCraftingController : NetworkBehaviour
@@ -16,33 +19,15 @@ namespace DeadZone.Systems.Housing
         [SerializeField]
         private List<RecipeSO> recipes = new();
 
+        [Header("디버그 제작")]
+        [SerializeField]
+        private string debugRecipeID;
+
         [Header("로그")]
         [SerializeField]
         private bool logCraftResult = true;
 
-        private MedicalFacility medicalFacility;
         private readonly List<ItemRequirement> consumedIngredients = new();
-
-        private void Reset()
-        {
-            FindRequiredComponents();
-        }
-
-        private void Awake()
-        {
-            FindRequiredComponents();
-        }
-
-        private void OnValidate()
-        {
-            FindRequiredComponents();
-        }
-
-        private void FindRequiredComponents()
-        {
-            if (medicalFacility == null)
-                medicalFacility = GetComponent<MedicalFacility>();
-        }
 
         public void RequestCraft(string recipeID)
         {
@@ -72,16 +57,28 @@ namespace DeadZone.Systems.Housing
             if (!HousingInventoryResolver.TryGetRequesterInventory(
                     requesterClientId,
                     out IInventory inventory,
-                    out string failReason))
+                    out string inventoryFailReason))
             {
-                FailCraft(recipeID, failReason);
+                FailCraft(recipeID, inventoryFailReason);
                 return;
             }
 
-            TryCraftWithInventory(recipeID, inventory);
+            if (!PlayerHousingProgressResolver.TryGetProgress(
+                    requesterClientId,
+                    out PlayerHousingProgress progress))
+            {
+                FailCraft(recipeID, "요청자의 하우징 진행도를 찾을 수 없습니다.");
+                return;
+            }
+
+            TryCraftWithRequesterData(recipeID, requesterClientId, inventory, progress);
         }
 
-        public bool TryCraftWithInventory(string recipeID, IInventory inventory)
+        private bool TryCraftWithRequesterData(
+            string recipeID,
+            ulong requesterClientId,
+            IInventory inventory,
+            PlayerHousingProgress progress)
         {
             if (!IsServer)
             {
@@ -89,18 +86,15 @@ namespace DeadZone.Systems.Housing
                 return false;
             }
 
-            if (medicalFacility == null)
-                medicalFacility = GetComponent<MedicalFacility>();
-
-            if (medicalFacility == null)
+            if (inventory == null)
             {
-                FailCraft(recipeID, "MedicalFacility가 없습니다.");
+                FailCraft(recipeID, "제작에 사용할 요청자 인벤토리가 없습니다.");
                 return false;
             }
 
-            if (inventory == null)
+            if (progress == null)
             {
-                FailCraft(recipeID, "제작에 사용할 실제 인벤토리가 없습니다.");
+                FailCraft(recipeID, "요청자의 하우징 진행도가 없습니다.");
                 return false;
             }
 
@@ -113,12 +107,15 @@ namespace DeadZone.Systems.Housing
             if (!IsRecipeValid(recipe))
                 return false;
 
-            int currentLevel = medicalFacility.GetCurrentLevel();
+            int requesterMedicalLevel = progress.GetLevel(FacilityType.Medical);
             int requiredLevel = Mathf.Max(1, recipe.requiredFacilityLevel);
 
-            if (currentLevel < requiredLevel)
+            if (requesterMedicalLevel < requiredLevel)
             {
-                FailCraft(recipeID, $"시설 레벨이 부족합니다. 현재 LV{currentLevel}, 필요 LV{requiredLevel}");
+                FailCraft(
+                    recipeID,
+                    $"의료시설 Lv.{requiredLevel} 이상이 필요합니다. 현재 내 의료시설 Lv.{requesterMedicalLevel}"
+                );
                 return false;
             }
 
@@ -146,6 +143,20 @@ namespace DeadZone.Systems.Housing
 
             consumedIngredients.Clear();
 
+            PlayerHousingSaveSyncer saveSyncer = progress.GetComponent<PlayerHousingSaveSyncer>();
+
+            if (saveSyncer != null)
+            {
+                saveSyncer.RequestSaveFromServer($"Medical 제작 완료: {recipe.recipeID}");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[MedicalCraftingController] PlayerHousingSaveSyncer가 없어 제작 결과 저장 요청을 보낼 수 없습니다. ClientId: {requesterClientId}",
+                    progress
+                );
+            }
+
             EventBus.Publish(new HousingCraftResultEvent
             {
                 facilityName = "Medical",
@@ -157,7 +168,15 @@ namespace DeadZone.Systems.Housing
             });
 
             if (logCraftResult)
-                Debug.Log($"[MedicalCraftingController] 제작 성공: {recipe.recipeID} → {recipe.result.itemID} x{resultCount}", this);
+            {
+                Debug.Log(
+                    $"[MedicalCraftingController] 플레이어별 의료시설 제작 성공\n" +
+                    $"ClientId: {requesterClientId}\n" +
+                    $"RecipeID: {recipe.recipeID}\n" +
+                    $"Result: {recipe.result.itemID} x{resultCount}",
+                    this
+                );
+            }
 
             return true;
         }
@@ -288,27 +307,8 @@ namespace DeadZone.Systems.Housing
 
             for (int i = 0; i < safeResultCount; i++)
             {
-                bool addResult = inventory.TryAddItem(recipe.result, 1);
-
-                Debug.Log(
-                    $"[MedicalCraftingController] 결과 아이템 지급 시도\n" +
-                    $"아이템: {recipe.result.itemID}\n" +
-                    $"현재 지급 인덱스: {i + 1}/{safeResultCount}\n" +
-                    $"지급 성공 여부: {addResult}",
-                    this
-                );
-
-                if (!addResult)
-                {
-                    Debug.LogWarning(
-                        $"[MedicalCraftingController] 결과 아이템 지급 실패\n" +
-                        $"아이템 ID: {recipe.result.itemID}\n" +
-                        $"resultCount: {safeResultCount}",
-                        this
-                    );
-
+                if (!inventory.TryAddItem(recipe.result, 1))
                     return false;
-                }
 
                 addedCount++;
             }
@@ -366,5 +366,25 @@ namespace DeadZone.Systems.Housing
 
             Debug.LogWarning($"[MedicalCraftingController] 제작 실패: {reason} RecipeID: {recipeID}", this);
         }
+
+#if UNITY_EDITOR
+        [ContextMenu("디버그 제작 실행")]
+        private void DebugCraftRecipe()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[MedicalCraftingController] 플레이 중에만 제작 테스트를 실행할 수 있습니다.", this);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(debugRecipeID))
+            {
+                Debug.LogWarning("[MedicalCraftingController] Debug Recipe ID가 비어 있습니다.", this);
+                return;
+            }
+
+            RequestCraft(debugRecipeID);
+        }
+#endif
     }
 }

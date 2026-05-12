@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Unity.Netcode;
 
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -12,7 +12,7 @@ using DeadZone.Systems.Housing;
 namespace DeadZone.Actors.UI.Hideout
 {
     // 시설 업그레이드 창 UI
-    // UI는 시설 정보와 재료 상태를 표시하고, 실제 업그레이드는 FacilityUpgradeController에 요청
+    // 시설 오브젝트의 공용 레벨이 아니라, 로컬 플레이어의 PlayerHousingProgress를 기준으로 표시
     [DisallowMultipleComponent]
     public sealed class FacilityUpgradeWindowUI : MonoBehaviour
     {
@@ -24,32 +24,47 @@ namespace DeadZone.Actors.UI.Hideout
         }
 
         [Header("창 루트")]
-        [SerializeField] private GameObject windowRoot;
+        [SerializeField]
+        private GameObject windowRoot;
 
         [Header("시설 연결")]
-        [SerializeField] private List<FacilityViewBinding> facilityBindings = new();
+        [SerializeField]
+        private List<FacilityViewBinding> facilityBindings = new();
 
         [Header("인벤토리 표시용")]
-        [SerializeField] private MonoBehaviour inventoryBehaviour;
+        [SerializeField]
+        private MonoBehaviour inventoryBehaviour;
 
         [Header("상단 표시")]
-        [SerializeField] private TMP_Text facilityNameText;
-        [SerializeField] private TMP_Text currentLevelText;
-        [SerializeField] private TMP_Text currentEffectText;
+        [SerializeField]
+        private TMP_Text facilityNameText;
+
+        [SerializeField]
+        private TMP_Text currentLevelText;
+
+        [SerializeField]
+        private TMP_Text currentEffectText;
 
         [Header("업그레이드 Row")]
-        [SerializeField] private FacilityUpgradeRowUI level2Row;
-        [SerializeField] private FacilityUpgradeRowUI level3Row;
-        [SerializeField] private FacilityUpgradeRowUI level4Row;
+        [SerializeField]
+        private FacilityUpgradeRowUI level2Row;
+
+        [SerializeField]
+        private FacilityUpgradeRowUI level3Row;
+
+        [SerializeField]
+        private FacilityUpgradeRowUI level4Row;
 
         [Header("로그")]
-        [SerializeField] private bool showDebugLog = true;
+        [SerializeField]
+        private bool showDebugLog = true;
 
         private HideoutCameraFacilitySelector.FacilityView currentFacilityView =
             HideoutCameraFacilitySelector.FacilityView.None;
 
         private FacilityBase currentFacility;
         private IInventory inventory;
+        private PlayerHousingProgress localHousingProgress;
         private bool isInitialized;
 
         public bool IsOpen => windowRoot != null && windowRoot.activeSelf;
@@ -76,7 +91,7 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            ResolveInventory();
+            ResolveLocalPlayerReferences();
 
             if (!TryFindFacility(facilityView, out FacilityBase facility))
             {
@@ -111,7 +126,7 @@ namespace DeadZone.Actors.UI.Hideout
 
         public void Refresh()
         {
-            ResolveInventory();
+            ResolveLocalPlayerReferences();
 
             if (currentFacility == null)
             {
@@ -120,15 +135,15 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            FacilityLevel currentLevelData = currentFacility.GetCurrentLevelData();
-            int currentLevel = currentFacility.GetCurrentLevel();
+            int playerCurrentLevel = GetLocalPlayerFacilityLevel();
             int maxLevel = currentFacility.GetMaxLevel();
+            FacilityLevel currentLevelData = currentFacility.GetLevelData(playerCurrentLevel);
 
             if (facilityNameText != null)
                 facilityNameText.text = GetFacilityDisplayName(currentFacilityView);
 
             if (currentLevelText != null)
-                currentLevelText.text = $"LV {currentLevel} / {maxLevel}";
+                currentLevelText.text = $"LV {playerCurrentLevel} / {maxLevel}";
 
             if (currentEffectText != null)
             {
@@ -138,9 +153,9 @@ namespace DeadZone.Actors.UI.Hideout
                         : "현재 시설 효과가 설정되어 있지 않습니다.";
             }
 
-            RefreshUpgradeRows();
+            RefreshUpgradeRows(playerCurrentLevel);
 
-            DebugLog($"시설 데이터 갱신: {currentFacilityView}, 현재 레벨 {currentLevel}, 최대 레벨 {maxLevel}");
+            DebugLog($"시설 데이터 갱신: {currentFacilityView}, 내 현재 레벨 {playerCurrentLevel}, 최대 레벨 {maxLevel}");
         }
 
         private void Initialize()
@@ -151,13 +166,13 @@ namespace DeadZone.Actors.UI.Hideout
             if (windowRoot == null)
                 windowRoot = gameObject;
 
-            ResolveInventory();
+            ResolveLocalPlayerReferences();
 
             isInitialized = true;
             DebugLog("초기화 완료");
         }
 
-        private void RefreshUpgradeRows()
+        private void RefreshUpgradeRows(int playerCurrentLevel)
         {
             if (currentFacility == null)
             {
@@ -165,18 +180,25 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            SetRow(level2Row, 2);
-            SetRow(level3Row, 3);
-            SetRow(level4Row, 4);
+            SetRow(level2Row, playerCurrentLevel, 2);
+            SetRow(level3Row, playerCurrentLevel, 3);
+            SetRow(level4Row, playerCurrentLevel, 4);
         }
 
-        private void SetRow(FacilityUpgradeRowUI row, int targetLevel)
+        private void SetRow(FacilityUpgradeRowUI row, int playerCurrentLevel, int targetLevel)
         {
             if (row == null)
                 return;
 
             FacilityLevel levelData = currentFacility.GetLevelData(targetLevel);
-            row.Set(currentFacility, targetLevel, levelData, inventory, RequestUpgrade);
+
+            row.Set(
+                currentFacility,
+                playerCurrentLevel,
+                targetLevel,
+                levelData,
+                inventory,
+                RequestUpgrade);
         }
 
         private void RequestUpgrade(int targetLevel)
@@ -193,9 +215,15 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            if (!currentFacility.IsUpgradeTargetLevel(targetLevel))
+            int playerCurrentLevel = GetLocalPlayerFacilityLevel();
+
+            if (targetLevel != playerCurrentLevel + 1)
             {
-                Debug.LogWarning($"[FacilityUpgradeWindowUI] LV{targetLevel}은 현재 업그레이드 대상 레벨이 아닙니다.", this);
+                Debug.LogWarning(
+                    $"[FacilityUpgradeWindowUI] LV{targetLevel}은 현재 업그레이드 대상 레벨이 아닙니다. 내 현재 레벨: LV{playerCurrentLevel}",
+                    this
+                );
+
                 Refresh();
                 return;
             }
@@ -228,6 +256,119 @@ namespace DeadZone.Actors.UI.Hideout
             upgradeController = currentFacility.GetComponentInChildren<FacilityUpgradeController>(true);
 
             return upgradeController != null;
+        }
+
+        private int GetLocalPlayerFacilityLevel()
+        {
+            if (currentFacility == null)
+                return 1;
+
+            if (localHousingProgress == null)
+                ResolveLocalPlayerReferences();
+
+            if (localHousingProgress == null)
+                return currentFacility.GetCurrentLevel();
+
+            return localHousingProgress.GetLevel(currentFacility.Type);
+        }
+
+        private void ResolveLocalPlayerReferences()
+        {
+            inventory = null;
+            localHousingProgress = null;
+
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+                if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out NetworkClient localClient))
+                {
+                    if (localClient.PlayerObject != null)
+                    {
+                        localHousingProgress = localClient.PlayerObject.GetComponent<PlayerHousingProgress>();
+
+                        if (localHousingProgress == null)
+                            localHousingProgress = localClient.PlayerObject.GetComponentInChildren<PlayerHousingProgress>(true);
+
+                        IInventory playerInventory = localClient.PlayerObject.GetComponent<IInventory>();
+
+                        if (playerInventory == null)
+                            playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
+
+                        if (playerInventory != null)
+                        {
+                            inventory = playerInventory;
+                            inventoryBehaviour = playerInventory as MonoBehaviour;
+
+                            DebugLog($"로컬 플레이어 인벤토리 연결 완료: {inventoryBehaviour.gameObject.name}");
+                        }
+
+                        if (localHousingProgress != null)
+                            DebugLog($"로컬 플레이어 하우징 진행도 연결 완료: {localHousingProgress.gameObject.name}");
+
+                        if (inventory != null || localHousingProgress != null)
+                            return;
+                    }
+                }
+            }
+
+            if (inventoryBehaviour != null)
+            {
+                if (inventoryBehaviour is IInventory directInventory)
+                {
+                    inventory = directInventory;
+                    DebugLog($"IInventory 직접 연결 완료: {inventoryBehaviour.GetType().Name}");
+                    return;
+                }
+
+                IInventory sameObjectInventory = inventoryBehaviour.GetComponent<IInventory>();
+
+                if (sameObjectInventory != null)
+                {
+                    inventory = sameObjectInventory;
+                    DebugLog($"IInventory 같은 오브젝트에서 연결 완료: {sameObjectInventory.GetType().Name}");
+                    return;
+                }
+
+                IInventory childInventory = inventoryBehaviour.GetComponentInChildren<IInventory>(true);
+
+                if (childInventory != null)
+                {
+                    inventory = childInventory;
+                    DebugLog($"IInventory 자식 오브젝트에서 연결 완료: {childInventory.GetType().Name}");
+                    return;
+                }
+            }
+
+            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (inventory == null && behaviours[i] is IInventory foundInventory)
+                {
+                    inventory = foundInventory;
+                    inventoryBehaviour = behaviours[i];
+
+                    DebugLog($"IInventory 자동 연결 완료: {behaviours[i].GetType().Name} / 오브젝트: {behaviours[i].gameObject.name}");
+                }
+
+                if (localHousingProgress == null && behaviours[i] is PlayerHousingProgress foundProgress)
+                {
+                    localHousingProgress = foundProgress;
+                    DebugLog($"PlayerHousingProgress 자동 연결 완료: {foundProgress.gameObject.name}");
+                }
+
+                if (inventory != null && localHousingProgress != null)
+                    return;
+            }
+
+            if (inventory == null)
+                Debug.LogWarning("[FacilityUpgradeWindowUI] 씬에서 IInventory 구현체를 찾지 못했습니다.", this);
+
+            if (localHousingProgress == null)
+                Debug.LogWarning("[FacilityUpgradeWindowUI] 씬에서 PlayerHousingProgress를 찾지 못했습니다.", this);
         }
 
         private void ClearRows()
@@ -263,86 +404,6 @@ namespace DeadZone.Actors.UI.Hideout
             }
 
             return false;
-        }
-
-        private void ResolveInventory()
-        {
-            inventory = null;
-
-            // 1순위: 네트워크에서 실제 로컬 플레이어의 PlayerObject 인벤토리를 찾는다.
-            // 테스트 아이템을 넣은 Player(Clone)의 GridInventory를 정확히 잡기 위한 기준
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            {
-                ulong localClientId = NetworkManager.Singleton.LocalClientId;
-
-                if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out NetworkClient localClient))
-                {
-                    if (localClient.PlayerObject != null)
-                    {
-                        IInventory playerInventory = localClient.PlayerObject.GetComponent<IInventory>();
-
-                        if (playerInventory == null)
-                            playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
-
-                        if (playerInventory != null)
-                        {
-                            inventory = playerInventory;
-                            inventoryBehaviour = playerInventory as MonoBehaviour;
-
-                            DebugLog($"로컬 플레이어 인벤토리 연결 완료: {inventoryBehaviour.gameObject.name}");
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // 2순위: Inspector에 직접 연결한 인벤토리 사용
-            if (inventoryBehaviour != null)
-            {
-                if (inventoryBehaviour is IInventory directInventory)
-                {
-                    inventory = directInventory;
-                    DebugLog($"IInventory 직접 연결 완료: {inventoryBehaviour.GetType().Name}");
-                    return;
-                }
-
-                IInventory sameObjectInventory = inventoryBehaviour.GetComponent<IInventory>();
-
-                if (sameObjectInventory != null)
-                {
-                    inventory = sameObjectInventory;
-                    DebugLog($"IInventory 같은 오브젝트에서 연결 완료: {sameObjectInventory.GetType().Name}");
-                    return;
-                }
-
-                IInventory childInventory = inventoryBehaviour.GetComponentInChildren<IInventory>(true);
-
-                if (childInventory != null)
-                {
-                    inventory = childInventory;
-                    DebugLog($"IInventory 자식 오브젝트에서 연결 완료: {childInventory.GetType().Name}");
-                    return;
-                }
-            }
-
-            // 3순위: 최후의 fallback. 자동 검색은 가장 마지막에만 사용
-            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is not IInventory foundInventory)
-                    continue;
-
-                inventory = foundInventory;
-                inventoryBehaviour = behaviours[i];
-
-                DebugLog($"IInventory 자동 연결 완료: {behaviours[i].GetType().Name} / 오브젝트: {behaviours[i].gameObject.name}");
-                return;
-            }
-
-            Debug.LogWarning("[FacilityUpgradeWindowUI] 씬에서 IInventory 구현체를 찾지 못했습니다.", this);
         }
 
         private void ClearTexts()

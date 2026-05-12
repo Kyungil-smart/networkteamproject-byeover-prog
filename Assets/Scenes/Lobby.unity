@@ -41196,6 +41196,9 @@ MonoBehaviour:
   inventoryState: {fileID: 788616058}
   uiBridge: {fileID: 788616056}
   captureUiBeforeCollect: 1
+  capturePlayerGridInventory: 1
+  debugTargetInventory: {fileID: 0}
+  logCollectResult: 1
 --- !u!114 &788616061
 MonoBehaviour:
   m_ObjectHideFlags: 0

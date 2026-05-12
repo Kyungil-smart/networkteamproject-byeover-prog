@@ -3,8 +3,6 @@ using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
-using DeadZone.Systems;
-using UnityEngine.Rendering.UI;
 
 namespace DeadZone.Actors
 {
@@ -32,6 +30,7 @@ namespace DeadZone.Actors
         [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 3f;
 
         private EquipmentSlots equipment;
+        private Camera aimCamera;
         private float nextFireAllowed;
         private float currentSpreadAngle;
         private float lastServerFireTime;
@@ -48,6 +47,8 @@ namespace DeadZone.Actors
         {
             equipment = GetComponent<EquipmentSlots>();
         }
+
+        public void SetAimCamera(Camera camera) => aimCamera = camera;
 
         // 레거시 
         public void TryFire()
@@ -118,7 +119,9 @@ namespace DeadZone.Actors
         
         private AimResult AnalyzeAim(Vector2 screenPos)
         {
-            Ray ray = Camera.main.ScreenPointToRay(screenPos);
+            if (aimCamera == null) return new AimResult { targetPoint = Vector3.zero };
+            
+            Ray ray = aimCamera.ScreenPointToRay(screenPos);
 
             // 1. 우선순위에 따른 타겟팅 시도
             if (TryHitboxAim(ray, out AimResult hitboxResult))
