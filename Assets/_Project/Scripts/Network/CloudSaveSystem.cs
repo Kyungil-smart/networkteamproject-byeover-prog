@@ -391,6 +391,7 @@ namespace DeadZone.Network
                 EnsureLobbySaveContainers();
 
                 CollectPersonalQuestProgress();
+                PreserveCurrentFacilityProgress(lobbySaveDto);
 
                 currentData.lobbySave = ToLobbySaveCloudData(lobbySaveDto);
                 ApplyLobbySaveToLegacyCloudFields(lobbySaveDto);
@@ -1317,13 +1318,13 @@ namespace DeadZone.Network
 
             switch (NormalizeFacilityId(facility.facilityId))
             {
-                case "workbench": currentData.facilities.workbench = facility.level; break;
-                case "commstation": currentData.facilities.commStation = facility.level; break;
-                case "medical": currentData.facilities.medical = facility.level; break;
-                case "gym": currentData.facilities.gym = facility.level; break;
-                case "stash": currentData.facilities.stash = facility.level; break;
-                case "kitchen": currentData.facilities.kitchen = facility.level; break;
-                case "bed": currentData.facilities.bed = facility.level; break;
+                case "workbench": currentData.facilities.workbench = Mathf.Max(currentData.facilities.workbench, facility.level); break;
+                case "commstation": currentData.facilities.commStation = Mathf.Max(currentData.facilities.commStation, facility.level); break;
+                case "medical": currentData.facilities.medical = Mathf.Max(currentData.facilities.medical, facility.level); break;
+                case "gym": currentData.facilities.gym = Mathf.Max(currentData.facilities.gym, facility.level); break;
+                case "stash": currentData.facilities.stash = Mathf.Max(currentData.facilities.stash, facility.level); break;
+                case "kitchen": currentData.facilities.kitchen = Mathf.Max(currentData.facilities.kitchen, facility.level); break;
+                case "bed": currentData.facilities.bed = Mathf.Max(currentData.facilities.bed, facility.level); break;
             }
         }
 
@@ -1334,13 +1335,13 @@ namespace DeadZone.Network
 
             switch (NormalizeFacilityId(facility.facilityId))
             {
-                case "workbench": currentData.facilities.workbench = facility.level; break;
-                case "commstation": currentData.facilities.commStation = facility.level; break;
-                case "medical": currentData.facilities.medical = facility.level; break;
-                case "gym": currentData.facilities.gym = facility.level; break;
-                case "stash": currentData.facilities.stash = facility.level; break;
-                case "kitchen": currentData.facilities.kitchen = facility.level; break;
-                case "bed": currentData.facilities.bed = facility.level; break;
+                case "workbench": currentData.facilities.workbench = Mathf.Max(currentData.facilities.workbench, facility.level); break;
+                case "commstation": currentData.facilities.commStation = Mathf.Max(currentData.facilities.commStation, facility.level); break;
+                case "medical": currentData.facilities.medical = Mathf.Max(currentData.facilities.medical, facility.level); break;
+                case "gym": currentData.facilities.gym = Mathf.Max(currentData.facilities.gym, facility.level); break;
+                case "stash": currentData.facilities.stash = Mathf.Max(currentData.facilities.stash, facility.level); break;
+                case "kitchen": currentData.facilities.kitchen = Mathf.Max(currentData.facilities.kitchen, facility.level); break;
+                case "bed": currentData.facilities.bed = Mathf.Max(currentData.facilities.bed, facility.level); break;
             }
         }
 
@@ -1354,13 +1355,13 @@ namespace DeadZone.Network
             currentData.facilities.bed = dto.bedLevel;
             currentData.facilities.commStation = dto.commStationLevel;
 
-            UpsertLobbyFacility("Workbench", dto.workbenchLevel);
-            UpsertLobbyFacility("Medical", dto.medicalLevel);
-            UpsertLobbyFacility("Gym", dto.gymLevel);
-            UpsertLobbyFacility("Stash", dto.stashLevel);
-            UpsertLobbyFacility("Kitchen", dto.kitchenLevel);
-            UpsertLobbyFacility("Bed", dto.bedLevel);
-            UpsertLobbyFacility("CommStation", dto.commStationLevel);
+            UpsertLobbyFacility("Workbench", dto.workbenchLevel, allowDowngrade: true);
+            UpsertLobbyFacility("Medical", dto.medicalLevel, allowDowngrade: true);
+            UpsertLobbyFacility("Gym", dto.gymLevel, allowDowngrade: true);
+            UpsertLobbyFacility("Stash", dto.stashLevel, allowDowngrade: true);
+            UpsertLobbyFacility("Kitchen", dto.kitchenLevel, allowDowngrade: true);
+            UpsertLobbyFacility("Bed", dto.bedLevel, allowDowngrade: true);
+            UpsertLobbyFacility("CommStation", dto.commStationLevel, allowDowngrade: true);
         }
 
         private void ApplyFacilityToHousingProgressDTO(PlayerHousingProgressDTO dto, LobbyFacilityCloudData facility)
@@ -1382,7 +1383,7 @@ namespace DeadZone.Network
             }
         }
 
-        private void UpsertLobbyFacility(string facilityId, int level)
+        private void UpsertLobbyFacility(string facilityId, int level, bool allowDowngrade = false)
         {
             if (string.IsNullOrWhiteSpace(facilityId))
                 return;
@@ -1403,7 +1404,7 @@ namespace DeadZone.Network
                     continue;
 
                 facility.facilityId = facilityId;
-                facility.level = safeLevel;
+                facility.level = allowDowngrade ? safeLevel : Mathf.Max(Mathf.Max(1, facility.level), safeLevel);
                 return;
             }
 
@@ -1419,6 +1420,32 @@ namespace DeadZone.Network
             return string.IsNullOrWhiteSpace(facilityId)
                 ? string.Empty
                 : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
+        }
+
+        private void PreserveCurrentFacilityProgress(LobbySaveDTO dto)
+        {
+            if (dto == null || currentData?.facilities == null)
+                return;
+
+            UpsertFacilitySaveDTO(dto, "Workbench", currentData.facilities.workbench);
+            UpsertFacilitySaveDTO(dto, "CommStation", currentData.facilities.commStation);
+            UpsertFacilitySaveDTO(dto, "Medical", currentData.facilities.medical);
+            UpsertFacilitySaveDTO(dto, "Gym", currentData.facilities.gym);
+            UpsertFacilitySaveDTO(dto, "Stash", currentData.facilities.stash);
+            UpsertFacilitySaveDTO(dto, "Kitchen", currentData.facilities.kitchen);
+            UpsertFacilitySaveDTO(dto, "Bed", currentData.facilities.bed);
+
+            if (currentData.lobbySave?.facilities == null)
+                return;
+
+            for (int i = 0; i < currentData.lobbySave.facilities.Count; i++)
+            {
+                LobbyFacilityCloudData facility = currentData.lobbySave.facilities[i];
+                if (facility == null || string.IsNullOrWhiteSpace(facility.facilityId))
+                    continue;
+
+                UpsertFacilitySaveDTO(dto, facility.facilityId, facility.level);
+            }
         }
 
         private LobbySaveDTO CreateLobbySaveDTOFromLegacyCloudFields()
