@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace DeadZone.Systems.Save
@@ -54,6 +55,9 @@ namespace DeadZone.Systems.Save
         [Button("시설 상태 비우기")]
         public void Clear()
         {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+                Debug.LogWarning("[Party] WARNING: Save data reset attempted during party creation. caller=LobbyFacilityState.Clear", this);
+
             facilities.Clear();
         }
     }

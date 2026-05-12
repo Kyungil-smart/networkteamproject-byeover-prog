@@ -87,7 +87,18 @@ namespace DeadZone.Actors.UI
 
         private void HandleMapAClicked()
         {
-            if (raidStartController == null) return;
+            Debug.Log("[LobbyMapSelectUI] MapA clicked.", this);
+            ResolveReferences();
+
+            if (raidStartController == null)
+            {
+                Debug.LogWarning("[LobbyMapSelectUI] raidStartController null.", this);
+                return;
+            }
+
+            Debug.Log(
+                $"[LobbyMapSelectUI] raidStartController found. object={raidStartController.name}, isSpawned={raidStartController.IsSpawned}",
+                raidStartController);
 
             if (!CanLocalPlayerSelectMap())
             {
@@ -102,7 +113,17 @@ namespace DeadZone.Actors.UI
 
         private void HandleMapBClicked()
         {
-            if (raidStartController == null) return;
+            ResolveReferences();
+
+            if (raidStartController == null)
+            {
+                Debug.LogWarning("[LobbyMapSelectUI] raidStartController null.", this);
+                return;
+            }
+
+            Debug.Log(
+                $"[LobbyMapSelectUI] raidStartController found. object={raidStartController.name}, isSpawned={raidStartController.IsSpawned}",
+                raidStartController);
 
             if (!CanLocalPlayerSelectMap())
             {
@@ -317,8 +338,8 @@ namespace DeadZone.Actors.UI
 
         private void ResolveReferences()
         {
-            if (raidStartController == null)
-                raidStartController = FindObjectOfType<LobbyRaidStartController>();
+            if (raidStartController == null || ShouldReplaceRaidStartController(raidStartController))
+                raidStartController = FindRaidStartController();
 
             if (lobbyState == null)
                 lobbyState = FindObjectOfType<NetworkLobbyState>();
@@ -390,7 +411,51 @@ namespace DeadZone.Actors.UI
                 return true;
 
             return Unity.Netcode.NetworkManager.Singleton != null &&
-                   Unity.Netcode.NetworkManager.Singleton.IsHost;
+                   Unity.Netcode.NetworkManager.Singleton.IsServer;
+        }
+
+        private static bool ShouldReplaceRaidStartController(LobbyRaidStartController controller)
+        {
+            if (controller == null)
+                return true;
+
+            if (!IsNetworkSessionActiveStatic())
+                return false;
+
+            return controller.NetworkObject == null || !controller.IsSpawned;
+        }
+
+        private static LobbyRaidStartController FindRaidStartController()
+        {
+            LobbyRaidStartController[] controllers = FindObjectsByType<LobbyRaidStartController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            LobbyRaidStartController fallback = null;
+
+            for (int i = 0; i < controllers.Length; i++)
+            {
+                LobbyRaidStartController controller = controllers[i];
+
+                if (controller == null)
+                    continue;
+
+                fallback ??= controller;
+
+                if (!IsNetworkSessionActiveStatic())
+                    return controller;
+
+                if (controller.NetworkObject != null && controller.IsSpawned)
+                    return controller;
+            }
+
+            return fallback;
+        }
+
+        private static bool IsNetworkSessionActiveStatic()
+        {
+            return Unity.Netcode.NetworkManager.Singleton != null &&
+                   Unity.Netcode.NetworkManager.Singleton.IsListening;
         }
 
         private bool CanLocalPlayerStartRaid()

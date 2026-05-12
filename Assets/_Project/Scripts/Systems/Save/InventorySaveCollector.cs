@@ -115,6 +115,14 @@ namespace DeadZone.Systems.Save
                 });
             }
 
+            if (items.Count == 0 && inventoryState.InventoryItems != null && inventoryState.InventoryItems.Count > 0)
+            {
+                Debug.LogWarning(
+                    "[InventorySaveCollector] GridInventory capture returned 0 items. Keeping UI-captured inventory state to avoid wiping lobby inventory before facility scene load.",
+                    gridInventory);
+                return;
+            }
+
             inventoryState.SetInventoryItems(items);
 
             if (logCollectResult)

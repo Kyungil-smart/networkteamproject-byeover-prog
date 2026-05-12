@@ -32,8 +32,25 @@ namespace DeadZone.Systems.Save
 
         private void Start()
         {
+            if (!captureOnStart)
+                return;
+
+            if (HasExistingInventoryState())
+            {
+                Debug.Log("[LobbyInventoryStateUiBridge] Existing lobby inventory state found. Skipping Start capture to avoid overwriting saved inventory with empty UI.", this);
+                return;
+            }
+
             if (captureOnStart)
                 CaptureUiToState();
+        }
+
+        private bool HasExistingInventoryState()
+        {
+            return inventoryState != null &&
+                   ((inventoryState.InventoryItems != null && inventoryState.InventoryItems.Count > 0) ||
+                    (inventoryState.StashItems != null && inventoryState.StashItems.Count > 0) ||
+                    (inventoryState.EquipmentItems != null && inventoryState.EquipmentItems.Count > 0));
         }
 
         [Button("UI 상태를 저장 상태로 반영")]

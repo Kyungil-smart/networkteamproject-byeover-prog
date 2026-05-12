@@ -215,6 +215,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
             
+            Debug.Log($"[Party] CreateParty called. userId={GetCurrentUserId()}", this);
             SetRoomState(RoomUiState.Busy);
             ShowStatus("Relay 방을 생성하는 중입니다...");
 
@@ -232,6 +233,7 @@ namespace DeadZone.Actors.UI
                 }
 
                 currentJoinCode = joinCode.Trim();
+                Debug.Log($"[Party] Party created. partyId={currentJoinCode}, memberCount={GetConnectedClientCount()}", this);
 
                 SetJoinCodeText(currentJoinCode);
                 SetJoinPopupVisible(false);
@@ -317,6 +319,24 @@ namespace DeadZone.Actors.UI
             SetRoomState(RoomUiState.Idle);
             
             ShowStatus("방 연결을 종료했습니다.");
+        }
+
+        private static string GetCurrentUserId()
+        {
+            DeadZone.Network.CloudSaveSystem cloudSave = ServiceLocator.Get<DeadZone.Network.CloudSaveSystem>();
+
+            if (cloudSave != null && !string.IsNullOrWhiteSpace(cloudSave.LoadedFirebaseUid))
+                return cloudSave.LoadedFirebaseUid;
+
+            return "unknown";
+        }
+
+        private static int GetConnectedClientCount()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            return networkManager != null && networkManager.ConnectedClients != null
+                ? networkManager.ConnectedClients.Count
+                : 0;
         }
 
         private bool TryGetSessionManager(out SessionManager sessionManager)

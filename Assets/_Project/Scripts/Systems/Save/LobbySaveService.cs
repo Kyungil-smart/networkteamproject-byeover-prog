@@ -36,6 +36,9 @@ namespace DeadZone.Systems.Save
 
         private bool isCloudSaveRunning;
         private Coroutine pendingCloudLoadCoroutine;
+        private bool isInitialLoadCompleted;
+
+        public bool IsInitialLoadCompleted => isInitialLoadCompleted;
 
         private void OnEnable()
         {
@@ -51,6 +54,8 @@ namespace DeadZone.Systems.Save
         {
             if (loadFromCloudOnStart)
                 QueueLoadLobbyDataFromCloudAfterUiReady();
+            else
+                isInitialLoadCompleted = true;
         }
 
         private void OnApplicationPause(bool pauseStatus)
@@ -65,6 +70,12 @@ namespace DeadZone.Systems.Save
         {
             if (!saveToCloudOnApplicationQuit)
                 return;
+
+            if (!isInitialLoadCompleted)
+            {
+                Debug.LogWarning("[Save] Save skipped because load is not completed yet.", this);
+                return;
+            }
 
             SaveLobbyDataToLocalJson(CreateCurrentLobbySaveDTO(), "ApplicationQuit backup");
             SaveLobbyDataToCloud();
@@ -95,13 +106,33 @@ namespace DeadZone.Systems.Save
                 return false;
             }
 
+            Debug.Log("[Save] Save requested. reason=LobbySaveService.SaveLobbyDataToCloudAsync", this);
+
+            CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
+
+            if (!isInitialLoadCompleted && saveSystem != null && saveSystem.HasLoadedData)
+                isInitialLoadCompleted = true;
+
+            if (!isInitialLoadCompleted)
+            {
+                LobbySaveDTO pendingDto = CreateCurrentLobbySaveDTO();
+                SaveLobbyDataToLocalJson(pendingDto, "Save requested before load completed fallback");
+                Debug.LogWarning("[Save] Save skipped because load is not completed yet.", this);
+                return false;
+            }
+
             LobbySaveDTO dto = CreateCurrentLobbySaveDTO();
             string json = JsonUtility.ToJson(dto, true);
             lastJson = json;
 
             Debug.Log($"[LobbySaveService] Server save request JSON\n{json}", this);
 
-            CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
+            if (WouldOverwriteExistingSaveWithEmptyState(dto, saveSystem))
+            {
+                Debug.LogWarning("[Save] Save skipped because collected lobby inventory/stash/equipment is empty and would overwrite existing save.", this);
+                return false;
+            }
+
             if (saveSystem == null)
             {
                 Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Saving local JSON fallback.", this);
@@ -144,6 +175,7 @@ namespace DeadZone.Systems.Save
             {
                 Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Trying local JSON fallback.", this);
                 TryLoadLobbyDataFromLocalJson("CloudSaveSystem missing");
+                isInitialLoadCompleted = true;
                 return;
             }
 
@@ -152,17 +184,22 @@ namespace DeadZone.Systems.Save
             {
                 Debug.LogWarning("[LobbySaveService] Server DTO missing. Trying local JSON fallback.", this);
                 TryLoadLobbyDataFromLocalJson("Server DTO missing");
+                isInitialLoadCompleted = true;
                 return;
             }
 
             if (!HasAnyLobbySaveData(dto) && TryLoadLobbyDataFromLocalJson("Server DTO empty"))
+            {
+                isInitialLoadCompleted = true;
                 return;
+            }
 
             string json = JsonUtility.ToJson(dto, true);
             lastJson = json;
 
             LoadLobbyDataFromJson(json);
             SaveLobbyDataToLocalJson(dto, "Server load success sync");
+            isInitialLoadCompleted = true;
         }
 
         public void LoadLobbyDataFromJson(string json)
@@ -274,6 +311,7 @@ namespace DeadZone.Systems.Save
             if (!File.Exists(path))
             {
                 Debug.LogWarning($"[LobbySaveService] Local JSON fallback not found. Reason={reason}, Path={path}", this);
+                isInitialLoadCompleted = true;
                 return false;
             }
 
@@ -295,9 +333,16 @@ namespace DeadZone.Systems.Save
             }
 
             Debug.Log($"[LobbySaveService] Applying local JSON fallback. Reason={reason}, Path={path}", this);
+            Debug.LogWarning("[HideoutLoad] Applying facility levels from=LocalJson", this);
             lastJson = json;
             LoadLobbyDataFromJson(json);
+            isInitialLoadCompleted = true;
             return true;
+        }
+
+        public bool LocalJsonExists()
+        {
+            return useLocalJsonFallback && File.Exists(GetLocalJsonPath());
         }
 
         private void SaveLobbyDataToLocalJson(LobbySaveDTO dto, string reason)
@@ -306,6 +351,13 @@ namespace DeadZone.Systems.Save
                 return;
 
             string path = GetLocalJsonPath();
+
+            if (WouldOverwriteLocalJsonWithEmptyState(dto, path))
+            {
+                Debug.LogWarning($"[LobbySaveService] Local JSON save skipped to avoid overwriting existing non-empty save with empty state. Reason={reason}, Path={path}", this);
+                return;
+            }
+
             string json = JsonUtility.ToJson(dto, true);
 
             try
@@ -338,6 +390,55 @@ namespace DeadZone.Systems.Save
             return Path.Combine(Application.persistentDataPath, "LobbySave", $"lobby_{userKey}.json");
         }
 
+        private bool WouldOverwriteExistingSaveWithEmptyState(LobbySaveDTO dto, CloudSaveSystem saveSystem)
+        {
+            if (!IsEmptyInventoryAndDefaultFacilities(dto))
+                return false;
+
+            if (HasMeaningfulLocalJsonSave())
+                return true;
+
+            if (saveSystem == null || !saveSystem.HasLoadedData)
+                return false;
+
+            LobbySaveDTO serverDto = saveSystem.CreateLobbySaveDTOFromCurrentData();
+            return HasMeaningfulSaveData(serverDto);
+        }
+
+        private bool WouldOverwriteLocalJsonWithEmptyState(LobbySaveDTO dto, string path)
+        {
+            if (!IsEmptyInventoryAndDefaultFacilities(dto))
+                return false;
+
+            LobbySaveDTO existingDto = TryReadLocalJsonDTO(path);
+            return HasMeaningfulSaveData(existingDto);
+        }
+
+        private bool HasMeaningfulLocalJsonSave()
+        {
+            return HasMeaningfulSaveData(TryReadLocalJsonDTO(GetLocalJsonPath()));
+        }
+
+        private static LobbySaveDTO TryReadLocalJsonDTO(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                return null;
+
+            try
+            {
+                string json = File.ReadAllText(path);
+
+                if (string.IsNullOrWhiteSpace(json))
+                    return null;
+
+                return JsonUtility.FromJson<LobbySaveDTO>(json);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private CloudSaveSystem ResolveCloudSaveSystem()
         {
             if (cloudSaveSystem != null)
@@ -366,6 +467,44 @@ namespace DeadZone.Systems.Save
         private static bool HasAny<T>(System.Collections.Generic.ICollection<T> items)
         {
             return items != null && items.Count > 0;
+        }
+
+        private static bool IsEmptyInventoryAndDefaultFacilities(LobbySaveDTO dto)
+        {
+            if (dto == null)
+                return true;
+
+            return !HasAny(dto.inventoryItems) &&
+                   !HasAny(dto.stashItems) &&
+                   !HasAny(dto.equipmentItems) &&
+                   !HasNonDefaultFacility(dto);
+        }
+
+        private static bool HasMeaningfulSaveData(LobbySaveDTO dto)
+        {
+            if (dto == null)
+                return false;
+
+            return HasAny(dto.inventoryItems) ||
+                   HasAny(dto.stashItems) ||
+                   HasAny(dto.equipmentItems) ||
+                   HasNonDefaultFacility(dto);
+        }
+
+        private static bool HasNonDefaultFacility(LobbySaveDTO dto)
+        {
+            if (dto?.facilities == null)
+                return false;
+
+            for (int i = 0; i < dto.facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = dto.facilities[i];
+
+                if (facility != null && facility.level > 1)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

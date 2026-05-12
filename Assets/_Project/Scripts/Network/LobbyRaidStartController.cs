@@ -66,12 +66,21 @@ namespace DeadZone.Network
 
         public void SelectMap(LobbyRaidMap map)
         {
+            Debug.Log(
+                $"[LobbyRaidStart] SelectMap requested. map={map}, object={name}, isSpawned={IsSpawned}, hasNetworkObject={NetworkObject != null}",
+                this);
+
             if (IsNetworkSessionActive())
             {
-                if (Unity.Netcode.NetworkManager.Singleton == null ||
-                    !Unity.Netcode.NetworkManager.Singleton.IsHost)
+                if (!CanSendSelectMapRpc(out string rpcBlockReason))
                 {
-                    LogDebug("맵 선택은 Host만 변경할 수 있습니다.");
+                    LogDebug(rpcBlockReason);
+                    return;
+                }
+
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    ApplySelectedMapOnServer(map, NetworkManager.ServerClientId);
                     return;
                 }
 
@@ -89,17 +98,23 @@ namespace DeadZone.Network
             offlineSelectedMap = map;
             SelectedMapChanged?.Invoke(previous, offlineSelectedMap);
         }
-
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void SelectMapServerRpc(LobbyRaidMap map, RpcParams rpcParams = default)
         {
             if (!IsServer) return;
 
             ulong senderClientId = rpcParams.Receive.SenderClientId;
+            Debug.Log($"[LobbyRaidStart] SelectMapServerRpc received. senderClientId={senderClientId}, map={map}", this);
+            ApplySelectedMapOnServer(map, senderClientId);
+        }
+
+        private void ApplySelectedMapOnServer(LobbyRaidMap map, ulong senderClientId)
+        {
+            if (!IsServer) return;
 
             if (!IsHostClient(senderClientId))
             {
-                LogDebug($"Host가 아닌 Client의 맵 선택 요청을 무시합니다. ClientId={senderClientId}");
+                LogDebug($"Map selection request ignored because sender is not host. ClientId={senderClientId}");
                 return;
             }
 
@@ -112,6 +127,47 @@ namespace DeadZone.Network
             selectedMap.Value = map;
         }
 
+        private bool CanSendSelectMapRpc(out string reason)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+
+            if (networkManager == null)
+            {
+                reason = "[LobbyRaidStart] NetworkManager null. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (!networkManager.IsListening)
+            {
+                reason = "[LobbyRaidStart] NetworkManager not listening. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (NetworkObject == null)
+            {
+                reason = "[LobbyRaidStart] NetworkObject missing. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (!IsSpawned)
+            {
+                reason = "[LobbyRaidStart] Not spawned. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (!networkManager.IsServer && networkManager.LocalClientId != NetworkManager.ServerClientId)
+            {
+                reason = "Map selection is restricted to the party host.";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
+        }
         public void StartRaid()
         {
             _ = StartRaidAsync();
