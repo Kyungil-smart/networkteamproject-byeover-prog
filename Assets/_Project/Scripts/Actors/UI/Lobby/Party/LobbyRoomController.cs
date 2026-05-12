@@ -92,7 +92,7 @@ namespace DeadZone.Actors.UI
         {
             ResolveMissingReferences();
             BindButtons();
-            SetRoomState(RoomUiState.Idle);
+            RestoreRoomStateFromNetworkSession();
         }
         
         private void OnDisable() => UnbindButtons();
@@ -141,8 +141,7 @@ namespace DeadZone.Actors.UI
         
         private void InitializeView()
         {
-            SetPartyRoomVisible(false);
-            SetPartyObjectsVisible(false);
+            RestoreRoomStateFromNetworkSession();
             PartyPlayerColorCache.Clear();
             currentJoinCode = string.Empty;
             SetJoinCodeText(emptyJoinCodeText);
@@ -342,6 +341,33 @@ namespace DeadZone.Actors.UI
                 || networkManager.IsHost
                 || networkManager.IsServer
                 || networkManager.IsClient;
+        }
+
+        private void RestoreRoomStateFromNetworkSession()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            bool isListening = networkManager != null && networkManager.IsListening;
+            bool isServer = isListening && networkManager.IsServer;
+            bool isClient = isListening && networkManager.IsClient;
+
+            if (isServer)
+            {
+                SetRoomState(RoomUiState.HostRoom);
+                Debug.Log("[LobbyPartyUI] Restored party UI from active network session. role=Server, Slot_Party=Visible", this);
+                ShowStatus("네트워크 파티 상태를 복구했습니다. 현재 서버로 연결 중입니다.");
+                return;
+            }
+
+            if (isClient)
+            {
+                SetRoomState(RoomUiState.ClientRoom);
+                Debug.Log("[LobbyPartyUI] Restored party UI from active network session. role=Client, Slot_Party=Visible", this);
+                ShowStatus("네트워크 파티 상태를 복구했습니다. 현재 파티에 참가 중입니다.");
+                return;
+            }
+
+            SetRoomState(RoomUiState.Idle);
+            Debug.Log("[LobbyPartyUI] No active network session found. Slot_Party=Hidden", this);
         }
         
         private bool IsBusyState()

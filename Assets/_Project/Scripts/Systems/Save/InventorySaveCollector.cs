@@ -29,6 +29,9 @@ namespace DeadZone.Systems.Save
         private bool capturePlayerGridInventory = true;
 
         [SerializeField]
+        private bool capturePlayerEquipmentSlots = true;
+
+        [SerializeField]
         private GridInventory debugTargetInventory;
 
         [Header("로그")]
@@ -51,6 +54,9 @@ namespace DeadZone.Systems.Save
 
             if (capturePlayerGridInventory)
                 CaptureLocalPlayerGridInventoryToState();
+
+            if (capturePlayerEquipmentSlots)
+                CaptureLocalPlayerEquipmentSlotsToState();
 
             dto.hasCredits = inventoryState.HasCredits;
             dto.credits = inventoryState.Credits;
@@ -103,7 +109,9 @@ namespace DeadZone.Systems.Save
                     x = slot.gridX,
                     y = slot.gridY,
                     rotated = slot.rotated,
-                    stackCount = Mathf.Max(1, slot.stackCount)
+                    stackCount = Mathf.Max(1, slot.stackCount),
+                    currentDurability = Mathf.Max(0f, slot.currentDurability),
+                    currentAmmo = Mathf.Max(0, slot.currentAmmo)
                 });
             }
 
@@ -118,6 +126,72 @@ namespace DeadZone.Systems.Save
                     gridInventory
                 );
             }
+        }
+
+        private void CaptureLocalPlayerEquipmentSlotsToState()
+        {
+            EquipmentSlots equipmentSlots = ResolveLocalPlayerEquipmentSlots();
+
+            if (equipmentSlots == null)
+            {
+                Debug.LogWarning("[InventorySaveCollector] Local player EquipmentSlots not found. Keeping UI equipment state.", this);
+                return;
+            }
+
+            List<EquipmentSaveDTO> items = new();
+
+            AddEquipment(items, "EquipmentHead", equipmentSlots.HeadSlotId.Value.ToString(), string.Empty, 0, equipmentSlots.HelmetDurability.Value);
+            AddEquipment(items, "EquipmentArmor", equipmentSlots.TorsoSlotId.Value.ToString(), string.Empty, 0, equipmentSlots.ArmorDurability.Value);
+            AddEquipment(items, "EquipmentBackpack", equipmentSlots.BackpackSlotId.Value.ToString(), string.Empty, 0, 0f);
+            AddWeaponEquipment(items, "EquipmentPrimaryWeapon", equipmentSlots.Primary1Id.Value.ToString(), equipmentSlots.Primary1State.Value);
+            AddWeaponEquipment(items, "primary2", equipmentSlots.Primary2Id.Value.ToString(), equipmentSlots.Primary2State.Value);
+            AddWeaponEquipment(items, "EquipmentSecondaryWeapon", equipmentSlots.SecondaryId.Value.ToString(), equipmentSlots.SecondaryState.Value);
+            AddEquipment(items, "EquipmentMeleeWeapon", equipmentSlots.MeleeId.Value.ToString(), string.Empty, 0, 0f);
+
+            inventoryState.SetEquipmentItems(items);
+
+            if (logCollectResult)
+            {
+                Debug.Log(
+                    $"[InventorySaveCollector] Local player EquipmentSlots captured\n" +
+                    $"Object: {equipmentSlots.gameObject.name}\n" +
+                    $"Saved equipment items: {items.Count}",
+                    equipmentSlots
+                );
+            }
+        }
+
+        private static void AddWeaponEquipment(List<EquipmentSaveDTO> items, string slotId, string itemId, WeaponState weaponState)
+        {
+            AddEquipment(
+                items,
+                slotId,
+                itemId,
+                weaponState.loadedAmmoId.ToString(),
+                weaponState.currentAmmo,
+                0f);
+        }
+
+        private static void AddEquipment(
+            List<EquipmentSaveDTO> items,
+            string slotId,
+            string itemId,
+            string loadedAmmoId,
+            int currentAmmo,
+            float durability)
+        {
+            if (items == null || string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            items.Add(new EquipmentSaveDTO
+            {
+                slotId = slotId,
+                itemId = itemId,
+                instanceId = $"{slotId}_{itemId}",
+                loadedAmmoId = loadedAmmoId ?? string.Empty,
+                currentAmmo = Mathf.Max(0, currentAmmo),
+                durability = Mathf.Max(0f, durability)
+            });
         }
 
         private GridInventory ResolveLocalPlayerGridInventory()
@@ -163,6 +237,50 @@ namespace DeadZone.Systems.Save
 
             if (inventories.Length == 1)
                 return inventories[0];
+
+            return null;
+        }
+
+        private EquipmentSlots ResolveLocalPlayerEquipmentSlots()
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+                if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out NetworkClient localClient))
+                {
+                    if (localClient.PlayerObject != null)
+                    {
+                        EquipmentSlots equipmentSlots = localClient.PlayerObject.GetComponent<EquipmentSlots>();
+
+                        if (equipmentSlots != null)
+                            return equipmentSlots;
+
+                        equipmentSlots = localClient.PlayerObject.GetComponentInChildren<EquipmentSlots>(true);
+
+                        if (equipmentSlots != null)
+                            return equipmentSlots;
+                    }
+                }
+            }
+
+            EquipmentSlots[] equipmentSlotsList = FindObjectsByType<EquipmentSlots>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < equipmentSlotsList.Length; i++)
+            {
+                EquipmentSlots equipmentSlots = equipmentSlotsList[i];
+
+                if (equipmentSlots == null)
+                    continue;
+
+                if (equipmentSlots.IsOwner)
+                    return equipmentSlots;
+            }
+
+            if (equipmentSlotsList.Length == 1)
+                return equipmentSlotsList[0];
 
             return null;
         }

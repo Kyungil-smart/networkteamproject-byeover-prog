@@ -1146,7 +1146,9 @@ namespace DeadZone.Network
                 x = item.x,
                 y = item.y,
                 rotated = item.rotated,
-                stackCount = item.stackCount
+                stackCount = item.stackCount,
+                currentDurability = item.currentDurability,
+                currentAmmo = item.currentAmmo
             };
         }
 
@@ -1191,7 +1193,9 @@ namespace DeadZone.Network
                 x = item.x,
                 y = item.y,
                 rotated = item.rotated,
-                stackCount = item.stackCount
+                stackCount = item.stackCount,
+                currentDurability = item.currentDurability,
+                currentAmmo = item.currentAmmo
             };
         }
 
@@ -1260,6 +1264,8 @@ namespace DeadZone.Network
                         gridX = GetStashGridX(item),
                         gridY = GetStashGridY(item),
                         rotated = item.rotated,
+                        currentDurability = Mathf.RoundToInt(Mathf.Max(0f, item.currentDurability)),
+                        currentAmmo = Mathf.Max(0, item.currentAmmo),
                     });
                 }
             }
@@ -1447,7 +1453,9 @@ namespace DeadZone.Network
                         x = GetStashSlotIndex(slot),
                         y = 0,
                         rotated = slot.rotated,
-                        stackCount = slot.stackCount
+                        stackCount = slot.stackCount,
+                        currentDurability = Mathf.Max(0, slot.currentDurability),
+                        currentAmmo = Mathf.Max(0, slot.currentAmmo)
                     });
                 }
             }

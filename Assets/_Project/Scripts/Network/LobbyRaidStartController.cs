@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DeadZone.Core;
+using DeadZone.Systems.Raid;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -217,6 +218,8 @@ namespace DeadZone.Network
                 Debug.LogWarning($"[LobbyRaidStartController] 출격 대상 확인 실패: {reason}", this);
                 return;
             }
+
+            RaidLoadoutTransferService.SaveLoadoutsForClients(expectedClientIdsBuffer);
 
             if (!TryBeginLoadTracking(sceneName, expectedClientIdsBuffer, out reason))
             {

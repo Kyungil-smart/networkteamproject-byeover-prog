@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DeadZone.Actors.UI;
 using DeadZone.Core;
@@ -236,7 +237,59 @@ namespace DeadZone.Systems.Save
                     return slot;
             }
 
+            if (string.Equals(slotId, "primary1", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(slotId, "EquipmentPrimaryWeapon", StringComparison.OrdinalIgnoreCase))
+            {
+                return FindPrimaryWeaponSlot(slots, false);
+            }
+
+            if (string.Equals(slotId, "primary2", StringComparison.OrdinalIgnoreCase))
+            {
+                return FindPrimaryWeaponSlot(slots, true);
+            }
+
             return null;
+        }
+
+        private static InventorySlotUI FindPrimaryWeaponSlot(InventorySlotUI[] slots, bool secondSlot)
+        {
+            InventorySlotUI fallback = null;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null || slot.SlotKind != InventorySlotKind.EquipmentPrimaryWeapon)
+                    continue;
+
+                fallback ??= slot;
+
+                string path = BuildTransformPath(slot.transform);
+                bool looksLikeSecondSlot =
+                    path.Contains("primary2", StringComparison.OrdinalIgnoreCase) ||
+                    path.Contains("_2", StringComparison.OrdinalIgnoreCase);
+
+                if (secondSlot == looksLikeSecondSlot)
+                    return slot;
+            }
+
+            return secondSlot ? null : fallback;
+        }
+
+        private static string BuildTransformPath(Transform transform)
+        {
+            if (transform == null)
+                return string.Empty;
+
+            string path = transform.name;
+            Transform parent = transform.parent;
+
+            while (parent != null)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+
+            return path;
         }
 
         private IItemDatabase ResolveItemDatabase()

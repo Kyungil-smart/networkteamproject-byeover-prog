@@ -24,6 +24,8 @@ namespace DeadZone.Systems.Save
         public int y;
         public bool rotated;
         public int stackCount;
+        public float currentDurability;
+        public int currentAmmo;
     }
 
     [Serializable]
