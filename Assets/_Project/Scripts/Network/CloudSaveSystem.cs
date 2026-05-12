@@ -183,7 +183,12 @@ namespace DeadZone.Network
         private async void OnSceneChanged(SceneChangedEvent e)
         {
             // Hideout 복귀 시 업로드
-            if (e.sceneName != "Hideout") return;
+            string sceneName = e.sceneName.ToString();
+            if (!string.Equals(sceneName, "Hideout", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(sceneName, "HideOut", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
             if (!HasLoadedData) return;
             if (string.IsNullOrWhiteSpace(loadedFirebaseUid)) return;
 

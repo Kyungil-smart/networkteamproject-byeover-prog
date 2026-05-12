@@ -4,16 +4,15 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 using DeadZone.Actors;
+using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems.Save;
 
 namespace DeadZone.Systems.Housing
 {
-    /// <summary>
-    /// 에디터와 개발 빌드에서 End 키로 하우징 저장/복원 경로를 빠르게 검증하는 전역 테스트 리스너입니다.
-    /// </summary>
     [DefaultExecutionOrder(-1000)]
     public sealed class HousingEndKeyUpgradeTester : MonoBehaviour
     {
@@ -24,6 +23,9 @@ namespace DeadZone.Systems.Housing
 
         [SerializeField]
         private bool shiftEndResetsHousingLevels = true;
+
+        [SerializeField]
+        private bool logDiagnostics = true;
 
         private bool cloudOnlySaveInProgress;
 
@@ -50,16 +52,35 @@ namespace DeadZone.Systems.Housing
             DontDestroyOnLoad(gameObject);
         }
 
+        private void OnEnable()
+        {
+            if (!logDiagnostics)
+                return;
+
+            Debug.Log("[HousingEndKeyUpgradeTester] Active. Press End to advance housing levels, Shift+End to reset to Lv.1.");
+        }
+
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
 
-            if (keyboard == null || !keyboard.endKey.wasPressedThisFrame)
+            if (keyboard == null)
+                return;
+
+            if (!keyboard.endKey.wasPressedThisFrame)
                 return;
 
             bool resetToLevelOne =
                 shiftEndResetsHousingLevels &&
                 (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
+
+            if (logDiagnostics)
+            {
+                Debug.Log(
+                    $"[HousingEndKeyUpgradeTester] End detected. Scene={GetActiveSceneName()}, " +
+                    $"NetworkListening={NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening}, " +
+                    $"Reset={resetToLevelOne}");
+            }
 
             if (TryRunThroughNetworkPlayer(resetToLevelOne))
                 return;
@@ -67,18 +88,24 @@ namespace DeadZone.Systems.Housing
             _ = RunCloudOnlyFallbackAsync(resetToLevelOne);
         }
 
-        private static bool TryRunThroughNetworkPlayer(bool resetToLevelOne)
+        private bool TryRunThroughNetworkPlayer(bool resetToLevelOne)
         {
             NetworkManager networkManager = NetworkManager.Singleton;
 
             if (networkManager == null || !networkManager.IsListening)
+            {
+                LogDiagnostic("Network path skipped. NetworkManager is not listening.");
                 return false;
+            }
 
             NetworkClient localClient = networkManager.LocalClient;
             NetworkObject playerObject = localClient?.PlayerObject;
 
             if (playerObject == null)
+            {
+                LogDiagnostic("Network path skipped. Local PlayerObject is null.");
                 return false;
+            }
 
             PlayerHousingSaveSyncer saveSyncer = playerObject.GetComponent<PlayerHousingSaveSyncer>();
 
@@ -87,7 +114,7 @@ namespace DeadZone.Systems.Housing
 
             if (saveSyncer == null)
             {
-                Debug.LogWarning("[HousingEndKeyUpgradeTester] Local PlayerObject에 PlayerHousingSaveSyncer가 없어 End 키 네트워크 테스트를 실행할 수 없습니다.");
+                Debug.LogWarning("[HousingEndKeyUpgradeTester] Network path failed. PlayerHousingSaveSyncer is missing on the local PlayerObject.");
                 return false;
             }
 
@@ -95,13 +122,13 @@ namespace DeadZone.Systems.Housing
 
             if (!requested)
             {
-                Debug.LogWarning("[HousingEndKeyUpgradeTester] PlayerHousingSaveSyncer가 아직 owner spawn 상태가 아니어서 End 키 네트워크 테스트를 실행하지 못했습니다.");
+                Debug.LogWarning("[HousingEndKeyUpgradeTester] Network path failed. PlayerHousingSaveSyncer is not spawned as the local owner yet.");
                 return false;
             }
 
             Debug.Log(resetToLevelOne
-                ? "[HousingEndKeyUpgradeTester] Shift+End 입력 감지. 네트워크 하우징 레벨 초기화를 요청했습니다."
-                : "[HousingEndKeyUpgradeTester] End 입력 감지. 네트워크 하우징 레벨 업그레이드를 요청했습니다.");
+                ? "[HousingEndKeyUpgradeTester] Shift+End requested through local network player."
+                : "[HousingEndKeyUpgradeTester] End requested through local network player.");
 
             return true;
         }
@@ -109,43 +136,56 @@ namespace DeadZone.Systems.Housing
         private async Task RunCloudOnlyFallbackAsync(bool resetToLevelOne)
         {
             if (cloudOnlySaveInProgress)
-                return;
-
-            CloudSaveSystem cloudSaveSystem = ResolveLoadedCloudSaveSystem();
-
-            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData)
             {
-                Debug.LogWarning("[HousingEndKeyUpgradeTester] End 키를 감지했지만 Network Player와 로드된 CloudSaveSystem을 모두 찾지 못했습니다.");
+                LogDiagnostic("Cloud-only path skipped. A previous End-key save is still running.");
                 return;
             }
-
-            PlayerHousingProgressDTO dto = cloudSaveSystem.CreateHousingProgressDTOFromCurrentData();
-
-            if (dto == null)
-            {
-                Debug.LogWarning("[HousingEndKeyUpgradeTester] Cloud Save 하우징 데이터를 DTO로 만들지 못했습니다.");
-                return;
-            }
-
-            if (resetToLevelOne)
-                SetLevel(dto, MinLevel);
-            else
-                IncrementLevel(dto);
-
-            dto.Normalize();
-            ApplyToLobbyFacilityState(dto);
 
             cloudOnlySaveInProgress = true;
 
             try
             {
+                CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(preferLoadedData: true);
+
+                if (cloudSaveSystem == null)
+                {
+                    Debug.LogWarning("[HousingEndKeyUpgradeTester] Cloud-only path failed. CloudSaveSystem was not found.");
+                    return;
+                }
+
+                if (!cloudSaveSystem.HasLoadedData)
+                {
+                    LogDiagnostic("Cloud-only path found CloudSaveSystem, but data is not loaded yet. Trying LoadAsync.");
+                    PlayerCloudData loadedData = await cloudSaveSystem.LoadAsync();
+
+                    if (loadedData == null || !cloudSaveSystem.HasLoadedData)
+                    {
+                        Debug.LogWarning("[HousingEndKeyUpgradeTester] Cloud-only path failed. Cloud Save is not loaded. Log in first, then press End after the lobby finishes loading.");
+                        return;
+                    }
+                }
+
+                PlayerHousingProgressDTO dto = cloudSaveSystem.CreateHousingProgressDTOFromCurrentData();
+
+                if (dto == null)
+                {
+                    Debug.LogWarning("[HousingEndKeyUpgradeTester] Cloud-only path failed. Housing DTO could not be created from Cloud Save.");
+                    return;
+                }
+
+                if (resetToLevelOne)
+                    SetLevel(dto, MinLevel);
+                else
+                    IncrementLevel(dto);
+
+                dto.Normalize();
+                ApplyToLobbyFacilityState(dto);
+
                 bool success = await cloudSaveSystem.SaveHousingProgressAsync(dto);
 
                 Debug.Log(success
-                    ? resetToLevelOne
-                        ? "[HousingEndKeyUpgradeTester] Shift+End Cloud Save 하우징 초기화 완료."
-                        : "[HousingEndKeyUpgradeTester] End Cloud Save 하우징 업그레이드 완료."
-                    : "[HousingEndKeyUpgradeTester] End 키 Cloud Save 하우징 테스트 저장 실패.");
+                    ? $"[HousingEndKeyUpgradeTester] Cloud-only housing test saved. Workbench Lv.{dto.workbenchLevel}, Medical Lv.{dto.medicalLevel}, Gym Lv.{dto.gymLevel}, Stash Lv.{dto.stashLevel}, Kitchen Lv.{dto.kitchenLevel}, Bed Lv.{dto.bedLevel}, CommStation Lv.{dto.commStationLevel}"
+                    : "[HousingEndKeyUpgradeTester] Cloud-only housing test save failed.");
             }
             finally
             {
@@ -153,8 +193,16 @@ namespace DeadZone.Systems.Housing
             }
         }
 
-        private static CloudSaveSystem ResolveLoadedCloudSaveSystem()
+        private static CloudSaveSystem ResolveCloudSaveSystem(bool preferLoadedData)
         {
+            CloudSaveSystem service = ServiceLocator.Get<CloudSaveSystem>();
+
+            if (!preferLoadedData && service != null)
+                return service;
+
+            if (service != null && service.HasLoadedData)
+                return service;
+
             CloudSaveSystem[] systems = FindObjectsByType<CloudSaveSystem>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
@@ -164,6 +212,9 @@ namespace DeadZone.Systems.Housing
                 if (systems[i] != null && systems[i].HasLoadedData)
                     return systems[i];
             }
+
+            if (service != null)
+                return service;
 
             return systems.Length > 0 ? systems[0] : null;
         }
@@ -205,6 +256,20 @@ namespace DeadZone.Systems.Housing
             dto.kitchenLevel = safeLevel;
             dto.bedLevel = safeLevel;
             dto.commStationLevel = safeLevel;
+        }
+
+        private void LogDiagnostic(string message)
+        {
+            if (!logDiagnostics)
+                return;
+
+            Debug.Log($"[HousingEndKeyUpgradeTester] {message} Scene={GetActiveSceneName()}");
+        }
+
+        private static string GetActiveSceneName()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            return scene.IsValid() ? scene.name : "<invalid>";
         }
     }
 }
