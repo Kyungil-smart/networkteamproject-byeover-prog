@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -63,6 +64,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private bool shutdownNetworkOnSignOut = true;
 
         private bool isApplyingBankruptcy;
+        private bool isAccountActionRunning;
 
         /// <summary>
         /// 현재 설정 팝업이 활성화되어 있는지 반환합니다.
@@ -228,12 +230,12 @@ namespace DeadZone.Actors.UI
 
         private void HandleLogoutRequested()
         {
-            SignOutAndReturnToTitle();
+            _ = SignOutAndReturnToTitleAsync(suppressAutoLoginOnTitle: false);
         }
 
         private void HandleChangeAccountRequested()
         {
-            SignOutAndReturnToTitle();
+            _ = SignOutAndReturnToTitleAsync(suppressAutoLoginOnTitle: true);
         }
 
         private async void HandleBankruptcyConfirmed()
@@ -299,11 +301,36 @@ namespace DeadZone.Actors.UI
                 bankruptcyCancelButton.interactable = interactable;
         }
 
-        private void SignOutAndReturnToTitle()
+        private async Task SignOutAndReturnToTitleAsync(bool suppressAutoLoginOnTitle)
         {
+            if (isAccountActionRunning)
+                return;
+
+            isAccountActionRunning = true;
+            SetAccountButtonsInteractable(false);
+
             FirebaseAuthManager authManager = ResolveFirebaseAuthManager();
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem();
+
+            if (cloudSaveSystem != null
+                && authManager != null
+                && authManager.IsSignedIn
+                && cloudSaveSystem.HasLoadedData
+                && cloudSaveSystem.LoadedFirebaseUid == authManager.CurrentUid)
+            {
+                bool uploaded = await cloudSaveSystem.UploadAsync();
+                if (!uploaded)
+                    Debug.LogWarning("[SettingPopupUI] Account sign-out continued after Cloud Save upload failed.", this);
+            }
+
+            if (suppressAutoLoginOnTitle)
+                TitleLoginUI.SuppressNextAutoLoginOnce();
+
             if (authManager != null)
                 authManager.SignOut();
+
+            if (cloudSaveSystem != null)
+                cloudSaveSystem.ClearLoadedData();
 
             if (shutdownNetworkOnSignOut
                 && NetworkManager.Singleton != null
@@ -316,7 +343,19 @@ namespace DeadZone.Actors.UI
             HideBankruptcyConfirmation();
 
             if (!string.IsNullOrWhiteSpace(titleSceneName))
-                SceneManager.LoadScene(titleSceneName);
+                LoadingScreenService.LoadSceneOrFallback(titleSceneName);
+
+            isAccountActionRunning = false;
+            SetAccountButtonsInteractable(true);
+        }
+
+        private void SetAccountButtonsInteractable(bool interactable)
+        {
+            if (logoutButton != null)
+                logoutButton.interactable = interactable;
+
+            if (changeAccountButton != null)
+                changeAccountButton.interactable = interactable;
         }
 
         private static FirebaseAuthManager ResolveFirebaseAuthManager()

@@ -64,6 +64,12 @@ namespace DeadZone.Actors.UI
 
         private bool isBusy;
         private bool isAutoLoginRunning;
+        private static bool suppressNextAutoLogin;
+
+        public static void SuppressNextAutoLoginOnce()
+        {
+            suppressNextAutoLogin = true;
+        }
 
         private void Awake()
         {
@@ -77,7 +83,10 @@ namespace DeadZone.Actors.UI
             SetBusy(false);
             ShowMessage(string.Empty);
 
-            if (attemptAutoLoginOnEnable)
+            bool shouldSuppressAutoLogin = suppressNextAutoLogin;
+            suppressNextAutoLogin = false;
+
+            if (attemptAutoLoginOnEnable && !shouldSuppressAutoLogin)
                 _ = TryAutoLoginAsync();
         }
 
@@ -211,7 +220,7 @@ namespace DeadZone.Actors.UI
                 }
                 
                 ShowMessage("로비로 이동합니다...");
-                SceneManager.LoadScene(lobbySceneName);
+                LoadingScreenService.LoadSceneOrFallback(lobbySceneName);
             }
             catch (Exception ex)
             {
@@ -281,7 +290,7 @@ namespace DeadZone.Actors.UI
                 }
 
                 ShowMessage("로비로 이동합니다...");
-                SceneManager.LoadScene(lobbySceneName);
+                LoadingScreenService.LoadSceneOrFallback(lobbySceneName);
             }
             catch (Exception ex)
             {

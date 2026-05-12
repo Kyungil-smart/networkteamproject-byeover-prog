@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+using DeadZone.Actors.UI;
 using DeadZone.Systems.Raid;
 
 namespace DeadZone.Systems.Raid
@@ -32,7 +34,7 @@ namespace DeadZone.Systems.Raid
 
             LoseAllItems();
 
-            SceneManager.LoadScene(resultSceneName);
+            LoadingScreenService.LoadSceneOrFallback(resultSceneName);
         }
 
         private void LoseAllItems()

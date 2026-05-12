@@ -97,7 +97,7 @@ namespace DeadZone.Actors.UI
             }
 
             Time.timeScale = 1f;
-            SceneManager.LoadScene(lobbySceneName);
+            LoadingScreenService.LoadSceneOrFallback(lobbySceneName);
         }
 
         public void ExitGame()
