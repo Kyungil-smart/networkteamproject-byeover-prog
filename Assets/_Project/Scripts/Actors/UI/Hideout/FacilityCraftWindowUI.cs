@@ -8,11 +8,12 @@ using UnityEngine;
 using DeadZone.Core;
 using DeadZone.Systems;
 using DeadZone.Systems.Housing;
+using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors.UI.Hideout
 {
-    // ÀÛ¾÷´ë/ÀÇ·á½Ã¼³ Á¦ÀÛ Ã¢ UI
-    // UI´Â ·¹½ÃÇÇ Ç¥½Ã¿Í Á¦ÀÛ ¿äÃ»¸¸ ´ã´çÇÏ°í, Àç·á ¼Ò¸ğ¿Í °á°ú Áö±ŞÀº ¼­¹ö Á¦ÀÛ ÄÁÆ®·Ñ·¯°¡ Ã³¸®
+    // ì‘ì—…ëŒ€/ì˜ë£Œì‹œì„¤ ì œì‘ ì°½ UI
+    // UIëŠ” ë ˆì‹œí”¼ í‘œì‹œì™€ ì œì‘ ìš”ì²­ë§Œ ë‹´ë‹¹í•˜ê³ , ì¬ë£Œ ì†Œëª¨ì™€ ê²°ê³¼ ì§€ê¸‰ì€ ì„œë²„ ì œì‘ ì»¨íŠ¸ë¡¤ëŸ¬ê°€ ì²˜ë¦¬
     [DisallowMultipleComponent]
     public sealed class FacilityCraftWindowUI : MonoBehaviour
     {
@@ -23,30 +24,30 @@ namespace DeadZone.Actors.UI.Hideout
             public FacilityBase facility;
         }
 
-        [Header("Ã¢ ·çÆ®")]
+        [Header("ì°½ ë£¨íŠ¸")]
         [SerializeField] private GameObject windowRoot;
 
-        [Header("ÅØ½ºÆ® Ç¥½Ã")]
+        [Header("í…ìŠ¤íŠ¸ í‘œì‹œ")]
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text descriptionText;
         [SerializeField] private TMP_Text levelText;
         [SerializeField] private TMP_Text messageText;
 
-        [Header("½Ã¼³ ¿¬°á")]
+        [Header("ì‹œì„¤ ì—°ê²°")]
         [SerializeField] private List<FacilityViewBinding> facilityBindings = new();
 
-        [Header("ÀÎº¥Åä¸® Ç¥½Ã¿ë")]
+        [Header("ì¸ë²¤í† ë¦¬ í‘œì‹œìš©")]
         [SerializeField] private MonoBehaviour inventoryBehaviour;
 
-        [Header("·¹½ÃÇÇ ¸ñ·Ï")]
+        [Header("ë ˆì‹œí”¼ ëª©ë¡")]
         [SerializeField] private List<RecipeSO> workbenchRecipes = new();
         [SerializeField] private List<RecipeSO> medicalRecipes = new();
 
-        [Header("·¹½ÃÇÇ UI")]
+        [Header("ë ˆì‹œí”¼ UI")]
         [SerializeField] private Transform recipeListRoot;
         [SerializeField] private FacilityCraftRecipeRowUI recipeRowPrefab;
 
-        [Header("·Î±×")]
+        [Header("ë¡œê·¸")]
         [SerializeField] private bool showDebugLog = true;
 
         private readonly List<FacilityCraftRecipeRowUI> spawnedRows = new();
@@ -56,6 +57,7 @@ namespace DeadZone.Actors.UI.Hideout
 
         private FacilityBase currentFacility;
         private IInventory inventory;
+        private PlayerHousingProgress localHousingProgress;
         private bool isInitialized;
 
         public bool IsOpen => windowRoot != null && windowRoot.activeSelf;
@@ -77,13 +79,13 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (!CanUseCraftWindow(facilityView))
             {
-                Debug.LogWarning($"[FacilityCraftWindowUI] {facilityView} ½Ã¼³Àº Á¦ÀÛ Ã¢À» »ç¿ëÇÒ ¼ö ¾ø½À´Ï´Ù.", this);
+                Debug.LogWarning($"[FacilityCraftWindowUI] {facilityView} ì‹œì„¤ì€ ì œì‘ ì°½ì„ ì‚¬ìš©í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             if (!TryFindFacility(facilityView, out FacilityBase facility))
             {
-                Debug.LogWarning($"[FacilityCraftWindowUI] {facilityView}¿¡ ¿¬°áµÈ FacilityBase°¡ ¾ø½À´Ï´Ù.", this);
+                Debug.LogWarning($"[FacilityCraftWindowUI] {facilityView}ì— ì—°ê²°ëœ FacilityBaseê°€ ì—†ìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
@@ -97,7 +99,7 @@ namespace DeadZone.Actors.UI.Hideout
 
             Refresh();
 
-            DebugLog($"{facilityView} Á¦ÀÛ Ã¢À» ¿­¾ú½À´Ï´Ù.");
+            DebugLog($"{facilityView} ì œì‘ ì°½ì„ ì—´ì—ˆìŠµë‹ˆë‹¤.");
         }
 
         public void Close()
@@ -113,7 +115,7 @@ namespace DeadZone.Actors.UI.Hideout
             ClearTexts();
             ClearRows();
 
-            DebugLog("Á¦ÀÛ Ã¢À» ´İ¾Ò½À´Ï´Ù.");
+            DebugLog("ì œì‘ ì°½ì„ ë‹«ì•˜ìŠµë‹ˆë‹¤.");
         }
 
         public void Refresh()
@@ -135,7 +137,7 @@ namespace DeadZone.Actors.UI.Hideout
         {
             if (recipe == null)
             {
-                SetMessage("·¹½ÃÇÇ µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+                SetMessage("ë ˆì‹œí”¼ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return;
             }
 
@@ -144,23 +146,23 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (currentFacility == null)
             {
-                SetMessage("ÇöÀç ¼±ÅÃµÈ ½Ã¼³ÀÌ ¾ø½À´Ï´Ù.");
+                SetMessage("í˜„ì¬ ì„ íƒëœ ì‹œì„¤ì´ ì—†ìŠµë‹ˆë‹¤.");
                 return;
             }
 
-            int currentLevel = currentFacility.GetCurrentLevel();
+            int currentLevel = GetLocalPlayerFacilityLevel();
             int requiredLevel = Mathf.Max(1, recipe.requiredFacilityLevel);
 
             if (currentLevel < requiredLevel)
             {
-                SetMessage($"½Ã¼³ ·¹º§ÀÌ ºÎÁ·ÇÕ´Ï´Ù. ÇÊ¿ä LV{requiredLevel}");
+                SetMessage($"ì‹œì„¤ ë ˆë²¨ì´ ë¶€ì¡±í•©ë‹ˆë‹¤. í•„ìš” LV{requiredLevel}");
                 Refresh();
                 return;
             }
 
             if (!RequestCraftToCurrentFacility(recipe.recipeID))
             {
-                SetMessage("Á¦ÀÛ ÄÁÆ®·Ñ·¯°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+                SetMessage("ì œì‘ ì»¨íŠ¸ë¡¤ëŸ¬ê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");
                 return;
             }
 
@@ -168,8 +170,8 @@ namespace DeadZone.Actors.UI.Hideout
                 ? recipe.result.displayName
                 : recipe.recipeID;
 
-            SetMessage($"{resultName} Á¦ÀÛÀ» ¼­¹ö¿¡ ¿äÃ»Çß½À´Ï´Ù.");
-            DebugLog($"Á¦ÀÛ ¿äÃ»: {recipe.recipeID}");
+            SetMessage($"{resultName} ì œì‘ì„ ì„œë²„ì— ìš”ì²­í–ˆìŠµë‹ˆë‹¤.");
+            DebugLog($"ì œì‘ ìš”ì²­: {recipe.recipeID}");
 
             Refresh();
         }
@@ -210,19 +212,19 @@ namespace DeadZone.Actors.UI.Hideout
         {
             if (recipe == null)
             {
-                SetMessage("·¹½ÃÇÇ µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+                SetMessage("ë ˆì‹œí”¼ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(recipe.recipeID))
             {
-                SetMessage("Recipe ID°¡ ºñ¾î ÀÖ½À´Ï´Ù.");
+                SetMessage("Recipe IDê°€ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤.");
                 return false;
             }
 
             if (recipe.result == null)
             {
-                SetMessage("°á°ú ¾ÆÀÌÅÛÀÌ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+                SetMessage("ê²°ê³¼ ì•„ì´í…œì´ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");
                 return false;
             }
 
@@ -244,8 +246,9 @@ namespace DeadZone.Actors.UI.Hideout
         private void ResolveInventory()
         {
             inventory = null;
+            localHousingProgress = null;
 
-            // ³×Æ®¿öÅ© ½Ç»ç¿ë ±âÁØ: ÇöÀç ·ÎÄÃ ÇÃ·¹ÀÌ¾îÀÇ PlayerObject ÀÎº¥Åä¸®¸¦ °¡Àå ¸ÕÀú Ã£´Â´Ù.
+            // ë„¤íŠ¸ì›Œí¬ ì‹¤ì‚¬ìš© ê¸°ì¤€: í˜„ì¬ ë¡œì»¬ í”Œë ˆì´ì–´ì˜ PlayerObject ì¸ë²¤í† ë¦¬ë¥¼ ê°€ì¥ ë¨¼ì € ì°¾ëŠ”ë‹¤.
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 ulong localClientId = NetworkManager.Singleton.LocalClientId;
@@ -254,6 +257,11 @@ namespace DeadZone.Actors.UI.Hideout
                 {
                     if (localClient.PlayerObject != null)
                     {
+                        localHousingProgress = localClient.PlayerObject.GetComponent<PlayerHousingProgress>();
+
+                        if (localHousingProgress == null)
+                            localHousingProgress = localClient.PlayerObject.GetComponentInChildren<PlayerHousingProgress>(true);
+
                         IInventory playerInventory = localClient.PlayerObject.GetComponent<IInventory>();
 
                         if (playerInventory == null)
@@ -265,21 +273,22 @@ namespace DeadZone.Actors.UI.Hideout
                             inventoryBehaviour = playerInventory as MonoBehaviour;
 
                             if (inventoryBehaviour != null)
-                                DebugLog($"·ÎÄÃ ÇÃ·¹ÀÌ¾î ÀÎº¥Åä¸® ¿¬°á ¿Ï·á: {inventoryBehaviour.gameObject.name}");
+                                DebugLog($"ë¡œì»¬ í”Œë ˆì´ì–´ ì¸ë²¤í† ë¦¬ ì—°ê²° ì™„ë£Œ: {inventoryBehaviour.gameObject.name}");
 
-                            return;
+                            if (localHousingProgress != null)
+                                return;
                         }
                     }
                 }
             }
 
-            // ÀÎ½ºÆåÅÍ¿¡ Á÷Á¢ ¿¬°áµÈ ÀÎº¥Åä¸®
+            // ì¸ìŠ¤í™í„°ì— ì§ì ‘ ì—°ê²°ëœ ì¸ë²¤í† ë¦¬
             if (inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
                 {
                     inventory = directInventory;
-                    DebugLog($"IInventory Á÷Á¢ ¿¬°á ¿Ï·á: {inventoryBehaviour.GetType().Name}");
+                    DebugLog($"IInventory ì§ì ‘ ì—°ê²° ì™„ë£Œ: {inventoryBehaviour.GetType().Name}");
                     return;
                 }
 
@@ -288,7 +297,7 @@ namespace DeadZone.Actors.UI.Hideout
                 if (sameObjectInventory != null)
                 {
                     inventory = sameObjectInventory;
-                    DebugLog($"IInventory °°Àº ¿ÀºêÁ§Æ®¿¡¼­ ¿¬°á ¿Ï·á: {sameObjectInventory.GetType().Name}");
+                    DebugLog($"IInventory ê°™ì€ ì˜¤ë¸Œì íŠ¸ì—ì„œ ì—°ê²° ì™„ë£Œ: {sameObjectInventory.GetType().Name}");
                     return;
                 }
 
@@ -297,34 +306,42 @@ namespace DeadZone.Actors.UI.Hideout
                 if (childInventory != null)
                 {
                     inventory = childInventory;
-                    DebugLog($"IInventory ÀÚ½Ä ¿ÀºêÁ§Æ®¿¡¼­ ¿¬°á ¿Ï·á: {childInventory.GetType().Name}");
+                    DebugLog($"IInventory ìì‹ ì˜¤ë¸Œì íŠ¸ì—ì„œ ì—°ê²° ì™„ë£Œ: {childInventory.GetType().Name}");
                     return;
                 }
             }
 
-            // ÃÖÈÄÀÇ ÀÚµ¿ °Ë»ö
+            // ìµœí›„ì˜ ìë™ ê²€ìƒ‰
             MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
 
             for (int i = 0; i < behaviours.Length; i++)
             {
-                if (behaviours[i] is not IInventory foundInventory)
-                    continue;
+                if (inventory == null && behaviours[i] is IInventory foundInventory)
+                {
+                    inventory = foundInventory;
+                    inventoryBehaviour = behaviours[i];
 
-                inventory = foundInventory;
-                inventoryBehaviour = behaviours[i];
+                    DebugLog($"IInventory ìë™ ì—°ê²° ì™„ë£Œ: {behaviours[i].GetType().Name} / ì˜¤ë¸Œì íŠ¸: {behaviours[i].gameObject.name}");
+                }
 
-                DebugLog($"IInventory ÀÚµ¿ ¿¬°á ¿Ï·á: {behaviours[i].GetType().Name} / ¿ÀºêÁ§Æ®: {behaviours[i].gameObject.name}");
-                return;
+                if (localHousingProgress == null && behaviours[i] is PlayerHousingProgress foundProgress)
+                {
+                    localHousingProgress = foundProgress;
+                    DebugLog($"PlayerHousingProgress ìë™ ì—°ê²° ì™„ë£Œ: {foundProgress.gameObject.name}");
+                }
+
+                if (inventory != null && localHousingProgress != null)
+                    return;
             }
 
-            Debug.LogWarning("[FacilityCraftWindowUI] ¾À¿¡¼­ IInventory ±¸ÇöÃ¼¸¦ Ã£Áö ¸øÇß½À´Ï´Ù.", this);
+            Debug.LogWarning("[FacilityCraftWindowUI] ì”¬ì—ì„œ IInventory êµ¬í˜„ì²´ë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.", this);
         }
 
         private void RefreshTexts()
         {
-            int currentLevel = currentFacility != null ? currentFacility.GetCurrentLevel() : 0;
+            int currentLevel = GetLocalPlayerFacilityLevel();
             int maxLevel = currentFacility != null ? currentFacility.GetMaxLevel() : 0;
 
             if (titleText != null)
@@ -334,7 +351,7 @@ namespace DeadZone.Actors.UI.Hideout
                 descriptionText.text = GetDescriptionText(currentFacilityView);
 
             if (levelText != null)
-                levelText.text = $"ÇöÀç ½Ã¼³ ·¹º§: LV {currentLevel} / {maxLevel}";
+                levelText.text = $"í˜„ì¬ ì‹œì„¤ ë ˆë²¨: LV {currentLevel} / {maxLevel}";
         }
 
         private void RefreshRecipeRows()
@@ -345,23 +362,23 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (recipes == null || recipes.Count == 0)
             {
-                DebugLog($"{currentFacilityView} Á¦ÀÛ ·¹½ÃÇÇ°¡ ¾ø½À´Ï´Ù.");
+                DebugLog($"{currentFacilityView} ì œì‘ ë ˆì‹œí”¼ê°€ ì—†ìŠµë‹ˆë‹¤.");
                 return;
             }
 
             if (recipeListRoot == null)
             {
-                Debug.LogWarning("[FacilityCraftWindowUI] Recipe List Root°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.", this);
+                Debug.LogWarning("[FacilityCraftWindowUI] Recipe List Rootê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             if (recipeRowPrefab == null)
             {
-                Debug.LogWarning("[FacilityCraftWindowUI] Recipe Row PrefabÀÌ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.", this);
+                Debug.LogWarning("[FacilityCraftWindowUI] Recipe Row Prefabì´ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
-            int currentLevel = currentFacility != null ? currentFacility.GetCurrentLevel() : 0;
+            int currentLevel = GetLocalPlayerFacilityLevel();
 
             for (int i = 0; i < recipes.Count; i++)
             {
@@ -375,7 +392,67 @@ namespace DeadZone.Actors.UI.Hideout
                 spawnedRows.Add(row);
             }
 
-            DebugLog($"{currentFacilityView} Á¦ÀÛ Row {spawnedRows.Count}°³¸¦ »ı¼ºÇß½À´Ï´Ù.");
+            DebugLog($"{currentFacilityView} ì œì‘ Row {spawnedRows.Count}ê°œë¥¼ ìƒì„±í–ˆìŠµë‹ˆë‹¤.");
+        }
+
+        private int GetLocalPlayerFacilityLevel()
+        {
+            if (currentFacility == null)
+                return 1;
+
+            if (localHousingProgress == null)
+                ResolveInventory();
+
+            if (localHousingProgress != null)
+                return localHousingProgress.GetLevel(currentFacility.Type);
+
+            if (TryGetLobbyFacilityLevel(currentFacility.Type, out int lobbyLevel))
+                return lobbyLevel;
+
+            return currentFacility.GetCurrentLevel();
+        }
+
+        private static bool TryGetLobbyFacilityLevel(FacilityType facilityType, out int level)
+        {
+            level = 1;
+
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+
+            if (facilityState == null || facilityState.Facilities == null)
+                return false;
+
+            string expectedId = GetFacilitySaveId(facilityType);
+
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = facilityState.Facilities[i];
+
+                if (facility == null)
+                    continue;
+
+                if (!string.Equals(facility.facilityId, expectedId, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                level = Mathf.Clamp(facility.level, 1, 4);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string GetFacilitySaveId(FacilityType facilityType)
+        {
+            return facilityType switch
+            {
+                FacilityType.Workbench => "Workbench",
+                FacilityType.Medical => "Medical",
+                FacilityType.Gym => "Gym",
+                FacilityType.Stash => "Stash",
+                FacilityType.Kitchen => "Kitchen",
+                FacilityType.Bed => "Bed",
+                FacilityType.CommStation => "CommStation",
+                _ => facilityType.ToString()
+            };
         }
 
         private IReadOnlyList<RecipeSO> GetCurrentRecipes()
@@ -455,9 +532,9 @@ namespace DeadZone.Actors.UI.Hideout
         {
             return facilityView switch
             {
-                HideoutCameraFacilitySelector.FacilityView.Workbench => "ÃÑ±â ÀÛ¾÷´ë Á¦ÀÛ",
-                HideoutCameraFacilitySelector.FacilityView.Medical => "ÀÇ·á½Ã¼³ Á¦ÀÛ",
-                _ => "Á¦ÀÛ"
+                HideoutCameraFacilitySelector.FacilityView.Workbench => "ì´ê¸° ì‘ì—…ëŒ€ ì œì‘",
+                HideoutCameraFacilitySelector.FacilityView.Medical => "ì˜ë£Œì‹œì„¤ ì œì‘",
+                _ => "ì œì‘"
             };
         }
 
@@ -466,10 +543,10 @@ namespace DeadZone.Actors.UI.Hideout
             return facilityView switch
             {
                 HideoutCameraFacilitySelector.FacilityView.Workbench =>
-                    "½Ã¼³ ·¹º§¿¡ µû¶ó ÃÑ±â Á¦ÀÛ ·¹½ÃÇÇ°¡ Ç¥½ÃµË´Ï´Ù.",
+                    "ì‹œì„¤ ë ˆë²¨ì— ë”°ë¼ ì´ê¸° ì œì‘ ë ˆì‹œí”¼ê°€ í‘œì‹œë©ë‹ˆë‹¤.",
 
                 HideoutCameraFacilitySelector.FacilityView.Medical =>
-                    "½Ã¼³ ·¹º§¿¡ µû¶ó ÀÇ·áÇ° Á¦ÀÛ ·¹½ÃÇÇ°¡ Ç¥½ÃµË´Ï´Ù.",
+                    "ì‹œì„¤ ë ˆë²¨ì— ë”°ë¼ ì˜ë£Œí’ˆ ì œì‘ ë ˆì‹œí”¼ê°€ í‘œì‹œë©ë‹ˆë‹¤.",
 
                 _ => string.Empty
             };

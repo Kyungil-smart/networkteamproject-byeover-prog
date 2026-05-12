@@ -2284,7 +2284,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2574730419
+  GlobalObjectIdHash: 2087075750
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -5939,7 +5939,7 @@ MonoBehaviour:
       - m_Target: {fileID: 6148772876351684629}
         m_TargetAssemblyTypeName: DeadZone.Actors.UI.Hideout.HideoutFacilityUIController,
           Assembly-CSharp
-        m_MethodName: HandleBackButton
+        m_MethodName: CloseFacilityView
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -7071,8 +7071,6 @@ MonoBehaviour:
   facilityContentRoot: {fileID: 0}
   leftFacilityPanelRoot: {fileID: 0}
   rightInventoryPanelRoot: {fileID: 0}
-  lobbySceneName: Lobby
-  clearStateBeforeReturnToLobby: 1
   closeContentWhenSelectFacility: 1
   showDebugLog: 1
 --- !u!222 &6259520587624177772
