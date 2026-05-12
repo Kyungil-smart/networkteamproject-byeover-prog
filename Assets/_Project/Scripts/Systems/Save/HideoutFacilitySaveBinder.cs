@@ -69,18 +69,18 @@ namespace DeadZone.Systems.Save
             facilityState.SetFacilities(capturedFacilities);
         }
 
-        [Button("????곹깭瑜??쒖꽕濡??곸슜")]
+        [Button("저장 상태를 시설로 적용")]
         public void ApplyStateToFacilities()
         {
             if (facilityState == null)
             {
-                Debug.LogWarning("[HideoutFacilitySaveBinder] LobbyFacilityState媛 ?곌껐?섏? ?딆븯?듬땲??", this);
+                Debug.LogWarning("[HideoutFacilitySaveBinder] LobbyFacilityState가 연결되지 않았습니다.", this);
                 return;
             }
 
             if (facilities == null || facilities.Length == 0)
             {
-                Debug.LogWarning("[HideoutFacilitySaveBinder] FacilityBase ?뚯깮 ?쒖꽕 李몄“媛 鍮꾩뼱 ?덉뒿?덈떎.", this);
+                Debug.LogWarning("[HideoutFacilitySaveBinder] FacilityBase 파생 시설 참조가 비어 있습니다.", this);
                 return;
             }
 
