@@ -196,17 +196,16 @@ namespace DeadZone.Actors
             if (!IsOwner)
                 return;
 
-            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
-
-            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData)
-                return;
-
-            PlayerHousingProgressDTO dto = cloudSaveSystem.CreateHousingProgressDTOFromCurrentData();
-
-            if (dto == null)
+            if (!TryCreateLoadedHousingProgressDTO(out PlayerHousingProgressDTO dto))
                 return;
 
             ApplyHousingStateToLobbySave(dto, reason);
+
+            if (IsServer)
+            {
+                ApplyHousingSaveDataOnServer(dto, reason);
+                return;
+            }
 
             ApplyHousingSaveDataRpc(
                 dto.workbenchLevel,
@@ -263,7 +262,7 @@ namespace DeadZone.Actors
             };
 
             dto.Normalize();
-            progress.ApplySaveDataFromServer(dto);
+            ApplyHousingSaveDataOnServer(dto, reason);
             ApplyHousingStateToLobbySave(dto, reason);
 
             if (!logSaveRequest)
@@ -272,6 +271,87 @@ namespace DeadZone.Actors
             Debug.Log(
                 $"[PlayerHousingSaveSyncer] Cloud Save 하우징 데이터를 서버 PlayerHousingProgress에 적용했습니다. 사유: {reason}",
                 this);
+        }
+
+        private bool TryCreateLoadedHousingProgressDTO(out PlayerHousingProgressDTO dto)
+        {
+            dto = null;
+
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
+
+            if (cloudSaveSystem != null && cloudSaveSystem.HasLoadedData)
+            {
+                dto = cloudSaveSystem.CreateHousingProgressDTOFromCurrentData();
+
+                if (dto != null)
+                {
+                    dto.Normalize();
+                    return true;
+                }
+            }
+
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+
+            if (facilityState == null || facilityState.Facilities == null || facilityState.Facilities.Count == 0)
+                return false;
+
+            dto = new PlayerHousingProgressDTO();
+
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+                ApplyFacilityStateToDTO(dto, facilityState.Facilities[i]);
+
+            dto.Normalize();
+            return true;
+        }
+
+        private void ApplyHousingSaveDataOnServer(PlayerHousingProgressDTO dto, string reason)
+        {
+            if (!IsServer)
+                return;
+
+            if (progress == null)
+                progress = GetComponent<PlayerHousingProgress>();
+
+            if (progress == null)
+            {
+                Debug.LogWarning("[PlayerHousingSaveSyncer] PlayerHousingProgress媛 ?놁뼱 ?섏슦吏?????곗씠?곕? ?곸슜?????놁뒿?덈떎.", this);
+                return;
+            }
+
+            progress.ApplySaveDataFromServer(dto);
+
+            if (!logSaveRequest)
+                return;
+
+            Debug.Log(
+                $"[PlayerHousingSaveSyncer] ?섏슦吏?????곗씠?곕? ?쒕쾭 PlayerHousingProgress???곸슜?덉뒿?덈떎. ?ъ쑀: {reason}",
+                this);
+        }
+
+        private static void ApplyFacilityStateToDTO(PlayerHousingProgressDTO dto, FacilitySaveDTO facility)
+        {
+            if (dto == null || facility == null)
+                return;
+
+            int safeLevel = Mathf.Max(1, facility.level);
+
+            switch (NormalizeFacilityId(facility.facilityId))
+            {
+                case "workbench": dto.workbenchLevel = Mathf.Max(dto.workbenchLevel, safeLevel); break;
+                case "commstation": dto.commStationLevel = Mathf.Max(dto.commStationLevel, safeLevel); break;
+                case "medical": dto.medicalLevel = Mathf.Max(dto.medicalLevel, safeLevel); break;
+                case "gym": dto.gymLevel = Mathf.Max(dto.gymLevel, safeLevel); break;
+                case "stash": dto.stashLevel = Mathf.Max(dto.stashLevel, safeLevel); break;
+                case "kitchen": dto.kitchenLevel = Mathf.Max(dto.kitchenLevel, safeLevel); break;
+                case "bed": dto.bedLevel = Mathf.Max(dto.bedLevel, safeLevel); break;
+            }
+        }
+
+        private static string NormalizeFacilityId(string facilityId)
+        {
+            return string.IsNullOrWhiteSpace(facilityId)
+                ? string.Empty
+                : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
