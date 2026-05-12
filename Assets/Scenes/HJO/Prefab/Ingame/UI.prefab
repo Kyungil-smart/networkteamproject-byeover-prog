@@ -1180,6 +1180,103 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &519081297809852832
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 874634935235626362}
+  - component: {fileID: 5251870841595623489}
+  - component: {fileID: 8764756416718460894}
+  - component: {fileID: 2470307425956394108}
+  m_Layer: 0
+  m_Name: WorldMap_LocalPlayerMarker (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &874634935235626362
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519081297809852832}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1156428266989013517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 16, y: 16}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &5251870841595623489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519081297809852832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cb3b239425a224e86456c57dcc6cd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.MapMarkerFollower
+  mapRect: {fileID: 297014638779595197}
+  markerRect: {fileID: 874634935235626362}
+  target: {fileID: 0}
+  boundsProvider: {fileID: 3224240857002343532}
+  worldMin: {x: -406.74, y: -149.42}
+  worldMax: {x: 6.08078, y: 55.42514}
+  updateEveryFrame: 1
+  clampToMap: 1
+  invertY: 0
+--- !u!222 &8764756416718460894
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519081297809852832}
+  m_CullTransparentMesh: 1
+--- !u!114 &2470307425956394108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519081297809852832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: c34226499b8c84655b12e937f8b8fb24, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &583924528696242266
 GameObject:
   m_ObjectHideFlags: 0
@@ -2166,6 +2263,9 @@ RectTransform:
   - {fileID: 297014638779595197}
   - {fileID: 5710082908257983895}
   - {fileID: 3673014894611950732}
+  - {fileID: 874634935235626362}
+  - {fileID: 6193769858432843272}
+  - {fileID: 1912806035947139661}
   m_Father: {fileID: 6154341774862521441}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -2699,7 +2799,7 @@ GameObject:
   - component: {fileID: 5199603181604345085}
   - component: {fileID: 7632703265281830955}
   m_Layer: 0
-  m_Name: LocalPlayerMarker3
+  m_Name: PlayerMarker3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5260,7 +5360,7 @@ GameObject:
   - component: {fileID: 6790918739023152330}
   - component: {fileID: 2996273990723766142}
   m_Layer: 0
-  m_Name: LocalPlayerMarker1
+  m_Name: PlayerMarker1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9131,16 +9231,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e59a55b10a599d43b1fee0b558c4e9e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.RaidMinimapTeamIconView
-  localPlayerIcon: {fileID: 6025843585230588892}
-  teammateIcons:
-  - {fileID: 2996273990723766142}
-  - {fileID: 6615736465051580513}
-  - {fileID: 7632703265281830955}
+  minimapLocalPlayerIcon: {fileID: 6025843585230588892}
+  minimapTeammateIcons: []
+  worldMapLocalPlayerIcon: {fileID: 8027852036638123937}
+  worldMapTeammateIcons:
+  - {fileID: 2470307425956394108}
+  - {fileID: 6621452341753590972}
+  - {fileID: 7292265758687170853}
   teammateHpIcons:
   - {fileID: 3151844013532747752}
   - {fileID: 3204807592963694639}
   - {fileID: 5227918943036460762}
-  refreshDelay: 0.25
+  refreshInterval: 0.25
+  refreshDuration: 5
+  logDebug: 0
 --- !u!1 &3556987309229332950
 GameObject:
   m_ObjectHideFlags: 0
@@ -11446,6 +11550,103 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 5
   m_TargetDisplay: 0
+--- !u!1 &4182391207611740036
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1912806035947139661}
+  - component: {fileID: 7244438044574449438}
+  - component: {fileID: 1429012627249815300}
+  - component: {fileID: 7292265758687170853}
+  m_Layer: 0
+  m_Name: WorldMap_LocalPlayerMarker (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1912806035947139661
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4182391207611740036}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1156428266989013517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 16, y: 16}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &7244438044574449438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4182391207611740036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cb3b239425a224e86456c57dcc6cd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.MapMarkerFollower
+  mapRect: {fileID: 297014638779595197}
+  markerRect: {fileID: 1912806035947139661}
+  target: {fileID: 0}
+  boundsProvider: {fileID: 3224240857002343532}
+  worldMin: {x: -406.74, y: -149.42}
+  worldMax: {x: 6.08078, y: 55.42514}
+  updateEveryFrame: 1
+  clampToMap: 1
+  invertY: 0
+--- !u!222 &1429012627249815300
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4182391207611740036}
+  m_CullTransparentMesh: 1
+--- !u!114 &7292265758687170853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4182391207611740036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: c34226499b8c84655b12e937f8b8fb24, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &4192226806212862073
 GameObject:
   m_ObjectHideFlags: 0
@@ -20368,7 +20569,7 @@ GameObject:
   - component: {fileID: 4530705237597958964}
   - component: {fileID: 8027852036638123937}
   m_Layer: 0
-  m_Name: PlayerMarker_WorldMap
+  m_Name: WorldMap_LocalPlayerMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21329,6 +21530,103 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1 &7940278520456993153
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6193769858432843272}
+  - component: {fileID: 3058830637253045852}
+  - component: {fileID: 7606192690603390388}
+  - component: {fileID: 6621452341753590972}
+  m_Layer: 0
+  m_Name: WorldMap_LocalPlayerMarker (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &6193769858432843272
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7940278520456993153}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1156428266989013517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 16, y: 16}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &3058830637253045852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7940278520456993153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cb3b239425a224e86456c57dcc6cd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.MapMarkerFollower
+  mapRect: {fileID: 297014638779595197}
+  markerRect: {fileID: 6193769858432843272}
+  target: {fileID: 0}
+  boundsProvider: {fileID: 3224240857002343532}
+  worldMin: {x: -406.74, y: -149.42}
+  worldMax: {x: 6.08078, y: 55.42514}
+  updateEveryFrame: 1
+  clampToMap: 1
+  invertY: 0
+--- !u!222 &7606192690603390388
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7940278520456993153}
+  m_CullTransparentMesh: 1
+--- !u!114 &6621452341753590972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7940278520456993153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: c34226499b8c84655b12e937f8b8fb24, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &7953885172021907900
 GameObject:
   m_ObjectHideFlags: 0
@@ -24989,7 +25287,7 @@ GameObject:
   - component: {fileID: 5996356316449882195}
   - component: {fileID: 6615736465051580513}
   m_Layer: 0
-  m_Name: LocalPlayerMarker2
+  m_Name: PlayerMarker2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
