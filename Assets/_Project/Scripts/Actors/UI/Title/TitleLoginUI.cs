@@ -10,6 +10,9 @@ using UnityEngine.UI;
 
 namespace DeadZone.Actors.UI
 {
+    /// <summary>
+    /// 타이틀 로그인 팝업에서 Firebase 로그인, 회원가입, 자동 로그인을 처리합니다.
+    /// </summary>
     public sealed class TitleLoginUI : MonoBehaviour
     {
         [Header("====입력 필드====")]
@@ -41,6 +44,13 @@ namespace DeadZone.Actors.UI
         
         [Tooltip("로그인 처리 중 표시할 선택 오브젝트입니다. null이어도 동작합니다.")]
         [SerializeField] private GameObject loadingBlocker;
+
+        [Header("====자동 로그인====")]
+        [Tooltip("로그인 팝업이 열릴 때 Firebase가 기억한 기존 계정으로 자동 로그인을 시도합니다.")]
+        [SerializeField] private bool attemptAutoLoginOnEnable = true;
+
+        [Tooltip("자동 로그인 전에 FirebaseAuthManager와 CloudSaveSystem 준비를 기다릴 최대 시간(ms)입니다.")]
+        [SerializeField] private int autoLoginSystemWaitMs = 5000;
         
         [Header("====씬 이동====")]
         [Tooltip("로그인과 Cloud Save 로드가 끝난 뒤 이동할 로비 씬 이름" +
@@ -53,6 +63,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private int cloudSaveTimeoutMs = 10000;
 
         private bool isBusy;
+        private bool isAutoLoginRunning;
 
         private void Awake()
         {
@@ -65,6 +76,9 @@ namespace DeadZone.Actors.UI
             BindButtons();
             SetBusy(false);
             ShowMessage(string.Empty);
+
+            if (attemptAutoLoginOnEnable)
+                _ = TryAutoLoginAsync();
         }
 
         private void OnDisable()
@@ -208,6 +222,97 @@ namespace DeadZone.Actors.UI
             {
                 SetBusy(false);
             }
+        }
+
+        private async Task TryAutoLoginAsync()
+        {
+            if (isBusy || isAutoLoginRunning)
+                return;
+
+            isAutoLoginRunning = true;
+            SetBusy(true);
+            ShowMessage("자동 로그인 확인 중입니다...");
+
+            try
+            {
+                bool systemsReady = await WaitForLoginSystemsReadyAsync();
+                if (!systemsReady || !isActiveAndEnabled)
+                {
+                    ShowMessage(string.Empty);
+                    return;
+                }
+
+                FirebaseAuthManager authManager = ServiceLocator.Get<FirebaseAuthManager>();
+                CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+
+                if (authManager == null || cloudSaveSystem == null || !authManager.IsSignedIn)
+                {
+                    ShowMessage(string.Empty);
+                    return;
+                }
+
+                Task<PlayerCloudData> waitCloudSaveTask = WaitForCloudSaveLoadedAfterAuthAsync(
+                    cloudSaveSystem,
+                    authManager
+                );
+
+                Firebase.Auth.FirebaseUser user = authManager.RestoreCachedUser();
+                if (user == null)
+                {
+                    ShowMessage(string.Empty);
+                    return;
+                }
+
+                string expectedUid = user.UserId;
+                ShowMessage("자동 로그인 중입니다...");
+
+                PlayerCloudData cloudData = await waitCloudSaveTask;
+                if (cloudData == null)
+                {
+                    ShowMessage("자동 로그인 데이터 로드가 실패했거나 시간이 초과되었습니다.");
+                    return;
+                }
+
+                if (authManager.CurrentUid != expectedUid
+                    || cloudSaveSystem.LoadedFirebaseUid != expectedUid)
+                {
+                    ShowMessage("자동 로그인 계정과 플레이어 데이터가 일치하지 않습니다.");
+                    return;
+                }
+
+                ShowMessage("로비로 이동합니다...");
+                SceneManager.LoadScene(lobbySceneName);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[TitleLoginUI] 자동 로그인 흐름 중 예외 발생: {ex}");
+                ShowMessage("자동 로그인 처리 중 오류가 발생했습니다.");
+            }
+            finally
+            {
+                isAutoLoginRunning = false;
+                SetBusy(false);
+            }
+        }
+
+        private async Task<bool> WaitForLoginSystemsReadyAsync()
+        {
+            int elapsedMs = 0;
+            const int intervalMs = 100;
+
+            while (elapsedMs <= autoLoginSystemWaitMs)
+            {
+                FirebaseAuthManager authManager = ServiceLocator.Get<FirebaseAuthManager>();
+                CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+
+                if (authManager != null && authManager.IsReady && cloudSaveSystem != null)
+                    return true;
+
+                await Task.Delay(intervalMs);
+                elapsedMs += intervalMs;
+            }
+
+            return false;
         }
 
         private async Task<PlayerCloudData> WaitForCloudSaveLoadedAfterAuthAsync(
