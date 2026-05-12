@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
-
+using DeadZone.Actors.UI;
 
 namespace DeadZone.Core
 {
@@ -33,7 +33,7 @@ namespace DeadZone.Core
         {
             if (SceneManager.GetActiveScene().name == "_Bootstrap")
             {
-                SceneManager.LoadScene(firstSceneName);
+                LoadingScreenService.LoadSceneOrFallback(firstSceneName);
             }
         }
 

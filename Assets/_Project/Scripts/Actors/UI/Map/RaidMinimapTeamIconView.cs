@@ -9,34 +9,55 @@ using DeadZone.Actors.Player;
 namespace DeadZone.Actors.UI
 {
     /// <summary>
-    /// 인게임에서 로비 파티 색상을 UI 아이콘에 적용합니다.
-    /// - 로컬 플레이어: 미니맵 Icon_Team
-    /// - 팀원: 미니맵 Icon_Team1~3
-    /// - 팀원 HP바 아이콘: TeamHpIcons에 같은 순서로 적용
+    /// 로비에서 정해진 팀 색상을 인게임 UI 마커에 적용합니다.
+    ///
+    /// 적용 대상:
+    /// 1. 미니맵 로컬 플레이어 마커
+    /// 2. 미니맵 팀원 마커
+    /// 3. 월드맵 로컬 플레이어 마커
+    /// 4. 월드맵 팀원 마커
+    /// 5. 왼쪽 팀원 HP바 아이콘
+    ///
+    /// PlayerPrefab 스폰 타이밍보다 HUD가 먼저 켜질 수 있으므로,
+    /// 인게임 진입 후 일정 시간 동안 반복 갱신합니다.
     /// </summary>
     public class RaidMinimapTeamIconView : MonoBehaviour
     {
         [Header("==== 미니맵 - 로컬 플레이어 아이콘 ====")]
-        [Tooltip("내 플레이어를 표시하는 미니맵 아이콘입니다. Icon_Team 연결")]
-        [SerializeField] private Image localPlayerIcon;
+        [Tooltip("미니맵에서 내 플레이어를 표시하는 아이콘입니다. 예: LocalPlayerMarker / Icon_Team")]
+        [SerializeField] private Image minimapLocalPlayerIcon;
 
         [Header("==== 미니맵 - 팀원 아이콘 ====")]
-        [Tooltip("다른 플레이어를 표시하는 미니맵 아이콘들입니다. Icon_Team1, Icon_Team2, Icon_Team3 연결")]
-        [SerializeField] private Image[] teammateIcons;
+        [Tooltip("미니맵에서 다른 플레이어를 표시하는 아이콘들입니다. 예: LocalPlayerMarker1~3 / Icon_Team1~3")]
+        [SerializeField] private Image[] minimapTeammateIcons;
+
+        [Header("==== 월드맵 - 로컬 플레이어 아이콘 ====")]
+        [Tooltip("월드맵에서 내 플레이어를 표시하는 아이콘입니다.")]
+        [SerializeField] private Image worldMapLocalPlayerIcon;
+
+        [Header("==== 월드맵 - 팀원 아이콘 ====")]
+        [Tooltip("월드맵에서 다른 플레이어를 표시하는 아이콘들입니다.")]
+        [SerializeField] private Image[] worldMapTeammateIcons;
 
         [Header("==== 팀원 HP바 아이콘 ====")]
-        [Tooltip("왼쪽 팀원 HP바에 있는 아이콘들입니다. 팀원 순서대로 연결")]
+        [Tooltip("왼쪽 팀원 HP바에 있는 아이콘들입니다. 팀원 순서대로 연결합니다.")]
         [SerializeField] private Image[] teammateHpIcons;
 
         [Header("==== 갱신 설정 ====")]
-        [Tooltip("레이드 씬 진입 직후 PlayerPrefab 스폰 타이밍을 기다리는 시간입니다.")]
-        [SerializeField] private float refreshDelay = 0.25f;
+        [Tooltip("반복 갱신 간격입니다.")]
+        [SerializeField] private float refreshInterval = 0.25f;
+
+        [Tooltip("인게임 진입 후 몇 초 동안 반복 갱신할지 설정합니다.")]
+        [SerializeField] private float refreshDuration = 5f;
+
+        [Tooltip("디버그 로그 출력 여부입니다.")]
+        [SerializeField] private bool logDebug;
 
         private Coroutine refreshCoroutine;
 
         private void OnEnable()
         {
-            StartRefresh();
+            StartRefreshLoop();
         }
 
         private void OnDisable()
@@ -48,28 +69,37 @@ namespace DeadZone.Actors.UI
             }
         }
 
-        private void StartRefresh()
+        private void StartRefreshLoop()
         {
             if (refreshCoroutine != null)
                 StopCoroutine(refreshCoroutine);
 
-            refreshCoroutine = StartCoroutine(RefreshRoutine());
+            refreshCoroutine = StartCoroutine(RefreshLoopRoutine());
         }
 
-        private IEnumerator RefreshRoutine()
+        private IEnumerator RefreshLoopRoutine()
         {
-            yield return null;
-            yield return new WaitForSeconds(refreshDelay);
+            float elapsed = 0f;
+
+            while (elapsed < refreshDuration)
+            {
+                RefreshIcons();
+
+                yield return new WaitForSeconds(refreshInterval);
+                elapsed += refreshInterval;
+            }
 
             RefreshIcons();
-
             refreshCoroutine = null;
         }
 
         public void RefreshIcons()
         {
             if (NetworkManager.Singleton == null)
+            {
+                LogDebug("NetworkManager.Singleton이 없어 마커 색상 갱신을 건너뜁니다.");
                 return;
+            }
 
             ulong localClientId = NetworkManager.Singleton.LocalClientId;
 
@@ -79,30 +109,48 @@ namespace DeadZone.Actors.UI
             List<PlayerTeamIdentity> sortedPlayers = new(players);
             sortedPlayers.Sort(ComparePlayersByOwnerClientId);
 
-            SetIconVisible(localPlayerIcon, false);
-            HideAll(teammateIcons);
-            HideAll(teammateHpIcons);
-
+            bool foundLocalPlayer = false;
             int teammateIndex = 0;
 
+            // 플레이어를 찾기 전까지는 기존 마커를 강제로 꺼버리지 않습니다.
+            // 단, 플레이어를 하나라도 찾은 뒤에는 남는 팀원 슬롯만 숨깁니다.
             foreach (PlayerTeamIdentity player in sortedPlayers)
             {
                 if (player == null || !player.IsSpawned)
                     continue;
 
+                Color32 color = player.CurrentColor;
                 bool isLocalPlayer = player.OwnerClientId == localClientId;
 
                 if (isLocalPlayer)
                 {
-                    ApplyIcon(localPlayerIcon, player.CurrentColor);
+                    foundLocalPlayer = true;
+
+                    ApplyIcon(minimapLocalPlayerIcon, color);
+                    ApplyIcon(worldMapLocalPlayerIcon, color);
                     continue;
                 }
 
-                ApplyIconAt(teammateIcons, teammateIndex, player.CurrentColor);
-                ApplyIconAt(teammateHpIcons, teammateIndex, player.CurrentColor);
+                ApplyIconAt(minimapTeammateIcons, teammateIndex, color);
+                ApplyIconAt(worldMapTeammateIcons, teammateIndex, color);
+                ApplyIconAt(teammateHpIcons, teammateIndex, color);
 
                 teammateIndex++;
             }
+
+            if (sortedPlayers.Count <= 0)
+            {
+                LogDebug("PlayerTeamIdentity를 아직 찾지 못했습니다. 다음 반복에서 다시 시도합니다.");
+                return;
+            }
+
+            // 남는 팀원 슬롯만 숨김
+            HideUnusedIcons(minimapTeammateIcons, teammateIndex);
+            HideUnusedIcons(worldMapTeammateIcons, teammateIndex);
+            HideUnusedIcons(teammateHpIcons, teammateIndex);
+
+            if (!foundLocalPlayer)
+                LogDebug($"로컬 플레이어 마커를 찾지 못했습니다. LocalClientId={localClientId}");
         }
 
         private int ComparePlayersByOwnerClientId(PlayerTeamIdentity a, PlayerTeamIdentity b)
@@ -131,21 +179,23 @@ namespace DeadZone.Actors.UI
             icon.gameObject.SetActive(true);
         }
 
-        private void HideAll(Image[] icons)
+        private void HideUnusedIcons(Image[] icons, int usedCount)
         {
             if (icons == null)
                 return;
 
-            foreach (Image icon in icons)
-                SetIconVisible(icon, false);
+            for (int i = usedCount; i < icons.Length; i++)
+            {
+                if (icons[i] != null)
+                    icons[i].gameObject.SetActive(false);
+            }
         }
 
-        private void SetIconVisible(Image icon, bool visible)
+        private void LogDebug(string message)
         {
-            if (icon == null)
-                return;
+            if (!logDebug) return;
 
-            icon.gameObject.SetActive(visible);
+            Debug.Log($"[RaidMinimapTeamIconView] {message}", this);
         }
     }
 }

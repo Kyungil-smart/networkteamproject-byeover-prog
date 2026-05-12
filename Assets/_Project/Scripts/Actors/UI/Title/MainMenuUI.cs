@@ -171,7 +171,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            SceneManager.LoadScene(loginSceneName);
+            LoadingScreenService.LoadSceneOrFallback(loginSceneName);
         }
 
         private void CloseTopPopup()

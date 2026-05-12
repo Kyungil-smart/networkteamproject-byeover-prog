@@ -140,7 +140,7 @@ namespace DeadZone.Actors.UI
 
         private void GoLobby()
         {
-            SceneManager.LoadScene(lobbySceneName);
+            LoadingScreenService.LoadSceneOrFallback(lobbySceneName);
         }
     }
 }
