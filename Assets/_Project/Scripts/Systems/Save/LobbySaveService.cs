@@ -239,7 +239,15 @@ namespace DeadZone.Systems.Save
                 if (dto.hasCredits)
                     inventoryState.SetCredits(dto.credits);
 
-                inventoryState.SetInventoryItems(dto.inventoryItems);
+                if (ShouldKeepExistingInventoryItems(dto))
+                {
+                    Debug.LogWarning("[LobbySaveService] Incoming inventoryItems is empty while runtime inventory has items. Keeping runtime player inventory to avoid scene-transition wipe.", this);
+                }
+                else
+                {
+                    inventoryState.SetInventoryItems(dto.inventoryItems);
+                }
+
                 inventoryState.SetStashItems(dto.stashItems);
                 inventoryState.SetEquipmentItems(dto.equipmentItems);
             }
@@ -257,6 +265,19 @@ namespace DeadZone.Systems.Save
                 inventoryStateUiBridge.ApplyStateToUi();
             else
                 Debug.LogWarning("[LobbySaveService] LobbyInventoryStateUiBridge missing. UI not refreshed.", this);
+        }
+
+        private bool ShouldKeepExistingInventoryItems(LobbySaveDTO incomingDto)
+        {
+            if (!isInitialLoadCompleted)
+                return false;
+
+            if (incomingDto == null || incomingDto.inventoryItems == null || incomingDto.inventoryItems.Count > 0)
+                return false;
+
+            return inventoryState != null &&
+                   inventoryState.InventoryItems != null &&
+                   inventoryState.InventoryItems.Count > 0;
         }
 
         private LobbySaveDTO CreateCurrentLobbySaveDTO()

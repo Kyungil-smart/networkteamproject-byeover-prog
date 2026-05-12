@@ -156,6 +156,7 @@ namespace DeadZone.Systems.Save
             AddWeaponEquipment(items, "EquipmentSecondaryWeapon", equipmentSlots.SecondaryId.Value.ToString(), equipmentSlots.SecondaryState.Value);
             AddEquipment(items, "EquipmentMeleeWeapon", equipmentSlots.MeleeId.Value.ToString(), string.Empty, 0, 0f);
 
+            MergeUiEquipmentState(items);
             inventoryState.SetEquipmentItems(items);
 
             if (logCollectResult)
@@ -167,6 +168,92 @@ namespace DeadZone.Systems.Save
                     equipmentSlots
                 );
             }
+        }
+
+        private void MergeUiEquipmentState(List<EquipmentSaveDTO> serverItems)
+        {
+            if (serverItems == null || inventoryState?.EquipmentItems == null)
+                return;
+
+            for (int i = 0; i < inventoryState.EquipmentItems.Count; i++)
+            {
+                EquipmentSaveDTO uiItem = inventoryState.EquipmentItems[i];
+                if (uiItem == null || string.IsNullOrWhiteSpace(uiItem.itemId))
+                    continue;
+
+                string canonicalSlotId = NormalizeEquipmentSlotId(uiItem.slotId);
+                EquipmentSaveDTO serverItem = FindEquipmentItem(serverItems, canonicalSlotId);
+
+                if (serverItem == null)
+                {
+                    serverItems.Add(CloneEquipmentItem(uiItem, canonicalSlotId));
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(serverItem.itemId))
+                {
+                    serverItem.itemId = uiItem.itemId;
+                    serverItem.instanceId = string.IsNullOrWhiteSpace(uiItem.instanceId)
+                        ? $"{canonicalSlotId}_{uiItem.itemId}"
+                        : uiItem.instanceId;
+                }
+            }
+        }
+
+        private static EquipmentSaveDTO FindEquipmentItem(List<EquipmentSaveDTO> items, string slotId)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                EquipmentSaveDTO item = items[i];
+                if (item != null &&
+                    string.Equals(NormalizeEquipmentSlotId(item.slotId), slotId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return item;
+                }
+            }
+
+            return null;
+        }
+
+        private static EquipmentSaveDTO CloneEquipmentItem(EquipmentSaveDTO source, string slotId)
+        {
+            return new EquipmentSaveDTO
+            {
+                slotId = slotId,
+                itemId = source.itemId,
+                instanceId = string.IsNullOrWhiteSpace(source.instanceId)
+                    ? $"{slotId}_{source.itemId}"
+                    : source.instanceId,
+                loadedAmmoId = source.loadedAmmoId ?? string.Empty,
+                currentAmmo = Mathf.Max(0, source.currentAmmo),
+                durability = Mathf.Max(0f, source.durability)
+            };
+        }
+
+        private static string NormalizeEquipmentSlotId(string slotId)
+        {
+            if (string.IsNullOrWhiteSpace(slotId))
+                return string.Empty;
+
+            return slotId switch
+            {
+                "EquipmentHead" => "EquipmentHead",
+                "Head" => "EquipmentHead",
+                "EquipmentArmor" => "EquipmentArmor",
+                "Torso" => "EquipmentArmor",
+                "EquipmentBackpack" => "EquipmentBackpack",
+                "Backpack" => "EquipmentBackpack",
+                "EquipmentPrimaryWeapon" => "EquipmentPrimaryWeapon",
+                "Primary1" => "EquipmentPrimaryWeapon",
+                "primary1" => "EquipmentPrimaryWeapon",
+                "primary2" => "primary2",
+                "Primary2" => "primary2",
+                "EquipmentSecondaryWeapon" => "EquipmentSecondaryWeapon",
+                "Secondary" => "EquipmentSecondaryWeapon",
+                "EquipmentMeleeWeapon" => "EquipmentMeleeWeapon",
+                "Melee" => "EquipmentMeleeWeapon",
+                _ => slotId
+            };
         }
 
         private static void AddWeaponEquipment(List<EquipmentSaveDTO> items, string slotId, string itemId, WeaponState weaponState)

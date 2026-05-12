@@ -765,6 +765,9 @@ namespace DeadZone.Actors.UI
             if (rarityBackground == null)
                 rarityBackground = FindImageReference("rarity", "grade", "background", "bg");
 
+            if (iconImage == null || IsEmptySlotIconName(iconImage.name.ToLowerInvariant()))
+                iconImage = FindItemIconReference();
+
             if (iconImage == null)
                 iconImage = FindImageReference("icon", "item");
 
@@ -773,6 +776,22 @@ namespace DeadZone.Actors.UI
 
             if (emptySlotIcon == null)
                 emptySlotIcon = FindEmptySlotIcon();
+        }
+
+        private Image FindItemIconReference()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+            foreach (Image image in images)
+            {
+                if (image == null || image.gameObject == gameObject)
+                    continue;
+
+                string lowerName = image.name.ToLowerInvariant();
+                if (lowerName.Contains("item") && !IsEmptySlotIconName(lowerName))
+                    return image;
+            }
+
+            return null;
         }
 
         private Image FindImageReference(params string[] nameTokens)
@@ -803,26 +822,19 @@ namespace DeadZone.Actors.UI
 
         private GameObject FindEmptySlotIcon()
         {
-            Image[] images = GetComponentsInChildren<Image>(true);
+            return FindEmptySlotIconIn(transform);
+        }
 
+        private GameObject FindEmptySlotIconIn(Transform root)
+        {
+            if (root == null)
+                return null;
+
+            Image[] images = root.GetComponentsInChildren<Image>(true);
             foreach (Image image in images)
             {
-                if (image == null || image == iconImage || image == rarityBackground)
-                    continue;
-
-                GameObject imageObject = image.gameObject;
-                if (imageObject == gameObject || imageObject == lockOverlay)
-                    continue;
-
-                if (lockOverlay != null && imageObject.transform.IsChildOf(lockOverlay.transform))
-                    continue;
-
-                string lowerName = imageObject.name.ToLowerInvariant();
-                if (lowerName.Contains("lock") || lowerName.Contains("background") || lowerName.Contains("rarity"))
-                    continue;
-
-                if (lowerName.StartsWith("icon_") && !lowerName.Contains("item"))
-                    return imageObject;
+                if (IsEmptySlotIconCandidate(image))
+                    return image.gameObject;
             }
 
             return null;
@@ -926,10 +938,65 @@ namespace DeadZone.Actors.UI
 
         private void SetEmptySlotIconVisible(bool visible)
         {
-            if (emptySlotIcon == null || emptySlotIcon == gameObject)
+            if (emptySlotIcon == gameObject)
+                emptySlotIcon = null;
+
+            if (emptySlotIcon == null)
+                emptySlotIcon = FindEmptySlotIcon();
+
+            if (!visible)
+            {
+                HideEmptySlotIconCandidates();
+                return;
+            }
+
+            if (emptySlotIcon == null)
                 return;
 
             emptySlotIcon.SetActive(visible);
+        }
+
+        private void HideEmptySlotIconCandidates()
+        {
+            HideEmptySlotIconCandidatesIn(transform);
+        }
+
+        private void HideEmptySlotIconCandidatesIn(Transform root)
+        {
+            if (root == null)
+                return;
+
+            foreach (Image image in root.GetComponentsInChildren<Image>(true))
+            {
+                if (IsEmptySlotIconCandidate(image))
+                    image.gameObject.SetActive(false);
+            }
+        }
+
+        private bool IsEmptySlotIconCandidate(Image image)
+        {
+            if (image == null || image == iconImage || image == rarityBackground)
+                return false;
+
+            GameObject imageObject = image.gameObject;
+            if (imageObject == null || imageObject == gameObject || imageObject == lockOverlay)
+                return false;
+
+            if (lockOverlay != null && imageObject.transform.IsChildOf(lockOverlay.transform))
+                return false;
+
+            string lowerName = imageObject.name.ToLowerInvariant();
+            if (lowerName.Contains("lock") || lowerName.Contains("background") || lowerName.Contains("rarity"))
+                return false;
+
+            return IsEmptySlotIconName(lowerName);
+        }
+
+        private static bool IsEmptySlotIconName(string lowerName)
+        {
+            return !string.IsNullOrEmpty(lowerName) &&
+                   lowerName.StartsWith("icon_") &&
+                   !lowerName.Contains("item");
         }
 
         private void SetStackCount(int stackCount)

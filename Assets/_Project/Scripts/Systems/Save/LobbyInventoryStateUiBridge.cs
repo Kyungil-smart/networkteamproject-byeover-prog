@@ -32,6 +32,8 @@ namespace DeadZone.Systems.Save
 
         private void Start()
         {
+            ResolveMissingReferences();
+
             if (!captureOnStart)
                 return;
 
@@ -56,6 +58,8 @@ namespace DeadZone.Systems.Save
         [Button("UI 상태를 저장 상태로 반영")]
         public void CaptureUiToState()
         {
+            ResolveMissingReferences();
+
             if (inventoryState == null)
             {
                 Debug.LogWarning("[LobbyInventoryStateUiBridge] LobbyInventoryState가 연결되지 않았습니다.", this);
@@ -65,14 +69,27 @@ namespace DeadZone.Systems.Save
             if (walletSystem != null)
                 inventoryState.SetCredits(walletSystem.Credits.Value);
 
-            inventoryState.SetInventoryItems(CollectItemSlots(inventorySlotsRoot, InventoryContainerId));
-            inventoryState.SetStashItems(CollectItemSlots(stashSlotsRoot, StashContainerId));
-            inventoryState.SetEquipmentItems(CollectEquipmentSlots(equipmentSlotsRoot));
+            if (inventorySlotsRoot != null)
+                inventoryState.SetInventoryItems(CollectItemSlots(inventorySlotsRoot, InventoryContainerId));
+            else
+                Debug.LogWarning("[LobbyInventoryStateUiBridge] Inventory slots root missing. Keeping existing inventory state.", this);
+
+            if (stashSlotsRoot != null)
+                inventoryState.SetStashItems(CollectItemSlots(stashSlotsRoot, StashContainerId));
+            else
+                Debug.LogWarning("[LobbyInventoryStateUiBridge] Stash slots root missing. Keeping existing stash state.", this);
+
+            if (equipmentSlotsRoot != null)
+                inventoryState.SetEquipmentItems(CollectEquipmentSlots(equipmentSlotsRoot));
+            else
+                Debug.LogWarning("[LobbyInventoryStateUiBridge] Equipment slots root missing. Keeping existing equipment state.", this);
         }
 
         [Button("저장 상태를 UI에 반영")]
         public void ApplyStateToUi()
         {
+            ResolveMissingReferences();
+
             if (inventoryState == null)
             {
                 Debug.LogWarning("[LobbyInventoryStateUiBridge] LobbyInventoryState가 연결되지 않았습니다.", this);
@@ -109,6 +126,12 @@ namespace DeadZone.Systems.Save
                 InventorySlotUI slot = slots[i];
                 if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
                     continue;
+
+                if (string.Equals(containerId, InventoryContainerId, StringComparison.OrdinalIgnoreCase) &&
+                    slot.SlotKind != InventorySlotKind.Bag)
+                {
+                    continue;
+                }
 
                 items.Add(new ItemSaveDTO
                 {
@@ -320,6 +343,35 @@ namespace DeadZone.Systems.Save
 
             itemDatabase = FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
             return itemDatabase;
+        }
+
+        private void ResolveMissingReferences()
+        {
+            if (inventoryState == null)
+                inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+
+            if (inventorySlotsRoot == null)
+            {
+                LobbyPlayerInventoryUI inventoryUI = FindFirstObjectByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include);
+                if (inventoryUI != null)
+                {
+                    inventorySlotsRoot = inventoryUI.transform;
+                    Debug.Log($"[LobbyInventoryStateUiBridge] Auto-bound player inventory root={BuildTransformPath(inventorySlotsRoot)}", this);
+                }
+            }
+
+            if (stashSlotsRoot == null)
+            {
+                StashGridUI stashGridUI = FindFirstObjectByType<StashGridUI>(FindObjectsInactive.Include);
+                if (stashGridUI != null)
+                {
+                    stashSlotsRoot = stashGridUI.transform;
+                    Debug.Log($"[LobbyInventoryStateUiBridge] Auto-bound stash root={BuildTransformPath(stashSlotsRoot)}", this);
+                }
+            }
+
+            if (itemDatabase == null)
+                itemDatabase = FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
         }
 
         private void RefreshSlotViews()
