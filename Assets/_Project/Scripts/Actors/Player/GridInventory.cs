@@ -17,9 +17,10 @@ namespace DeadZone.Actors
 
         private EquipmentSlots equipment;
         private IItemDatabase itemDb;
+        private int activeSlotCount = BASE_WIDTH * BASE_HEIGHT;
 
         public byte Width => BASE_WIDTH;
-        public byte Height => BASE_HEIGHT;
+        public byte Height => (byte)Mathf.CeilToInt(activeSlotCount / (float)BASE_WIDTH);
 
         private void Awake()
         {
@@ -37,6 +38,7 @@ namespace DeadZone.Actors
 
             itemDb = ServiceLocator.Get<IItemDatabase>();
             EventBus.Subscribe<ReloadExecuteRequestedEvent>(OnReloadExecuteRequested);
+            EventBus.Subscribe<BackpackChangedEvent>(OnBackpackChanged);
 
             if (itemDb == null)
             {
@@ -47,6 +49,7 @@ namespace DeadZone.Actors
         public override void OnNetworkDespawn()
         {
             EventBus.Unsubscribe<ReloadExecuteRequestedEvent>(OnReloadExecuteRequested);
+            EventBus.Unsubscribe<BackpackChangedEvent>(OnBackpackChanged);
             base.OnNetworkDespawn();
         }
 
@@ -231,7 +234,7 @@ namespace DeadZone.Actors
             int w = rotated ? size.y : size.x;
             int h = rotated ? size.x : size.y;
 
-            if (x + w > BASE_WIDTH || y + h > BASE_HEIGHT)
+            if (!CanFitWithinActiveGrid(x, y, w, h))
                 return false;
 
             for (int i = 0; i < ServerGrid.Count; i++)
@@ -269,7 +272,7 @@ namespace DeadZone.Actors
         {
             newSlot = default;
 
-            for (byte y = 0; y < BASE_HEIGHT; y++)
+            for (byte y = 0; y < Height; y++)
             {
                 for (byte x = 0; x < BASE_WIDTH; x++)
                 {
@@ -303,7 +306,7 @@ namespace DeadZone.Actors
             int w = rotated ? size.y : size.x;
             int h = rotated ? size.x : size.y;
 
-            if (x + w > BASE_WIDTH || y + h > BASE_HEIGHT) return false;
+            if (!CanFitWithinActiveGrid(x, y, w, h)) return false;
 
             for (int i = 0; i < slots.Count; i++)
             {
@@ -669,7 +672,7 @@ namespace DeadZone.Actors
 
         private bool TryAddItemDataToNewSlot(ItemDataSO item, int amount)
         {
-            for (byte y = 0; y < BASE_HEIGHT; y++)
+            for (byte y = 0; y < Height; y++)
             {
                 for (byte x = 0; x < BASE_WIDTH; x++)
                 {
@@ -733,6 +736,49 @@ namespace DeadZone.Actors
 
             ammo = itemDb?.GetById<AmmoDataSO>(ammoId.ToString());
             return ammo != null;
+        }
+
+        private void OnBackpackChanged(BackpackChangedEvent evt)
+        {
+            if (!IsServer || evt.clientId != OwnerClientId)
+                return;
+
+            activeSlotCount = GetCapacityByBackpackId(evt.newBackpackId.ToString());
+        }
+
+        private int GetCapacityByBackpackId(string backpackId)
+        {
+            int baseCapacity = BASE_WIDTH * BASE_HEIGHT;
+
+            if (string.IsNullOrWhiteSpace(backpackId))
+                return baseCapacity;
+
+            if (itemDb == null)
+                itemDb = ServiceLocator.Get<IItemDatabase>();
+
+            BackpackDataSO backpack = itemDb?.GetById<BackpackDataSO>(backpackId);
+            if (backpack == null)
+                return baseCapacity;
+
+            return Mathf.Clamp(baseCapacity + Mathf.Max(0, backpack.extraSlots), baseCapacity, 40);
+        }
+
+        private bool CanFitWithinActiveGrid(byte x, byte y, int width, int height)
+        {
+            if (x + width > BASE_WIDTH)
+                return false;
+
+            for (int offsetY = 0; offsetY < height; offsetY++)
+            {
+                for (int offsetX = 0; offsetX < width; offsetX++)
+                {
+                    int cellIndex = (y + offsetY) * BASE_WIDTH + (x + offsetX);
+                    if (cellIndex < 0 || cellIndex >= activeSlotCount)
+                        return false;
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -2,6 +2,7 @@
 using DeadZone.Actors;
 using Sirenix.OdinInspector;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -429,7 +430,13 @@ namespace DeadZone.Actors.UI
 
         private static bool TrySyncEquipmentSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)
         {
-            if (slot == null || !slot.TryGetWeaponSlot(out WeaponSlot weaponSlot))
+            if (slot == null)
+                return true;
+
+            if (slot.slotKind == InventorySlotKind.EquipmentBackpack)
+                return TrySyncBackpackSlotAfterDrop(slot, nextItem);
+
+            if (!slot.TryGetWeaponSlot(out WeaponSlot weaponSlot))
                 return true;
 
             if (nextItem == null)
@@ -446,6 +453,60 @@ namespace DeadZone.Actors.UI
 
             Debug.Log($"[InventorySlotUI] 장비 슬롯 장착 요청: slot={slot.name}, weaponSlot={weaponSlot}, itemID={weaponData.itemID}, category={weaponData.weaponCategory}", slot);
             return TryEquipWeaponSlot(weaponSlot, weaponData, slot);
+        }
+
+        private static bool TrySyncBackpackSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)
+        {
+            if (slot == null)
+                return true;
+
+            InventoryUI inventoryUI = ResolveInventoryUI(slot);
+            LobbyPlayerInventoryUI lobbyPlayerInventoryUI = ResolveLobbyPlayerInventoryUI();
+
+            if (nextItem == null)
+            {
+                inventoryUI?.SetBagLevel(0);
+                lobbyPlayerInventoryUI?.SetBagLevel(0);
+                return TryEquipBackpackSlot(string.Empty, slot);
+            }
+
+            if (nextItem is not BackpackDataSO backpackData)
+            {
+                Debug.LogWarning($"[InventorySlotUI] {slot.name} 장비 슬롯에는 BackpackDataSO만 넣을 수 있습니다.", slot);
+                return false;
+            }
+
+            inventoryUI?.SetBagLevel(backpackData.backpackLevel);
+            lobbyPlayerInventoryUI?.SetBagLevel(backpackData.backpackLevel);
+            return TryEquipBackpackSlot(backpackData.itemID, slot);
+        }
+
+        private static bool TryEquipBackpackSlot(string backpackId, UnityEngine.Object context)
+        {
+            FixedString64Bytes id = new(backpackId ?? string.Empty);
+
+            EquipmentSlotsBridge bridge = ResolveAnyEquipmentSlotsBridge();
+            if (!string.IsNullOrEmpty(backpackId) && bridge != null && bridge.IsSpawned)
+            {
+                bridge.EquipItemServerRpc(id, WeaponSlot.None, default, 0);
+                return true;
+            }
+
+            EquipmentSlots equipmentSlots = ResolveEquipmentSlots();
+            if (equipmentSlots != null && equipmentSlots.IsServer)
+            {
+                equipmentSlots.EquipBackpack(id);
+                return true;
+            }
+
+            if (equipmentSlots != null && equipmentSlots.IsSpawned)
+            {
+                equipmentSlots.EquipBackpackServerRpc(id);
+                return true;
+            }
+
+            Debug.LogWarning($"[InventorySlotUI] 가방 장착 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. backpackId={backpackId}", context);
+            return true;
         }
 
         private static bool TryEquipWeaponSlot(WeaponSlot weaponSlot, WeaponDataSO weaponData, UnityEngine.Object context)
@@ -531,6 +592,30 @@ namespace DeadZone.Actors.UI
             }
 
             return null;
+        }
+
+        private static EquipmentSlotsBridge ResolveAnyEquipmentSlotsBridge()
+        {
+            EquipmentSlotsBridge[] candidates = FindObjectsByType<EquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                    return candidate;
+            }
+
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null)
+                    return candidate;
+            }
+
+            return null;
+        }
+
+        private static LobbyPlayerInventoryUI ResolveLobbyPlayerInventoryUI()
+        {
+            LobbyPlayerInventoryUI[] candidates = FindObjectsByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            return candidates.Length > 0 ? candidates[0] : null;
         }
 
         private static EquipmentSlots ResolveEquipmentSlots()

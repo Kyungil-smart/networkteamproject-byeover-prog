@@ -44,6 +44,7 @@ namespace DeadZone.Actors
 
         public NetworkVariable<FixedString64Bytes> HeadSlotId      = new("");
         public NetworkVariable<FixedString64Bytes> TorsoSlotId     = new("");
+        public NetworkVariable<FixedString64Bytes> BackpackSlotId  = new("");
         public NetworkVariable<FixedString64Bytes> Primary1Id      = new("");
         public NetworkVariable<FixedString64Bytes> Primary2Id      = new("");
         public NetworkVariable<FixedString64Bytes> SecondaryId     = new("");
@@ -329,6 +330,28 @@ namespace DeadZone.Actors
             TorsoSlotId.Value = armorId;
             var a = Lookup<ArmorDataSO>(armorId.ToString());
             ArmorDurability.Value = a != null ? a.maxDurability : 0f;
+        }
+
+        [ServerRpc]
+        public void EquipBackpackServerRpc(FixedString64Bytes backpackId)
+        {
+            EquipBackpack(backpackId);
+        }
+
+        public void EquipBackpack(FixedString64Bytes backpackId)
+        {
+            if (!IsServer)
+                return;
+
+            FixedString64Bytes previousBackpackId = BackpackSlotId.Value;
+            BackpackSlotId.Value = backpackId;
+
+            EventBus.Publish(new BackpackChangedEvent
+            {
+                clientId = OwnerClientId,
+                oldBackpackId = previousBackpackId,
+                newBackpackId = backpackId
+            });
         }
 
         [ServerRpc]

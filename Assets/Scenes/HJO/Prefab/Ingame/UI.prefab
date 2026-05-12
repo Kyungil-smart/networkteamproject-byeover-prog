@@ -6974,7 +6974,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.InventoryUI
   inventoryRoot: {fileID: 7198581178110281154}
-  bagLevel: 1
+  bagLevel: 0
   bagSlots:
   - {fileID: 4254922533378865906}
   - {fileID: 5765603724864169736}
