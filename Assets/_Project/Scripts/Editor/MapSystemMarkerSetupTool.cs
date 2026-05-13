@@ -1,5 +1,5 @@
 using System;
-using DeadZone.Actors;
+using DeadZone.Actors.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -23,17 +23,7 @@ namespace DeadZone.Editor
             Vector2 worldMin = new(mapBounds.min.x, mapBounds.min.z);
             Vector2 worldMax = new(mapBounds.max.x, mapBounds.max.z);
 
-            RectTransform miniMapRect = FindRect("MiniMapBG");
-            RectTransform worldMapRect = FindRect("Png_WorldMap_01");
-            RectTransform miniMarkerRect = FindRect("PlayerMarker_Minimap");
-            RectTransform worldMarkerRect = FindRect("PlayerMarker_WorldMap");
-
-            ConfigureFollower(miniMarkerRect, miniMapRect, miniMarkerRect, worldMin, worldMax);
-            ConfigureFollower(worldMarkerRect, worldMapRect, worldMarkerRect, worldMin, worldMax);
-
-            GameObject mapSystem = GameObject.Find("MapSystem");
-            if (mapSystem != null && mapSystem.GetComponent<MapSystemTargetBinder>() == null)
-                Undo.AddComponent<MapSystemTargetBinder>(mapSystem);
+            ConfigureMinimapCameraFollower();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -78,39 +68,18 @@ namespace DeadZone.Editor
             }
         }
 
-        private static RectTransform FindRect(string objectName)
+        private static void ConfigureMinimapCameraFollower()
         {
-            GameObject obj = GameObject.Find(objectName);
-            if (obj == null)
-                throw new InvalidOperationException($"{objectName} was not found.");
+            GameObject minimapCamera = GameObject.Find("MinimapCamera");
+            if (minimapCamera == null)
+            {
+                Debug.LogWarning("[MapSystemMarkerSetupTool] MinimapCamera was not found.");
+                return;
+            }
 
-            RectTransform rectTransform = obj.GetComponent<RectTransform>();
-            if (rectTransform == null)
-                throw new InvalidOperationException($"{objectName} has no RectTransform.");
-
-            return rectTransform;
-        }
-
-        private static void ConfigureFollower(
-            RectTransform markerObject,
-            RectTransform mapRect,
-            RectTransform markerRect,
-            Vector2 worldMin,
-            Vector2 worldMax)
-        {
-            MapMarkerFollower follower = markerObject.GetComponent<MapMarkerFollower>();
+            MinimapCameraFollower follower = minimapCamera.GetComponent<MinimapCameraFollower>();
             if (follower == null)
-                follower = Undo.AddComponent<MapMarkerFollower>(markerObject.gameObject);
-
-            SerializedObject serializedFollower = new(follower);
-            serializedFollower.FindProperty("mapRect").objectReferenceValue = mapRect;
-            serializedFollower.FindProperty("markerRect").objectReferenceValue = markerRect;
-            serializedFollower.FindProperty("target").objectReferenceValue = null;
-            serializedFollower.FindProperty("worldMin").vector2Value = worldMin;
-            serializedFollower.FindProperty("worldMax").vector2Value = worldMax;
-            serializedFollower.FindProperty("updateEveryFrame").boolValue = true;
-            serializedFollower.FindProperty("clampToMap").boolValue = true;
-            serializedFollower.ApplyModifiedPropertiesWithoutUndo();
+                follower = Undo.AddComponent<MinimapCameraFollower>(minimapCamera);
 
             EditorUtility.SetDirty(follower);
         }

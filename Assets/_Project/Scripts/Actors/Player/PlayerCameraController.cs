@@ -70,6 +70,8 @@ namespace DeadZone.Actors
         [SerializeField] private bool enableDebugLogs;
 
         private Transform cameraTransform;
+        private Camera[] childCameras;
+        private AudioListener[] childAudioListeners;
         private bool isLocalOwnerCamera;
         private float currentLookAheadDistance;
         private Vector3 lastValidLookDirection = Vector3.forward;
@@ -156,6 +158,9 @@ namespace DeadZone.Actors
         /// </summary>
         private void ResolveRuntimeCameraReferences()
         {
+            childCameras = GetComponentsInChildren<Camera>(true);
+            childAudioListeners = GetComponentsInChildren<AudioListener>(true);
+
             Transform runtimeCameraTransform = transform.Find("CameraHolder/PlayerCamera");
 
             if (runtimeCameraTransform != null)
@@ -165,7 +170,46 @@ namespace DeadZone.Actors
                 audioListener = runtimeCameraTransform.GetComponent<AudioListener>();
             }
 
+            if (playerCamera == null)
+                playerCamera = FindPlayerCamera();
+
+            if (playerCamera != null)
+            {
+                cameraRoot = playerCamera.gameObject;
+
+                if (audioListener == null)
+                    audioListener = playerCamera.GetComponent<AudioListener>();
+            }
+
             cameraTransform = playerCamera != null ? playerCamera.transform : null;
+        }
+
+        private Camera FindPlayerCamera()
+        {
+            if (childCameras == null || childCameras.Length == 0)
+                return null;
+
+            foreach (Camera camera in childCameras)
+            {
+                if (camera != null && camera.name == "PlayerCamera")
+                    return camera;
+            }
+
+            foreach (Camera camera in childCameras)
+            {
+                if (camera == null)
+                    continue;
+
+                if (camera.targetTexture != null)
+                    continue;
+
+                if (camera.name.Contains("Minimap"))
+                    continue;
+
+                return camera;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -176,14 +220,40 @@ namespace DeadZone.Actors
             if (cameraRoot != null)
                 cameraRoot.SetActive(true);
 
-            if (playerCamera != null)
+            if (childCameras != null)
+            {
+                foreach (Camera camera in childCameras)
+                {
+                    if (camera == null)
+                        continue;
+
+                    camera.gameObject.SetActive(true);
+                    camera.targetDisplay = 0;
+                    camera.enabled = active && IsOwnerCamera(camera);
+                }
+            }
+            else if (playerCamera != null)
             {
                 playerCamera.gameObject.SetActive(true);
+                playerCamera.targetDisplay = 0;
                 playerCamera.enabled = active;
             }
 
-            if (audioListener != null)
+            if (childAudioListeners != null)
+            {
+                foreach (AudioListener listener in childAudioListeners)
+                {
+                    if (listener != null)
+                        listener.enabled = active && listener == audioListener;
+                }
+            }
+            else if (audioListener != null)
+            {
                 audioListener.enabled = active;
+            }
+
+            if (active)
+                DisableSceneFallbackCameras();
 
             LogCameraState($"SetCameraActive({active}) / {reason}");
         }
@@ -197,10 +267,25 @@ namespace DeadZone.Actors
             if (cameraRoot != null && !cameraRoot.activeSelf)
                 cameraRoot.SetActive(true);
 
+            if (childCameras != null)
+            {
+                foreach (Camera camera in childCameras)
+                {
+                    if (camera == null)
+                        continue;
+
+                    camera.gameObject.SetActive(true);
+                    camera.targetDisplay = 0;
+                    camera.enabled = IsOwnerCamera(camera);
+                }
+            }
+
             if (playerCamera != null)
             {
                 if (!playerCamera.gameObject.activeSelf)
                     playerCamera.gameObject.SetActive(true);
+
+                playerCamera.targetDisplay = 0;
 
                 if (!playerCamera.enabled)
                     playerCamera.enabled = true;
@@ -208,6 +293,56 @@ namespace DeadZone.Actors
 
             if (audioListener != null && !audioListener.enabled)
                 audioListener.enabled = true;
+        }
+
+        private bool IsOwnerCamera(Camera camera)
+        {
+            if (camera == null)
+                return false;
+
+            return camera == playerCamera || IsMinimapCamera(camera);
+        }
+
+        private bool IsMinimapCamera(Camera camera)
+        {
+            if (camera == null)
+                return false;
+
+            return camera.name.Contains("Minimap")
+                   || camera.targetTexture != null
+                   || camera.GetComponent<DeadZone.Actors.UI.MinimapCameraFollower>() != null
+                   || camera.GetComponentInParent<DeadZone.Actors.UI.MinimapCameraFollower>() != null;
+        }
+
+        private void DisableSceneFallbackCameras()
+        {
+            Camera[] cameras = Camera.allCameras;
+            foreach (Camera camera in cameras)
+            {
+                if (camera == null)
+                    continue;
+
+                if (camera == playerCamera)
+                    continue;
+
+                if (camera.transform.IsChildOf(transform))
+                    continue;
+
+                if (camera.targetTexture != null)
+                    continue;
+
+                if (camera.GetComponent<DeadZone.Actors.UI.MinimapCameraFollower>() != null)
+                    continue;
+
+                if (camera.name.Contains("Minimap"))
+                    continue;
+
+                camera.enabled = false;
+
+                AudioListener listener = camera.GetComponent<AudioListener>();
+                if (listener != null)
+                    listener.enabled = false;
+            }
         }
 
         /// <summary>

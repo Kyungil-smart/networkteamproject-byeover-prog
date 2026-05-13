@@ -62,7 +62,8 @@ namespace DeadZone.Network
 
         private void OnApplicationQuit()
         {
-            DisconnectInternal("ApplicationQuit");
+            currentPartyId = string.Empty;
+            ClearLocalPartyCache();
         }
 
         // =================================================================
