@@ -44,6 +44,7 @@ namespace DeadZone.Actors
 
         private EquipmentSlots equipment;
         private Camera aimCamera;
+        private Transform fallbackMuzzleTransform;
         private float nextFireAllowed;
         private float currentSpreadAngle;
         private float lastServerFireTime;
@@ -63,31 +64,19 @@ namespace DeadZone.Actors
         {
             equipment = GetComponent<EquipmentSlots>();
             fallbackMuzzleTransform = muzzleTransform;
-
-            if (weaponHolder == null)
-                weaponHolder = FindDeepChild(transform, weaponHolderName);
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            if (equipment == null)
-                equipment = GetComponent<EquipmentSlots>();
-
-            if (equipment != null)
-                equipment.CurrentEquipped.OnValueChanged += HandleCurrentEquippedChanged;
-
-            RefreshEquippedWeaponVisual();
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            if (equipment != null)
-                equipment.CurrentEquipped.OnValueChanged -= HandleCurrentEquippedChanged;
-
-            ClearWeaponVisual();
         }
 
         public void SetAimCamera(Camera camera) => aimCamera = camera;
+
+        public void SetMuzzleTransform(Transform muzzle)
+        {
+            muzzleTransform = muzzle != null ? muzzle : fallbackMuzzleTransform;
+        }
+
+        public void ResetMuzzleTransform()
+        {
+            muzzleTransform = fallbackMuzzleTransform;
+        }
 
         // 레거시 
         public void TryFire()
