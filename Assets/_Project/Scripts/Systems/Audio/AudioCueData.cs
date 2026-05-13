@@ -14,8 +14,9 @@ namespace DeadZone.Systems.Audio
     [Serializable]
     public sealed class AudioCueData
     {
-        [Tooltip("AudioManager가 찾을 사운드 ID. 같은 ID가 여러 개 있으면 먼저 발견된 항목만 사용")]
-        public AudioCueId cueId;
+        [SerializeField, HideInInspector] private AudioCueId cueId;
+
+        public AudioCueId CueId => cueId;
 
         [Tooltip("인스펙터에서 구분하기 위한 이름")]
         public string displayName;
@@ -26,7 +27,7 @@ namespace DeadZone.Systems.Audio
         [Tooltip("재생할 AudioClip 목록, 여러 개를 넣으면 재생할 때마다 무작위로 하나를 고릅니다.")]
         public AudioClip[] clips;
 
-        [Tooltip("라이브러리 기준 기본 볼륨,. 0이면 무음, 1이면 원본 크기")]
+        [Tooltip("라이브러리 기준 기본 볼륨. 0이면 무음, 1이면 원본 크기")]
         [Range(0f, 1f)] public float baseVolume = 1f;
 
         [Tooltip("개별 사운드 볼륨, 옵션 메뉴나 밸런싱에서 이 사운드만 따로 줄일 때 사용")]
@@ -52,6 +53,13 @@ namespace DeadZone.Systems.Audio
 
         [Tooltip("BGM 전환 시 사용할 페이드 시간")]
         [Min(0f)] public float fadeSeconds = 0.5f;
+
+        public void SetFixedInfo(AudioCueId fixedCueId, string fixedDisplayName, AudioGroup fixedGroup)
+        {
+            cueId = fixedCueId;
+            displayName = fixedDisplayName;
+            group = fixedGroup;
+        }
 
         public AudioClip GetRandomClip()
         {

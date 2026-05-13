@@ -235,17 +235,11 @@ MonoBehaviour:
   bgmVolume: 1
   sfxVolume: 1
   uiVolume: 1
-  cueVolumeOverrides: []
   playBgmByScene: 1
-  sceneBgmMappings:
-  - sceneName: Title
-    bgmCueId: 400
-  - sceneName: Game_Stage_1
-    bgmCueId: 401
-  - sceneName: Game_Stage_2
-    bgmCueId: 402
-  - sceneName: Ending
-    bgmCueId: 403
+  titleSceneName: Title
+  stage1SceneName: Game_Stage_1
+  stage2SceneName: Game_Stage_2
+  endingSceneName: Ending
   playLootSoundFromEvent: 1
   playPlayerInjuredFromEvent: 1
   onlyLocalPlayerInjurySound: 1
