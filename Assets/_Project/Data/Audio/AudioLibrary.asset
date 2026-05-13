@@ -228,7 +228,7 @@ MonoBehaviour:
     displayName: Title BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: a9cd9bca04df0a94a984e09f346dcdca, type: 3}
+    - {fileID: 8300000, guid: 14283eca126d6c345a0b665b4f84509d, type: 3}
     baseVolume: 0.75
     individualVolume: 1
     use3D: 0
@@ -243,7 +243,7 @@ MonoBehaviour:
     displayName: Stage1 BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: 9afac921b8b442348b3083f46cd61294, type: 3}
+    - {fileID: 8300000, guid: 5d99dc50e9bf9974b8fa92873d4de940, type: 3}
     baseVolume: 0.75
     individualVolume: 1
     use3D: 0
@@ -258,7 +258,7 @@ MonoBehaviour:
     displayName: Stage2 BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: 178bf2d909837bb408dac35322337838, type: 3}
+    - {fileID: 8300000, guid: 1436614517abb974c9537df25ce2717a, type: 3}
     baseVolume: 0.75
     individualVolume: 1
     use3D: 0
@@ -273,7 +273,7 @@ MonoBehaviour:
     displayName: Ending BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: 2a1e3aafbd92d8447b17101ab2264cb8, type: 3}
+    - {fileID: 8300000, guid: 83178add6255fb945b8f2cbb7f9e367f, type: 3}
     baseVolume: 0.75
     individualVolume: 1
     use3D: 0
