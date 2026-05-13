@@ -965,9 +965,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 32768
   maxRange: 600
-  shotgunProjectileCount: 25
-  shotgunSpreadAngle: 120
-  shotgunPelletAngleJitter: 3
+  shotgunProjectileCount: 12
+  shotgunSpreadAngle: 24
+  shotgunPelletAngleJitter: 2
+  shotgunEffectiveRange: 6
+  shotgunMaxRange: 12
+  shotgunMinDamageMultiplier: 0.15
+  shotgunTotalDamageMultiplier: 0.55
 --- !u!114 &3096256922150323826
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1749,7 +1753,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.InteractionSystem
   interactRadius: 3
-  interactAngle: 150
+  interactAngle: 360
   interactMask:
     serializedVersion: 2
     m_Bits: 65536

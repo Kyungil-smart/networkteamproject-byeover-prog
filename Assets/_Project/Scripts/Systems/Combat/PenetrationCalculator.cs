@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 using DeadZone.Core;
 using DeadZone.Actors;
@@ -61,33 +61,52 @@ namespace DeadZone.Systems
             // 3. 관통 테이블 연산
             // 관통력 - 아머 등급 (관통 테이블은 GetPenTableEntry에서 정의)
             int diff = data.Penetration - armorClass;
-            var (penChance, dmgReduction) = GetPenTableEntry(diff);
+            var (penChance, penetrationReductionScale) = GetPenTableEntry(diff);
             // 확률 기반 관통 여부 판단
             bool penetrated = Random.value < penChance;
 
-            // 관통 여부에 따른 최종 피해 계산
-            float finalDmg = penetrated ? 
-                data.BaseDamage * multiplier * (1f - dmgReduction) :
-                data.BaseDamage * multiplier * (1f - blockChance);
+            float baseReduction = GetArmorClassDamageReduction(armorClass);
+            float blockBonus = Mathf.Clamp01(blockChance) * 0.5f;
+            float fullReduction = Mathf.Clamp01(baseReduction + blockBonus);
+            float appliedReduction = penetrated
+                ? Mathf.Clamp01(fullReduction * penetrationReductionScale)
+                : fullReduction;
+
+            float finalDmg = data.BaseDamage * multiplier * (1f - appliedReduction);
+            float armorDamage = penetrated
+                ? Mathf.Max(4f, data.BaseDamage * 0.12f)
+                : Mathf.Max(8f, data.BaseDamage * 0.22f);
 
             return new DamageResult {
-                finalDamage = Mathf.RoundToInt(finalDmg),
+                finalDamage = Mathf.Max(1, Mathf.RoundToInt(finalDmg)),
                 penetrated = penetrated,
-                armorDamage = penetrated ? 8f : 12f
+                armorDamage = armorDamage
             };
         }
 
-        // 관통 테이블
         private static (float, float) GetPenTableEntry(int diff)
         {
-            if (diff >= 2)  return (1.00f, 0.00f);
-            if (diff == 1)  return (1.00f, 0.00f);
-            if (diff == 0)  return (0.90f, 0.10f);
-            if (diff == -1) return (0.55f, 0.30f);
-            if (diff == -2) return (0.25f, 0.55f);
-            if (diff == -3) return (0.10f, 0.75f);
-            if (diff == -4) return (0.03f, 0.90f);
-            return (0.01f, 0.95f);
+            if (diff >= 2)  return (1.00f, 0.15f);
+            if (diff == 1)  return (1.00f, 0.25f);
+            if (diff == 0)  return (0.90f, 0.45f);
+            if (diff == -1) return (0.55f, 0.65f);
+            if (diff == -2) return (0.25f, 0.80f);
+            if (diff == -3) return (0.10f, 0.90f);
+            if (diff == -4) return (0.03f, 0.95f);
+            return (0.01f, 1.00f);
+        }
+
+        private static float GetArmorClassDamageReduction(int armorClass)
+        {
+            return armorClass switch
+            {
+                <= 1 => 0.20f,
+                2 => 0.30f,
+                3 => 0.40f,
+                4 => 0.50f,
+                5 => 0.60f,
+                _ => 0.70f,
+            };
         }
     }
 }

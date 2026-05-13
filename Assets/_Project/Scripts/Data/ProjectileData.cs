@@ -12,6 +12,8 @@ namespace DeadZone.Actors
         public ulong TargetNetId; 
         public bool WasHeadAim;
         public float Range;
+        public float DamageFalloffStart;
+        public float MinDamageMultiplier;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) 
             where T : IReaderWriter
@@ -22,6 +24,8 @@ namespace DeadZone.Actors
             serializer.SerializeValue(ref TargetNetId);
             serializer.SerializeValue(ref WasHeadAim);
             serializer.SerializeValue(ref Range);
+            serializer.SerializeValue(ref DamageFalloffStart);
+            serializer.SerializeValue(ref MinDamageMultiplier);
         }
     }
 }

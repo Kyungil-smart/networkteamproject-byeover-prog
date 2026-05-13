@@ -23,11 +23,15 @@ namespace DeadZone.Actors
 
         [Header("Shotgun")]
         [Tooltip("샷건 1회 사격 시 동시에 생성할 투사체 수")]
-        [SerializeField, Min(1)] private int shotgunProjectileCount = 25;
+        [SerializeField, Min(1)] private int shotgunProjectileCount = 12;
         [Tooltip("샷건 투사체가 퍼질 전체 각도")]
-        [SerializeField, Range(0f, 180f)] private float shotgunSpreadAngle = 120f;
+        [SerializeField, Range(0f, 180f)] private float shotgunSpreadAngle = 24f;
         [Tooltip("샷건 투사체마다 더해지는 무작위 각도 오차")]
-        [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 3f;
+        [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 2f;
+        [SerializeField, Min(0.1f)] private float shotgunEffectiveRange = 6f;
+        [SerializeField, Min(0.1f)] private float shotgunMaxRange = 12f;
+        [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.15f;
+        [SerializeField, Range(0.1f, 1f)] private float shotgunTotalDamageMultiplier = 0.55f;
 
         [Header("Weapon Visual")]
         [SerializeField] private bool autoEquipWeaponVisual = true;
@@ -270,7 +274,9 @@ namespace DeadZone.Actors
                 Penetration = a.penetration,
                 TargetNetId = target,
                 WasHeadAim = isHead,
-                Range = w.engageRange.y
+                Range = w.engageRange.y,
+                DamageFalloffStart = w.engageRange.y,
+                MinDamageMultiplier = 1f
             };
         }
         
@@ -298,7 +304,12 @@ namespace DeadZone.Actors
             int projectileCount = Mathf.Max(1, shotgunProjectileCount);
             float halfAngle = shotgunSpreadAngle * 0.5f;
             ProjectileData pelletData = pData;
-            pelletData.BaseDamage = Mathf.Max(1, Mathf.RoundToInt(pData.BaseDamage / (float)projectileCount));
+            pelletData.Range = Mathf.Min(pData.Range, shotgunMaxRange);
+            pelletData.DamageFalloffStart = Mathf.Min(shotgunEffectiveRange, pelletData.Range);
+            pelletData.MinDamageMultiplier = shotgunMinDamageMultiplier;
+            pelletData.BaseDamage = Mathf.Max(
+                1,
+                Mathf.RoundToInt((pData.BaseDamage * shotgunTotalDamageMultiplier) / projectileCount));
 
             for (int i = 0; i < projectileCount; i++)
             {
