@@ -587,7 +587,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 146189795
+  GlobalObjectIdHash: 2875219163
   InScenePlacedSourceGlobalObjectIdHash: 146189795
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1812,7 +1812,9 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   animator: {fileID: 95481129507444498}
   equipmentSlots: {fileID: 3096256922150323826}
+  playerHealthSystem: {fileID: 0}
   weaponTypeParameterName: WeaponType
+  rollingParameterName: IsRolling
   combatLayerName: Combat Upper Body
   useCombatLayerWeight: 1
   layerBlendSpeed: 12

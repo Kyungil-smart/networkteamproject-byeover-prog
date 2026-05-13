@@ -23,10 +23,18 @@ namespace DeadZone.Actors
                  "비워두면 같은 Player에서 자동 탐색합니다.")]
         [SerializeField] private EquipmentSlots equipmentSlots;
 
+        [Tooltip("기절/사망 상태를 읽는 플레이어 체력 상태 컴포넌트입니다. " +
+                 "비워두면 같은 Player에서 자동 탐색합니다.")]
+        [SerializeField] private PlayerHealthSystem playerHealthSystem;
+
         [Header("Animator 파라미터")]
         [Tooltip("Player Animator Controller에 있는 Int 파라미터 이름입니다. " +
                  "PlayerWeaponAnimationType 값과 대응됩니다.")]
         [SerializeField] private string weaponTypeParameterName = "WeaponType";
+
+        [Tooltip("구르기 상태를 읽을 Bool 파라미터 이름입니다. " +
+                 "이 값이 true이면 상체 전투 레이어 Weight를 0으로 낮춥니다.")]
+        [SerializeField] private string rollingParameterName = "IsRolling";
 
         [Tooltip("무기 장착 시 Weight를 올릴 상체 전투 레이어 이름입니다. " +
                  "레이어가 없으면 Weight 갱신만 건너뜁니다.")]
@@ -50,15 +58,20 @@ namespace DeadZone.Actors
         private float currentCombatLayerWeight;
 
         private int weaponTypeHash;
+        private int rollingHash;
         private int combatLayerIndex = -1;
 
         private bool hasWeaponTypeParameter;
+        private bool hasRollingParameter;
         private bool subscribedToEquipment;
 
         private bool loggedMissingAnimator;
         private bool loggedMissingEquipmentSlots;
+        private bool loggedMissingPlayerHealthSystem;
         private bool loggedMissingWeaponTypeParameter;
+        private bool loggedMissingRollingParameter;
         private bool loggedWeaponTypeMismatch;
+        private bool loggedRollingParameterMismatch;
         private bool loggedMissingCombatLayer;
 
         private void Awake()
@@ -85,7 +98,6 @@ namespace DeadZone.Actors
             CacheAnimatorBindings();
             SubscribeEquipmentEvents();
 
-            // 스폰 직후에는 이미 동기화된 장착 상태를 기준으로 표시 상태를 즉시 맞춘다.
             RefreshWeaponAnimationState(immediateLayerWeight: true);
         }
 
@@ -126,12 +138,17 @@ namespace DeadZone.Actors
 
             if (equipmentSlots == null)
                 equipmentSlots = GetComponent<EquipmentSlots>();
+
+            if (playerHealthSystem == null)
+                playerHealthSystem = GetComponent<PlayerHealthSystem>();
         }
 
         private void CacheAnimatorBindings()
         {
             hasWeaponTypeParameter = false;
+            hasRollingParameter = false;
             weaponTypeHash = 0;
+            rollingHash = 0;
             combatLayerIndex = -1;
 
             if (animator == null)
@@ -142,7 +159,14 @@ namespace DeadZone.Actors
             }
 
             CacheWeaponTypeParameter();
+            CacheRollingParameter();
             CacheCombatLayer();
+
+            if (playerHealthSystem == null)
+            {
+                WarnOnce(ref loggedMissingPlayerHealthSystem,
+                    "[PlayerAnimatorDriver] PlayerHealthSystem 참조가 없어 기절/사망 중 상체 레이어 억제를 적용할 수 없습니다.");
+            }
         }
 
         private void CacheWeaponTypeParameter()
@@ -179,8 +203,44 @@ namespace DeadZone.Actors
 
             WarnOnce(
                 ref loggedMissingWeaponTypeParameter,
-                $"[PlayerAnimatorDriver] " +
-                $"Animator에서 Int 파라미터 '{weaponTypeParameterName}'를 찾지 못했습니다.");
+                $"[PlayerAnimatorDriver] Animator에서 Int 파라미터 '{weaponTypeParameterName}'를 찾지 못했습니다.");
+        }
+
+        private void CacheRollingParameter()
+        {
+            if (string.IsNullOrWhiteSpace(rollingParameterName))
+            {
+                WarnOnce(ref loggedMissingRollingParameter,
+                    "[PlayerAnimatorDriver] 구르기 파라미터 이름이 비어 있습니다.");
+                return;
+            }
+
+            rollingHash = Animator.StringToHash(rollingParameterName);
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.name != rollingParameterName)
+                    continue;
+
+                if (parameter.type != AnimatorControllerParameterType.Bool)
+                {
+                    WarnOnce(
+                        ref loggedRollingParameterMismatch,
+                        $"[PlayerAnimatorDriver] Animator 파라미터 '{rollingParameterName}'" +
+                        $" 타입이 Bool이 아닙니다. 현재 타입: {parameter.type}");
+
+                    return;
+                }
+
+                hasRollingParameter = true;
+                return;
+            }
+
+            WarnOnce(
+                ref loggedMissingRollingParameter,
+                $"[PlayerAnimatorDriver] Animator에서 Bool 파라미터 '{rollingParameterName}'를 찾지 못했습니다.");
         }
 
         private void CacheCombatLayer()
@@ -193,8 +253,6 @@ namespace DeadZone.Actors
 
             combatLayerIndex = animator.GetLayerIndex(combatLayerName);
 
-            // 상체 전투 레이어가 없는 Animator에서도 Driver 자체는 동작해야 한다.
-            // 이 경우 WeaponType 파라미터만 갱신하고 Layer Weight 처리는 건너뛴다.
             if (combatLayerIndex < 0)
             {
                 if (!loggedMissingCombatLayer)
@@ -336,7 +394,7 @@ namespace DeadZone.Actors
 
             if (immediateLayerWeight)
             {
-                ApplyCombatLayerWeight(targetCombatLayerWeight);
+                ApplyCombatLayerWeight(GetEffectiveCombatLayerWeight());
             }
 
             if (changed)
@@ -364,17 +422,18 @@ namespace DeadZone.Actors
             if (animator == null || combatLayerIndex < 0)
                 return;
 
+            float effectiveTargetWeight = GetEffectiveCombatLayerWeight();
             float nextWeight;
 
             if (layerBlendSpeed <= 0f)
             {
-                nextWeight = targetCombatLayerWeight;
+                nextWeight = effectiveTargetWeight;
             }
             else
             {
                 nextWeight = Mathf.MoveTowards(
                     currentCombatLayerWeight,
-                    targetCombatLayerWeight,
+                    effectiveTargetWeight,
                     layerBlendSpeed * Time.deltaTime);
             }
 
@@ -382,6 +441,38 @@ namespace DeadZone.Actors
                 return;
 
             ApplyCombatLayerWeight(nextWeight);
+        }
+
+        private float GetEffectiveCombatLayerWeight()
+        {
+            if (ShouldSuppressCombatLayer())
+                return 0f;
+
+            return targetCombatLayerWeight;
+        }
+
+        private bool ShouldSuppressCombatLayer()
+        {
+            return IsRolling() || IsKnockedOrDead();
+        }
+
+        private bool IsRolling()
+        {
+            if (animator == null)
+                return false;
+
+            if (!hasRollingParameter)
+                return false;
+
+            return animator.GetBool(rollingHash);
+        }
+
+        private bool IsKnockedOrDead()
+        {
+            if (playerHealthSystem == null)
+                return false;
+
+            return playerHealthSystem.IsKnocked || playerHealthSystem.IsDead;
         }
 
         private void ApplyCombatLayerWeight(float weight)
