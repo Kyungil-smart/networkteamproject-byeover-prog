@@ -10,7 +10,7 @@ namespace DeadZone.Actors.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateRuntimeController()
         {
-            if (FindObjectOfType<InGameMenuInputController>() != null)
+            if (FindFirstObjectByType<InGameMenuInputController>() != null)
                 return;
 
             GameObject controllerObject = new GameObject(RuntimeObjectName);

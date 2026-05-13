@@ -91,13 +91,14 @@ namespace DeadZone.Network
             LogDebug("네트워크 Despawn 완료.");
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (instance == this)
                 instance = null;
 
             UnsubscribeSceneEvents();
             UnregisterFromServiceLocator();
+            base.OnDestroy();
         }
 
         /// <summary>

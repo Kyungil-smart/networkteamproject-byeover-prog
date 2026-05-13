@@ -50,7 +50,7 @@ namespace DeadZone.Network
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void ReturnToHideoutServerRpc()
         {
             RaidTimeRemaining.Value = 0f;

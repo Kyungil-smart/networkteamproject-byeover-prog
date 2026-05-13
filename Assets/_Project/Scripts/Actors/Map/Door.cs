@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -52,8 +52,8 @@ namespace DeadZone.Actors
 
         public string GetPromptText() => IsOpen.Value ? "[F] Close" : (isLocked ? "[F] Locked" : "[F] Open");
 
-        [ServerRpc(RequireOwnership = false)]
-        private void RequestToggleServerRpc(ServerRpcParams rpc = default)
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void RequestToggleServerRpc(RpcParams rpc = default)
         {
             if (isLocked && !string.IsNullOrEmpty(requiredKeyId)) return;
             IsOpen.Value = !IsOpen.Value;

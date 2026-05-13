@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -11,7 +11,10 @@ namespace DeadZone.Actors
     public class LootContainer : NetworkBehaviour, IInteractable
     {
         [Header("상자 기본 데이터")]
-        [Tooltip("이 상자에서 나올 아이템 후보 테이블입니다.")]
+        [Tooltip("이 상자에서 직접 검색 후보로 사용할 아이템 목록입니다. 비어 있으면 호환용 LootTableSO를 사용합니다.")]
+        [SerializeField] private LootEntry[] searchEntries;
+
+        [Tooltip("호환용 후보 테이블입니다. 새 상자는 searchEntries를 우선 사용하세요.")]
         [SerializeField] private LootTableSO lootTable;
 
         [Tooltip("Console 로그에 표시할 상자 등급 이름입니다.")]
@@ -20,6 +23,9 @@ namespace DeadZone.Actors
         [Header("슬롯/랜덤 생성")]
         [Tooltip("상자 내부 슬롯 수입니다.")]
         [SerializeField] private int slotCount = 6;
+
+        [Tooltip("상자를 처음 열 때 실제로 생성할 품목 수 범위입니다.")]
+        [SerializeField] private Vector2Int itemCountRange = new(1, 6);
 
         [Tooltip("처음 열 때 랜덤 생성할 아이템 개수입니다.")]
         [SerializeField] private int rollCount = 6;
@@ -58,6 +64,7 @@ namespace DeadZone.Actors
 
         private bool localOpened;
         private List<global::ContainerSlotNetData> localSlots;
+        private int lastGeneratedItemCount;
 
         public LootTableSO LootTable => lootTable;
         public int SlotCount => slotCount;
@@ -73,9 +80,11 @@ namespace DeadZone.Actors
         private void OnValidate()
         {
             slotCount = Mathf.Max(1, slotCount);
+            itemCountRange.x = Mathf.Clamp(itemCountRange.x, 0, slotCount);
+            itemCountRange.y = Mathf.Clamp(itemCountRange.y, itemCountRange.x, slotCount);
             rollCount = Mathf.Clamp(rollCount, 1, slotCount);
-            minWeaponCount = Mathf.Clamp(minWeaponCount, 0, rollCount);
-            maxWeaponCount = Mathf.Clamp(maxWeaponCount, minWeaponCount, rollCount);
+            minWeaponCount = Mathf.Clamp(minWeaponCount, 0, Mathf.Max(1, itemCountRange.y));
+            maxWeaponCount = Mathf.Clamp(maxWeaponCount, minWeaponCount, Mathf.Max(1, itemCountRange.y));
         }
 
         public override void OnNetworkSpawn()
@@ -285,22 +294,18 @@ namespace DeadZone.Actors
 
         private bool CanRollByProbabilityRule()
         {
-            if (lootTable == null)
+            IReadOnlyList<LootEntry> entries = ResolveActiveEntries();
+
+            if (entries == null || entries.Count == 0)
             {
-                Debug.LogWarning("[LootContainer] LootTableSO가 비어 있습니다.", this);
+                Debug.LogWarning("[LootContainer] 검색 후보 아이템 목록이 비어 있습니다.", this);
                 return false;
             }
 
-            if (lootTable.entries == null || lootTable.entries.Length == 0)
-            {
-                Debug.LogWarning("[LootContainer] LootTableSO에 entries가 없습니다.", this);
-                return false;
-            }
-
-            int totalWeight = global::LootRollUtility.GetTotalWeight(lootTable);
+            int totalWeight = global::LootRollUtility.GetTotalWeight(entries);
             if (totalWeight <= 0)
             {
-                Debug.LogWarning("[LootContainer] LootTable에 유효한 item과 weight가 없습니다.", this);
+                Debug.LogWarning("[LootContainer] 검색 후보에 유효한 item과 weight가 없습니다.", this);
                 return false;
             }
 
@@ -309,14 +314,41 @@ namespace DeadZone.Actors
 
         private List<global::ContainerSlotNetData> GenerateSlotList()
         {
+            int generatedItemCount = RollItemCountForOpen();
+            lastGeneratedItemCount = generatedItemCount;
+
+            IReadOnlyList<LootEntry> entries = ResolveActiveEntries();
+            if (entries != null && entries.Count > 0)
+            {
+                return global::LootRollUtility.RollSlots(
+                    entries,
+                    slotCount,
+                    generatedItemCount,
+                    requireTotalWeight100,
+                    weaponBoxMode,
+                    minWeaponCount,
+                    maxWeaponCount);
+            }
+
             return global::LootRollUtility.RollSlots(
                 lootTable,
                 slotCount,
-                rollCount,
+                generatedItemCount,
                 requireTotalWeight100,
                 weaponBoxMode,
                 minWeaponCount,
                 maxWeaponCount);
+        }
+
+        private int RollItemCountForOpen()
+        {
+            int min = Mathf.Clamp(itemCountRange.x, 0, slotCount);
+            int max = Mathf.Clamp(itemCountRange.y, min, slotCount);
+
+            if (max <= 0)
+                return 0;
+
+            return Random.Range(min, max + 1);
         }
 
         private void ApplyGeneratedSlotsToNetworkList(List<global::ContainerSlotNetData> generated)
@@ -392,12 +424,20 @@ namespace DeadZone.Actors
                     containerGradeName,
                     clientId,
                     slotCount,
-                    rollCount,
-                    global::LootRollUtility.GetTotalWeight(lootTable),
+                    lastGeneratedItemCount > 0 ? lastGeneratedItemCount : rollCount,
+                    global::LootRollUtility.GetTotalWeight(ResolveActiveEntries()),
                     slotArray,
                     lootTable);
 
             Debug.Log(log, this);
+        }
+
+        private IReadOnlyList<LootEntry> ResolveActiveEntries()
+        {
+            if (searchEntries != null && searchEntries.Length > 0)
+                return searchEntries;
+
+            return lootTable != null ? lootTable.entries : null;
         }
 
         private bool TryGetServerSlot(int slotIndex, out global::ContainerSlotNetData slotData)

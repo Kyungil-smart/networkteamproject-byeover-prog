@@ -61,7 +61,7 @@ namespace DeadZone.Actors
         [SerializeField] private MMF_Player onAreaUnlockedFeedback;
 
         [FoldoutGroup("구역 잠금")]
-        [ListDrawerSettings(Expanded = true, DraggableItems = true, ShowIndexLabels = true)]
+        [ListDrawerSettings(ShowFoldout = true, DraggableItems = true, ShowIndexLabels = true)]
         [SerializeField] private List<MapAreaLock> areaLocks = new();
 
         [TitleGroup("디버그")]
@@ -70,25 +70,19 @@ namespace DeadZone.Actors
         [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private string lastUnlockedAreaId;
 
-        private MapSystemPlayerMarkerManager playerMarkerManager;
-        private MiniMapMapImageFollower miniMapMapImageFollower;
         private DeadZoneInputActions fallbackInputActions;
         private InputAction activeToggleMapAction;
         private InputAction activeCloseMapAction;
 
         private void Awake()
         {
-            playerMarkerManager = GetComponent<MapSystemPlayerMarkerManager>();
-            if (playerMarkerManager == null)
-                playerMarkerManager = gameObject.AddComponent<MapSystemPlayerMarkerManager>();
-
-            EnsureMiniMapMapImageFollower();
-
             if (forceRootScaleOne)
                 transform.localScale = Vector3.one;
 
             if (hideMapOnAwake && worldMapUI != null)
                 worldMapUI.SetActive(false);
+
+            isOpen = worldMapUI != null && worldMapUI.activeSelf;
         }
 
         // 퀘스트 완료 이벤트 구독
@@ -150,6 +144,9 @@ namespace DeadZone.Actors
 
         private void OnCloseMapInput(InputAction.CallbackContext context)
         {
+            if (activeToggleMapAction != null && context.action == activeToggleMapAction)
+                return;
+
             if (closeWithEscape && isOpen)
                 CloseMap();
         }
@@ -165,7 +162,9 @@ namespace DeadZone.Actors
         // 전체 맵 토글
         public void ToggleMap()
         {
-            if (isOpen) CloseMap();
+            bool currentlyOpen = worldMapUI != null ? worldMapUI.activeSelf : isOpen;
+
+            if (currentlyOpen) CloseMap();
             else OpenMap();
         }
         
@@ -227,6 +226,9 @@ namespace DeadZone.Actors
                 return null;
             }
 
+            if (toggleMapAction != null && toggleMapAction.action == closeMapAction.action)
+                return null;
+
             return closeMapAction.action;
         }
 
@@ -234,33 +236,6 @@ namespace DeadZone.Actors
         {
             fallbackInputActions ??= new DeadZoneInputActions();
             return fallbackInputActions.Player.Map;
-        }
-
-        private void EnsureMiniMapMapImageFollower()
-        {
-            RectTransform miniMapRoot = FindChildRectTransform("MiniMap");
-            if (miniMapRoot == null)
-            {
-                Debug.LogWarning("[WorldMapController] MiniMap was not found under MapSystem.", this);
-                return;
-            }
-
-            miniMapMapImageFollower = miniMapRoot.GetComponent<MiniMapMapImageFollower>();
-            if (miniMapMapImageFollower == null)
-                miniMapMapImageFollower = miniMapRoot.gameObject.AddComponent<MiniMapMapImageFollower>();
-
-            miniMapMapImageFollower.EnsureMiniMapStructure();
-        }
-
-        private RectTransform FindChildRectTransform(string childName)
-        {
-            foreach (RectTransform rectTransform in GetComponentsInChildren<RectTransform>(true))
-            {
-                if (rectTransform.name == childName)
-                    return rectTransform;
-            }
-
-            return null;
         }
 
         // 등록된 모든 구역의 잠금 상태를 다시 적용

@@ -70,7 +70,7 @@ namespace DeadZone.Actors
         }
 
         /// <summary>루팅하는 플레이어 쪽에서 시체 UI를 연다 — 현재는 이벤트 발행만 한다.</summary>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void RequestOpenServerRpc(ulong looterClientId)
         {
         }
@@ -102,8 +102,8 @@ namespace DeadZone.Actors
             TakeItemServerRpc(slotIndex);
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        public void TakeItemServerRpc(int slotIndex, ServerRpcParams rpc = default)
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        public void TakeItemServerRpc(int slotIndex, RpcParams rpc = default)
         {
             if (slotIndex < 0 || slotIndex >= Slots.Count) return;
 

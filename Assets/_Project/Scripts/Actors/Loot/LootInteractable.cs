@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine;
 
@@ -44,8 +44,8 @@ namespace DeadZone.Actors
             TryLootServerRpc();
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void TryLootServerRpc(ServerRpcParams rpc = default)
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void TryLootServerRpc(RpcParams rpc = default)
         {
             ulong clientId = rpc.Receive.SenderClientId;
 
