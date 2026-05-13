@@ -342,7 +342,7 @@ namespace DeadZone.Actors.UI
                 raidStartController = FindRaidStartController();
 
             if (lobbyState == null)
-                lobbyState = FindObjectOfType<NetworkLobbyState>();
+                lobbyState = FindFirstObjectByType<NetworkLobbyState>();
 
             if (btnMapA == null)
                 btnMapA = FindButton(btnMapAName);

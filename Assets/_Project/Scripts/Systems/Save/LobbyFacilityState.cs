@@ -20,7 +20,7 @@ namespace DeadZone.Systems.Save
         {
             if (dontDestroyOnLoad)
             {
-                Debug.LogWarning(
+                Debug.Log(
                     "[LobbyFacilityState] dontDestroyOnLoad is ignored. Lobby facility state is a scene-local cache; CloudSaveSystem is the persistent authority.",
                     this);
             }

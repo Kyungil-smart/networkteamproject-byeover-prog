@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -67,6 +67,8 @@ namespace DeadZone.Actors.UI
 
         private GridInventory boundGridInventory;
         private bool gridInventorySubscribed;
+        private EquipmentSlots subscribedEquipmentSlots;
+        private bool equipmentSlotsSubscribed;
 
         [BoxGroup("ItemDataSO 테스트")]
         [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
@@ -91,17 +93,20 @@ namespace DeadZone.Actors.UI
             ActiveInstance = this;
             EventBus.Subscribe<BackpackChangedEvent>(HandleBackpackChanged);
             SubscribeGridInventory();
+            SubscribeEquipmentSlots();
         }
 
         private void OnDisable()
         {
             EventBus.Unsubscribe<BackpackChangedEvent>(HandleBackpackChanged);
             UnsubscribeGridInventory();
+            UnsubscribeEquipmentSlots();
         }
 
         private void OnDestroy()
         {
             UnsubscribeGridInventory();
+            UnsubscribeEquipmentSlots();
 
             if (ActiveInstance == this)
                 ActiveInstance = null;
@@ -109,16 +114,7 @@ namespace DeadZone.Actors.UI
 
         private void OnValidate()
         {
-            if (bagSlots == null)
-                return;
-
-            if (!Application.isPlaying)
-                return;
-
-            ResolveTooltipUI();
-            EnsureDropSlots();
-            AssignTooltipToSlots();
-            RefreshBagSlots();
+            bagLevel = Mathf.Clamp(bagLevel, 0, 4);
         }
 
         private void InitializeSlots()
@@ -154,7 +150,9 @@ namespace DeadZone.Actors.UI
             if (autoBindOwnerGridInventory)
                 BindOwnerGridInventoryIfNeeded();
 
+            SubscribeEquipmentSlots();
             RefreshGridInventorySlots();
+            RefreshEquipmentSlotViews();
         }
 
         public void Close()
@@ -297,6 +295,7 @@ namespace DeadZone.Actors.UI
                 return;
 
             SetBagLevel(GetBagLevelFromBackpackId(evt.newBackpackId.ToString()));
+            RefreshEquipmentSlotViews();
         }
 
         [BoxGroup("디버그")]
@@ -532,6 +531,11 @@ namespace DeadZone.Actors.UI
             RefreshGridInventorySlots();
         }
 
+        private void HandleEquipmentSlotIdChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
+        {
+            RefreshEquipmentSlotViews();
+        }
+
         private void RefreshGridInventorySlots()
         {
             if (bagSlots == null || bagSlots.Count == 0)
@@ -595,6 +599,120 @@ namespace DeadZone.Actors.UI
 
                 slot.ClearItem();
             }
+        }
+
+        private void RefreshEquipmentSlotViews()
+        {
+            List<InventorySlotUI> slots = GetEquipmentDisplaySlots();
+            ClearEquipmentSlots(slots);
+
+            if (slots.Count == 0 || !ResolveEquipmentSlots())
+                return;
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+                return;
+
+            string backpackId = equipmentSlots.BackpackSlotId.Value.ToString();
+            bagLevel = GetBagLevelFromBackpackId(backpackId);
+
+            ApplyEquipmentSlot(slots, "EquipmentHead", equipmentSlots.HeadSlotId.Value.ToString());
+            ApplyEquipmentSlot(slots, "EquipmentArmor", equipmentSlots.TorsoSlotId.Value.ToString());
+            ApplyEquipmentSlot(slots, "EquipmentBackpack", backpackId);
+            ApplyEquipmentSlot(slots, "EquipmentPrimaryWeapon", equipmentSlots.Primary1Id.Value.ToString());
+            ApplyEquipmentSlot(slots, "Primary2", equipmentSlots.Primary2Id.Value.ToString());
+            ApplyEquipmentSlot(slots, "EquipmentSecondaryWeapon", equipmentSlots.SecondaryId.Value.ToString());
+            ApplyEquipmentSlot(slots, "EquipmentMeleeWeapon", equipmentSlots.MeleeId.Value.ToString());
+
+            RefreshBagSlots();
+        }
+
+        private void ApplyEquipmentSlot(List<InventorySlotUI> slots, string slotId, string itemId)
+        {
+            if (slots == null || string.IsNullOrWhiteSpace(slotId) || string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            InventorySlotUI slot = FindEquipmentSlot(slots, slotId);
+            if (slot == null)
+            {
+                if (debugWeaponEquipEvents)
+                    Debug.LogWarning($"[InventoryUI] Equipment UI slot not found. slotId={slotId}, itemId={itemId}", this);
+
+                return;
+            }
+
+            ItemDataSO itemData = itemDatabase?.GetById(itemId);
+            if (itemData == null)
+            {
+                if (debugWeaponEquipEvents)
+                    Debug.LogWarning($"[InventoryUI] Equipment item data not found. itemId={itemId}", this);
+
+                return;
+            }
+
+            slot.SetItem(itemData, 1);
+        }
+
+        private List<InventorySlotUI> GetEquipmentDisplaySlots()
+        {
+            List<InventorySlotUI> slots = new();
+            HashSet<InventorySlotUI> visited = new();
+
+            foreach (InventorySlotUI slot in GetAllKnownSlots())
+            {
+                if (slot == null || !visited.Add(slot))
+                    continue;
+
+                string slotId = slot.GetEquipmentSaveSlotId();
+                if (!string.IsNullOrWhiteSpace(slotId))
+                    slots.Add(slot);
+            }
+
+            return slots;
+        }
+
+        private static void ClearEquipmentSlots(List<InventorySlotUI> slots)
+        {
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+                slots[i]?.ClearItem();
+        }
+
+        private static InventorySlotUI FindEquipmentSlot(List<InventorySlotUI> slots, string slotId)
+        {
+            string normalizedTarget = NormalizeEquipmentSlotId(slotId);
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null)
+                    continue;
+
+                string normalizedSlot = NormalizeEquipmentSlotId(slot.GetEquipmentSaveSlotId());
+                if (normalizedSlot == normalizedTarget)
+                    return slot;
+            }
+
+            return null;
+        }
+
+        private static string NormalizeEquipmentSlotId(string slotId)
+        {
+            if (string.IsNullOrWhiteSpace(slotId))
+                return string.Empty;
+
+            return slotId.Trim().Replace("_", "").Replace(" ", "").ToLowerInvariant() switch
+            {
+                "head" => "equipmenthead",
+                "torso" => "equipmentarmor",
+                "backpack" => "equipmentbackpack",
+                "primary1" => "equipmentprimaryweapon",
+                "secondary" => "equipmentsecondaryweapon",
+                "melee" => "equipmentmeleeweapon",
+                var normalized => normalized
+            };
         }
 
         private void AssignTooltipToSlots()
@@ -759,6 +877,15 @@ namespace DeadZone.Actors.UI
             EquipmentSlots[] candidates = FindObjectsByType<EquipmentSlots>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (EquipmentSlots candidate in candidates)
             {
+                if (candidate != null && candidate.IsSpawned && candidate.IsOwner)
+                {
+                    equipmentSlots = candidate;
+                    return true;
+                }
+            }
+
+            foreach (EquipmentSlots candidate in candidates)
+            {
                 if (candidate != null && candidate.IsOwner)
                 {
                     equipmentSlots = candidate;
@@ -768,7 +895,7 @@ namespace DeadZone.Actors.UI
 
             foreach (EquipmentSlots candidate in candidates)
             {
-                if (candidate != null)
+                if (candidate != null && candidate.IsSpawned)
                 {
                     equipmentSlots = candidate;
                     return true;
@@ -776,6 +903,48 @@ namespace DeadZone.Actors.UI
             }
 
             return false;
+        }
+
+        private void SubscribeEquipmentSlots()
+        {
+            if (!ResolveEquipmentSlots())
+                return;
+
+            if (equipmentSlotsSubscribed && subscribedEquipmentSlots == equipmentSlots)
+                return;
+
+            UnsubscribeEquipmentSlots();
+
+            subscribedEquipmentSlots = equipmentSlots;
+            subscribedEquipmentSlots.HeadSlotId.OnValueChanged += HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.TorsoSlotId.OnValueChanged += HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.BackpackSlotId.OnValueChanged += HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.Primary1Id.OnValueChanged += HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.Primary2Id.OnValueChanged += HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.SecondaryId.OnValueChanged += HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.MeleeId.OnValueChanged += HandleEquipmentSlotIdChanged;
+            equipmentSlotsSubscribed = true;
+        }
+
+        private void UnsubscribeEquipmentSlots()
+        {
+            if (!equipmentSlotsSubscribed || subscribedEquipmentSlots == null)
+            {
+                subscribedEquipmentSlots = null;
+                equipmentSlotsSubscribed = false;
+                return;
+            }
+
+            subscribedEquipmentSlots.HeadSlotId.OnValueChanged -= HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.TorsoSlotId.OnValueChanged -= HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.BackpackSlotId.OnValueChanged -= HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.Primary1Id.OnValueChanged -= HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.Primary2Id.OnValueChanged -= HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.SecondaryId.OnValueChanged -= HandleEquipmentSlotIdChanged;
+            subscribedEquipmentSlots.MeleeId.OnValueChanged -= HandleEquipmentSlotIdChanged;
+
+            subscribedEquipmentSlots = null;
+            equipmentSlotsSubscribed = false;
         }
 
         private bool ResolveEquipmentSlotsBridge()

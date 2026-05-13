@@ -422,11 +422,13 @@ namespace DeadZone.Actors.UI
             if (stashGridUI != null)
                 return stashGridUI;
 
-            stashGridUI = FindObjectOfType<StashGridUI>(true);
+            stashGridUI = FindFirstObjectByType<StashGridUI>(FindObjectsInactive.Include);
             if (stashGridUI != null)
                 return stashGridUI;
 
-            MonoBehaviour[] behaviours = FindObjectsOfType<MonoBehaviour>(true);
+            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < behaviours.Length; i++)
             {
                 if (behaviours[i] is IInventory inventory)
@@ -501,13 +503,13 @@ namespace DeadZone.Actors.UI
         private void AutoBindReferences()
         {
             if (traderManager == null)
-                traderManager = FindObjectOfType<TraderManager>();
+                traderManager = FindFirstObjectByType<TraderManager>();
 
             if (testWalletSystem == null)
-                testWalletSystem = FindObjectOfType<WalletSystem>(true);
+                testWalletSystem = FindFirstObjectByType<WalletSystem>(FindObjectsInactive.Include);
 
             if (lobbySaveService == null)
-                lobbySaveService = FindObjectOfType<LobbySaveService>(true);
+                lobbySaveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
 
             if (selectedTraderPortraitImage == null)
                 selectedTraderPortraitImage = FindImage("Img_SelectedTrader", "SelectedTrader", "Img_Igor", "Igor", "Portrait");
@@ -1117,7 +1119,7 @@ namespace DeadZone.Actors.UI
 
         private int GetCurrentTestCurrency()
         {
-            return testWalletSystem != null ? testWalletSystem.Credits.Value : testCurrency;
+            return testWalletSystem != null ? testWalletSystem.CurrentCredits : testCurrency;
         }
 
         private bool TryPayTestCurrency(int price)
@@ -1127,7 +1129,7 @@ namespace DeadZone.Actors.UI
                 if (!testWalletSystem.TryPayLocalTest(price))
                     return false;
 
-                testCurrency = testWalletSystem.Credits.Value;
+                testCurrency = testWalletSystem.CurrentCredits;
                 return true;
             }
 
@@ -1143,7 +1145,7 @@ namespace DeadZone.Actors.UI
             if (testWalletSystem != null)
             {
                 testWalletSystem.EarnLocalTest(amount);
-                testCurrency = testWalletSystem.Credits.Value;
+                testCurrency = testWalletSystem.CurrentCredits;
                 return;
             }
 
@@ -1156,7 +1158,7 @@ namespace DeadZone.Actors.UI
                 return;
 
             if (lobbySaveService == null)
-                lobbySaveService = FindObjectOfType<LobbySaveService>(true);
+                lobbySaveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
 
             if (lobbySaveService != null)
                 lobbySaveService.SaveLobbyDataToCloud();

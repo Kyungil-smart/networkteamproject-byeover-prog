@@ -1,4 +1,4 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections.Generic;
@@ -470,7 +470,7 @@ namespace DeadZone.Actors
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void EquipWeaponSlotServerRpc(
             FixedString64Bytes itemId,
             WeaponSlot slot,
@@ -486,7 +486,7 @@ namespace DeadZone.Actors
             UpdateSlot(slot, itemId.ToString(), state);
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void ClearWeaponSlotServerRpc(WeaponSlot slot)
         {
             UpdateSlot(slot, string.Empty, default);

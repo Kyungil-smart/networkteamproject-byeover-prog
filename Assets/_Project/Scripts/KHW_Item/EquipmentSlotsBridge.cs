@@ -59,7 +59,7 @@ public class EquipmentSlotsBridge : NetworkBehaviour
         EquipItemServerRpc(new FixedString64Bytes(itemId), WeaponSlot.Secondary, new FixedString64Bytes(defaultLoadedAmmoId), defaultCurrentAmmo);
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void EquipItemServerRpc(FixedString64Bytes itemId, WeaponSlot weaponSlot, FixedString64Bytes loadedAmmoId, ushort currentAmmo)
     {
         // [추가 기능]
@@ -115,7 +115,7 @@ public class EquipmentSlotsBridge : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void SwitchWeaponSlotServerRpc(WeaponSlot weaponSlot)
     {
         if (!IsServer)

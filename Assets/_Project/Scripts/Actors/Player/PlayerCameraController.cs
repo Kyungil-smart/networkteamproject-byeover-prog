@@ -123,6 +123,10 @@ namespace DeadZone.Actors
             if (fpsController != null && cameraTransform != null)
                 fpsController.SetMovementReference(cameraTransform);
 
+            // 여기 아래 흐름은 Owner 전용이다.
+            // PublishOwnerCameraRegistered는 내부에서 Owner를 다시 검사하지 않으므로 호출 위치를 유지해야 한다.
+            PublishOwnerCameraRegistered();
+
             ApplyCameraTransform();
             LogCameraState("OnNetworkSpawn");
         }
@@ -133,6 +137,9 @@ namespace DeadZone.Actors
         /// </summary>
         public override void OnNetworkDespawn()
         {
+            if (isLocalOwnerCamera)
+                PublishOwnerCameraUnregistered();
+
             isLocalOwnerCamera = false;
             SetCameraActive(false, "OnNetworkDespawn");
 
@@ -148,9 +155,45 @@ namespace DeadZone.Actors
             ApplyCameraTransform();
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
+            if (isLocalOwnerCamera)
+                PublishOwnerCameraUnregistered();
+
             SetCameraActive(false, "OnDestroy");
+            base.OnDestroy();
+        }
+
+        /// <summary>
+        /// 로컬 Owner 플레이어의 카메라 참조를 로컬 연출 시스템에 알린다.
+        /// 이 함수는 반드시 IsOwner 검증이 끝난 Owner 전용 흐름에서만 호출해야 한다.
+        /// Non-owner가 호출하면 컷아웃/입력/로컬 카메라 기준이 다른 플레이어 카메라로 덮일 수 있다.
+        /// </summary>
+        private void PublishOwnerCameraRegistered()
+        {
+            if (playerCamera == null)
+                return;
+
+            EventBus.Publish(new OwnerPlayerCameraRegisteredEvent
+            {
+                playerCamera = playerCamera
+            });
+        }
+
+        /// <summary>
+        /// 로컬 Owner 플레이어의 카메라 참조 해제를 로컬 연출 시스템에 알린다.
+        /// 이 함수는 반드시 IsOwner 검증이 끝난 Owner 전용 흐름에서만 호출해야 한다.
+        /// Non-owner가 호출하면 현재 로컬 카메라 참조가 잘못 해제될 수 있다.
+        /// </summary>
+        private void PublishOwnerCameraUnregistered()
+        {
+            if (playerCamera == null)
+                return;
+
+            EventBus.Publish(new OwnerPlayerCameraUnregisteredEvent
+            {
+                playerCamera = playerCamera
+            });
         }
 
         /// <summary>

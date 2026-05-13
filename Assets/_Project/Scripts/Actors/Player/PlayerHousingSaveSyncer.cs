@@ -54,7 +54,6 @@ namespace DeadZone.Actors
             EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
             EventBus.Subscribe<SceneChangedEvent>(HandleSceneChanged);
             SceneManager.sceneLoaded += HandleUnitySceneLoaded;
-            TryApplyLoadedCloudDataToServer("PlayerHousingSaveSyncer spawned");
             TryApplyLoadedDataForCurrentHideoutScene("PlayerHousingSaveSyncer spawned in Hideout");
         }
 
@@ -153,6 +152,9 @@ namespace DeadZone.Actors
 
             if (facilityState == null)
             {
+                if (!IsLobbyOrHideoutScene(SceneManager.GetActiveScene().name))
+                    return;
+
                 Debug.LogWarning("[PlayerHousingSaveSyncer] LobbyFacilityState를 찾지 못했습니다. PersistentSystems 또는 Save 오브젝트 설정을 확인하세요.", this);
                 return;
             }
@@ -211,6 +213,9 @@ namespace DeadZone.Actors
         private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
         {
             if (!IsOwner)
+                return;
+
+            if (!IsHideoutScene(SceneManager.GetActiveScene().name))
                 return;
 
             TryApplyLoadedCloudDataToServer("Cloud Save loaded");
@@ -489,11 +494,8 @@ namespace DeadZone.Actors
             if (facility == null)
                 return false;
 
-            if (!facility.IsSpawned)
-                return true;
-
             NetworkManager networkManager = NetworkManager.Singleton;
-            return networkManager != null && networkManager.IsServer;
+            return facility.IsSpawned && networkManager != null && networkManager.IsServer;
         }
 
         private static void RefreshOpenHideoutWindows()
@@ -551,6 +553,12 @@ namespace DeadZone.Actors
         {
             return string.Equals(sceneName, "Hideout", System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(sceneName, "HideOut", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsLobbyOrHideoutScene(string sceneName)
+        {
+            return IsHideoutScene(sceneName) ||
+                   string.Equals(sceneName, "Lobby", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetCurrentUserId()

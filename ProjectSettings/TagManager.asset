@@ -29,6 +29,7 @@ TagManager:
   - Ground
   - ItemBox
   - Minimap
+  - FovMesh
   - 
   - 
   - 

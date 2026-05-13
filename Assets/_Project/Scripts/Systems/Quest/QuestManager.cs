@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -10,6 +10,8 @@ namespace DeadZone.Systems.Quests
 {
     public class QuestManager : NetworkBehaviour, IQuestQuery
     {
+        private const ulong StandaloneClientId = 0;
+
         [Header("Quest Data (8개)")]
         [SerializeField] private QuestDataSO[] allQuests;
 
@@ -33,11 +35,25 @@ namespace DeadZone.Systems.Quests
             }
         }
 
+        private void OnEnable()
+        {
+            if (!IsSpawned)
+            {
+                RegisterQuestServices();
+                RestoreLocalStateFromCloudIfAvailable();
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (!IsSpawned)
+                UnregisterQuestServicesIfCurrent();
+        }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            ServiceLocator.Register(this);
-            ServiceLocator.Register<IQuestQuery>(this);
+            RegisterQuestServices();
             RestoreLocalStateFromCloudIfAvailable();
 
             if (IsServer)
@@ -56,9 +72,26 @@ namespace DeadZone.Systems.Quests
                 EventBus.Unsubscribe<ZoneEnteredEvent>(OnZoneEntered);
                 EventBus.Unsubscribe<SceneChangedEvent>(OnSceneChanged);
             }
-            ServiceLocator.Unregister<IQuestQuery>();
-            ServiceLocator.Unregister<QuestManager>();
+            UnregisterQuestServicesIfCurrent();
             base.OnNetworkDespawn();
+        }
+
+        private void RegisterQuestServices()
+        {
+            if (ServiceLocator.Get<QuestManager>() != this)
+                ServiceLocator.Register(this);
+
+            if (ServiceLocator.Get<IQuestQuery>() != (IQuestQuery)this)
+                ServiceLocator.Register<IQuestQuery>(this);
+        }
+
+        private void UnregisterQuestServicesIfCurrent()
+        {
+            if (ServiceLocator.Get<IQuestQuery>() == (IQuestQuery)this)
+                ServiceLocator.Unregister<IQuestQuery>();
+
+            if (ServiceLocator.Get<QuestManager>() == this)
+                ServiceLocator.Unregister<QuestManager>();
         }
 
         private void Update()
@@ -83,16 +116,30 @@ namespace DeadZone.Systems.Quests
             return state;
         }
 
+        public ulong GetLocalClientIdForState()
+        {
+            return HasNetworkSession()
+                ? NetworkManager.Singleton.LocalClientId
+                : StandaloneClientId;
+        }
+
+        private static bool HasNetworkSession()
+        {
+            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+        }
+
+        private bool CanWriteQuestState()
+        {
+            return IsServer || !HasNetworkSession();
+        }
+
         private void RestoreLocalStateFromCloudIfAvailable()
         {
             CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
             if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData || cloudSaveSystem.CurrentData?.progress == null)
                 return;
 
-            if (NetworkManager.Singleton == null)
-                return;
-
-            RestorePlayerState(NetworkManager.Singleton.LocalClientId, cloudSaveSystem.CurrentData.progress);
+            RestorePlayerState(GetLocalClientIdForState(), cloudSaveSystem.CurrentData.progress);
         }
 
        
@@ -113,7 +160,7 @@ namespace DeadZone.Systems.Quests
 
         public bool AcceptQuest(ulong clientId, string questId)
         {
-            if (!IsServer) return false;
+            if (!CanWriteQuestState()) return false;
             if (!_questLookup.TryGetValue(questId, out var questData)) return false;
 
             var state = GetPlayerState(clientId);
@@ -139,17 +186,20 @@ namespace DeadZone.Systems.Quests
                 clientId = clientId
             });
 
-            NotifyQuestAcceptedClientRpc(questId, new ClientRpcParams
+            if (HasNetworkSession())
             {
-                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
-            });
+                NotifyQuestAcceptedClientRpc(questId, new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+                });
+            }
 
             Debug.Log($"[QuestManager] Client {clientId} accepted {questId}");
             TryAutoAcceptSideQuests(clientId);
             return true;
         }
-        [ServerRpc(RequireOwnership = false)]
-        public void AcceptQuestServerRpc(string questId, ServerRpcParams rpcParams = default)
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        public void AcceptQuestServerRpc(string questId, RpcParams rpcParams = default)
         {
             ulong senderClientId = rpcParams.Receive.SenderClientId;
             AcceptQuest(senderClientId, questId);
@@ -173,7 +223,7 @@ namespace DeadZone.Systems.Quests
 
         public void ReportProgress(ulong clientId, ObjectiveType type, string targetId, int amount)
         {
-            if (!IsServer) return;
+            if (!CanWriteQuestState()) return;
             var state = GetPlayerState(clientId);
 
             var activeSnapshot = new List<string>(state.ActiveQuestIds);
@@ -198,11 +248,14 @@ namespace DeadZone.Systems.Quests
                         targetId = new FixedString64Bytes(targetId)
                     });
 
-                    NotifyQuestProgressClientRpc(questId, targetId, newCount, obj.requiredCount,
-                        new ClientRpcParams
-                        {
-                            Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
-                        });
+                    if (HasNetworkSession())
+                    {
+                        NotifyQuestProgressClientRpc(questId, targetId, newCount, obj.requiredCount,
+                            new ClientRpcParams
+                            {
+                                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+                            });
+                    }
                     
                     if (state.AreAllObjectivesComplete(questId)
                         && !state.PendingCompletionIds.Contains(questId))
@@ -210,10 +263,13 @@ namespace DeadZone.Systems.Quests
                         state.PendingCompletionIds.Add(questId);
                         Debug.Log($"[QuestManager] Client {clientId}: {questId} objectives done → pending (Hideout에서 완료 처리)");
 
-                        NotifyQuestPendingClientRpc(questId, new ClientRpcParams
+                        if (HasNetworkSession())
                         {
-                            Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
-                        });
+                            NotifyQuestPendingClientRpc(questId, new ClientRpcParams
+                            {
+                                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+                            });
+                        }
                     }
                 }
             }
@@ -230,19 +286,17 @@ namespace DeadZone.Systems.Quests
         
         public bool IsQuestCompleted(string questId)
         {
-            if (NetworkManager.Singleton == null) return false;
-            return IsQuestCompleted(NetworkManager.Singleton.LocalClientId, questId);
+            return IsQuestCompleted(GetLocalClientIdForState(), questId);
         }
 
         public bool IsQuestActive(string questId)
         {
-            if (NetworkManager.Singleton == null) return false;
-            return IsQuestActive(NetworkManager.Singleton.LocalClientId, questId);
+            return IsQuestActive(GetLocalClientIdForState(), questId);
         }
 
         private void OnSceneChanged(SceneChangedEvent e)
         {
-            if (!IsServer) return;
+            if (!CanWriteQuestState()) return;
             if (e.sceneName.ToString() != "Hideout") return;
 
             Debug.Log("[QuestManager] Hideout 진입 → 대기 중인 퀘스트 완료 처리 시작");
@@ -271,7 +325,7 @@ namespace DeadZone.Systems.Quests
 
         private void CompleteQuest(ulong clientId, string questId)
         {
-            if (!IsServer) return;
+            if (!CanWriteQuestState()) return;
             var state = GetPlayerState(clientId);
 
             state.ActiveQuestIds.Remove(questId);
@@ -292,10 +346,13 @@ namespace DeadZone.Systems.Quests
                 unlockZoneId = new FixedString64Bytes(questData.unlockZoneID ?? "")
             });
 
-            NotifyQuestCompletedClientRpc(questId, new ClientRpcParams
+            if (HasNetworkSession())
             {
-                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
-            });
+                NotifyQuestCompletedClientRpc(questId, new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+                });
+            }
 
             Debug.Log($"[QuestManager] Client {clientId} completed {questId}" +
                       (string.IsNullOrEmpty(questData.unlockZoneID) ? "" : $" → unlocked {questData.unlockZoneID}"));
@@ -339,7 +396,7 @@ namespace DeadZone.Systems.Quests
 
         private void OnEnemyKilled(EnemyKilledEvent e)
         {
-            if (!IsServer) return;
+            if (!CanWriteQuestState()) return;
             string enemyId = e.enemyId.ToString();
             if (string.IsNullOrEmpty(enemyId)) return;
             ReportProgress(e.attackerClientId, ObjectiveType.Kill, enemyId, 1);
@@ -347,13 +404,13 @@ namespace DeadZone.Systems.Quests
 
         private void OnZoneEntered(ZoneEnteredEvent e)
         {
-            if (!IsServer) return;
+            if (!CanWriteQuestState()) return;
             ReportProgress(e.clientId, ObjectiveType.Reach, e.zoneId.ToString(), 1);
         }
         
         private void DebugForceCompleteNext()
         {
-            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            ulong localClientId = GetLocalClientIdForState();
             var state = GetPlayerState(localClientId);
 
             // 메인 퀘스트 순서대로 찾아서 첫 번째 미완료를 완료

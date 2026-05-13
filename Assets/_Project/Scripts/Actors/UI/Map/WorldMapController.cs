@@ -61,7 +61,7 @@ namespace DeadZone.Actors
         [SerializeField] private MMF_Player onAreaUnlockedFeedback;
 
         [FoldoutGroup("구역 잠금")]
-        [ListDrawerSettings(Expanded = true, DraggableItems = true, ShowIndexLabels = true)]
+        [ListDrawerSettings(ShowFoldout = true, DraggableItems = true, ShowIndexLabels = true)]
         [SerializeField] private List<MapAreaLock> areaLocks = new();
 
         [TitleGroup("디버그")]
@@ -199,7 +199,7 @@ namespace DeadZone.Actors
         {
             if (toggleMapAction == null)
             {
-                Debug.LogWarning("[WorldMapController] toggleMapAction is not assigned. Falling back to DeadZoneInputActions Player/Map.", this);
+                Debug.Log("[WorldMapController] toggleMapAction is not assigned. Falling back to DeadZoneInputActions Player/Map.", this);
                 return ResolveFallbackMapAction();
             }
 
@@ -216,7 +216,7 @@ namespace DeadZone.Actors
         {
             if (closeMapAction == null)
             {
-                Debug.LogWarning("[WorldMapController] closeMapAction is not assigned. The map can still be closed by pressing the toggle map input again.", this);
+                Debug.Log("[WorldMapController] closeMapAction is not assigned. The map can still be closed by pressing the toggle map input again.", this);
                 return null;
             }
 

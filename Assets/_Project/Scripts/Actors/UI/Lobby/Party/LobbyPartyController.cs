@@ -100,7 +100,7 @@ namespace DeadZone.Actors.UI
         private void ResolveReferences()
         {
             if (lobbyState == null)
-                lobbyState = FindObjectOfType<NetworkLobbyState>();
+                lobbyState = FindFirstObjectByType<NetworkLobbyState>();
 
             if (partyView == null)
                 partyView = GetComponent<LobbyPartyView>();

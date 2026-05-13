@@ -87,7 +87,10 @@ namespace DeadZone.Systems.Save
 
             if (gridInventory == null)
             {
-                Debug.LogWarning("[InventorySaveCollector] 로컬 플레이어 GridInventory를 찾지 못했습니다.", this);
+                if (HasUiInventoryState())
+                    Debug.Log("[InventorySaveCollector] Local player GridInventory not found. Keeping UI inventory state.", this);
+                else
+                    Debug.LogWarning("[InventorySaveCollector] Local player GridInventory not found and UI inventory state is empty.", this);
                 return;
             }
 
@@ -142,7 +145,10 @@ namespace DeadZone.Systems.Save
 
             if (equipmentSlots == null)
             {
-                Debug.LogWarning("[InventorySaveCollector] Local player EquipmentSlots not found. Keeping UI equipment state.", this);
+                if (HasUiEquipmentState())
+                    Debug.Log("[InventorySaveCollector] Local player EquipmentSlots not found. Keeping UI equipment state.", this);
+                else
+                    Debug.LogWarning("[InventorySaveCollector] Local player EquipmentSlots not found and UI equipment state is empty.", this);
                 return;
             }
 
@@ -168,6 +174,20 @@ namespace DeadZone.Systems.Save
                     equipmentSlots
                 );
             }
+        }
+
+        private bool HasUiInventoryState()
+        {
+            return inventoryState != null &&
+                   inventoryState.InventoryItems != null &&
+                   inventoryState.InventoryItems.Count > 0;
+        }
+
+        private bool HasUiEquipmentState()
+        {
+            return inventoryState != null &&
+                   inventoryState.EquipmentItems != null &&
+                   inventoryState.EquipmentItems.Count > 0;
         }
 
         private void MergeUiEquipmentState(List<EquipmentSaveDTO> serverItems)
