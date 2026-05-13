@@ -101,15 +101,46 @@ namespace DeadZone.Actors
                 var victim = hitZone.GetOwner<IDamageable>();
                 if (victim != null)
                 {
+                    ProjectileData impactData = data;
+                    impactData.BaseDamage = CalculateImpactDamage(hit.distance);
+
                     ServiceLocator.Get<DamageSystem>()?.ApplyDamage(
                         victim, 
                         hit.point, 
-                        data
+                        impactData
                     );
                 }
             }
 
             DespawnProjectile();
+        }
+
+        private int CalculateImpactDamage(float hitDistance)
+        {
+            float impactDistance = distanceTravelled + Mathf.Max(0f, hitDistance);
+            float multiplier = CalculateDistanceDamageMultiplier(impactDistance);
+            return Mathf.Max(1, Mathf.RoundToInt(data.BaseDamage * multiplier));
+        }
+
+        private float CalculateDistanceDamageMultiplier(float impactDistance)
+        {
+            if (data.Range <= 0f)
+                return 1f;
+
+            float minMultiplier = data.MinDamageMultiplier <= 0f
+                ? 1f
+                : Mathf.Clamp01(data.MinDamageMultiplier);
+
+            if (minMultiplier >= 0.999f)
+                return 1f;
+
+            float falloffStart = Mathf.Clamp(data.DamageFalloffStart, 0f, data.Range);
+            if (impactDistance <= falloffStart)
+                return 1f;
+
+            float falloffDistance = Mathf.Max(0.01f, data.Range - falloffStart);
+            float t = Mathf.Clamp01((impactDistance - falloffStart) / falloffDistance);
+            return Mathf.Lerp(1f, minMultiplier, t);
         }
 
         /// <summary>

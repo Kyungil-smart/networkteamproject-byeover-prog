@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -47,6 +47,8 @@ namespace DeadZone.Actors
         private Vector2 lookDirection = Vector2.up;
         private bool fireHeld;
         private bool firePressedThisFrame;
+        private float lastInteractInputTime = -999f;
+        private const float InteractInputGuardSeconds = 0.15f;
 
         private void Awake()
         {
@@ -286,9 +288,13 @@ namespace DeadZone.Actors
 
         public void OnInteract(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || (!context.started && !context.performed))
                 return;
 
+            if (Time.unscaledTime - lastInteractInputTime < InteractInputGuardSeconds)
+                return;
+
+            lastInteractInputTime = Time.unscaledTime;
             currentContext?.OnInteract();
         }
 
