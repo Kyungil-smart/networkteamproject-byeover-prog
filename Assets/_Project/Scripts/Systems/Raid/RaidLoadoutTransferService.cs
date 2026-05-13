@@ -207,6 +207,7 @@ namespace DeadZone.Systems.Raid
             IReadOnlyList<ItemSaveDTO> inventoryItems = HasItems(dto.inventoryItems)
                 ? dto.inventoryItems
                 : dto.stashItems;
+            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems, dto.stashItems);
 
             if (inventoryItems != null)
             {
@@ -246,7 +247,7 @@ namespace DeadZone.Systems.Raid
                     int currentAmmo = Mathf.Max(0, equipment.currentAmmo);
                     if (string.IsNullOrWhiteSpace(loadedAmmoId) && currentAmmo > 0)
                     {
-                        loadedAmmoId = ResolveLoadedAmmoId(equipment.itemId, inventoryItems);
+                        loadedAmmoId = ResolveLoadedAmmoId(equipment.itemId, ammoLookupItems);
 
                         if (!string.IsNullOrWhiteSpace(loadedAmmoId))
                         {
@@ -276,6 +277,16 @@ namespace DeadZone.Systems.Raid
             }
 
             return loadout;
+        }
+
+        private static List<ItemSaveDTO> CreateAmmoLookupItems(
+            IReadOnlyList<ItemSaveDTO> inventoryItems,
+            IReadOnlyList<ItemSaveDTO> stashItems)
+        {
+            List<ItemSaveDTO> items = new();
+            AddRange(items, inventoryItems);
+            AddRange(items, stashItems);
+            return items;
         }
 
         private static int ResolveGridX(ItemSaveDTO item)
@@ -324,7 +335,25 @@ namespace DeadZone.Systems.Raid
                     return ammo.itemID;
             }
 
+            string defaultAmmoId = ResolveDefaultAmmoId(weapon.ammoType);
+            AmmoDataSO defaultAmmo = itemDatabase.GetById<AmmoDataSO>(defaultAmmoId);
+            if (defaultAmmo != null && defaultAmmo.caliber == weapon.ammoType)
+                return defaultAmmo.itemID;
+
             return string.Empty;
+        }
+
+        private static string ResolveDefaultAmmoId(AmmoType ammoType)
+        {
+            return ammoType switch
+            {
+                AmmoType.AR => "Ammo_AR_BP",
+                AmmoType.SMG => "Ammo_SMG_BP",
+                AmmoType.Handgun => "Ammo_Handgun_BP",
+                AmmoType.Sniper => "Ammo_Sniper_BP",
+                AmmoType.Shotgun => "Ammo_SG_BP",
+                _ => string.Empty
+            };
         }
 
         private static string ToRaidEquipmentSlotId(string lobbySlotId)
