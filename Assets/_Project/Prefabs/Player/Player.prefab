@@ -488,6 +488,7 @@ GameObject:
   - component: {fileID: -4358573395740997876}
   - component: {fileID: 8112840747869453086}
   - component: {fileID: -8633860964739703053}
+  - component: {fileID: -7812494434515924552}
   - component: {fileID: 3096256922150323826}
   - component: {fileID: -3200219425098209382}
   - component: {fileID: 1186768812489299859}
@@ -496,6 +497,7 @@ GameObject:
   - component: {fileID: 6020859240896289732}
   - component: {fileID: 2960883677210419207}
   - component: {fileID: 8742465977128026345}
+  - component: {fileID: 5946135611297530169}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -942,6 +944,30 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+--- !u!114 &-7812494434515924552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c9126248a615f84a9da6ee7089c5a78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ShootingSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+  muzzleTransform: {fileID: 7489591256997111823}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 64
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 32768
+  maxRange: 600
+  shotgunProjectileCount: 25
+  shotgunSpreadAngle: 120
+  shotgunPelletAngleJitter: 3
 --- !u!114 &3096256922150323826
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1710,6 +1736,26 @@ MonoBehaviour:
   housingCarryWeightBonusKg: 0
   currentCarryWeightKg: 0
   logBonusChanged: 1
+--- !u!114 &5946135611297530169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab6dc9780ee62da4ab6039ba75ce1141, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.InteractionSystem
+  interactRadius: 3
+  interactAngle: 150
+  interactMask:
+    serializedVersion: 2
+    m_Bits: 65536
+  triggerInteraction: 2
+  enableDebugLogs: 1
+  drawDebugGizmos: 0
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0

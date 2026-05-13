@@ -33,6 +33,14 @@ namespace DeadZone.Actors.UI
         [Tooltip("EquipmentPanel/QuickSlotPanel 하위 슬롯에 InventorySlotUI가 없으면 Play 시 자동으로 추가합니다.")]
         [SerializeField] private bool autoCreateDropSlots = true;
 
+        [BoxGroup("런타임 인벤토리")]
+        [Tooltip("인벤토리를 열 때 Owner Player의 GridInventory를 자동으로 찾아 UI에 표시합니다.")]
+        [SerializeField] private bool autoBindOwnerGridInventory = true;
+
+        [BoxGroup("런타임 인벤토리")]
+        [Tooltip("GridInventory 표시 갱신 과정을 Console에 출력합니다.")]
+        [SerializeField] private bool debugGridInventoryView;
+
         [BoxGroup("장비 연동")]
         [Tooltip("플레이어에 붙은 EquipmentSlotsBridge입니다. 비워두면 Owner 플레이어에서 자동 탐색합니다.")]
         [SerializeField] private EquipmentSlotsBridge equipmentSlotsBridge;
@@ -57,6 +65,9 @@ namespace DeadZone.Actors.UI
         private bool warnedUnsupportedClear;
         private IItemDatabase itemDatabase;
 
+        private GridInventory boundGridInventory;
+        private bool gridInventorySubscribed;
+
         [BoxGroup("ItemDataSO 테스트")]
         [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
         [SerializeField] private List<ItemDataSO> testItemPool = new();
@@ -79,15 +90,19 @@ namespace DeadZone.Actors.UI
         {
             ActiveInstance = this;
             EventBus.Subscribe<BackpackChangedEvent>(HandleBackpackChanged);
+            SubscribeGridInventory();
         }
 
         private void OnDisable()
         {
             EventBus.Unsubscribe<BackpackChangedEvent>(HandleBackpackChanged);
+            UnsubscribeGridInventory();
         }
 
         private void OnDestroy()
         {
+            UnsubscribeGridInventory();
+
             if (ActiveInstance == this)
                 ActiveInstance = null;
         }
@@ -135,6 +150,11 @@ namespace DeadZone.Actors.UI
             EnsureDropSlots();
             AssignTooltipToSlots();
             RefreshBagSlots();
+
+            if (autoBindOwnerGridInventory)
+                BindOwnerGridInventoryIfNeeded();
+
+            RefreshGridInventorySlots();
         }
 
         public void Close()
@@ -248,7 +268,27 @@ namespace DeadZone.Actors.UI
         public void SetBagLevel(int level)
         {
             bagLevel = Mathf.Clamp(level, 0, 4);
-            RefreshBagSlots();
+            RefreshGridInventorySlots();
+        }
+
+        public void BindGridInventory(GridInventory inventory)
+        {
+            if (boundGridInventory == inventory)
+            {
+                RefreshGridInventorySlots();
+                return;
+            }
+
+            UnsubscribeGridInventory();
+            boundGridInventory = inventory;
+            SubscribeGridInventory();
+            RefreshGridInventorySlots();
+
+            if (debugGridInventoryView)
+            {
+                string inventoryName = boundGridInventory != null ? boundGridInventory.name : "null";
+                Debug.Log($"[InventoryUI] GridInventory 바인딩: {inventoryName}", this);
+            }
         }
 
         private void HandleBackpackChanged(BackpackChangedEvent evt)
@@ -433,6 +473,117 @@ namespace DeadZone.Actors.UI
         private void TestBagLevel4()
         {
             SetBagLevel(4);
+        }
+
+        private void BindOwnerGridInventoryIfNeeded()
+        {
+            if (boundGridInventory != null && boundGridInventory.IsSpawned && boundGridInventory.IsOwner)
+                return;
+
+            GridInventory[] candidates = FindObjectsByType<GridInventory>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            foreach (GridInventory candidate in candidates)
+            {
+                if (candidate != null && candidate.IsSpawned && candidate.IsOwner)
+                {
+                    BindGridInventory(candidate);
+                    return;
+                }
+            }
+
+            foreach (GridInventory candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                {
+                    BindGridInventory(candidate);
+                    return;
+                }
+            }
+
+            if (debugGridInventoryView)
+                Debug.LogWarning("[InventoryUI] Owner GridInventory를 찾지 못했습니다.", this);
+        }
+
+        private void SubscribeGridInventory()
+        {
+            if (gridInventorySubscribed || boundGridInventory == null || boundGridInventory.ServerGrid == null)
+                return;
+
+            boundGridInventory.ServerGrid.OnListChanged += HandleGridInventoryChanged;
+            gridInventorySubscribed = true;
+        }
+
+        private void UnsubscribeGridInventory()
+        {
+            if (!gridInventorySubscribed || boundGridInventory == null || boundGridInventory.ServerGrid == null)
+            {
+                gridInventorySubscribed = false;
+                return;
+            }
+
+            boundGridInventory.ServerGrid.OnListChanged -= HandleGridInventoryChanged;
+            gridInventorySubscribed = false;
+        }
+
+        private void HandleGridInventoryChanged(Unity.Netcode.NetworkListEvent<ItemSlotData> changeEvent)
+        {
+            RefreshGridInventorySlots();
+        }
+
+        private void RefreshGridInventorySlots()
+        {
+            if (bagSlots == null || bagSlots.Count == 0)
+                return;
+
+            ClearAssignedSlots();
+
+            if (boundGridInventory == null || boundGridInventory.ServerGrid == null)
+            {
+                RefreshBagSlots();
+                return;
+            }
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+
+            for (int i = 0; i < boundGridInventory.ServerGrid.Count; i++)
+            {
+                ItemSlotData slotData = boundGridInventory.ServerGrid[i];
+                string itemId = slotData.itemId.ToString();
+
+                if (string.IsNullOrWhiteSpace(itemId) || slotData.stackCount <= 0)
+                    continue;
+
+                ItemDataSO itemData = itemDatabase?.GetById(itemId);
+                if (itemData == null)
+                {
+                    if (debugGridInventoryView)
+                        Debug.LogWarning($"[InventoryUI] ItemDatabase 조회 실패: itemId={itemId}", this);
+
+                    continue;
+                }
+
+                int slotIndex = slotData.gridY * GridInventory.BASE_WIDTH + slotData.gridX;
+                if (slotIndex < 0 || slotIndex >= bagSlots.Count || bagSlots[slotIndex] == null)
+                {
+                    if (debugGridInventoryView)
+                    {
+                        Debug.LogWarning(
+                            $"[InventoryUI] 표시 슬롯 범위 오류: itemId={itemId}, grid=({slotData.gridX},{slotData.gridY}), slotIndex={slotIndex}",
+                            this);
+                    }
+
+                    continue;
+                }
+
+                bagSlots[slotIndex].SetItem(itemData, slotData.stackCount);
+            }
+
+            RefreshBagSlots();
+
+            if (debugGridInventoryView)
+                Debug.Log($"[InventoryUI] GridInventory 표시 갱신 완료. count={boundGridInventory.ServerGrid.Count}", this);
         }
 
         private void ClearAssignedSlots()
