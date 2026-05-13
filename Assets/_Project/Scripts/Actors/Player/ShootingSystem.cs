@@ -31,6 +31,7 @@ namespace DeadZone.Actors
 
         private EquipmentSlots equipment;
         private Camera aimCamera;
+        private Transform fallbackMuzzleTransform;
         private float nextFireAllowed;
         private float currentSpreadAngle;
         private float lastServerFireTime;
@@ -46,9 +47,20 @@ namespace DeadZone.Actors
         private void Awake()
         {
             equipment = GetComponent<EquipmentSlots>();
+            fallbackMuzzleTransform = muzzleTransform;
         }
 
         public void SetAimCamera(Camera camera) => aimCamera = camera;
+
+        public void SetMuzzleTransform(Transform muzzle)
+        {
+            muzzleTransform = muzzle != null ? muzzle : fallbackMuzzleTransform;
+        }
+
+        public void ResetMuzzleTransform()
+        {
+            muzzleTransform = fallbackMuzzleTransform;
+        }
 
         // 레거시 
         public void TryFire()
