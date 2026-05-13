@@ -11655,7 +11655,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e4c8b2d1904a5e8c3d2012345678ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.TeamHpSlotUI
-  root: {fileID: 90895289828087671}
+  root: {fileID: 4952445868739469345}
   hpFill: {fileID: 1414739287043467254}
   teamIcon: {fileID: 3204807592963694639}
   hpValueText: {fileID: 1348688783737136924}
@@ -20639,7 +20639,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e4c8b2d1904a5e8c3d2012345678ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.TeamHpSlotUI
-  root: {fileID: 90895289828087671}
+  root: {fileID: 7953885172021907900}
   hpFill: {fileID: 2309423307761249974}
   teamIcon: {fileID: 5227918943036460762}
   hpValueText: {fileID: 2045935156374136101}
@@ -24304,7 +24304,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e4c8b2d1904a5e8c3d2012345678ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.TeamHpSlotUI
-  root: {fileID: 90895289828087671}
+  root: {fileID: 9063700272119372347}
   hpFill: {fileID: 1663581001379119348}
   teamIcon: {fileID: 3151844013532747752}
   hpValueText: {fileID: 684884980144874249}

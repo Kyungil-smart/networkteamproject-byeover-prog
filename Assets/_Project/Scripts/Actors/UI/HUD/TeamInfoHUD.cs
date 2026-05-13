@@ -36,15 +36,33 @@ namespace DeadZone.Actors.UI
 
         private readonly Dictionary<ulong, TeamHpSlotUI> clientIdToSlot = new();
 
+        private readonly Dictionary<ulong, PlayerHealthSystem> clientIdToHealth = new();
+
         private readonly List<Action> maxHpUnsubscribers = new();
 
         private NetworkManager registeredNetworkManager;
 
+        private bool loggedMissingSlots;
+
+        private bool loggedRootSelfReference;
+
+        private bool loggedRosterSnapshot;
+
+        private ulong lastLoggedLocalClientId = ulong.MaxValue;
+
+        private int lastLoggedSpawnedPlayerCount = -1;
+
+        private int lastLoggedTeammateCount = -1;
+
+        private int lastLoggedUsableSlotCount = -1;
+
         private void OnEnable()
         {
+            loggedMissingSlots = false;
             EventBus.Subscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
             RegisterNetworkCallbacks();
             StartCoroutine(RebuildAfterFrames());
+            StartCoroutine(RebuildWhileNetworkBooting());
         }
 
         private void OnDisable()
@@ -61,6 +79,19 @@ namespace DeadZone.Actors.UI
             yield return null;
             yield return null;
             RebuildTeamRoster();
+        }
+
+        /// <summary>
+        /// NetworkManager가 HUD보다 늦게 Listen 하거나, PlayerObject가 몇 프레임 뒤에 붙는 경우를 흡수합니다.
+        /// </summary>
+        private IEnumerator RebuildWhileNetworkBooting()
+        {
+            const int maxSteps = 300;
+            for (int i = 0; i < maxSteps; i++)
+            {
+                yield return null;
+                RebuildTeamRoster();
+            }
         }
 
         private void RegisterNetworkCallbacks()
@@ -100,33 +131,14 @@ namespace DeadZone.Actors.UI
 
             if (!clientIdToSlot.TryGetValue(e.clientId, out TeamHpSlotUI slot))
             {
-                if (ShouldShowTeammate(e.clientId, localId, nm))
-                    RebuildTeamRoster();
+                RebuildTeamRoster();
 
                 if (!clientIdToSlot.TryGetValue(e.clientId, out slot))
                     return;
             }
 
-            float maxForClient = ResolveMaxHpForClient(e.clientId, nm);
+            float maxForClient = ResolveMaxHpForClient(e.clientId);
             slot.SetHp(e.newValue, maxForClient);
-        }
-
-        private static bool ShouldShowTeammate(ulong clientId, ulong localId, NetworkManager nm)
-        {
-            if (clientId == localId)
-                return false;
-
-            IReadOnlyList<ulong> ids = nm.ConnectedClientsIds;
-            if (ids == null)
-                return false;
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                if (ids[i] == clientId)
-                    return true;
-            }
-
-            return false;
         }
 
         [Button("팀 슬롯 재구성(에디터)")]
@@ -140,12 +152,14 @@ namespace DeadZone.Actors.UI
 
         private void RebuildTeamRoster()
         {
+            EnsureTeamSlotsPopulatedFromHierarchy();
             ClearMaxHpSubscriptions();
             ClearAllSlots();
             clientIdToSlot.Clear();
+            clientIdToHealth.Clear();
 
             NetworkManager nm = NetworkManager.Singleton;
-            if (nm == null || !nm.IsListening || nm.LocalClient == null)
+            if (nm == null || !nm.IsListening)
             {
                 SetTeamRootActive(false);
                 return;
@@ -153,10 +167,13 @@ namespace DeadZone.Actors.UI
 
             ulong localId = nm.LocalClientId;
 
-            List<ulong> others = CollectOtherClientIds(nm, localId);
-            others.Sort();
+            List<TeamPlayerEntry> spawnedPlayers = CollectSpawnedPlayers(nm);
+            spawnedPlayers.Sort(CompareTeamPlayerEntry);
 
-            int teammateCount = others.Count;
+            List<TeamPlayerEntry> teammates = CollectTeammates(spawnedPlayers, localId);
+            LogRosterSnapshot(localId, spawnedPlayers.Count, teammates.Count, CountNonNullSlots(ResolveTeamSlots()));
+
+            int teammateCount = teammates.Count;
             if (teammateCount == 0)
             {
                 SetTeamRootActive(false);
@@ -165,26 +182,132 @@ namespace DeadZone.Actors.UI
 
             SetTeamRootActive(true);
 
-            int slotsToUse = Mathf.Min(3, teammateCount);
             TeamHpSlotUI[] resolved = ResolveTeamSlots();
+            int usableSlots = CountNonNullSlots(resolved);
+            int slotsToUse = Mathf.Min(usableSlots, teammateCount);
 
+            if (teammateCount > 0 && usableSlots == 0)
+            {
+                if (!loggedMissingSlots)
+                {
+                    loggedMissingSlots = true;
+                    Debug.LogWarning(
+                        "[TeamInfoHUD] Teammates were found, but no TeamHpSlotUI slots are assigned. " +
+                        "Assign TeamHpSlotUI components to Team Slots or place them under infoTeamRoot.",
+                        this);
+                }
+
+                SetTeamRootActive(false);
+                return;
+            }
+
+            if (teammateCount > usableSlots && !loggedMissingSlots)
+            {
+                loggedMissingSlots = true;
+                Debug.LogWarning(
+                    $"[TeamInfoHUD] Teammate count ({teammateCount}) is greater than usable TeamHpSlotUI slots ({usableSlots}). " +
+                    "Only assigned slots can be displayed.",
+                    this);
+            }
+
+            int teammateIndex = 0;
             for (int i = 0; i < resolved.Length; i++)
             {
                 TeamHpSlotUI slot = resolved[i];
                 if (slot == null)
                     continue;
 
-                if (i < slotsToUse)
+                if (teammateIndex < slotsToUse)
                 {
-                    ulong cid = others[i];
-                    BindSlot(slot, cid, nm);
-                    clientIdToSlot[cid] = slot;
+                    TeamPlayerEntry teammate = teammates[teammateIndex];
+                    BindSlot(slot, teammate, nm);
+                    clientIdToSlot[teammate.ClientId] = slot;
+
+                    if (teammate.Health != null)
+                        clientIdToHealth[teammate.ClientId] = teammate.Health;
+
+                    teammateIndex++;
                 }
                 else
                 {
                     slot.Clear();
                 }
             }
+        }
+
+        private static int CountNonNullSlots(TeamHpSlotUI[] slots)
+        {
+            if (slots == null)
+                return 0;
+
+            int n = 0;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                    n++;
+            }
+
+            return n;
+        }
+
+        /// <summary>
+        /// teamSlots가 비어 있으면 infoTeamRoot 하위에서 TeamHpSlotUI를 찾아 채웁니다(수동 배열이 우선).
+        /// </summary>
+        private void EnsureTeamSlotsPopulatedFromHierarchy()
+        {
+            if (infoTeamRoot == null)
+                return;
+
+            if (HasAnyTeamSlotReference())
+                return;
+
+            TeamHpSlotUI[] found = infoTeamRoot.GetComponentsInChildren<TeamHpSlotUI>(true);
+            if (found == null || found.Length == 0)
+                return;
+
+            System.Array.Sort(found, CompareTeamSlotHierarchy);
+            int take = Mathf.Min(3, found.Length);
+            teamSlots = new TeamHpSlotUI[take];
+            for (int i = 0; i < take; i++)
+                teamSlots[i] = found[i];
+        }
+
+        private bool HasAnyTeamSlotReference()
+        {
+            if (teamSlots == null || teamSlots.Length == 0)
+                return false;
+
+            for (int i = 0; i < teamSlots.Length; i++)
+            {
+                if (teamSlots[i] != null)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static int CompareTeamSlotHierarchy(TeamHpSlotUI a, TeamHpSlotUI b)
+        {
+            if (a == null || b == null)
+                return 0;
+
+            return string.CompareOrdinal(GetHierarchyPath(a.transform), GetHierarchyPath(b.transform));
+        }
+
+        private static string GetHierarchyPath(Transform t)
+        {
+            if (t == null)
+                return string.Empty;
+
+            string path = t.name;
+            Transform parent = t.parent;
+            while (parent != null)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+
+            return path;
         }
 
         private TeamHpSlotUI[] ResolveTeamSlots()
@@ -195,31 +318,99 @@ namespace DeadZone.Actors.UI
             return System.Array.Empty<TeamHpSlotUI>();
         }
 
-        private static List<ulong> CollectOtherClientIds(NetworkManager nm, ulong localId)
+        private static List<TeamPlayerEntry> CollectSpawnedPlayers(NetworkManager nm)
         {
-            List<ulong> list = new List<ulong>(4);
-            IReadOnlyList<ulong> ids = nm.ConnectedClientsIds;
-            if (ids == null)
+            List<TeamPlayerEntry> list = new List<TeamPlayerEntry>(4);
+            if (nm == null || nm.SpawnManager == null || nm.SpawnManager.SpawnedObjectsList == null)
                 return list;
 
-            for (int i = 0; i < ids.Count; i++)
+            foreach (NetworkObject netObj in nm.SpawnManager.SpawnedObjectsList)
             {
-                ulong id = ids[i];
-                if (id != localId)
-                    list.Add(id);
+                if (!TryCreatePlayerEntry(netObj, out TeamPlayerEntry entry))
+                    continue;
+
+                list.Add(entry);
             }
 
             return list;
         }
 
-        private void BindSlot(TeamHpSlotUI slot, ulong clientId, NetworkManager nm)
+        private static bool TryCreatePlayerEntry(NetworkObject netObj, out TeamPlayerEntry entry)
         {
-            Color color = ResolveTeamColor(clientId, nm);
+            entry = default;
+            if (netObj == null)
+                return false;
+
+            PlayerHealthSystem health = netObj.GetComponent<PlayerHealthSystem>();
+            if (health == null)
+                health = netObj.GetComponentInChildren<PlayerHealthSystem>(true);
+
+            Component playerStats = null;
+            if (health == null)
+                playerStats = FindPlayerStats(netObj);
+
+            if (health == null && playerStats == null)
+                return false;
+
+            entry = new TeamPlayerEntry(netObj.OwnerClientId, netObj, health, playerStats);
+            return true;
+        }
+
+        private static Component FindPlayerStats(NetworkObject netObj)
+        {
+            if (netObj == null)
+                return null;
+
+            Component direct = netObj.GetComponent("PlayerStats");
+            if (direct != null)
+                return direct;
+
+            Component[] components = netObj.GetComponentsInChildren<Component>(true);
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component != null && component.GetType().Name == "PlayerStats")
+                    return component;
+            }
+
+            return null;
+        }
+
+        private static List<TeamPlayerEntry> CollectTeammates(List<TeamPlayerEntry> spawnedPlayers, ulong localId)
+        {
+            List<TeamPlayerEntry> teammates = new List<TeamPlayerEntry>(4);
+            if (spawnedPlayers == null)
+                return teammates;
+
+            HashSet<ulong> seenClientIds = new HashSet<ulong>();
+            for (int i = 0; i < spawnedPlayers.Count; i++)
+            {
+                TeamPlayerEntry entry = spawnedPlayers[i];
+                if (entry.ClientId == localId)
+                    continue;
+
+                if (!seenClientIds.Add(entry.ClientId))
+                    continue;
+
+                teammates.Add(entry);
+            }
+
+            return teammates;
+        }
+
+        private static int CompareTeamPlayerEntry(TeamPlayerEntry a, TeamPlayerEntry b)
+        {
+            return a.ClientId.CompareTo(b.ClientId);
+        }
+
+        private void BindSlot(TeamHpSlotUI slot, TeamPlayerEntry teammate, NetworkManager nm)
+        {
+            Color color = ResolveTeamColor(teammate, nm);
             float hp;
             float maxForClient = Mathf.Max(1f, maxHP);
-            PlayerHealthSystem health = null;
+            PlayerHealthSystem health = teammate.Health;
 
-            if (TryGetPlayerHealth(clientId, nm, out health))
+            if (health != null)
             {
                 hp = health.CurrentHP.Value;
                 maxForClient = ResolveMaxHpForHealth(health);
@@ -229,33 +420,13 @@ namespace DeadZone.Actors.UI
                 hp = maxForClient;
             }
 
-            slot.Bind(clientId, color, hp, maxForClient);
+            slot.Bind(teammate.ClientId, color, hp, maxForClient);
             RegisterMaxHpSubscription(health, slot);
         }
 
-        private static bool TryGetPlayerHealth(ulong clientId, NetworkManager nm, out PlayerHealthSystem health)
+        private float ResolveMaxHpForClient(ulong clientId)
         {
-            health = null;
-            if (nm.ConnectedClients == null)
-                return false;
-
-            if (!nm.ConnectedClients.TryGetValue(clientId, out NetworkClient client) || client == null)
-                return false;
-
-            NetworkObject po = client.PlayerObject;
-            if (po == null)
-                return false;
-
-            health = po.GetComponent<PlayerHealthSystem>();
-            if (health == null)
-                health = po.GetComponentInChildren<PlayerHealthSystem>(true);
-
-            return health != null;
-        }
-
-        private float ResolveMaxHpForClient(ulong clientId, NetworkManager nm)
-        {
-            if (TryGetPlayerHealth(clientId, nm, out PlayerHealthSystem health))
+            if (clientIdToHealth.TryGetValue(clientId, out PlayerHealthSystem health))
                 return ResolveMaxHpForHealth(health);
 
             return Mathf.Max(1f, maxHP);
@@ -302,21 +473,21 @@ namespace DeadZone.Actors.UI
             maxHpUnsubscribers.Clear();
         }
 
-        private static Color ResolveTeamColor(ulong clientId, NetworkManager nm)
+        private static Color ResolveTeamColor(TeamPlayerEntry teammate, NetworkManager nm)
         {
-            if (TryGetPlayerHealth(clientId, nm, out PlayerHealthSystem health))
+            NetworkObject netObj = teammate.NetworkObject != null
+                ? teammate.NetworkObject
+                : teammate.Health != null ? teammate.Health.NetworkObject : null;
+
+            if (netObj != null)
             {
-                NetworkObject netObj = health.NetworkObject;
-                if (netObj != null)
-                {
-                    PlayerTeamIdentity identity = netObj.GetComponent<PlayerTeamIdentity>()
-                        ?? netObj.GetComponentInChildren<PlayerTeamIdentity>(true);
-                    if (identity != null)
-                        return identity.CurrentColor;
-                }
+                PlayerTeamIdentity identity = netObj.GetComponent<PlayerTeamIdentity>()
+                    ?? netObj.GetComponentInChildren<PlayerTeamIdentity>(true);
+                if (identity != null)
+                    return identity.CurrentColor;
             }
 
-            if (LobbyTeamColorCache.TryGetColor(clientId, out Color32 cached))
+            if (LobbyTeamColorCache.TryGetColor(teammate.ClientId, out Color32 cached))
                 return cached;
 
             return Color.white;
@@ -336,8 +507,73 @@ namespace DeadZone.Actors.UI
 
         private void SetTeamRootActive(bool active)
         {
-            if (infoTeamRoot != null)
-                infoTeamRoot.SetActive(active);
+            if (infoTeamRoot == null)
+                return;
+
+            if (infoTeamRoot == gameObject)
+            {
+                if (!loggedRootSelfReference)
+                {
+                    loggedRootSelfReference = true;
+                    Debug.LogWarning(
+                        "[TeamInfoHUD] TeamInfoHUD is attached to infoTeamRoot. Attach this component to PlayerHUD or a persistent HUD manager object.",
+                        this);
+                }
+
+                return;
+            }
+
+            infoTeamRoot.SetActive(active);
+        }
+
+        private void LogRosterSnapshot(ulong localClientId, int spawnedPlayerCount, int teammateCount, int usableSlotCount)
+        {
+            if (lastLoggedLocalClientId == localClientId
+                && lastLoggedSpawnedPlayerCount == spawnedPlayerCount
+                && lastLoggedTeammateCount == teammateCount
+                && lastLoggedUsableSlotCount == usableSlotCount)
+            {
+                return;
+            }
+
+            lastLoggedLocalClientId = localClientId;
+            lastLoggedSpawnedPlayerCount = spawnedPlayerCount;
+            lastLoggedTeammateCount = teammateCount;
+            lastLoggedUsableSlotCount = usableSlotCount;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log(
+                $"[TeamInfoHUD] Rebuild roster: localId={localClientId}, teammateCount={teammateCount}, spawnedPlayers={spawnedPlayerCount}, usableSlots={usableSlotCount}",
+                this);
+#else
+            if (loggedRosterSnapshot)
+                return;
+
+            loggedRosterSnapshot = true;
+            Debug.Log(
+                $"[TeamInfoHUD] Rebuild roster: localId={localClientId}, teammateCount={teammateCount}, spawnedPlayers={spawnedPlayerCount}, usableSlots={usableSlotCount}",
+                this);
+#endif
+        }
+
+        private readonly struct TeamPlayerEntry
+        {
+            public readonly ulong ClientId;
+            public readonly NetworkObject NetworkObject;
+            public readonly PlayerHealthSystem Health;
+            public readonly Component PlayerStats;
+
+            public TeamPlayerEntry(
+                ulong clientId,
+                NetworkObject networkObject,
+                PlayerHealthSystem health,
+                Component playerStats)
+            {
+                ClientId = clientId;
+                NetworkObject = networkObject;
+                Health = health;
+                PlayerStats = playerStats;
+            }
         }
     }
 }
