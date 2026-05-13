@@ -26,6 +26,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/HideOut.unity
     guid: c2da797d8183f754b8ee82e46117cfc9
+  - enabled: 1
+    path: Assets/Scenes/KHW/KHW.unity
+    guid: 6b2752241128baf4e8254f76346a9ea2
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

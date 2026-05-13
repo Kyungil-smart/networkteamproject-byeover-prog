@@ -24,4 +24,4 @@ MonoBehaviour:
   maxStackSize: 3
   weightKg: 0.1
   baseSellPrice: 4000
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 4337095019474041704, guid: c001e1f70c4a18242bf86813e3f32dd9, type: 3}
