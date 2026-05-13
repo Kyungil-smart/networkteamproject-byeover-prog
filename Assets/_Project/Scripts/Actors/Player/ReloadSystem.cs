@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Systems.Audio;
 
 namespace DeadZone.Actors
 {
@@ -47,8 +48,14 @@ namespace DeadZone.Actors
         private bool isReloading; // 현재 장전 진행 중인지 나타낸다.
         private bool pendingChangeGrade; // 이번 장전이 탄종 등급 변경 장전인지 나타낸다.
         private AmmoGrade pendingTargetGrade; // 탄종 등급 변경 장전일 때 목표 탄약 등급이다.
+        private EquipmentSlots equipment;
 
         public bool IsReloading => isReloading;
+
+        private void Awake()
+        {
+            equipment = GetComponent<EquipmentSlots>();
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -135,6 +142,10 @@ namespace DeadZone.Actors
         /// </summary>
         private void StartReload()
         {
+            AudioCueId reloadCueId = GetCurrentReloadCueId();
+            if (reloadCueId != AudioCueId.None)
+                PlayReloadAudioClientRpc(reloadCueId, transform.position);
+
             SetReloading(true);
             reloadRoutine = StartCoroutine(ReloadRoutine());
         }
@@ -225,6 +236,37 @@ namespace DeadZone.Actors
                 weaponId = default,
                 reason = (byte)reason
             });
+        }
+
+        [ClientRpc]
+        private void PlayReloadAudioClientRpc(AudioCueId cueId, Vector3 position)
+        {
+            EventBus.Publish(new AudioPlayRequestedEvent
+            {
+                cueId = cueId,
+                position = position,
+                use3D = true,
+                volumeMultiplier = 1f
+            });
+        }
+
+        private AudioCueId GetCurrentReloadCueId()
+        {
+            if (equipment == null)
+                equipment = GetComponent<EquipmentSlots>();
+
+            WeaponDataSO weapon = equipment != null ? equipment.GetCurrentWeapon() : null;
+            if (weapon == null)
+                return AudioCueId.None;
+
+            return weapon.weaponCategory switch
+            {
+                WeaponCategory.AR => AudioCueId.ARReload,
+                WeaponCategory.SMG => AudioCueId.SMGReload,
+                WeaponCategory.Handgun => AudioCueId.HGReload,
+                WeaponCategory.Sniper => AudioCueId.SRDragReload,
+                _ => AudioCueId.None,
+            };
         }
     }
 }

@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Systems.Audio;
 
 namespace DeadZone.Actors
 {
@@ -244,7 +245,11 @@ namespace DeadZone.Actors
             }
 
             // 5. 이벤트 발행
-            PublishFireEvent(rpc.Receive.SenderClientId, weaponId);
+            PublishFireEvent(rpc.Receive.SenderClientId, weaponId, weapon);
+
+            AudioCueId fireCueId = GetFireCueId(weapon.weaponCategory);
+            if (fireCueId != AudioCueId.None)
+                PlayFireAudioClientRpc(fireCueId, muzzleTransform.position);
         }
         
         /// <summary>
@@ -364,14 +369,43 @@ namespace DeadZone.Actors
             return spreadDir.normalized;
         }
         
-        private void PublishFireEvent(ulong clientId, FixedString64Bytes wId)
+        private void PublishFireEvent(ulong clientId, FixedString64Bytes wId, WeaponDataSO weapon)
         {
             EventBus.Publish(new WeaponFiredEvent
             {
                 shooterClientId = clientId,
                 weaponId = wId,
-                origin = muzzleTransform.position
+                weaponData = weapon,
+                weaponCategory = weapon != null ? weapon.weaponCategory : default,
+                maxAmmo = weapon != null ? weapon.magSize : 0,
+                maxDurability = weapon != null ? weapon.maxDurability : 0f,
+                origin = muzzleTransform.position,
+                loudness = 1f
             });
+        }
+
+        [ClientRpc]
+        private void PlayFireAudioClientRpc(AudioCueId cueId, Vector3 position)
+        {
+            EventBus.Publish(new AudioPlayRequestedEvent
+            {
+                cueId = cueId,
+                position = position,
+                use3D = true,
+                volumeMultiplier = 1f
+            });
+        }
+
+        private static AudioCueId GetFireCueId(WeaponCategory weaponCategory)
+        {
+            return weaponCategory switch
+            {
+                WeaponCategory.AR => AudioCueId.ARFire,
+                WeaponCategory.SMG => AudioCueId.SMGFire,
+                WeaponCategory.Handgun => AudioCueId.HGFire,
+                WeaponCategory.Sniper => AudioCueId.SRDragFire,
+                _ => AudioCueId.None,
+            };
         }
 
         private void HandleCurrentEquippedChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
