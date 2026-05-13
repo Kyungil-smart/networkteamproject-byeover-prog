@@ -172,7 +172,7 @@ namespace DeadZone.Actors
         private bool TryHitboxAim(Ray ray, out AimResult result)
         {
             result = new AimResult();
-            if (Physics.Raycast(ray, out var hit, 200f, hitMask))
+            if (Physics.Raycast(ray, out var hit, maxRange, hitMask))
             {
                 result.targetPoint = hit.point;
         
@@ -193,7 +193,7 @@ namespace DeadZone.Actors
         private bool TryGroundAim(Ray ray, out AimResult result)
         {
             result = new AimResult();
-            if (Physics.Raycast(ray, out var hit, 200f, groundMask))
+            if (Physics.Raycast(ray, out var hit, maxRange, groundMask))
             {
                 // 총구 높이를 유지하기 위한 수평 좌표 역산
                 result.targetPoint = CalculateHorizontalPoint(ray, hit.point);

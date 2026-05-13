@@ -559,7 +559,7 @@ namespace DeadZone.Network
                 gameSessionManager = registeredManager;
 
             if (gameSessionManager == null)
-                gameSessionManager = FindObjectOfType<GameSessionManager>();
+                gameSessionManager = FindFirstObjectByType<GameSessionManager>();
 
             if (gameSessionManager == null)
             {
@@ -613,10 +613,10 @@ namespace DeadZone.Network
         private void ResolveReferences()
         {
             if (lobbyState == null)
-                lobbyState = FindObjectOfType<NetworkLobbyState>();
+                lobbyState = FindFirstObjectByType<NetworkLobbyState>();
 
             if (gameManager == null)
-                gameManager = FindObjectOfType<NetworkGameManager>();
+                gameManager = FindFirstObjectByType<NetworkGameManager>();
         }
 
         private bool IsNetworkSessionActive()

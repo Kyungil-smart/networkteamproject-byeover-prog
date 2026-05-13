@@ -61,7 +61,7 @@ namespace DeadZone.Actors
         [SerializeField] private MMF_Player onAreaUnlockedFeedback;
 
         [FoldoutGroup("구역 잠금")]
-        [ListDrawerSettings(Expanded = true, DraggableItems = true, ShowIndexLabels = true)]
+        [ListDrawerSettings(ShowFoldout = true, DraggableItems = true, ShowIndexLabels = true)]
         [SerializeField] private List<MapAreaLock> areaLocks = new();
 
         [TitleGroup("디버그")]

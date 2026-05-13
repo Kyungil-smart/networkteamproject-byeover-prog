@@ -664,7 +664,9 @@ namespace DeadZone.Actors
         private HUDManager[] FindHudManagers()
         {
             HUDManager[] hudManagers = GetComponentsInParent<HUDManager>(true);
-            return hudManagers.Length > 0 ? hudManagers : FindObjectsOfType<HUDManager>(true);
+            return hudManagers.Length > 0
+                ? hudManagers
+                : FindObjectsByType<HUDManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         }
 
         // 에디터 전용 테스트 버튼

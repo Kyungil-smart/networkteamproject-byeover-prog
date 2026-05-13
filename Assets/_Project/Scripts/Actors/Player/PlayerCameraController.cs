@@ -146,9 +146,10 @@ namespace DeadZone.Actors
             ApplyCameraTransform();
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             SetCameraActive(false, "OnDestroy");
+            base.OnDestroy();
         }
 
         /// <summary>

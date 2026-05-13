@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -21,7 +21,6 @@ namespace DeadZone.Actors
         public NetworkVariable<float> Progress = new(0f);
         public NetworkVariable<ulong> CurrentTargetClientId = new(ulong.MaxValue);
 
-        private bool ownerHolding;
         private NetworkObject serverTargetObj;
 
         public bool IsReviving => CurrentTargetClientId.Value != ulong.MaxValue;
@@ -29,14 +28,12 @@ namespace DeadZone.Actors
         public void StartHold()
         {
             if (!IsOwner) return;
-            ownerHolding = true;
             BeginReviveServerRpc();
         }
 
         public void StopHold()
         {
             if (!IsOwner) return;
-            ownerHolding = false;
             CancelReviveServerRpc();
         }
 

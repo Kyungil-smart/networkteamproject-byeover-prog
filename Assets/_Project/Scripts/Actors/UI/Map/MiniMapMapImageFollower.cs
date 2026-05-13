@@ -27,7 +27,7 @@ namespace DeadZone.Actors
         [SerializeField] private MapBoundsProvider boundsProvider;
 
         [BoxGroup("스테이지 설정")]
-        [ListDrawerSettings(Expanded = true, DraggableItems = true, ShowIndexLabels = true)]
+        [ListDrawerSettings(ShowFoldout = true, DraggableItems = true, ShowIndexLabels = true)]
         [SerializeField] private MinimapStageConfig[] stageConfigs;
 
         [BoxGroup("이미지")]
@@ -621,7 +621,7 @@ namespace DeadZone.Actors
             boundsProvider = GetComponentInParent<MapBoundsProvider>();
 
             if (boundsProvider == null)
-                boundsProvider = FindObjectOfType<MapBoundsProvider>();
+                boundsProvider = FindFirstObjectByType<MapBoundsProvider>();
         }
 
         private void EnsureBoundsProviderOnMapSystemRoot()

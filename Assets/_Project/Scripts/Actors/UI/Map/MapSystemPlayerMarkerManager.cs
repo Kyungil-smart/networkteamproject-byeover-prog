@@ -358,7 +358,7 @@ namespace DeadZone.Actors
             boundsProvider = GetComponentInParent<MapBoundsProvider>();
 
             if (boundsProvider == null)
-                boundsProvider = FindObjectOfType<MapBoundsProvider>();
+                boundsProvider = FindFirstObjectByType<MapBoundsProvider>();
         }
 
         private void GetActiveBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax)

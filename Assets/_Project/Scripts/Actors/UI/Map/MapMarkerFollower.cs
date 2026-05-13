@@ -188,7 +188,7 @@ namespace DeadZone.Actors
             boundsProvider = GetComponentInParent<MapBoundsProvider>();
 
             if (boundsProvider == null)
-                boundsProvider = FindObjectOfType<MapBoundsProvider>();
+                boundsProvider = FindFirstObjectByType<MapBoundsProvider>();
         }
 
         private Vector2 CorrectNormalized(Vector2 rawNormalized)
