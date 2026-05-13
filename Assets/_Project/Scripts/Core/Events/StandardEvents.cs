@@ -1,6 +1,7 @@
 ﻿using Unity.Collections;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Systems;
 
 namespace DeadZone.Core
@@ -157,6 +158,56 @@ namespace DeadZone.Core
     {
         public Vector3 position;
         public bool isOpen;
+    }
+
+    // CameraCutoutTarget이 활성화되어 카메라 컷아웃 관리 대상에 등록될 때 발행된다.
+    // 씬 초기화 시 Start에서 한 번 발행되고, 이후 비활성화된 오브젝트가 다시 활성화될 때 OnEnable에서 발행된다.
+    public struct CameraCutoutTargetRegisteredEvent : IGameEvent
+    {
+        public CameraCutoutTarget target;
+    }
+
+    // CameraCutoutTarget이 비활성화되어 카메라 컷아웃 관리 대상에서 해제될 때 발행된다.
+    // 등록된 대상이 OnDisable을 호출할 때 발행된다.
+    public struct CameraCutoutTargetUnregisteredEvent : IGameEvent
+    {
+        public CameraCutoutTarget target;
+    }
+
+    // 플레이어 NetworkObject가 스폰되어 공유 시야 시스템에 플레이어 루트 Transform을 제공할 때 발행된다.
+    public struct PlayerRootRegisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 플레이어 NetworkObject가 디스폰되어 공유 시야 시스템이 플레이어 루트 Transform 참조를 해제해야 할 때 발행된다.
+    public struct PlayerRootUnregisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 로컬 Owner 플레이어가 스폰되어 로컬 카메라/컷아웃 시스템에 플레이어 루트 Transform을 제공할 때 발행된다.
+    public struct OwnerPlayerRootRegisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 로컬 Owner 플레이어가 디스폰되어 로컬 카메라/컷아웃 시스템이 플레이어 루트 Transform 참조를 해제해야 할 때 발행된다.
+    public struct OwnerPlayerRootUnregisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 로컬 Owner 플레이어 카메라가 활성화되어 로컬 카메라/컷아웃 시스템에 Camera 참조를 제공할 때 발행된다.
+    public struct OwnerPlayerCameraRegisteredEvent : IGameEvent
+    {
+        public Camera playerCamera;
+    }
+
+    // 로컬 Owner 플레이어 카메라가 비활성화되거나 디스폰되어 로컬 카메라/컷아웃 시스템이 Camera 참조를 해제해야 할 때 발행된다.
+    public struct OwnerPlayerCameraUnregisteredEvent : IGameEvent
+    {
+        public Camera playerCamera;
     }
 
     public struct ZoneEnteredEvent : IGameEvent

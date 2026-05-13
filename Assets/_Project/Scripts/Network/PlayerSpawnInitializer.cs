@@ -2,6 +2,8 @@ using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
 
+using DeadZone.Core;
+
 namespace DeadZone.Network
 {
     /// <summary>
@@ -27,6 +29,50 @@ namespace DeadZone.Network
         {
             if (networkTransform == null)
                 networkTransform = GetComponent<NetworkTransform>();
+        }
+
+        /// <summary>
+        /// 플레이어가 스폰되면 공유 시야 시스템이 사용할 전체 플레이어 루트를 먼저 알린다.
+        /// 이후 로컬 Owner인 경우에만 컷아웃, 카메라 등 로컬 연출 시스템이 사용할 Owner 루트도 별도로 알린다.
+        /// </summary>
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            EventBus.Publish(new PlayerRootRegisteredEvent
+            {
+                playerRoot = transform
+            });
+
+            if (!IsOwner)
+                return;
+
+            EventBus.Publish(new OwnerPlayerRootRegisteredEvent
+            {
+                playerRoot = transform
+            });
+        }
+
+        /// <summary>
+        /// 플레이어가 디스폰되면 공유 시야 시스템이 전체 플레이어 루트 참조를 정리할 수 있도록 알린다.
+        /// 로컬 Owner인 경우에는 로컬 연출 시스템의 Owner 루트 참조도 함께 정리한다.
+        /// </summary>
+        public override void OnNetworkDespawn()
+        {
+            if (IsOwner)
+            {
+                EventBus.Publish(new OwnerPlayerRootUnregisteredEvent
+                {
+                    playerRoot = transform
+                });
+            }
+
+            EventBus.Publish(new PlayerRootUnregisteredEvent
+            {
+                playerRoot = transform
+            });
+
+            base.OnNetworkDespawn();
         }
 
         /// <summary>
