@@ -15,26 +15,6 @@ namespace DeadZone.Systems.Audio
     [DisallowMultipleComponent]
     public sealed class AudioManager : MonoBehaviour
     {
-        [Serializable]
-        private sealed class SceneBgmMapping
-        {
-            [Tooltip("BGM을 자동 재생할 씬 이름")]
-            public string sceneName;
-
-            [Tooltip("해당 씬에서 재생할 BGM ID")]
-            public AudioCueId bgmCueId;
-        }
-
-        [Serializable]
-        private sealed class CueVolumeOverride
-        {
-            [Tooltip("개별 볼륨을 덮어쓸 사운드 ID")]
-            public AudioCueId cueId;
-
-            [Tooltip("이 사운드에만 적용할 개별 볼륨")]
-            [Range(0f, 1f)] public float volume = 1f;
-        }
-
         public static AudioManager Instance { get; private set; }
 
         [Header("====사운드 라이브러리====")]
@@ -54,22 +34,21 @@ namespace DeadZone.Systems.Audio
         [Tooltip("UI 효과음 그룹에 적용되는 볼륨")]
         [SerializeField, Range(0f, 1f)] private float uiVolume = 1f;
 
-        [Header("====개별 볼륨====")]
-        [Tooltip("특정 사운드만 따로 조절할 때 사용, 비어 있으면 AudioLibrarySO의 개별 볼륨을 사용")]
-        [SerializeField] private List<CueVolumeOverride> cueVolumeOverrides = new();
-
         [Header("====BGM 자동 재생====")]
         [Tooltip("씬이 로드될 때 씬 이름에 맞는 BGM을 자동으로 재생")]
         [SerializeField] private bool playBgmByScene = true;
 
-        [Tooltip("씬 이름과 BGM ID 매핑")]
-        [SerializeField] private List<SceneBgmMapping> sceneBgmMappings = new()
-        {
-            new SceneBgmMapping { sceneName = "Title", bgmCueId = AudioCueId.TitleBGM },
-            new SceneBgmMapping { sceneName = "Game_Stage_1", bgmCueId = AudioCueId.Stage1BGM },
-            new SceneBgmMapping { sceneName = "Game_Stage_2", bgmCueId = AudioCueId.Stage2BGM },
-            new SceneBgmMapping { sceneName = "Ending", bgmCueId = AudioCueId.EndingBGM },
-        };
+        [Tooltip("Title BGM을 자동 재생할 씬 이름")]
+        [SerializeField] private string titleSceneName = "Title";
+
+        [Tooltip("Stage1 BGM을 자동 재생할 씬 이름")]
+        [SerializeField] private string stage1SceneName = "Game_Stage_1";
+
+        [Tooltip("Stage2 BGM을 자동 재생할 씬 이름")]
+        [SerializeField] private string stage2SceneName = "Game_Stage_2";
+
+        [Tooltip("Ending BGM을 자동 재생할 씬 이름")]
+        [SerializeField] private string endingSceneName = "Ending";
 
         [Header("====자동 연결====")]
         [Tooltip("ItemLootedEvent를 받아 파밍 사운드1/2 중 하나를 재생")]
@@ -93,6 +72,7 @@ namespace DeadZone.Systems.Audio
         [SerializeField] private bool logMissingCue;
 
         private readonly List<AudioSource> pooledSources = new();
+        private readonly Dictionary<AudioCueId, float> runtimeCueVolumeOverrides = new();
         private AudioSource bgmSource;
         private AudioSource sfx2DSource;
         private Coroutine bgmFadeRoutine;
@@ -270,14 +250,7 @@ namespace DeadZone.Systems.Audio
             if (cueId == AudioCueId.None)
                 return;
 
-            CueVolumeOverride existing = cueVolumeOverrides.Find(x => x != null && x.cueId == cueId);
-            if (existing == null)
-            {
-                existing = new CueVolumeOverride { cueId = cueId };
-                cueVolumeOverrides.Add(existing);
-            }
-
-            existing.volume = Mathf.Clamp01(value);
+            runtimeCueVolumeOverrides[cueId] = Mathf.Clamp01(value);
             RefreshBgmVolume();
         }
 
@@ -327,21 +300,23 @@ namespace DeadZone.Systems.Audio
 
         private void TryPlayBgmForScene(string sceneName)
         {
-            if (string.IsNullOrWhiteSpace(sceneName) || sceneBgmMappings == null)
+            if (string.IsNullOrWhiteSpace(sceneName))
                 return;
 
-            for (int i = 0; i < sceneBgmMappings.Count; i++)
-            {
-                SceneBgmMapping mapping = sceneBgmMappings[i];
-                if (mapping == null || string.IsNullOrWhiteSpace(mapping.sceneName))
-                    continue;
+            if (IsSceneName(sceneName, titleSceneName))
+                PlayBgm(AudioCueId.TitleBGM, useFade: true);
+            else if (IsSceneName(sceneName, stage1SceneName))
+                PlayBgm(AudioCueId.Stage1BGM, useFade: true);
+            else if (IsSceneName(sceneName, stage2SceneName))
+                PlayBgm(AudioCueId.Stage2BGM, useFade: true);
+            else if (IsSceneName(sceneName, endingSceneName))
+                PlayBgm(AudioCueId.EndingBGM, useFade: true);
+        }
 
-                if (!string.Equals(mapping.sceneName, sceneName, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                PlayBgm(mapping.bgmCueId, useFade: true);
-                return;
-            }
+        private static bool IsSceneName(string loadedSceneName, string targetSceneName)
+        {
+            return !string.IsNullOrWhiteSpace(targetSceneName)
+                   && string.Equals(loadedSceneName, targetSceneName, StringComparison.OrdinalIgnoreCase);
         }
 
         private void CreateAudioSources()
@@ -429,8 +404,7 @@ namespace DeadZone.Systems.Audio
 
         private float GetCueVolume(AudioCueData cue)
         {
-            CueVolumeOverride volumeOverride = cueVolumeOverrides.Find(x => x != null && x.cueId == cue.cueId);
-            return volumeOverride != null ? volumeOverride.volume : cue.individualVolume;
+            return runtimeCueVolumeOverrides.TryGetValue(cue.CueId, out float volume) ? volume : cue.individualVolume;
         }
 
         private IEnumerator FadeToBgm(AudioCueData cue, AudioClip clip)

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01b77707c4714ad3a0c1a6d9b078db43, type: 3}
   m_Name: AudioLibrary
   m_EditorClassIdentifier: 
-  cues:
-  - cueId: 10
+  arFire:
+    cueId: 10
     displayName: "AR \uC18C\uCD1D \uBC1C\uC0AC"
     group: 0
     clips: []
@@ -26,7 +26,8 @@ MonoBehaviour:
     minDistance: 2
     maxDistance: 45
     fadeSeconds: 0
-  - cueId: 11
+  arReload:
+    cueId: 11
     displayName: "AR \uC18C\uCD1D \uC7A5\uC804"
     group: 0
     clips: []
@@ -39,7 +40,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 22
     fadeSeconds: 0
-  - cueId: 20
+  hgFire:
+    cueId: 20
     displayName: "HG \uBC1C\uC0AC"
     group: 0
     clips: []
@@ -52,7 +54,8 @@ MonoBehaviour:
     minDistance: 2
     maxDistance: 35
     fadeSeconds: 0
-  - cueId: 21
+  hgReload:
+    cueId: 21
     displayName: "HG \uC7A5\uC804"
     group: 0
     clips: []
@@ -65,7 +68,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 18
     fadeSeconds: 0
-  - cueId: 30
+  srDragFire:
+    cueId: 30
     displayName: "SR \uB4DC\uB77C\uADF8\uC18C\uCD1D \uBC1C\uC0AC"
     group: 0
     clips: []
@@ -78,7 +82,8 @@ MonoBehaviour:
     minDistance: 3
     maxDistance: 60
     fadeSeconds: 0
-  - cueId: 31
+  srDragReload:
+    cueId: 31
     displayName: "SR \uB4DC\uB77C\uADF8\uC18C\uCD1D \uC7A5\uC804"
     group: 0
     clips: []
@@ -91,7 +96,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 25
     fadeSeconds: 0
-  - cueId: 40
+  smgFire:
+    cueId: 40
     displayName: "SMG \uBC1C\uC0AC"
     group: 0
     clips: []
@@ -104,7 +110,8 @@ MonoBehaviour:
     minDistance: 2
     maxDistance: 38
     fadeSeconds: 0
-  - cueId: 41
+  smgReload:
+    cueId: 41
     displayName: "SMG \uC7A5\uC804"
     group: 0
     clips: []
@@ -117,7 +124,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0
-  - cueId: 100
+  playerFootstep:
+    cueId: 100
     displayName: "\uD50C\uB808\uC774\uC5B4 \uBC1C\uAC78\uC74C"
     group: 0
     clips: []
@@ -130,7 +138,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 16
     fadeSeconds: 0
-  - cueId: 101
+  enemyFootstep:
+    cueId: 101
     displayName: "\uC801 \uBC1C\uAC78\uC74C"
     group: 0
     clips: []
@@ -143,7 +152,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 16
     fadeSeconds: 0
-  - cueId: 102
+  enemyAlert:
+    cueId: 102
     displayName: "\uC801 \uBC1C\uAC01\uC74C"
     group: 0
     clips: []
@@ -156,33 +166,8 @@ MonoBehaviour:
     minDistance: 2
     maxDistance: 35
     fadeSeconds: 0
-  - cueId: 200
-    displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC1"
-    group: 0
-    clips: []
-    baseVolume: 0.9
-    individualVolume: 1
-    use3D: 0
-    loop: 0
-    minPitch: 0.96
-    maxPitch: 1.04
-    minDistance: 1
-    maxDistance: 20
-    fadeSeconds: 0
-  - cueId: 201
-    displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC2"
-    group: 0
-    clips: []
-    baseVolume: 0.9
-    individualVolume: 1
-    use3D: 0
-    loop: 0
-    minPitch: 0.96
-    maxPitch: 1.04
-    minDistance: 1
-    maxDistance: 20
-    fadeSeconds: 0
-  - cueId: 202
+  playerInjured:
+    cueId: 202
     displayName: "\uD50C\uB808\uC774\uC5B4 \uBD80\uC0C1"
     group: 0
     clips: []
@@ -195,7 +180,36 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0
-  - cueId: 300
+  loot1:
+    cueId: 200
+    displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC1"
+    group: 0
+    clips: []
+    baseVolume: 0.9
+    individualVolume: 1
+    use3D: 0
+    loop: 0
+    minPitch: 0.96
+    maxPitch: 1.04
+    minDistance: 1
+    maxDistance: 20
+    fadeSeconds: 0
+  loot2:
+    cueId: 201
+    displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC2"
+    group: 0
+    clips: []
+    baseVolume: 0.9
+    individualVolume: 1
+    use3D: 0
+    loop: 0
+    minPitch: 0.96
+    maxPitch: 1.04
+    minDistance: 1
+    maxDistance: 20
+    fadeSeconds: 0
+  uiButtonClick:
+    cueId: 300
     displayName: "UI \uBC84\uD2BC \uD074\uB9AD"
     group: 2
     clips:
@@ -209,7 +223,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0
-  - cueId: 400
+  titleBgm:
+    cueId: 400
     displayName: Title BGM
     group: 1
     clips:
@@ -223,7 +238,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0.75
-  - cueId: 401
+  stage1Bgm:
+    cueId: 401
     displayName: Stage1 BGM
     group: 1
     clips:
@@ -237,7 +253,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0.75
-  - cueId: 402
+  stage2Bgm:
+    cueId: 402
     displayName: Stage2 BGM
     group: 1
     clips:
@@ -251,7 +268,8 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0.75
-  - cueId: 403
+  endingBgm:
+    cueId: 403
     displayName: Ending BGM
     group: 1
     clips:
