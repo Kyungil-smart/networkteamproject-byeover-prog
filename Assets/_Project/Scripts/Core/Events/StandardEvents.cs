@@ -42,6 +42,13 @@ namespace DeadZone.Core
         public FixedString64Bytes enemyId;
     }
 
+    public struct EnemyAlertedEvent : IGameEvent
+    {
+        public ulong enemyNetworkObjectId;
+        public ulong targetNetworkObjectId;
+        public Vector3 position;
+    }
+
     public struct CriticalHitEvent : IGameEvent
     {
         public ulong attackerClientId;
