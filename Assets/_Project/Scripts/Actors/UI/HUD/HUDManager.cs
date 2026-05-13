@@ -175,7 +175,7 @@ namespace DeadZone.Actors
             if (isKnockedHpMode) return;
 
             float prev = currentHp01;
-            RefreshHpUI(e.newValue);
+            RefreshHpUI(e.newValue, ResolveLocalMaxHp(e.newValue));
 
             // 이전값과 비교해서 데미지인지 회복인지 자동 분기
             if (currentHp01 < prev)
@@ -194,15 +194,20 @@ namespace DeadZone.Actors
         private void OnStaminaChanged(PlayerStaminaChangedEvent e)
         {
             if (!IsLocalClient(e.clientId)) return;
-            Debug.Log($"[HUDManager] PlayerStaminaChanged old={e.oldValue:F1}, new={e.newValue:F1}", this);
             RefreshStaminaUI(e.newValue);
         }
 
         private void RefreshHpUI(float value)
         {
-            float clamped = Mathf.Clamp(value, 0f, maxHP);
+            RefreshHpUI(value, maxHP);
+        }
+
+        private void RefreshHpUI(float value, float maxValue)
+        {
+            float resolvedMax = Mathf.Max(1f, maxValue);
+            float clamped = Mathf.Clamp(value, 0f, resolvedMax);
             currentHpValue = clamped;
-            currentHp01 = Mathf.Clamp01(clamped / maxHP);
+            currentHp01 = Mathf.Clamp01(clamped / resolvedMax);
 
             if (hpFill != null)
             {
@@ -211,6 +216,36 @@ namespace DeadZone.Actors
             }
 
             if (hpValueText != null) hpValueText.text = Mathf.CeilToInt(clamped).ToString();
+        }
+
+        private float ResolveLocalMaxHp(float currentHp)
+        {
+            float resolvedMax = Mathf.Max(1f, maxHP, currentHp);
+
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || nm.SpawnManager == null || nm.SpawnManager.SpawnedObjectsList == null)
+                return resolvedMax;
+
+            ulong localId = nm.LocalClientId;
+            foreach (NetworkObject netObj in nm.SpawnManager.SpawnedObjectsList)
+            {
+                if (netObj == null || netObj.OwnerClientId != localId)
+                    continue;
+
+                PlayerHealthSystem health = netObj.GetComponent<PlayerHealthSystem>();
+                if (health == null)
+                    health = netObj.GetComponentInChildren<PlayerHealthSystem>(true);
+
+                if (health == null)
+                    continue;
+
+                if (health.IsSpawned)
+                    return Mathf.Max(resolvedMax, health.ReplicatedMaxHp.Value);
+
+                return Mathf.Max(resolvedMax, health.MaxHP);
+            }
+
+            return resolvedMax;
         }
 
         private void RefreshKnockedHpUI()
