@@ -183,7 +183,7 @@ namespace DeadZone.Systems.Housing
                 ApplyToSceneFacilities(dto);
                 RefreshOpenHideoutWindows();
 
-                bool success = await cloudSaveSystem.SaveHousingProgressAsync(dto);
+                bool success = await cloudSaveSystem.SaveHousingProgressAsync(dto, allowDefaultOverwrite: resetToLevelOne);
 
                 Debug.Log(success
                     ? $"[HousingEndKeyUpgradeTester] Cloud-only housing test saved. Workbench Lv.{dto.workbenchLevel}, Medical Lv.{dto.medicalLevel}, Gym Lv.{dto.gymLevel}, Stash Lv.{dto.stashLevel}, Kitchen Lv.{dto.kitchenLevel}, Bed Lv.{dto.bedLevel}, CommStation Lv.{dto.commStationLevel}"
@@ -267,11 +267,8 @@ namespace DeadZone.Systems.Housing
             if (facility == null)
                 return false;
 
-            if (!facility.IsSpawned)
-                return true;
-
             NetworkManager networkManager = NetworkManager.Singleton;
-            return networkManager != null && networkManager.IsServer;
+            return facility.IsSpawned && networkManager != null && networkManager.IsServer;
         }
 
         private static void RefreshOpenHideoutWindows()

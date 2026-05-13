@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 
 using TMPro;
 using UnityEngine;
@@ -21,6 +21,10 @@ namespace DeadZone.Systems
             value: 50000,
             readPerm: NetworkVariableReadPermission.Owner,
             writePerm: NetworkVariableWritePermission.Server);
+
+        private int localCredits = 50000;
+
+        public int CurrentCredits => IsSpawned ? Credits.Value : localCredits;
 
         private void Reset()
         {
@@ -70,8 +74,13 @@ namespace DeadZone.Systems
         public bool TryPayLocalTest(int amount)
         {
             if (amount < 0) return false;
-            if (Credits.Value < amount) return false;
-            Credits.Value -= amount;
+            if (CurrentCredits < amount) return false;
+
+            if (IsSpawned)
+                Credits.Value -= amount;
+            else
+                localCredits -= amount;
+
             RefreshGoodsText();
             return true;
         }
@@ -79,13 +88,24 @@ namespace DeadZone.Systems
         public void EarnLocalTest(int amount)
         {
             if (amount <= 0) return;
-            Credits.Value += amount;
+
+            if (IsSpawned)
+                Credits.Value += amount;
+            else
+                localCredits += amount;
+
             RefreshGoodsText();
         }
 
         public void SetCreditsLocalTest(int credits)
         {
-            Credits.Value = Mathf.Max(0, credits);
+            int safeCredits = Mathf.Max(0, credits);
+
+            if (IsSpawned)
+                Credits.Value = safeCredits;
+            else
+                localCredits = safeCredits;
+
             RefreshGoodsText();
         }
 
@@ -114,8 +134,8 @@ namespace DeadZone.Systems
                 return;
 
             goodsText.text = string.IsNullOrEmpty(goodsTextFormat)
-                ? Credits.Value.ToString()
-                : string.Format(goodsTextFormat, Credits.Value);
+                ? CurrentCredits.ToString()
+                : string.Format(goodsTextFormat, CurrentCredits);
         }
 
         private void AutoBindReferences()

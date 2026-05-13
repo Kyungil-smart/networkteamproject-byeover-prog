@@ -81,12 +81,7 @@ namespace DeadZone.Actors.UI
             fixedColumnCount = Mathf.Max(1, fixedColumnCount);
             scrollSensitivity = Mathf.Max(1f, scrollSensitivity);
 
-            if (!Application.isPlaying)
-                return;
-
-            AutoBindReferences();
-            ConfigureScrollAndGrid();
-            RefreshSlots();
+            // OnValidate can run during Unity consistency checks. Avoid mutating UI hierarchy here.
         }
 
         public void SetBagLevel(int level)

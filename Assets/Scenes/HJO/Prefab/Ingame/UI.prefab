@@ -1235,7 +1235,7 @@ MonoBehaviour:
   target: {fileID: 0}
   boundsProvider: {fileID: 3224240857002343532}
   worldMin: {x: -406.74, y: -149.42}
-  worldMax: {x: 6.08078, y: 55.42514}
+  worldMax: {x: 12, y: 55.42514}
   updateEveryFrame: 1
   clampToMap: 1
   invertY: 0
@@ -4339,7 +4339,7 @@ RectTransform:
   m_GameObject: {fileID: 1428532276508598165}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1173632236336880462}
@@ -11605,7 +11605,7 @@ MonoBehaviour:
   target: {fileID: 0}
   boundsProvider: {fileID: 3224240857002343532}
   worldMin: {x: -406.74, y: -149.42}
-  worldMax: {x: 6.08078, y: 55.42514}
+  worldMax: {x: 12, y: 55.42514}
   updateEveryFrame: 1
   clampToMap: 1
   invertY: 0
@@ -19441,7 +19441,17 @@ MonoBehaviour:
   mapImageRect: {fileID: 3762022803407840903}
   target: {fileID: 0}
   boundsProvider: {fileID: 3224240857002343532}
-  stageConfigs: []
+  stageConfigs:
+  - sceneName: Game_Stage_1
+    minimapSprite: {fileID: 0}
+    worldMapSprite: {fileID: 0}
+    worldMin: {x: -406.74, y: -149.42}
+    worldMax: {x: 12, y: 55.42514}
+    normalizedAnchor: {x: 0.9433962, y: 0.6756757}
+    normalizedScale: {x: 0.65, y: 0.65}
+    normalizedOffset: {x: 0, y: 0}
+    miniMapSize: {x: 300, y: 300}
+    mapImageSize: {x: 1000, y: 563}
   minimapImage: {fileID: 0}
   worldMapImage: {fileID: 0}
   miniMapMask: {fileID: 0}
@@ -19450,7 +19460,7 @@ MonoBehaviour:
   miniMapFrame: {fileID: 7729903359326910009}
   localPlayerIconSprite: {fileID: 21300000, guid: c34226499b8c84655b12e937f8b8fb24, type: 3}
   worldMin: {x: -406.74, y: -149.42}
-  worldMax: {x: 6.08078, y: 55.42514}
+  worldMax: {x: 12, y: 55.42514}
   miniMapSize: {x: 300, y: 300}
   mapImageSize: {x: 1000, y: 563}
   localMarkerSize: {x: 16, y: 16}
@@ -20611,7 +20621,7 @@ MonoBehaviour:
   target: {fileID: 0}
   boundsProvider: {fileID: 3224240857002343532}
   worldMin: {x: -406.74, y: -149.42}
-  worldMax: {x: 6.08078, y: 55.42514}
+  worldMax: {x: 12, y: 55.42514}
   updateEveryFrame: 1
   clampToMap: 1
   invertY: 0
@@ -21585,7 +21595,7 @@ MonoBehaviour:
   target: {fileID: 0}
   boundsProvider: {fileID: 3224240857002343532}
   worldMin: {x: -406.74, y: -149.42}
-  worldMax: {x: 6.08078, y: 55.42514}
+  worldMax: {x: 12, y: 55.42514}
   updateEveryFrame: 1
   clampToMap: 1
   invertY: 0

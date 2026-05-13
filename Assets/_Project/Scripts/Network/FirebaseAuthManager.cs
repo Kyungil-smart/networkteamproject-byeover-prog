@@ -118,7 +118,7 @@ namespace DeadZone.Network
             }
             catch (Exception e)
             {
-                Debug.LogError($"[FirebaseAuthManager] 로그인 실패: {e.Message}");
+                Debug.LogError($"[FirebaseAuthManager] 로그인 실패: type={e.GetType().Name}, message={e.Message}, inner={e.InnerException?.Message ?? "none"}");
                 return null;
             }
         }

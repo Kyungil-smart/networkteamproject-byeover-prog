@@ -1,7 +1,8 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Systems.Save;
 
 namespace DeadZone.Systems
 {
@@ -74,7 +75,7 @@ namespace DeadZone.Systems
             if (facilityData == null)
                 return null;
 
-            return facilityData.GetLevel(CurrentLevel.Value);
+            return facilityData.GetLevel(GetCurrentLevel());
         }
 
         public FacilityLevel GetNextLevelData()
@@ -82,7 +83,7 @@ namespace DeadZone.Systems
             if (facilityData == null)
                 return null;
 
-            int nextLevel = CurrentLevel.Value + 1;
+            int nextLevel = GetCurrentLevel() + 1;
 
             if (!CanSetLevel(nextLevel))
                 return null;
@@ -97,7 +98,12 @@ namespace DeadZone.Systems
 
         public int GetCurrentLevel()
         {
-            return CurrentLevel.Value;
+            int currentLevel = CurrentLevel.Value;
+
+            if (IsSpawned)
+                return currentLevel;
+
+            return Mathf.Max(currentLevel, GetCachedFacilityLevel());
         }
 
         public int GetMaxLevel()
@@ -127,12 +133,12 @@ namespace DeadZone.Systems
             if (!CanSetLevel(targetLevel))
                 return false;
 
-            return targetLevel == CurrentLevel.Value + 1;
+            return targetLevel == GetCurrentLevel() + 1;
         }
 
         public bool IsLevelAlreadyReached(int targetLevel)
         {
-            return CurrentLevel.Value >= targetLevel;
+            return GetCurrentLevel() >= targetLevel;
         }
 
         public bool CanUpgradeToLevel(int targetLevel, IInventory inventory)
@@ -179,7 +185,37 @@ namespace DeadZone.Systems
             if (facilityData == null || facilityData.levels == null)
                 return true;
 
-            return CurrentLevel.Value >= facilityData.levels.Length;
+            return GetCurrentLevel() >= facilityData.levels.Length;
+        }
+
+        private int GetCachedFacilityLevel()
+        {
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+
+            if (facilityState == null || facilityState.Facilities == null)
+                return CurrentLevel.Value;
+
+            string facilityId = NormalizeFacilityId(Type.ToString());
+
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+            {
+                FacilitySaveDTO savedFacility = facilityState.Facilities[i];
+
+                if (savedFacility == null)
+                    continue;
+
+                if (NormalizeFacilityId(savedFacility.facilityId) == facilityId)
+                    return Mathf.Max(1, savedFacility.level);
+            }
+
+            return CurrentLevel.Value;
+        }
+
+        private static string NormalizeFacilityId(string facilityId)
+        {
+            return string.IsNullOrWhiteSpace(facilityId)
+                ? string.Empty
+                : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
         }
 
         private bool HasUpgradeMaterials(FacilityLevel levelData, IInventory inventory)
