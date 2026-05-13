@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -8,6 +9,7 @@ using DeadZone.Network;
 using Sirenix.OdinInspector;
 
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DeadZone.Systems.Save
 {
@@ -29,6 +31,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private bool saveToCloudOnApplicationPause = true;
         [SerializeField] private bool saveToCloudOnApplicationQuit = true;
         [SerializeField] private bool useLocalJsonFallback = true;
+        [SerializeField] private bool preferLocalJsonInventorySections = true;
         [SerializeField] private bool allowLifecycleAutoSave;
 
         [Header("Debug JSON")]
@@ -91,6 +94,17 @@ namespace DeadZone.Systems.Save
 
             Debug.Log($"[LobbySaveService] Lobby Save JSON\n{json}", this);
             SaveLobbyDataToLocalJson(dto, "Manual JSON save");
+        }
+
+        public void SaveCurrentStateToLocalJson(string reason)
+        {
+            LobbySaveDTO dto = CreateCurrentStateSnapshotDTO();
+            string json = JsonUtility.ToJson(dto, true);
+            lastJson = json;
+
+            SaveLobbyDataToLocalJson(
+                dto,
+                string.IsNullOrWhiteSpace(reason) ? "Local snapshot" : reason);
         }
 
         [Button("Save Lobby To Firebase")]
@@ -195,6 +209,8 @@ namespace DeadZone.Systems.Save
                 return;
             }
 
+            MergeLocalJsonSectionsInto(dto, "Server DTO missing lobby inventory sections");
+
             string json = JsonUtility.ToJson(dto, true);
             lastJson = json;
 
@@ -258,14 +274,126 @@ namespace DeadZone.Systems.Save
             }
 
             if (facilityState != null)
+            {
                 facilityState.SetFacilities(dto.facilities);
+                ApplyFacilityStateToSceneFacilities();
+            }
             else
                 Debug.LogWarning("[LobbySaveService] LobbyFacilityState missing. Facility state not applied.", this);
 
             if (inventoryStateUiBridge != null)
                 inventoryStateUiBridge.ApplyStateToUi();
-            else
+            else if (IsLobbyScene())
                 Debug.LogWarning("[LobbySaveService] LobbyInventoryStateUiBridge missing. UI not refreshed.", this);
+            else
+                Debug.Log("[LobbySaveService] LobbyInventoryStateUiBridge missing in non-lobby scene. UI refresh skipped.", this);
+        }
+
+        private static bool IsLobbyScene()
+        {
+            return SceneManager.GetActiveScene().name == "Lobby";
+        }
+
+        private void ApplyFacilityStateToSceneFacilities()
+        {
+            if (facilityState == null || facilityState.Facilities == null || facilityState.Facilities.Count == 0)
+                return;
+
+            FacilityBase[] facilities = FindObjectsByType<FacilityBase>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < facilities.Length; i++)
+            {
+                FacilityBase facility = facilities[i];
+
+                if (facility == null || !TryGetSavedFacilityLevel(facility, out int savedLevel))
+                    continue;
+
+                if (!facility.CanSetLevel(savedLevel))
+                    continue;
+
+                if (!CanWriteSceneFacilityLevel(facility))
+                    continue;
+
+                int previousLevel = facility.CurrentLevel.Value;
+                facility.CurrentLevel.Value = savedLevel;
+
+                Debug.Log(
+                    $"[Facility] Apply level. type={facility.Type}, loadedLevel={savedLevel}, previousLevel={previousLevel}, finalLevel={facility.CurrentLevel.Value}",
+                    facility);
+            }
+
+            RefreshOpenHideoutWindows();
+        }
+
+        private bool TryGetSavedFacilityLevel(FacilityBase facility, out int level)
+        {
+            level = 1;
+
+            if (facility == null || facilityState?.Facilities == null)
+                return false;
+
+            string facilityId = NormalizeFacilityId(facility.Type.ToString());
+
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+            {
+                FacilitySaveDTO savedFacility = facilityState.Facilities[i];
+
+                if (savedFacility == null)
+                    continue;
+
+                if (NormalizeFacilityId(savedFacility.facilityId) != facilityId)
+                    continue;
+
+                level = Mathf.Max(1, savedFacility.level);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool CanWriteSceneFacilityLevel(FacilityBase facility)
+        {
+            if (facility == null)
+                return false;
+
+            if (!facility.IsSpawned)
+                return false;
+
+            return facility.IsServer;
+        }
+
+        private static void RefreshOpenHideoutWindows()
+        {
+            DeadZone.Actors.UI.Hideout.FacilityUpgradeWindowUI[] upgradeWindows =
+                FindObjectsByType<DeadZone.Actors.UI.Hideout.FacilityUpgradeWindowUI>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+            for (int i = 0; i < upgradeWindows.Length; i++)
+            {
+                if (upgradeWindows[i] != null && upgradeWindows[i].IsOpen)
+                    upgradeWindows[i].Refresh();
+            }
+
+            DeadZone.Actors.UI.Hideout.FacilityCraftWindowUI[] craftWindows =
+                FindObjectsByType<DeadZone.Actors.UI.Hideout.FacilityCraftWindowUI>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+            for (int i = 0; i < craftWindows.Length; i++)
+            {
+                if (craftWindows[i] != null && craftWindows[i].IsOpen)
+                    craftWindows[i].Refresh();
+            }
+        }
+
+        private static string NormalizeFacilityId(string facilityId)
+        {
+            return string.IsNullOrWhiteSpace(facilityId)
+                ? string.Empty
+                : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
         }
 
         private bool ShouldKeepExistingInventoryItems(LobbySaveDTO incomingDto)
@@ -294,6 +422,37 @@ namespace DeadZone.Systems.Save
                 facilitySaveCollector.Collect(dto);
             else
                 Debug.LogWarning("[LobbySaveService] FacilitySaveCollector missing.", this);
+
+            return dto;
+        }
+
+        private LobbySaveDTO CreateCurrentStateSnapshotDTO()
+        {
+            LobbySaveDTO dto = new LobbySaveDTO();
+
+            if (inventoryState != null)
+            {
+                dto.hasCredits = inventoryState.HasCredits;
+                dto.credits = inventoryState.Credits;
+
+                if (inventoryState.InventoryItems != null)
+                    dto.inventoryItems.AddRange(inventoryState.InventoryItems);
+
+                if (inventoryState.StashItems != null)
+                    dto.stashItems.AddRange(inventoryState.StashItems);
+
+                if (inventoryState.EquipmentItems != null)
+                    dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
+            }
+            else
+            {
+                Debug.LogWarning("[LobbySaveService] LobbyInventoryState missing. Local snapshot will not include inventory data.", this);
+            }
+
+            if (facilityState != null && facilityState.Facilities != null)
+                dto.facilities.AddRange(facilityState.Facilities);
+            else if (facilitySaveCollector != null)
+                facilitySaveCollector.Collect(dto);
 
             return dto;
         }
@@ -328,43 +487,79 @@ namespace DeadZone.Systems.Save
             if (!useLocalJsonFallback)
                 return false;
 
-            string path = GetLocalJsonPath();
-
-            if (!File.Exists(path))
+            if (!TryReadFirstLocalJsonDTO(out LobbySaveDTO dto, out string path, out string json))
             {
-                Debug.LogWarning($"[LobbySaveService] Local JSON fallback not found. Reason={reason}, Path={path}", this);
+                Debug.LogWarning($"[LobbySaveService] Local JSON fallback not found. Reason={reason}, Paths={string.Join(", ", GetLocalJsonCandidatePaths())}", this);
                 isInitialLoadCompleted = true;
-                return false;
-            }
-
-            string json;
-            try
-            {
-                json = File.ReadAllText(path);
-            }
-            catch (System.Exception exception)
-            {
-                Debug.LogError($"[LobbySaveService] Local JSON read failed. Reason={reason}, Error={exception.Message}, Path={path}", this);
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                Debug.LogWarning($"[LobbySaveService] Local JSON is empty. Reason={reason}, Path={path}", this);
                 return false;
             }
 
             Debug.Log($"[LobbySaveService] Applying local JSON fallback. Reason={reason}, Path={path}", this);
             Debug.LogWarning("[HideoutLoad] Applying facility levels from=LocalJson", this);
             lastJson = json;
-            LoadLobbyDataFromJson(json);
+            ApplyLobbySaveDTO(dto);
+            Debug.Log("[LobbySaveService] Lobby save JSON loaded.", this);
             isInitialLoadCompleted = true;
             return true;
         }
 
+        private void MergeLocalJsonSectionsInto(LobbySaveDTO dto, string reason)
+        {
+            if (dto == null || !useLocalJsonFallback)
+                return;
+
+            if (!TryReadFirstLocalJsonDTO(out LobbySaveDTO localDto, out string path, out _))
+                return;
+
+            bool changed = false;
+
+            if (!dto.hasCredits && localDto.hasCredits)
+            {
+                dto.hasCredits = true;
+                dto.credits = localDto.credits;
+                changed = true;
+            }
+
+            if ((preferLocalJsonInventorySections || !HasAny(dto.inventoryItems)) && HasAny(localDto.inventoryItems))
+            {
+                dto.inventoryItems = new List<ItemSaveDTO>(localDto.inventoryItems);
+                changed = true;
+            }
+
+            if ((preferLocalJsonInventorySections || !HasAny(dto.stashItems)) && HasAny(localDto.stashItems))
+            {
+                dto.stashItems = new List<ItemSaveDTO>(localDto.stashItems);
+                changed = true;
+            }
+
+            if ((preferLocalJsonInventorySections || !HasAny(dto.equipmentItems)) && HasAny(localDto.equipmentItems))
+            {
+                dto.equipmentItems = new List<EquipmentSaveDTO>(localDto.equipmentItems);
+                changed = true;
+            }
+
+            if (!changed)
+                return;
+
+            Debug.Log(
+                $"[LobbySaveService] Merged local JSON lobby sections into loaded server save. Reason={reason}, Path={path}, " +
+                $"preferLocal={preferLocalJsonInventorySections}, inventory={dto.inventoryItems.Count}, stash={dto.stashItems.Count}, equipment={dto.equipmentItems.Count}",
+                this);
+        }
+
         public bool LocalJsonExists()
         {
-            return useLocalJsonFallback && File.Exists(GetLocalJsonPath());
+            if (!useLocalJsonFallback)
+                return false;
+
+            string[] candidatePaths = GetLocalJsonCandidatePaths();
+            for (int i = 0; i < candidatePaths.Length; i++)
+            {
+                if (File.Exists(candidatePaths[i]))
+                    return true;
+            }
+
+            return false;
         }
 
         private void SaveLobbyDataToLocalJson(LobbySaveDTO dto, string reason)
@@ -400,16 +595,84 @@ namespace DeadZone.Systems.Save
 
         private string GetLocalJsonPath()
         {
-            string userKey = "local";
+            return GetLocalJsonPathForUserKey(GetLocalJsonUserKey());
+        }
+
+        private string[] GetLocalJsonCandidatePaths()
+        {
+            List<string> paths = new();
+            string primaryPath = GetLocalJsonPath();
+            string localPath = GetLocalJsonPathForUserKey("local");
+
+            paths.Add(primaryPath);
+
+            if (!string.Equals(primaryPath, localPath, System.StringComparison.OrdinalIgnoreCase))
+                paths.Add(localPath);
+
+            return paths.ToArray();
+        }
+
+        private bool TryReadFirstLocalJsonDTO(out LobbySaveDTO dto, out string path, out string json)
+        {
+            dto = null;
+            path = null;
+            json = null;
+
+            string[] candidatePaths = GetLocalJsonCandidatePaths();
+            for (int i = 0; i < candidatePaths.Length; i++)
+            {
+                string candidatePath = candidatePaths[i];
+                if (string.IsNullOrWhiteSpace(candidatePath) || !File.Exists(candidatePath))
+                    continue;
+
+                try
+                {
+                    string candidateJson = File.ReadAllText(candidatePath);
+                    if (string.IsNullOrWhiteSpace(candidateJson))
+                        continue;
+
+                    LobbySaveDTO candidateDto = JsonUtility.FromJson<LobbySaveDTO>(candidateJson);
+                    if (candidateDto == null)
+                        continue;
+
+                    dto = candidateDto;
+                    path = candidatePath;
+                    json = candidateJson;
+                    return true;
+                }
+                catch (System.Exception exception)
+                {
+                    Debug.LogError($"[LobbySaveService] Local JSON read failed. Error={exception.Message}, Path={candidatePath}", this);
+                }
+            }
+
+            return false;
+        }
+
+        private string GetLocalJsonUserKey()
+        {
             CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
 
             if (saveSystem != null && !string.IsNullOrWhiteSpace(saveSystem.LoadedFirebaseUid))
-                userKey = saveSystem.LoadedFirebaseUid;
+                return SanitizeLocalJsonUserKey(saveSystem.LoadedFirebaseUid);
+
+            return "local";
+        }
+
+        private static string GetLocalJsonPathForUserKey(string userKey)
+        {
+            return Path.Combine(Application.persistentDataPath, "LobbySave", $"lobby_{SanitizeLocalJsonUserKey(userKey)}.json");
+        }
+
+        private static string SanitizeLocalJsonUserKey(string userKey)
+        {
+            if (string.IsNullOrWhiteSpace(userKey))
+                userKey = "local";
 
             foreach (char invalidChar in Path.GetInvalidFileNameChars())
                 userKey = userKey.Replace(invalidChar, '_');
 
-            return Path.Combine(Application.persistentDataPath, "LobbySave", $"lobby_{userKey}.json");
+            return userKey;
         }
 
         private bool WouldOverwriteExistingSaveWithEmptyState(LobbySaveDTO dto, CloudSaveSystem saveSystem)
@@ -438,7 +701,15 @@ namespace DeadZone.Systems.Save
 
         private bool HasMeaningfulLocalJsonSave()
         {
-            return HasMeaningfulSaveData(TryReadLocalJsonDTO(GetLocalJsonPath()));
+            string[] candidatePaths = GetLocalJsonCandidatePaths();
+
+            for (int i = 0; i < candidatePaths.Length; i++)
+            {
+                if (HasMeaningfulSaveData(TryReadLocalJsonDTO(candidatePaths[i])))
+                    return true;
+            }
+
+            return false;
         }
 
         private static LobbySaveDTO TryReadLocalJsonDTO(string path)

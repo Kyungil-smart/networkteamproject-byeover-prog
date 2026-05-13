@@ -200,7 +200,7 @@ namespace DeadZone.Actors
         {
             if (toggleMapAction == null)
             {
-                Debug.LogWarning("[WorldMapController] toggleMapAction is not assigned. Falling back to DeadZoneInputActions Player/Map.", this);
+                Debug.Log("[WorldMapController] toggleMapAction is not assigned. Falling back to DeadZoneInputActions Player/Map.", this);
                 return ResolveFallbackMapAction();
             }
 
@@ -217,7 +217,7 @@ namespace DeadZone.Actors
         {
             if (closeMapAction == null)
             {
-                Debug.LogWarning("[WorldMapController] closeMapAction is not assigned. The map can still be closed by pressing the toggle map input again.", this);
+                Debug.Log("[WorldMapController] closeMapAction is not assigned. The map can still be closed by pressing the toggle map input again.", this);
                 return null;
             }
 

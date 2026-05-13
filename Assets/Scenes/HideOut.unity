@@ -3605,7 +3605,6 @@ GameObject:
   - component: {fileID: 1746838716}
   - component: {fileID: 1746838715}
   - component: {fileID: 1746838714}
-  - component: {fileID: 1746838713}
   - component: {fileID: 1746838719}
   m_Layer: 0
   m_Name: PersistentSystems
@@ -3629,20 +3628,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1746838713
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1746838711}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6690597713ab0e844abccd7a02853c7f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Network.CloudSaveSystem
-  bankruptcyStarterPack: {fileID: 11400000, guid: 2dc562d0d6426b346805646b94200313, type: 2}
-  logSaveAudit: 1
 --- !u!114 &1746838714
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3660,12 +3645,13 @@ MonoBehaviour:
   inventoryState: {fileID: 1746838717}
   facilityState: {fileID: 1746838718}
   inventoryStateUiBridge: {fileID: 0}
-  cloudSaveSystem: {fileID: 1746838713}
+  cloudSaveSystem: {fileID: 0}
   loadFromCloudOnStart: 1
   loadFromCloudOnCloudSaveLoaded: 1
   saveToCloudOnApplicationPause: 1
   saveToCloudOnApplicationQuit: 1
   useLocalJsonFallback: 1
+  preferLocalJsonInventorySections: 1
   allowLifecycleAutoSave: 0
   lastJson: 
 --- !u!114 &1746838715

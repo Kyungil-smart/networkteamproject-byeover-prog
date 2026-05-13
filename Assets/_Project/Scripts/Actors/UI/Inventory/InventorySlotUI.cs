@@ -1,5 +1,6 @@
-﻿using DeadZone.Core;
+using DeadZone.Core;
 using DeadZone.Actors;
+using DeadZone.Systems.Save;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Collections;
@@ -113,6 +114,28 @@ namespace DeadZone.Actors.UI
         public ItemDataSO CurrentItemData => currentItemData as ItemDataSO;
         public int CurrentStackCount => currentStackCount;
         public bool HasItem => CurrentItemData != null && currentStackCount > 0;
+
+        public void PrepareForSaveSnapshot()
+        {
+            AutoBindReferences();
+            ConfigureSlotKind();
+        }
+
+        public string GetEquipmentSaveSlotId()
+        {
+            ConfigureSlotKind();
+
+            return slotKind switch
+            {
+                InventorySlotKind.EquipmentHead => "EquipmentHead",
+                InventorySlotKind.EquipmentArmor => "EquipmentArmor",
+                InventorySlotKind.EquipmentBackpack => "EquipmentBackpack",
+                InventorySlotKind.EquipmentSecondaryWeapon => "EquipmentSecondaryWeapon",
+                InventorySlotKind.EquipmentMeleeWeapon => "EquipmentMeleeWeapon",
+                InventorySlotKind.EquipmentPrimaryWeapon => IsPrimary2Slot() ? "Primary2" : "EquipmentPrimaryWeapon",
+                _ => string.Empty
+            };
+        }
 
         private void Awake()
         {
@@ -385,6 +408,7 @@ namespace DeadZone.Actors.UI
 
                 SetItem(sourceItem, sourceCount);
                 source.ClearItem();
+                CaptureLobbyInventoryStateIfPresent(this, source);
                 return true;
             }
 
@@ -408,6 +432,7 @@ namespace DeadZone.Actors.UI
                 else
                     source.ClearItem();
 
+                CaptureLobbyInventoryStateIfPresent(this, source);
                 return true;
             }
 
@@ -425,7 +450,25 @@ namespace DeadZone.Actors.UI
 
             SetItem(sourceItem, sourceCount);
             source.SetItem(targetItem, targetCount);
+            CaptureLobbyInventoryStateIfPresent(this, source);
             return true;
+        }
+
+        private static void CaptureLobbyInventoryStateIfPresent(params InventorySlotUI[] changedSlots)
+        {
+            LobbyInventoryStateUiBridge bridge =
+                FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+
+            if (bridge == null)
+                return;
+
+            bridge.CaptureChangedItemSlots(changedSlots);
+            bridge.CaptureChangedEquipmentSlots(changedSlots);
+
+            LobbySaveService saveService =
+                FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+
+            saveService?.SaveCurrentStateToLocalJson("Inventory UI drop snapshot");
         }
 
         private static bool TrySyncEquipmentSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)
@@ -505,7 +548,7 @@ namespace DeadZone.Actors.UI
                 return true;
             }
 
-            Debug.LogWarning($"[InventorySlotUI] 가방 장착 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. backpackId={backpackId}", context);
+            Debug.Log($"[InventorySlotUI] No spawned equipment sync target in this scene. The UI move will be captured by the lobby save snapshot. backpackId={backpackId}", context);
             return true;
         }
 
@@ -553,7 +596,7 @@ namespace DeadZone.Actors.UI
                 return true;
             }
 
-            Debug.LogWarning($"[InventorySlotUI] 무기 장착 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. slot={weaponSlot}, itemID={weaponData.itemID}", context);
+            Debug.Log($"[InventorySlotUI] No spawned equipment sync target in this scene. The UI move will be captured by the lobby save snapshot. slot={weaponSlot}, itemID={weaponData.itemID}", context);
             return true;
         }
 
@@ -572,7 +615,7 @@ namespace DeadZone.Actors.UI
                 return true;
             }
 
-            Debug.LogWarning($"[InventorySlotUI] 무기 장착 해제 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. slot={weaponSlot}", context);
+            Debug.Log($"[InventorySlotUI] No spawned equipment sync target in this scene. The UI clear will be captured by the lobby save snapshot. slot={weaponSlot}", context);
             return true;
         }
 
@@ -704,6 +747,13 @@ namespace DeadZone.Actors.UI
 
             weaponSlot = WeaponSlot.None;
             return false;
+        }
+
+        private bool IsPrimary2Slot()
+        {
+            string path = GetHierarchyPath(transform).ToLowerInvariant();
+            string objectName = name.ToLowerInvariant();
+            return path.Contains("primary2") || objectName.Contains("primary2") || objectName.Contains("_2");
         }
 
         private bool CanAccept(ItemDataSO itemData)

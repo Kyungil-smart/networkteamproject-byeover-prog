@@ -1117,7 +1117,7 @@ namespace DeadZone.Actors.UI
 
         private int GetCurrentTestCurrency()
         {
-            return testWalletSystem != null ? testWalletSystem.Credits.Value : testCurrency;
+            return testWalletSystem != null ? testWalletSystem.CurrentCredits : testCurrency;
         }
 
         private bool TryPayTestCurrency(int price)
@@ -1127,7 +1127,7 @@ namespace DeadZone.Actors.UI
                 if (!testWalletSystem.TryPayLocalTest(price))
                     return false;
 
-                testCurrency = testWalletSystem.Credits.Value;
+                testCurrency = testWalletSystem.CurrentCredits;
                 return true;
             }
 
@@ -1143,7 +1143,7 @@ namespace DeadZone.Actors.UI
             if (testWalletSystem != null)
             {
                 testWalletSystem.EarnLocalTest(amount);
-                testCurrency = testWalletSystem.Credits.Value;
+                testCurrency = testWalletSystem.CurrentCredits;
                 return;
             }
 

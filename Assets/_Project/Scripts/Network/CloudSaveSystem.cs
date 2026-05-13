@@ -483,7 +483,7 @@ namespace DeadZone.Network
         /// <summary>
         /// 현재 로그인 사용자의 하우징 진행도를 Cloud Save의 legacy facilities와 lobbySave facilities에 함께 저장합니다.
         /// </summary>
-        public async Task<bool> SaveHousingProgressAsync(PlayerHousingProgressDTO housingProgressDto)
+        public async Task<bool> SaveHousingProgressAsync(PlayerHousingProgressDTO housingProgressDto, bool allowDefaultOverwrite = false)
         {
             if (housingProgressDto == null)
             {
@@ -522,7 +522,9 @@ namespace DeadZone.Network
                 EnsureLobbySaveContainers();
                 LogSaveAudit("SaveHousingProgressAsync request", BuildHousingDtoAuditSummary(housingProgressDto));
 
-                ApplyHousingProgressToCloudFields(housingProgressDto);
+                if (!TryApplyHousingProgressToCloudFields(housingProgressDto, allowDefaultOverwrite))
+                    return false;
+
                 currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 currentData.schemaVersion = Mathf.Max(currentData.schemaVersion, 3);
 
@@ -895,7 +897,7 @@ namespace DeadZone.Network
             var wallet = player.GetComponent<WalletSystem>();
             if (wallet != null)
             {
-                currentData.progress.credits = wallet.Credits.Value;
+                currentData.progress.credits = wallet.CurrentCredits;
             }
         }
 
@@ -943,15 +945,17 @@ namespace DeadZone.Network
 
             foreach (var f in facilities)
             {
+                int level = f.GetCurrentLevel();
+
                 switch (f.Type)
                 {
-                    case FacilityType.Workbench: currentData.facilities.workbench = Mathf.Max(currentData.facilities.workbench, f.CurrentLevel.Value); break;
-                    case FacilityType.CommStation: currentData.facilities.commStation = Mathf.Max(currentData.facilities.commStation, f.CurrentLevel.Value); break;
-                    case FacilityType.Medical: currentData.facilities.medical = Mathf.Max(currentData.facilities.medical, f.CurrentLevel.Value); break;
-                    case FacilityType.Gym: currentData.facilities.gym = Mathf.Max(currentData.facilities.gym, f.CurrentLevel.Value); break;
-                    case FacilityType.Stash: currentData.facilities.stash = Mathf.Max(currentData.facilities.stash, f.CurrentLevel.Value); break;
-                    case FacilityType.Kitchen: currentData.facilities.kitchen = Mathf.Max(currentData.facilities.kitchen, f.CurrentLevel.Value); break;
-                    case FacilityType.Bed: currentData.facilities.bed = Mathf.Max(currentData.facilities.bed, f.CurrentLevel.Value); break;
+                    case FacilityType.Workbench: currentData.facilities.workbench = Mathf.Max(currentData.facilities.workbench, level); break;
+                    case FacilityType.CommStation: currentData.facilities.commStation = Mathf.Max(currentData.facilities.commStation, level); break;
+                    case FacilityType.Medical: currentData.facilities.medical = Mathf.Max(currentData.facilities.medical, level); break;
+                    case FacilityType.Gym: currentData.facilities.gym = Mathf.Max(currentData.facilities.gym, level); break;
+                    case FacilityType.Stash: currentData.facilities.stash = Mathf.Max(currentData.facilities.stash, level); break;
+                    case FacilityType.Kitchen: currentData.facilities.kitchen = Mathf.Max(currentData.facilities.kitchen, level); break;
+                    case FacilityType.Bed: currentData.facilities.bed = Mathf.Max(currentData.facilities.bed, level); break;
                 }
             }
 
@@ -982,8 +986,7 @@ namespace DeadZone.Network
                 return false;
             }
 
-            ApplyHousingProgressToCloudFields(dto);
-            return true;
+            return TryApplyHousingProgressToCloudFields(dto);
         }
 
         private bool TryCollectLobbyFacilityState()
@@ -1029,12 +1032,10 @@ namespace DeadZone.Network
 
         private void CollectPersonalQuestProgress()
         {
-            if (NetworkManager.Singleton == null) return;
-
             var quest = ServiceLocator.Get<QuestManager>();
             if (quest == null) return;
 
-            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            ulong localClientId = quest.GetLocalClientIdForState();
             var myState = quest.GetPlayerState(localClientId);
             if (myState == null) return;
 
@@ -1046,14 +1047,11 @@ namespace DeadZone.Network
             if (currentData?.progress == null)
                 return;
 
-            if (NetworkManager.Singleton == null)
-                return;
-
             QuestManager quest = ServiceLocator.Get<QuestManager>();
             if (quest == null)
                 return;
 
-            quest.RestorePlayerState(NetworkManager.Singleton.LocalClientId, currentData.progress);
+            quest.RestorePlayerState(quest.GetLocalClientIdForState(), currentData.progress);
         }
 
         private void ApplyBankruptcyStarterPack(StarterPackConfigSO starterPack)
@@ -1576,18 +1574,18 @@ namespace DeadZone.Network
             }
         }
 
-        private void ApplyHousingProgressToCloudFields(PlayerHousingProgressDTO dto)
+        private bool TryApplyHousingProgressToCloudFields(PlayerHousingProgressDTO dto, bool allowDefaultOverwrite = false)
         {
             if (dto == null)
-                return;
+                return false;
 
             dto.Normalize();
 
-            if (IsDefaultHousingProgress(dto) && HasNonDefaultHousingProgress())
+            if (!allowDefaultOverwrite && IsDefaultHousingProgress(dto) && HasNonDefaultHousingProgress())
             {
-                Debug.LogWarning("[Party] WARNING: Save data reset attempted during party creation. caller=CloudSaveSystem.ApplyHousingProgressToCloudFields");
+                Debug.LogWarning("[Party] WARNING: Save data reset attempted during party creation. caller=CloudSaveSystem.TryApplyHousingProgressToCloudFields");
                 Debug.LogWarning("[Save] Save skipped because load is not completed yet.");
-                return;
+                return false;
             }
 
             currentData.facilities.workbench = dto.workbenchLevel;
@@ -1599,6 +1597,7 @@ namespace DeadZone.Network
             currentData.facilities.commStation = dto.commStationLevel;
 
             MirrorFacilitiesToLobbySave();
+            return true;
         }
 
         private bool HasNonDefaultHousingProgress()

@@ -41197,6 +41197,7 @@ MonoBehaviour:
   uiBridge: {fileID: 788616056}
   captureUiBeforeCollect: 1
   capturePlayerGridInventory: 1
+  capturePlayerEquipmentSlots: 1
   debugTargetInventory: {fileID: 0}
   logCollectResult: 1
 --- !u!114 &788616061
@@ -41221,6 +41222,9 @@ MonoBehaviour:
   loadFromCloudOnCloudSaveLoaded: 1
   saveToCloudOnApplicationPause: 1
   saveToCloudOnApplicationQuit: 1
+  useLocalJsonFallback: 1
+  preferLocalJsonInventorySections: 1
+  allowLifecycleAutoSave: 0
   lastJson: 
 --- !u!4 &788616062
 Transform:
@@ -101311,7 +101315,7 @@ MonoBehaviour:
   - {fileID: 316351627}
   defaultTabIndex: 0
   facilitySceneName: HideOut
-  facilityTabIndex: 5
+  facilityTabIndex: 4
   saveLobbyBeforeFacilityScene: 1
   lobbySaveService: {fileID: 788616061}
   autoCollectTabsInScene: 1
