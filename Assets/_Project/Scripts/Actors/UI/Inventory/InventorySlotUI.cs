@@ -514,14 +514,16 @@ namespace DeadZone.Actors.UI
             if (weaponData == null)
                 return TryClearWeaponSlot(weaponSlot, context);
 
-            Unity.Collections.FixedString64Bytes ammoId = "";
-            int ammoCount = Mathf.Max(0, weaponData.magSize);
+            // 무기 장착은 탄창을 채우는 행위가 아니다.
+            // 실제 탄약 장전은 ReloadSystem이 GridInventory의 AmmoDataSO를 소비해 처리한다.
+            FixedString64Bytes ammoId = "";
+            int ammoCount = 0;
 
             EquipmentSlotsBridge bridge = ResolveEquipmentSlotsBridge(weaponData.itemID);
             if (bridge != null && bridge.IsSpawned)
             {
                 bridge.EquipItemServerRpc(
-                    new Unity.Collections.FixedString64Bytes(weaponData.itemID),
+                    new FixedString64Bytes(weaponData.itemID),
                     weaponSlot,
                     ammoId,
                     (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
@@ -545,7 +547,7 @@ namespace DeadZone.Actors.UI
             if (equipmentSlots != null && equipmentSlots.IsSpawned)
             {
                 equipmentSlots.EquipWeaponSlotServerRpc(
-                    new Unity.Collections.FixedString64Bytes(weaponData.itemID),
+                    new FixedString64Bytes(weaponData.itemID),
                     weaponSlot,
                     ammoId,
                     (ushort)Mathf.Clamp(ammoCount, 0, ushort.MaxValue));
