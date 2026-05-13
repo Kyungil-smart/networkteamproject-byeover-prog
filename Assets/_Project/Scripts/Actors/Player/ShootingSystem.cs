@@ -44,7 +44,6 @@ namespace DeadZone.Actors
 
         private EquipmentSlots equipment;
         private Camera aimCamera;
-        private Transform fallbackMuzzleTransform;
         private float nextFireAllowed;
         private float currentSpreadAngle;
         private float lastServerFireTime;
