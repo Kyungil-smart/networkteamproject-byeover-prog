@@ -45,7 +45,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f075fd26af1d1d948a22f8d5d5a4fae1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.VisionMaskController
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.VisionMaskManager
   visionMaskCamera: {fileID: 5823814851850624546}
   visionMaskTexture: {fileID: 8400000, guid: 5944c847c7355d14fbccf99c7b17ab2e, type: 2}
   fovMeshPrefab: {fileID: 4327675665585488485, guid: 61bcee045c14f8c4e81a26862658b7a0, type: 3}
@@ -59,6 +59,9 @@ MonoBehaviour:
   darknessPlaneBaseSize: 10
   darknessPlaneSizeMultiplier: 2
   darknessAlpha: 0.35
+  enableVisionMaskVisibility: 1
+  visionMaskClipThreshold: 0.5
+  visionMaskHiddenAlpha: 0
   configureCameraAutomatically: 1
   visionMaskCullingMask:
     serializedVersion: 2

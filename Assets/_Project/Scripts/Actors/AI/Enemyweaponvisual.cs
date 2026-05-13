@@ -33,11 +33,23 @@ namespace DeadZone.Actors
         [SerializeField] private Vector3 scale = Vector3.one;
 
         private GameObject spawnedWeapon;
+        private Renderer[] spawnedWeaponRenderers;
+        private bool weaponRenderersRegistered;
 
         /// <summary>
         /// 현재 장착된 무기의 총구 위치입니다.
         /// </summary>
         public Transform MuzzlePoint { get; private set; }
+
+        private void OnEnable()
+        {
+            RegisterSpawnedWeaponRenderers();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterSpawnedWeaponRenderers();
+        }
 
         private void Start()
         {
@@ -70,6 +82,7 @@ namespace DeadZone.Actors
             spawnedWeapon.transform.localPosition = positionOffset;
             spawnedWeapon.transform.localRotation = Quaternion.Euler(rotationOffset);
             spawnedWeapon.transform.localScale = scale;
+            RegisterSpawnedWeaponRenderers();
 
             MuzzlePoint = FindDeepChild(spawnedWeapon.transform, muzzlePointName);
             if (MuzzlePoint == null)
@@ -116,6 +129,7 @@ namespace DeadZone.Actors
 
         private void ClearWeapon()
         {
+            UnregisterSpawnedWeaponRenderers();
             MuzzlePoint = null;
 
             if (spawnedWeapon == null)
@@ -125,6 +139,44 @@ namespace DeadZone.Actors
 
             Destroy(spawnedWeapon);
             spawnedWeapon = null;
+            spawnedWeaponRenderers = null;
+        }
+
+        /// <summary>
+        /// 장착된 적 무기의 Renderer들을 VisionMaskManager에 등록한다.
+        /// 적 본체는 CharacterVisual 쪽에서 등록하고, 무기는 런타임 생성물이므로 EnemyWeaponVisual이 별도로 등록한다.
+        /// </summary>
+        private void RegisterSpawnedWeaponRenderers()
+        {
+            if (weaponRenderersRegistered || spawnedWeapon == null)
+                return;
+
+            // 비주얼 교체시 렌더러 재등록(기존 렌더 해제 및 활성 랜더 등록) 과정이 필요합니다.
+            spawnedWeaponRenderers = spawnedWeapon.GetComponentsInChildren<Renderer>(false);
+            if (spawnedWeaponRenderers == null || spawnedWeaponRenderers.Length == 0)
+                return;
+
+            weaponRenderersRegistered = true;
+            EventBus.Publish(new VisionMaskRenderersRegisteredEvent
+            {
+                renderers = spawnedWeaponRenderers
+            });
+        }
+
+        /// <summary>
+        /// 장착 무기가 제거되거나 EnemyWeaponVisual이 비활성화될 때 VisionMaskManager 등록을 해제한다.
+        /// 해제 이벤트는 Renderer 상태를 직접 되돌리지 않고, 매니저의 대상 목록에서만 제거하도록 요청한다.
+        /// </summary>
+        private void UnregisterSpawnedWeaponRenderers()
+        {
+            if (!weaponRenderersRegistered)
+                return;
+
+            weaponRenderersRegistered = false;
+            EventBus.Publish(new VisionMaskRenderersUnregisteredEvent
+            {
+                renderers = spawnedWeaponRenderers
+            });
         }
 
         private static Transform FindDeepChild(Transform root, string childName)

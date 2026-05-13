@@ -186,6 +186,18 @@ namespace DeadZone.Core
         public Transform playerRoot;
     }
 
+    // VisionMask 셰이더 제어를 받을 Renderer들이 활성화되어 등록될 때 발행된다.
+    public struct VisionMaskRenderersRegisteredEvent : IGameEvent
+    {
+        public Renderer[] renderers;
+    }
+
+    // VisionMask 셰이더 제어를 받던 Renderer들이 비활성화되거나 제거되어 해제될 때 발행된다.
+    public struct VisionMaskRenderersUnregisteredEvent : IGameEvent
+    {
+        public Renderer[] renderers;
+    }
+
     // 로컬 Owner 플레이어가 스폰되어 로컬 카메라/컷아웃 시스템에 플레이어 루트 Transform을 제공할 때 발행된다.
     public struct OwnerPlayerRootRegisteredEvent : IGameEvent
     {
