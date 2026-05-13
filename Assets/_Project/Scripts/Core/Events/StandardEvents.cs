@@ -174,6 +174,18 @@ namespace DeadZone.Core
         public CameraCutoutTarget target;
     }
 
+    // 플레이어 NetworkObject가 스폰되어 공유 시야 시스템에 플레이어 루트 Transform을 제공할 때 발행된다.
+    public struct PlayerRootRegisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 플레이어 NetworkObject가 디스폰되어 공유 시야 시스템이 플레이어 루트 Transform 참조를 해제해야 할 때 발행된다.
+    public struct PlayerRootUnregisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
     // 로컬 Owner 플레이어가 스폰되어 로컬 카메라/컷아웃 시스템에 플레이어 루트 Transform을 제공할 때 발행된다.
     public struct OwnerPlayerRootRegisteredEvent : IGameEvent
     {

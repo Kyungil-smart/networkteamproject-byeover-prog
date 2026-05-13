@@ -32,11 +32,17 @@ namespace DeadZone.Network
         }
 
         /// <summary>
-        /// 로컬 Owner 플레이어가 스폰되면 컷아웃, 카메라 등 로컬 연출 시스템이 사용할 플레이어 루트 Transform을 알린다.
+        /// 플레이어가 스폰되면 공유 시야 시스템이 사용할 전체 플레이어 루트를 먼저 알린다.
+        /// 이후 로컬 Owner인 경우에만 컷아웃, 카메라 등 로컬 연출 시스템이 사용할 Owner 루트도 별도로 알린다.
         /// </summary>
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+
+            EventBus.Publish(new PlayerRootRegisteredEvent
+            {
+                playerRoot = transform
+            });
 
             if (!IsOwner)
                 return;
@@ -48,7 +54,8 @@ namespace DeadZone.Network
         }
 
         /// <summary>
-        /// 로컬 Owner 플레이어가 디스폰되면 로컬 연출 시스템이 플레이어 루트 Transform 참조를 정리할 수 있도록 알린다.
+        /// 플레이어가 디스폰되면 공유 시야 시스템이 전체 플레이어 루트 참조를 정리할 수 있도록 알린다.
+        /// 로컬 Owner인 경우에는 로컬 연출 시스템의 Owner 루트 참조도 함께 정리한다.
         /// </summary>
         public override void OnNetworkDespawn()
         {
@@ -59,6 +66,11 @@ namespace DeadZone.Network
                     playerRoot = transform
                 });
             }
+
+            EventBus.Publish(new PlayerRootUnregisteredEvent
+            {
+                playerRoot = transform
+            });
 
             base.OnNetworkDespawn();
         }
