@@ -237,11 +237,13 @@ MonoBehaviour:
   uiVolume: 1
   playBgmByScene: 1
   titleSceneName: Title
+  lobbySceneName: Lobby
   stage1SceneName: Game_Stage_1
   stage2SceneName: Game_Stage_2
   endingSceneName: Ending
   playLootSoundFromEvent: 1
   playPlayerInjuredFromEvent: 1
+  playPlayerKnockedFromEvent: 1
   onlyLocalPlayerInjurySound: 1
   pooledSourceCount: 16
   expandPoolWhenNeeded: 1

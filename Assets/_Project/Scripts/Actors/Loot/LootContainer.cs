@@ -5,6 +5,7 @@ using UnityEngine;
 
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Audio;
 
 namespace DeadZone.Actors
 {
@@ -56,6 +57,16 @@ namespace DeadZone.Actors
 
         [Tooltip("열린 상자에 표시할 상호작용 문구입니다.")]
         [SerializeField] private string openedPrompt = "[F] 파밍 상자 확인";
+
+        [Header("파밍 오디오")]
+        [Tooltip("켜면 F키로 상자 열기/확인에 성공했을 때 파밍 사운드를 재생합니다.")]
+        [SerializeField] private bool playLootSoundOnOpen = true;
+
+        [Tooltip("켜면 상자 슬롯의 아이템을 플레이어 인벤토리로 가져왔을 때 파밍 사운드를 재생합니다.")]
+        [SerializeField] private bool playLootSoundOnTake = true;
+
+        [Tooltip("상자 파밍 사운드 볼륨 배율입니다. AudioLibrary의 개별 볼륨과 AudioManager의 SFX 볼륨이 함께 적용됩니다.")]
+        [SerializeField, Range(0f, 2f)] private float lootSoundVolumeMultiplier = 1f;
 
         public NetworkVariable<bool> IsOpened =
             new NetworkVariable<bool>(false);
@@ -186,6 +197,9 @@ namespace DeadZone.Actors
             {
                 PrintNetworkSlotsDebug(senderClientId);
             }
+
+            if (playLootSoundOnOpen)
+                PlayLootSoundForClient(senderClientId);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -212,6 +226,11 @@ namespace DeadZone.Actors
                 return;
 
             Slots[slotIndex] = new global::ContainerSlotNetData();
+
+            if (playLootSoundOnTake)
+            {
+                PublishItemLootedForClient(rpcParams.Receive.SenderClientId, slotData.itemId, amount);
+            }
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -290,6 +309,59 @@ namespace DeadZone.Actors
             {
                 PrintLocalSlotsDebug(clientId);
             }
+        }
+
+        private void PlayLootSoundForClient(ulong clientId)
+        {
+            if (!IsServer)
+                return;
+
+            ClientRpcParams rpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+            };
+
+            PlayLootSoundClientRpc(lootSoundVolumeMultiplier, rpcParams);
+        }
+
+        private void PublishItemLootedForClient(ulong clientId, FixedString64Bytes itemId, int amount)
+        {
+            if (!IsServer)
+                return;
+
+            ClientRpcParams rpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+            };
+
+            PublishItemLootedClientRpc(clientId, itemId, amount, rpcParams);
+        }
+
+        [ClientRpc]
+        private void PlayLootSoundClientRpc(float volumeMultiplier, ClientRpcParams rpcParams = default)
+        {
+            EventBus.Publish(new AudioPlayRequestedEvent
+            {
+                cueId = Random.value < 0.5f ? AudioCueId.Loot1 : AudioCueId.Loot2,
+                position = Vector3.zero,
+                use3D = false,
+                volumeMultiplier = volumeMultiplier
+            });
+        }
+
+        [ClientRpc]
+        private void PublishItemLootedClientRpc(
+            ulong clientId,
+            FixedString64Bytes itemId,
+            int amount,
+            ClientRpcParams rpcParams = default)
+        {
+            EventBus.Publish(new ItemLootedEvent
+            {
+                clientId = clientId,
+                itemId = itemId,
+                amount = amount,
+            });
         }
 
         private bool CanRollByProbabilityRule()

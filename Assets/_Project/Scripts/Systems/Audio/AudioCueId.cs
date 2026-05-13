@@ -22,6 +22,7 @@ namespace DeadZone.Systems.Audio
         Loot1 = 200,
         Loot2 = 201,
         PlayerInjured = 202,
+        PlayerKnocked = 203,
 
         UIButtonClick = 300,
 

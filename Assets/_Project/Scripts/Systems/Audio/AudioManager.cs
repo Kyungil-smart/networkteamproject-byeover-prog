@@ -41,6 +41,9 @@ namespace DeadZone.Systems.Audio
         [Tooltip("Title BGM을 자동 재생할 씬 이름")]
         [SerializeField] private string titleSceneName = "Title";
 
+        [Tooltip("Lobby 씬에서 재생할 BGM은 Title BGM을 공유합니다.")]
+        [SerializeField] private string lobbySceneName = "Lobby";
+
         [Tooltip("Stage1 BGM을 자동 재생할 씬 이름")]
         [SerializeField] private string stage1SceneName = "Game_Stage_1";
 
@@ -56,6 +59,9 @@ namespace DeadZone.Systems.Audio
 
         [Tooltip("PlayerHpChangedEvent를 받아 로컬 플레이어 체력이 감소하면 부상음을 재생")]
         [SerializeField] private bool playPlayerInjuredFromEvent = true;
+
+        [Tooltip("PlayerKnockedEvent를 받아 로컬 플레이어가 기절 상태가 되면 기절음을 재생")]
+        [SerializeField] private bool playPlayerKnockedFromEvent = true;
 
         [Tooltip("네트워크 세션 중에는 로컬 플레이어의 체력 감소 이벤트에만 부상음을 재생")]
         [SerializeField] private bool onlyLocalPlayerInjurySound = true;
@@ -77,6 +83,8 @@ namespace DeadZone.Systems.Audio
         private AudioSource sfx2DSource;
         private Coroutine bgmFadeRoutine;
         private AudioCueId currentBgmCueId = AudioCueId.None;
+        private ulong lastKnockedSoundClientId = ulong.MaxValue;
+        private float lastKnockedSoundTime = -999f;
 
         public float MasterVolume => masterVolume;
         public float BgmVolume => bgmVolume;
@@ -105,6 +113,8 @@ namespace DeadZone.Systems.Audio
             EventBus.Subscribe<BgmChangeRequestedEvent>(OnBgmChangeRequested);
             EventBus.Subscribe<ItemLootedEvent>(OnItemLooted);
             EventBus.Subscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
+            EventBus.Subscribe<PlayerKnockedEvent>(OnPlayerKnocked);
+            EventBus.Subscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
 
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
@@ -122,6 +132,8 @@ namespace DeadZone.Systems.Audio
             EventBus.Unsubscribe<BgmChangeRequestedEvent>(OnBgmChangeRequested);
             EventBus.Unsubscribe<ItemLootedEvent>(OnItemLooted);
             EventBus.Unsubscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
+            EventBus.Unsubscribe<PlayerKnockedEvent>(OnPlayerKnocked);
+            EventBus.Unsubscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
 
             SceneManager.sceneLoaded -= OnSceneLoaded;
         }
@@ -292,6 +304,36 @@ namespace DeadZone.Systems.Audio
             Play(AudioCueId.PlayerInjured);
         }
 
+        private void OnPlayerKnocked(PlayerKnockedEvent e)
+        {
+            TryPlayPlayerKnockedSound(e.victimClientId);
+        }
+
+        private void OnPlayerStateChanged(PlayerStateChangedEvent e)
+        {
+            if (e.newState == PlayerState.Knocked)
+                TryPlayPlayerKnockedSound(e.clientId);
+        }
+
+        private void TryPlayPlayerKnockedSound(ulong clientId)
+        {
+            if (!playPlayerKnockedFromEvent)
+                return;
+
+            if (onlyLocalPlayerInjurySound && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                if (clientId != NetworkManager.Singleton.LocalClientId)
+                    return;
+            }
+
+            if (lastKnockedSoundClientId == clientId && Time.unscaledTime - lastKnockedSoundTime < 0.2f)
+                return;
+
+            lastKnockedSoundClientId = clientId;
+            lastKnockedSoundTime = Time.unscaledTime;
+            Play(AudioCueId.PlayerKnocked);
+        }
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (playBgmByScene)
@@ -303,7 +345,7 @@ namespace DeadZone.Systems.Audio
             if (string.IsNullOrWhiteSpace(sceneName))
                 return;
 
-            if (IsSceneName(sceneName, titleSceneName))
+            if (IsSceneName(sceneName, titleSceneName) || IsSceneName(sceneName, lobbySceneName))
                 PlayBgm(AudioCueId.TitleBGM, useFade: true);
             else if (IsSceneName(sceneName, stage1SceneName))
                 PlayBgm(AudioCueId.Stage1BGM, useFade: true);
