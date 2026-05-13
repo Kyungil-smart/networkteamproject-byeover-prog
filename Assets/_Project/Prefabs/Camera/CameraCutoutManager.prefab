@@ -55,7 +55,7 @@ MonoBehaviour:
   lookCutoutRadius: 5
   cutoutFeather: 2
   heightCutoutFeather: 2.5
-  useFullObjectHeightCutout: 0
+  useFullObjectHeightCutout: 1
   fullObjectCutoutTransitionTime: 0.25
   fullObjectCutoutExpandedRadius: 8
   useRaycastOccluderTest: 1
