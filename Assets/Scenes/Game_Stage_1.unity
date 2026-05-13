@@ -12335,6 +12335,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 251533518954325876, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 262135
+      objectReference: {fileID: 0}
     - target: {fileID: 306245524971709450, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
