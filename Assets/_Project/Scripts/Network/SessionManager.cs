@@ -3,6 +3,7 @@ using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.Relay.Models;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 using DeadZone.Core;
 
@@ -22,14 +23,46 @@ namespace DeadZone.Network
     /// </remarks>
     public class SessionManager : MonoBehaviour
     {
+        private static readonly string[] PartySessionPlayerPrefsKeys =
+        {
+            "partyId",
+            "PartyId",
+            "partyMembers",
+            "PartyMembers",
+            "readyState",
+            "ReadyState",
+            "selectedMap",
+            "SelectedMap"
+        };
+
+        private static bool staleRuntimePartySessionCleared;
+
+        private string currentPartyId = string.Empty;
+
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticStateForPlayMode()
+        {
+            staleRuntimePartySessionCleared = false;
+        }
+#endif
+
         private void Awake()
         {
+            ClearStaleRuntimePartySessionOnGameStart();
             ServiceLocator.Register(this);
+            SceneManager.sceneLoaded += HandleSceneLoaded;
         }
 
         private void OnDestroy()
         {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             ServiceLocator.Unregister<SessionManager>();
+        }
+
+        private void OnApplicationQuit()
+        {
+            DisconnectInternal("ApplicationQuit");
         }
 
         // =================================================================
@@ -43,13 +76,25 @@ namespace DeadZone.Network
                 Debug.LogError("[SessionManager] NetworkManager.Singleton이 null이다");
                 return false;
             }
-            return NetworkManager.Singleton.StartHost();
+
+            bool started = NetworkManager.Singleton.StartHost();
+            if (started)
+            {
+                currentPartyId = "LocalHost";
+                Debug.Log($"[PartySession] Create party. partyId={currentPartyId}, hostClientId={NetworkManager.ServerClientId}", this);
+            }
+
+            return started;
         }
 
         public bool StartClient()
         {
             if (NetworkManager.Singleton == null) return false;
-            return NetworkManager.Singleton.StartClient();
+            bool started = NetworkManager.Singleton.StartClient();
+            if (started)
+                currentPartyId = "LocalClient";
+
+            return started;
         }
 
         public bool StartServer()
@@ -60,8 +105,12 @@ namespace DeadZone.Network
 
         public void Disconnect()
         {
-            if (NetworkManager.Singleton == null) return;
-            NetworkManager.Singleton.Shutdown();
+            DisconnectInternal("ManualLeave");
+        }
+
+        public void Disconnect(string reason)
+        {
+            DisconnectInternal(reason);
         }
 
         // =================================================================
@@ -98,6 +147,9 @@ namespace DeadZone.Network
                 Debug.LogError("[SessionManager] Relay 설정 후 StartHost 실패");
                 return string.Empty;
             }
+
+            currentPartyId = joinCode;
+            Debug.Log($"[PartySession] Create party. partyId={currentPartyId}, hostClientId={NetworkManager.ServerClientId}", this);
 
             EventBus.Publish(new RelayAllocationCreatedEvent
             {
@@ -137,6 +189,8 @@ namespace DeadZone.Network
                 return false;
             }
 
+            currentPartyId = joinCode;
+
             EventBus.Publish(new RelayJoinedEvent { joinCode = joinCode });
             return true;
         }
@@ -169,6 +223,77 @@ namespace DeadZone.Network
 
             transport.SetRelayServerData(new Unity.Networking.Transport.Relay.RelayServerData(a, "dtls"));
             return true;
+        }
+
+        private void ClearStaleRuntimePartySessionOnGameStart()
+        {
+            if (staleRuntimePartySessionCleared)
+                return;
+
+            staleRuntimePartySessionCleared = true;
+            Debug.Log("[PartySession] Game start. Clearing stale runtime party session.", this);
+            ClearLocalPartyCache();
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || !networkManager.IsListening)
+                return;
+
+            string storedPartyId = string.IsNullOrWhiteSpace(currentPartyId)
+                ? "active-network-session"
+                : currentPartyId;
+            Debug.LogWarning($"[PartySession] Prevent restore stale party. storedPartyId={storedPartyId}", this);
+            networkManager.Shutdown();
+        }
+
+        private void DisconnectInternal(string reason)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+            {
+                ClearLocalPartyCache();
+                return;
+            }
+
+            bool isListening = networkManager.IsListening;
+            bool isServer = isListening && networkManager.IsServer;
+            bool isClient = isListening && networkManager.IsClient;
+            ulong localClientId = isListening ? networkManager.LocalClientId : 0;
+
+            if (isServer)
+            {
+                string partyId = string.IsNullOrWhiteSpace(currentPartyId) ? "unknown" : currentPartyId;
+                Debug.Log($"[PartySession] Disband party. partyId={partyId}, reason={reason}", this);
+            }
+            else if (isClient)
+            {
+                Debug.Log($"[PartySession] Leave party. clientId={localClientId}, reason={reason}", this);
+            }
+
+            if (isListening)
+                networkManager.Shutdown();
+
+            currentPartyId = string.Empty;
+            ClearLocalPartyCache();
+        }
+
+        private static void ClearLocalPartyCache()
+        {
+            for (int i = 0; i < PartySessionPlayerPrefsKeys.Length; i++)
+            {
+                string key = PartySessionPlayerPrefsKeys[i];
+                if (PlayerPrefs.HasKey(key))
+                    PlayerPrefs.DeleteKey(key);
+            }
+
+            PlayerPrefs.Save();
+            Debug.Log("[PartySession] Clear local party cache.");
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            bool keepPartySession = networkManager != null && networkManager.IsListening;
+            Debug.Log($"[PartySession] Scene changed. keep party session={keepPartySession}. scene={scene.name}", this);
         }
     }
 }

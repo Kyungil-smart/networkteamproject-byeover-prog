@@ -191,33 +191,7 @@ namespace DeadZone.Systems.Housing
             if (recipe == null)
                 return 1;
 
-            int levelByRecipe = Mathf.Clamp(recipe.requiredFacilityLevel, 1, 4);
-            int levelByRarity = GetRequiredLevelByRarity(recipe.requiredTier);
-            return Mathf.Max(levelByRecipe, levelByRarity);
-        }
-
-        private static int GetRequiredLevelByRarity(RarityTier rarity)
-        {
-            switch (rarity)
-            {
-                case RarityTier.Common:
-                    return 1;
-
-                case RarityTier.Uncommon:
-                    return 2;
-
-                case RarityTier.Rare:
-                    return 3;
-
-                case RarityTier.Epic:
-                    return 4;
-
-                case RarityTier.Legendary:
-                    return 4;
-
-                default:
-                    return 1;
-            }
+            return Mathf.Clamp(recipe.requiredFacilityLevel, 1, 4);
         }
 
         private static bool IsValuableResult(ItemDataSO item)

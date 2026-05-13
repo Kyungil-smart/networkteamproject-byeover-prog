@@ -106,6 +106,13 @@ public class EquipmentSlotsBridge : NetworkBehaviour
             equipmentSlots.ArmorDurability.Value = armor.maxDurability;
             return;
         }
+
+        BackpackDataSO backpack = item as BackpackDataSO;
+        if (backpack != null)
+        {
+            equipmentSlots.EquipBackpack(itemId);
+            return;
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]

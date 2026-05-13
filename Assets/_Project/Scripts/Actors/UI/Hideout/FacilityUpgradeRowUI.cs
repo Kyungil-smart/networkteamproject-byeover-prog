@@ -1,14 +1,18 @@
-using DeadZone.Core;
-using DeadZone.Systems;
 using System;
 using System.Collections.Generic;
+
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+using DeadZone.Core;
+using DeadZone.Systems;
+using DeadZone.Systems.Housing;
+
 namespace DeadZone.Actors.UI.Hideout
 {
-    // 시설 업그레이드 한 줄을 표시하고, 버튼 클릭 시 목표 레벨을 전달
+    // 시설 업그레이드 한 줄 UI
+    // 플레이어별 현재 시설 레벨을 기준으로 완료/잠김/업그레이드 가능 상태를 표시
     [DisallowMultipleComponent]
     public sealed class FacilityUpgradeRowUI : MonoBehaviour
     {
@@ -57,6 +61,7 @@ namespace DeadZone.Actors.UI.Hideout
 
         public void Set(
             FacilityBase facility,
+            int playerCurrentLevel,
             int targetLevel,
             FacilityLevel levelData,
             IInventory inventory,
@@ -73,9 +78,10 @@ namespace DeadZone.Actors.UI.Hideout
 
             gameObject.SetActive(true);
 
-            bool alreadyReached = facility.IsLevelAlreadyReached(targetLevel);
-            bool isTargetLevel = facility.IsUpgradeTargetLevel(targetLevel);
-            bool canUpgrade = facility.CanUpgradeToLevel(targetLevel, inventory);
+            bool alreadyReached = playerCurrentLevel >= targetLevel;
+            bool isTargetLevel = targetLevel == playerCurrentLevel + 1;
+            bool hasMaterials = HasAllMaterials(levelData, inventory);
+            bool canUpgrade = !alreadyReached && isTargetLevel && hasMaterials;
 
             if (levelText != null)
                 levelText.text = $"LV{targetLevel}";
@@ -91,6 +97,8 @@ namespace DeadZone.Actors.UI.Hideout
                     upgradeButtonText.text = "완료";
                 else if (!isTargetLevel)
                     upgradeButtonText.text = "잠김";
+                else if (!hasMaterials)
+                    upgradeButtonText.text = "재료 부족";
                 else
                     upgradeButtonText.text = "업그레이드";
             }
@@ -102,11 +110,41 @@ namespace DeadZone.Actors.UI.Hideout
                 lockedMarkRoot.SetActive(!alreadyReached && !isTargetLevel);
         }
 
+        private bool HasAllMaterials(FacilityLevel levelData, IInventory inventory)
+        {
+            if (levelData == null)
+                return false;
+
+            if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
+                return true;
+
+            if (inventory == null)
+                return false;
+
+            for (int i = 0; i < levelData.upgradeMaterials.Count; i++)
+            {
+                ItemRequirement requirement = levelData.upgradeMaterials[i];
+
+                if (requirement.item == null)
+                    return false;
+
+                if (string.IsNullOrWhiteSpace(requirement.item.itemID))
+                    return false;
+
+                int requiredAmount = Mathf.Max(1, requirement.amount);
+
+                if (!inventory.HasItem(requirement.item.itemID, requiredAmount))
+                    return false;
+            }
+
+            return true;
+        }
+
         private void SetMaterials(FacilityLevel levelData, IInventory inventory)
         {
             ClearSlots();
 
-            if (levelData.upgradeMaterials == null)
+            if (levelData == null || levelData.upgradeMaterials == null)
                 return;
 
             for (int i = 0; i < levelData.upgradeMaterials.Count; i++)

@@ -51,6 +51,15 @@ namespace DeadZone.Actors
         public NetworkVariable<float> BleedoutRemaining = new(0f);
         public NetworkVariable<PlayerState> State = new(PlayerState.Alive);
 
+        /// <summary>
+        /// 생존 기준 최대 체력(기본 + 하우징·의료시설 등 보너스). <see cref="housingMaxHpBonus"/>는 NV가 아니므로
+        /// 팀 HUD·원격 UI가 동일한 상한을 쓰도록 서버에서만 갱신합니다.
+        /// </summary>
+        public NetworkVariable<float> ReplicatedMaxHp = new(
+            100f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
         private RollSystem rollSystem;
 
         public float BaseMaxHP => maxHP;
@@ -91,6 +100,7 @@ namespace DeadZone.Actors
                 KnockedHP.Value = 0f;
                 BleedoutRemaining.Value = 0f;
                 State.Value = PlayerState.Alive;
+                ReplicatedMaxHp.Value = MaxHP;
             }
 
             CurrentHP.OnValueChanged += BroadcastHpChanged;
@@ -235,10 +245,13 @@ namespace DeadZone.Actors
                 CurrentHP.Value = MaxHP;
             }
 
-            bool hpValueChanged = !Mathf.Approximately(previousCurrentHp, CurrentHP.Value);
-
-            if (!IsSpawned || !hpValueChanged)
+            // 스폰된 이후에는 CurrentHP.OnValueChanged가 모든 클라이언트에서 BroadcastHpChanged를 호출한다.
+            // 아직 스폰 전인 경우에만 여기서 이벤트를 한 번 보낸다.
+            if (!IsSpawned && !Mathf.Approximately(previousCurrentHp, CurrentHP.Value))
                 BroadcastHpChanged(previousCurrentHp, CurrentHP.Value);
+
+            if (IsSpawned && IsServer)
+                ReplicatedMaxHp.Value = MaxHP;
 
             Debug.Log(
                 $"[PlayerHealthSystem] 하우징 최대 체력 보너스 적용\n" +

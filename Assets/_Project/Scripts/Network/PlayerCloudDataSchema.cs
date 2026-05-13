@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Firebase.Firestore;
 
 
@@ -13,10 +13,11 @@ namespace DeadZone.Network
         [FirestoreProperty] public SafePocketData safePocket { get; set; } = new SafePocketData();
         [FirestoreProperty] public EquipmentData equipment { get; set; } = new EquipmentData();
         [FirestoreProperty] public FacilitiesData facilities { get; set; } = new FacilitiesData();
+        [FirestoreProperty] public LobbySaveCloudData lobbySave { get; set; } = new LobbySaveCloudData();
         [FirestoreProperty] public List<InsuranceEntry> insurance { get; set; } = new List<InsuranceEntry>();
 
-        /// <summary>스키마 버전. v1→v2: questObjectives 추가.</summary>
-        [FirestoreProperty] public int schemaVersion { get; set; } = 2;
+        /// <summary>스키마 버전. v3: lobbySave 추가.</summary>
+        [FirestoreProperty] public int schemaVersion { get; set; } = 3;
     }
 
     [FirestoreData]
@@ -75,6 +76,49 @@ namespace DeadZone.Network
     }
 
     [FirestoreData]
+    public class LobbySaveCloudData
+    {
+        [FirestoreProperty] public bool hasCredits { get; set; }
+        [FirestoreProperty] public int credits { get; set; }
+        [FirestoreProperty] public List<LobbyItemCloudData> inventoryItems { get; set; } = new List<LobbyItemCloudData>();
+        [FirestoreProperty] public List<LobbyItemCloudData> stashItems { get; set; } = new List<LobbyItemCloudData>();
+        [FirestoreProperty] public List<LobbyEquipmentCloudData> equipmentItems { get; set; } = new List<LobbyEquipmentCloudData>();
+        [FirestoreProperty] public List<LobbyFacilityCloudData> facilities { get; set; } = new List<LobbyFacilityCloudData>();
+    }
+
+    [FirestoreData]
+    public class LobbyItemCloudData
+    {
+        [FirestoreProperty] public string itemId { get; set; } = "";
+        [FirestoreProperty] public string instanceId { get; set; } = "";
+        [FirestoreProperty] public string containerId { get; set; } = "";
+        [FirestoreProperty] public int x { get; set; }
+        [FirestoreProperty] public int y { get; set; }
+        [FirestoreProperty] public bool rotated { get; set; }
+        [FirestoreProperty] public int stackCount { get; set; }
+        [FirestoreProperty] public float currentDurability { get; set; }
+        [FirestoreProperty] public int currentAmmo { get; set; }
+    }
+
+    [FirestoreData]
+    public class LobbyEquipmentCloudData
+    {
+        [FirestoreProperty] public string slotId { get; set; } = "";
+        [FirestoreProperty] public string itemId { get; set; } = "";
+        [FirestoreProperty] public string instanceId { get; set; } = "";
+        [FirestoreProperty] public string loadedAmmoId { get; set; } = "";
+        [FirestoreProperty] public int currentAmmo { get; set; }
+        [FirestoreProperty] public float durability { get; set; }
+    }
+
+    [FirestoreData]
+    public class LobbyFacilityCloudData
+    {
+        [FirestoreProperty] public string facilityId { get; set; } = "";
+        [FirestoreProperty] public int level { get; set; }
+    }
+
+    [FirestoreData]
     public class SafePocketSlot
     {
         [FirestoreProperty] public string itemId { get; set; } = "";
@@ -103,9 +147,10 @@ namespace DeadZone.Network
     [FirestoreData]
     public class FacilitiesData
     {
-        // 개인 은신처 6시설 레벨 (0~4). 팀장 결정: 각자 자기 하우징을 가짐.
+        // 개인 은신처 시설 레벨 (0~4). 팀장 결정: 각자 자기 하우징을 가짐.
         [FirestoreProperty] public int workbench { get; set; } = 1;
         [FirestoreProperty] public int commStation { get; set; } = 1;
+        [FirestoreProperty] public int medical { get; set; } = 1;
         [FirestoreProperty] public int gym { get; set; } = 1;
         [FirestoreProperty] public int stash { get; set; } = 1;
         [FirestoreProperty] public int kitchen { get; set; } = 1;

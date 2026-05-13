@@ -104,6 +104,9 @@ namespace DeadZone.Actors
         [Tooltip("스폰 지점 주변에 유효한 NavMesh가 없을 때 경고 로그를 출력할지 여부입니다.")]
         [SerializeField] private bool warnWhenSpawnOffNavMesh = true;
 
+        [Tooltip("스폰 위치가 큰 NavMeshObstacle 내부에 들어간 경우 경고를 출력할지 여부입니다.")]
+        [SerializeField] private bool warnWhenInsideNavMeshObstacle = true;
+
         [Header("교전/회피 보정")]
         [Tooltip("SO 값이 너무 작아도 플레이어에게 붙지 않도록 보장할 최소 교전 거리입니다.")]
         [SerializeField] private float minimumPersonalSpaceDistance = 6f;
@@ -147,6 +150,7 @@ namespace DeadZone.Actors
         private bool isBoss;
         private bool hasPreviousSeenPosition;
         private bool hasActiveSearchPoint;
+        private bool warnedInsideNavMeshObstacle;
         private float preferredRangeMin;
         private float preferredRangeMax;
 
@@ -279,6 +283,8 @@ namespace DeadZone.Actors
 
         private void ResolveSpawnPositionOnNavMesh()
         {
+            WarnIfInsideNavMeshObstacle();
+
             if (agent == null)
             {
                 spawnPosition = transform.position;
@@ -319,6 +325,57 @@ namespace DeadZone.Actors
 
             spawnPosition = transform.position;
             lastDestination = transform.position;
+        }
+
+        private void WarnIfInsideNavMeshObstacle()
+        {
+            if (!warnWhenInsideNavMeshObstacle || warnedInsideNavMeshObstacle)
+            {
+                return;
+            }
+
+            NavMeshObstacle[] obstacles = Object.FindObjectsByType<NavMeshObstacle>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < obstacles.Length; i++)
+            {
+                NavMeshObstacle obstacle = obstacles[i];
+                if (obstacle == null || !obstacle.enabled || obstacle.transform == transform || obstacle.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                if (!IsInsideObstacleBounds(obstacle))
+                {
+                    continue;
+                }
+
+                warnedInsideNavMeshObstacle = true;
+                Debug.LogWarning(
+                    $"[EnemyAI] {name}이(가) '{obstacle.name}' NavMeshObstacle 내부에서 시작했습니다. 빈 건물 전체를 덮는 Obstacle은 실내 NavMeshAgent를 밖으로 밀거나 이동을 막을 수 있습니다. 창고 부모 Obstacle을 제거하고 벽/기둥/소품 단위로 분리하세요.",
+                    this);
+                return;
+            }
+        }
+
+        private bool IsInsideObstacleBounds(NavMeshObstacle obstacle)
+        {
+            Vector3 localPoint = obstacle.transform.InverseTransformPoint(transform.position) - obstacle.center;
+
+            if (obstacle.shape == NavMeshObstacleShape.Box)
+            {
+                Vector3 halfSize = obstacle.size * 0.5f;
+                float padding = agent != null ? agent.radius : 0.5f;
+                return Mathf.Abs(localPoint.x) <= halfSize.x + padding &&
+                       Mathf.Abs(localPoint.y) <= halfSize.y + padding &&
+                       Mathf.Abs(localPoint.z) <= halfSize.z + padding;
+            }
+
+            float radius = obstacle.radius + (agent != null ? agent.radius : 0.5f);
+            Vector2 horizontal = new(localPoint.x, localPoint.z);
+            return horizontal.sqrMagnitude <= radius * radius &&
+                   Mathf.Abs(localPoint.y) <= obstacle.height * 0.5f;
         }
 
         private void TickPatrol()
@@ -452,7 +509,10 @@ namespace DeadZone.Actors
 
             if (distanceToTarget < preferredRangeMin)
             {
-                TryRetreat();
+                if (!TryRetreat())
+                {
+                    SetAgentStopped(true);
+                }
             }
             else
             {
@@ -1247,12 +1307,12 @@ namespace DeadZone.Actors
             return length;
         }
 
-        private void TryRetreat()
+        private bool TryRetreat()
         {
             if (currentTarget == null)
             {
                 SetAgentStopped(true);
-                return;
+                return false;
             }
 
             Vector3 baseDirection = transform.position - currentTarget.position;
@@ -1274,10 +1334,11 @@ namespace DeadZone.Actors
                 Vector3 candidate = transform.position + direction * retreatDistance;
 
                 if (TrySetDestination(candidate))
-                    return;
+                    return true;
             }
 
             SetAgentStopped(true);
+            return false;
         }
 
         private void RecoverIfStuck(Vector3 rawDestination)

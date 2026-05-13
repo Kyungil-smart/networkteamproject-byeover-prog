@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Core;
+using DeadZone.Systems.Housing;
 
 namespace DeadZone.Systems
 {
@@ -76,7 +78,7 @@ namespace DeadZone.Systems
         {
             if (useTestInventory)
             {
-                TryUpgradeWithInventory(testInventory);
+                TryUpgradeWithInventory(testInventory, GetLocalRequesterClientId());
                 return;
             }
 
@@ -97,7 +99,7 @@ namespace DeadZone.Systems
                 return;
             }
 
-            TryUpgradeWithInventory(inventory);
+            TryUpgradeWithInventory(inventory, requesterClientId);
         }
 
         public bool CanUpgradeWithInventory(IInventory inventory)
@@ -126,7 +128,7 @@ namespace DeadZone.Systems
             return CanApplyUpgradeLevel();
         }
 
-        public bool TryUpgradeWithInventory(IInventory inventory)
+        public bool TryUpgradeWithInventory(IInventory inventory, ulong? requesterClientId = null)
         {
             if (inventory == null)
             {
@@ -178,6 +180,7 @@ namespace DeadZone.Systems
             }
 
             consumedMaterials.Clear();
+            SyncRequesterHousingProgress(requesterClientId, nextLevelData.level);
 
             if (logUpgradeResult)
                 Debug.Log($"[CommunicationsUpgradeController] 통신장비 업그레이드 성공: Lv.{nextLevelData.level}", this);
@@ -396,6 +399,29 @@ namespace DeadZone.Systems
 
             LogWarning("통신장비 레벨 변경은 서버에서만 가능합니다. Host 모드로 실행했는지 확인하세요.");
             return false;
+        }
+
+        private static ulong? GetLocalRequesterClientId()
+        {
+            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening
+                ? NetworkManager.Singleton.LocalClientId
+                : null;
+        }
+
+        private void SyncRequesterHousingProgress(ulong? requesterClientId, int nextLevel)
+        {
+            if (!IsServer || !requesterClientId.HasValue)
+                return;
+
+            if (!PlayerHousingProgressResolver.TryGetProgress(requesterClientId.Value, out PlayerHousingProgress progress))
+                return;
+
+            if (!progress.TrySetLevelFromServer(FacilityType.CommStation, nextLevel))
+                return;
+
+            PlayerHousingSaveSyncer saveSyncer = progress.GetComponent<PlayerHousingSaveSyncer>();
+            if (saveSyncer != null)
+                saveSyncer.RequestSaveFromServer("CommStation 시설 업그레이드");
         }
 
         private bool CanApplyUpgradeLevel()

@@ -1,10 +1,8 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
-using DeadZone.Systems;
-using UnityEngine.Rendering.UI;
 
 namespace DeadZone.Actors
 {
@@ -31,10 +29,23 @@ namespace DeadZone.Actors
         [Tooltip("샷건 투사체마다 더해지는 무작위 각도 오차")]
         [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 3f;
 
+        [Header("Weapon Visual")]
+        [SerializeField] private bool autoEquipWeaponVisual = true;
+        [SerializeField] private Transform weaponHolder;
+        [SerializeField] private string weaponHolderName = "WeaponHolder";
+        [SerializeField] private string weaponMuzzlePointName = "MuzzlePoint";
+        [SerializeField] private Vector3 weaponVisualPositionOffset = Vector3.zero;
+        [SerializeField] private Vector3 weaponVisualRotationOffset = Vector3.zero;
+        [SerializeField] private Vector3 weaponVisualScale = Vector3.one;
+
         private EquipmentSlots equipment;
+        private Camera aimCamera;
         private float nextFireAllowed;
         private float currentSpreadAngle;
         private float lastServerFireTime;
+        private Transform fallbackMuzzleTransform;
+        private GameObject spawnedWeaponVisual;
+        private string spawnedWeaponId;
         
         // 조준 분석 결과를 담는 내부 구조체
         private struct AimResult
@@ -47,7 +58,32 @@ namespace DeadZone.Actors
         private void Awake()
         {
             equipment = GetComponent<EquipmentSlots>();
+            fallbackMuzzleTransform = muzzleTransform;
+
+            if (weaponHolder == null)
+                weaponHolder = FindDeepChild(transform, weaponHolderName);
         }
+
+        public override void OnNetworkSpawn()
+        {
+            if (equipment == null)
+                equipment = GetComponent<EquipmentSlots>();
+
+            if (equipment != null)
+                equipment.CurrentEquipped.OnValueChanged += HandleCurrentEquippedChanged;
+
+            RefreshEquippedWeaponVisual();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (equipment != null)
+                equipment.CurrentEquipped.OnValueChanged -= HandleCurrentEquippedChanged;
+
+            ClearWeaponVisual();
+        }
+
+        public void SetAimCamera(Camera camera) => aimCamera = camera;
 
         // 레거시 
         public void TryFire()
@@ -118,7 +154,9 @@ namespace DeadZone.Actors
         
         private AimResult AnalyzeAim(Vector2 screenPos)
         {
-            Ray ray = Camera.main.ScreenPointToRay(screenPos);
+            if (aimCamera == null) return new AimResult { targetPoint = Vector3.zero };
+            
+            Ray ray = aimCamera.ScreenPointToRay(screenPos);
 
             // 1. 우선순위에 따른 타겟팅 시도
             if (TryHitboxAim(ray, out AimResult hitboxResult))
@@ -259,6 +297,8 @@ namespace DeadZone.Actors
             Vector3 baseDir = (target - spawnPos).normalized;
             int projectileCount = Mathf.Max(1, shotgunProjectileCount);
             float halfAngle = shotgunSpreadAngle * 0.5f;
+            ProjectileData pelletData = pData;
+            pelletData.BaseDamage = Mathf.Max(1, Mathf.RoundToInt(pData.BaseDamage / (float)projectileCount));
 
             for (int i = 0; i < projectileCount; i++)
             {
@@ -270,7 +310,7 @@ namespace DeadZone.Actors
                 float yaw = Mathf.Clamp(baseYaw + jitter, -halfAngle, halfAngle);
                 Vector3 pelletDir = Quaternion.AngleAxis(yaw, Vector3.up) * baseDir;
 
-                SpawnProjectileWithDirection(pData, w, pelletDir.normalized, velocity);
+                SpawnProjectileWithDirection(pelletData, w, pelletDir.normalized, velocity);
             }
         }
 
@@ -333,6 +373,92 @@ namespace DeadZone.Actors
                 weaponId = wId,
                 origin = muzzleTransform.position
             });
+        }
+
+        private void HandleCurrentEquippedChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
+        {
+            RefreshEquippedWeaponVisual();
+        }
+
+        private void RefreshEquippedWeaponVisual()
+        {
+            if (!autoEquipWeaponVisual)
+                return;
+
+            if (equipment == null)
+                equipment = GetComponent<EquipmentSlots>();
+
+            if (weaponHolder == null)
+                weaponHolder = FindDeepChild(transform, weaponHolderName);
+
+            string weaponId = equipment != null ? equipment.CurrentEquipped.Value.ToString() : string.Empty;
+            if (spawnedWeaponVisual != null && spawnedWeaponId == weaponId)
+                return;
+
+            ClearWeaponVisual();
+
+            if (string.IsNullOrWhiteSpace(weaponId))
+            {
+                muzzleTransform = fallbackMuzzleTransform;
+                return;
+            }
+
+            WeaponDataSO weapon = equipment?.Lookup(weaponId) as WeaponDataSO;
+            if (weapon == null || weapon.worldPrefab == null || weaponHolder == null)
+            {
+                muzzleTransform = fallbackMuzzleTransform;
+                return;
+            }
+
+            spawnedWeaponVisual = Instantiate(weapon.worldPrefab, weaponHolder);
+            spawnedWeaponId = weaponId;
+            spawnedWeaponVisual.transform.localPosition = weaponVisualPositionOffset;
+            spawnedWeaponVisual.transform.localRotation = Quaternion.Euler(weaponVisualRotationOffset);
+            spawnedWeaponVisual.transform.localScale = weaponVisualScale;
+            SetVisualCollidersEnabled(spawnedWeaponVisual, false);
+
+            Transform weaponMuzzle = FindDeepChild(spawnedWeaponVisual.transform, weaponMuzzlePointName);
+            muzzleTransform = weaponMuzzle != null ? weaponMuzzle : fallbackMuzzleTransform;
+        }
+
+        private void ClearWeaponVisual()
+        {
+            muzzleTransform = fallbackMuzzleTransform;
+            spawnedWeaponId = string.Empty;
+
+            if (spawnedWeaponVisual == null)
+                return;
+
+            Destroy(spawnedWeaponVisual);
+            spawnedWeaponVisual = null;
+        }
+
+        private static void SetVisualCollidersEnabled(GameObject visualRoot, bool enabled)
+        {
+            if (visualRoot == null)
+                return;
+
+            Collider[] colliders = visualRoot.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+                colliders[i].enabled = enabled;
+        }
+
+        private static Transform FindDeepChild(Transform root, string childName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(childName))
+                return null;
+
+            if (root.name == childName)
+                return root;
+
+            foreach (Transform child in root)
+            {
+                Transform found = FindDeepChild(child, childName);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
         }
     }
 }

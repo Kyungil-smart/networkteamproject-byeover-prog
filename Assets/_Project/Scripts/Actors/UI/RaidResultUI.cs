@@ -8,6 +8,8 @@ namespace DeadZone.Actors.UI
 {
     public class RaidResultUI : MonoBehaviour
     {
+        private const string DefaultLobbySceneName = "Lobby";
+
         [Header("패널")]
         [SerializeField] private GameObject raidResultUI;
         [SerializeField] private GameObject gameOverUI;
@@ -34,7 +36,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private Button btnGoLobbyDead;
 
         [Header("씬 이동")]
-        [SerializeField] private string lobbySceneName = "HJO_Lobby";
+        [SerializeField] private string lobbySceneName = DefaultLobbySceneName;
 
         private void Awake()
         {
@@ -140,7 +142,20 @@ namespace DeadZone.Actors.UI
 
         private void GoLobby()
         {
-            SceneManager.LoadScene(lobbySceneName);
+            LoadingScreenService.LoadSceneOrFallback(
+                NormalizeLobbySceneName(lobbySceneName),
+                LoadSceneMode.Single,
+                DefaultLobbySceneName);
+        }
+
+        private static string NormalizeLobbySceneName(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+                return DefaultLobbySceneName;
+
+            return string.Equals(sceneName, "HJO_Lobby", System.StringComparison.Ordinal)
+                ? DefaultLobbySceneName
+                : sceneName;
         }
     }
 }

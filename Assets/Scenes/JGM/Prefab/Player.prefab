@@ -1011,7 +1011,7 @@ Transform:
   m_GameObject: {fileID: 2099325004758248890}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.6027426, z: -0.0032263945}
+  m_LocalPosition: {x: 0, y: 1.6027426, z: -0.0032263598}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1541,7 +1541,7 @@ Transform:
   m_GameObject: {fileID: 3327090606728123391}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00000056176054, y: -2.1038327e-13, z: -0.000000374507, w: 1}
-  m_LocalPosition: {x: 0, y: 1.1699626, z: -0.021774825}
+  m_LocalPosition: {x: 0, y: 1.1699626, z: -0.021774769}
   m_LocalScale: {x: 1.0905, y: 1.8127933, z: 1.0553}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3045,6 +3045,8 @@ GameObject:
   - component: {fileID: 4260008715252334417}
   - component: {fileID: 7076519258675018630}
   - component: {fileID: 3963644342252435484}
+  - component: {fileID: 2260964690649159723}
+  - component: {fileID: 6049983305593738643}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -3132,7 +3134,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1410919396
+  GlobalObjectIdHash: 4042826297
   InScenePlacedSourceGlobalObjectIdHash: 1410919396
   DeferredDespawnTick: 0
   Ownership: 1
@@ -3353,8 +3355,19 @@ MonoBehaviour:
   healthSystem: {fileID: 5034137757600062690}
   staminaSystem: {fileID: 9185953409126241225}
   carryWeightSystem: {fileID: 7076519258675018630}
+  housingProgress: {fileID: 2260964690649159723}
   fillHpWhenMaxHpIncreased: 1
   fillStaminaWhenMaxStaminaIncreased: 1
+  bonusConfig: {fileID: 0}
+  bonusStartLevel: 2
+  medicalHealthBonusPerLevel: 5
+  kitchenStaminaBonusPerLevel: 5
+  bedStaminaBonusPerLevel: 5
+  gymCarryWeightBonusPerLevelKg: 7.5
+  medicalHealthBonus: 0
+  kitchenStaminaBonus: 0
+  bedStaminaBonus: 0
+  gymCarryWeightBonusKg: 0
   logBonusChanged: 1
 --- !u!114 &4260008715252334417
 MonoBehaviour:
@@ -3386,13 +3399,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerCarryWeightSystem
   ShowTopMostFoldoutHeaderGroup: 1
-  gridInventory: {fileID: 4260008715252334417}
   baseMaxCarryWeightKg: 60
   housingCarryWeightBonusKg: 0
-  currentWeightKg: 0
-  currentMaxCarryWeightKg: 60
-  isOverWeight: 0
-  logWeightChanged: 1
+  currentCarryWeightKg: 0
+  logBonusChanged: 1
 --- !u!114 &3963644342252435484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3407,6 +3417,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors._LSH_Temp.GridInventoryDebugItemAdder
   gridInventory: {fileID: 4260008715252334417}
   testItems:
+  - item: {fileID: 11400000, guid: 3f26f68f6f0f19a4bbaf942bed6f42a7, type: 2}
+    amount: 16
+  - item: {fileID: 11400000, guid: d1bef906214968245aa2782265ea3f2c, type: 2}
+    amount: 4
+  - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: 771885c03bd11074aa30d0110f6f6197, type: 2}
+    amount: 3
+  - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
+    amount: 6
   - item: {fileID: 11400000, guid: 0ad2af112dd8ad94192784a3dadaf54d, type: 2}
     amount: 15
   - item: {fileID: 11400000, guid: b0f7fba7e4e87a74c91f5c3d0cbd5f44, type: 2}
@@ -3423,14 +3443,71 @@ MonoBehaviour:
     amount: 30
   - item: {fileID: 11400000, guid: dafe881ee30592d4da6053db2bcf0ff4, type: 2}
     amount: 1
-  - item: {fileID: 11400000, guid: 3f26f68f6f0f19a4bbaf942bed6f42a7, type: 2}
-    amount: 15
-  - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
-    amount: 2
-  - item: {fileID: 11400000, guid: d1bef906214968245aa2782265ea3f2c, type: 2}
-    amount: 6
-  - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
-    amount: 3
+--- !u!114 &2260964690649159723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8718230562560161913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bd52185ded3c3f40ae6bd15e2ea3e23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHousingProgress
+  ShowTopMostFoldoutHeaderGroup: 1
+  WorkbenchLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  MedicalLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  GymLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  StashLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  KitchenLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  BedLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  CommStationLevel:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  logLevelChanged: 1
+--- !u!114 &6049983305593738643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8718230562560161913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caccc38c307576043a6ce0b039ecb55a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerHousingSaveSyncer
+  ShowTopMostFoldoutHeaderGroup: 1
+  saveToCloud: 1
+  logSaveRequest: 1
+  allowOwnerProvidedLoadDataWhenServerCloudDataMissing: 1
 --- !u!1 &8891958178260265517
 GameObject:
   m_ObjectHideFlags: 0

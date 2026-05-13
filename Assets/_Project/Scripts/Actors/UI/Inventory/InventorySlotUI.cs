@@ -1,7 +1,9 @@
-﻿using DeadZone.Core;
+using DeadZone.Core;
 using DeadZone.Actors;
+using DeadZone.Systems.Save;
 using Sirenix.OdinInspector;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -112,6 +114,28 @@ namespace DeadZone.Actors.UI
         public ItemDataSO CurrentItemData => currentItemData as ItemDataSO;
         public int CurrentStackCount => currentStackCount;
         public bool HasItem => CurrentItemData != null && currentStackCount > 0;
+
+        public void PrepareForSaveSnapshot()
+        {
+            AutoBindReferences();
+            ConfigureSlotKind();
+        }
+
+        public string GetEquipmentSaveSlotId()
+        {
+            ConfigureSlotKind();
+
+            return slotKind switch
+            {
+                InventorySlotKind.EquipmentHead => "EquipmentHead",
+                InventorySlotKind.EquipmentArmor => "EquipmentArmor",
+                InventorySlotKind.EquipmentBackpack => "EquipmentBackpack",
+                InventorySlotKind.EquipmentSecondaryWeapon => "EquipmentSecondaryWeapon",
+                InventorySlotKind.EquipmentMeleeWeapon => "EquipmentMeleeWeapon",
+                InventorySlotKind.EquipmentPrimaryWeapon => IsPrimary2Slot() ? "Primary2" : "EquipmentPrimaryWeapon",
+                _ => string.Empty
+            };
+        }
 
         private void Awake()
         {
@@ -384,6 +408,7 @@ namespace DeadZone.Actors.UI
 
                 SetItem(sourceItem, sourceCount);
                 source.ClearItem();
+                CaptureLobbyInventoryStateIfPresent(this, source);
                 return true;
             }
 
@@ -407,6 +432,7 @@ namespace DeadZone.Actors.UI
                 else
                     source.ClearItem();
 
+                CaptureLobbyInventoryStateIfPresent(this, source);
                 return true;
             }
 
@@ -424,12 +450,36 @@ namespace DeadZone.Actors.UI
 
             SetItem(sourceItem, sourceCount);
             source.SetItem(targetItem, targetCount);
+            CaptureLobbyInventoryStateIfPresent(this, source);
             return true;
+        }
+
+        private static void CaptureLobbyInventoryStateIfPresent(params InventorySlotUI[] changedSlots)
+        {
+            LobbyInventoryStateUiBridge bridge =
+                FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+
+            if (bridge == null)
+                return;
+
+            bridge.CaptureChangedItemSlots(changedSlots);
+            bridge.CaptureChangedEquipmentSlots(changedSlots);
+
+            LobbySaveService saveService =
+                FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+
+            saveService?.SaveCurrentStateToLocalJson("Inventory UI drop snapshot");
         }
 
         private static bool TrySyncEquipmentSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)
         {
-            if (slot == null || !slot.TryGetWeaponSlot(out WeaponSlot weaponSlot))
+            if (slot == null)
+                return true;
+
+            if (slot.slotKind == InventorySlotKind.EquipmentBackpack)
+                return TrySyncBackpackSlotAfterDrop(slot, nextItem);
+
+            if (!slot.TryGetWeaponSlot(out WeaponSlot weaponSlot))
                 return true;
 
             if (nextItem == null)
@@ -446,6 +496,60 @@ namespace DeadZone.Actors.UI
 
             Debug.Log($"[InventorySlotUI] 장비 슬롯 장착 요청: slot={slot.name}, weaponSlot={weaponSlot}, itemID={weaponData.itemID}, category={weaponData.weaponCategory}", slot);
             return TryEquipWeaponSlot(weaponSlot, weaponData, slot);
+        }
+
+        private static bool TrySyncBackpackSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)
+        {
+            if (slot == null)
+                return true;
+
+            InventoryUI inventoryUI = ResolveInventoryUI(slot);
+            LobbyPlayerInventoryUI lobbyPlayerInventoryUI = ResolveLobbyPlayerInventoryUI();
+
+            if (nextItem == null)
+            {
+                inventoryUI?.SetBagLevel(0);
+                lobbyPlayerInventoryUI?.SetBagLevel(0);
+                return TryEquipBackpackSlot(string.Empty, slot);
+            }
+
+            if (nextItem is not BackpackDataSO backpackData)
+            {
+                Debug.LogWarning($"[InventorySlotUI] {slot.name} 장비 슬롯에는 BackpackDataSO만 넣을 수 있습니다.", slot);
+                return false;
+            }
+
+            inventoryUI?.SetBagLevel(backpackData.backpackLevel);
+            lobbyPlayerInventoryUI?.SetBagLevel(backpackData.backpackLevel);
+            return TryEquipBackpackSlot(backpackData.itemID, slot);
+        }
+
+        private static bool TryEquipBackpackSlot(string backpackId, UnityEngine.Object context)
+        {
+            FixedString64Bytes id = new(backpackId ?? string.Empty);
+
+            EquipmentSlotsBridge bridge = ResolveAnyEquipmentSlotsBridge();
+            if (!string.IsNullOrEmpty(backpackId) && bridge != null && bridge.IsSpawned)
+            {
+                bridge.EquipItemServerRpc(id, WeaponSlot.None, default, 0);
+                return true;
+            }
+
+            EquipmentSlots equipmentSlots = ResolveEquipmentSlots();
+            if (equipmentSlots != null && equipmentSlots.IsServer)
+            {
+                equipmentSlots.EquipBackpack(id);
+                return true;
+            }
+
+            if (equipmentSlots != null && equipmentSlots.IsSpawned)
+            {
+                equipmentSlots.EquipBackpackServerRpc(id);
+                return true;
+            }
+
+            Debug.Log($"[InventorySlotUI] No spawned equipment sync target in this scene. The UI move will be captured by the lobby save snapshot. backpackId={backpackId}", context);
+            return true;
         }
 
         private static bool TryEquipWeaponSlot(WeaponSlot weaponSlot, WeaponDataSO weaponData, UnityEngine.Object context)
@@ -492,7 +596,7 @@ namespace DeadZone.Actors.UI
                 return true;
             }
 
-            Debug.LogWarning($"[InventorySlotUI] 무기 장착 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. slot={weaponSlot}, itemID={weaponData.itemID}", context);
+            Debug.Log($"[InventorySlotUI] No spawned equipment sync target in this scene. The UI move will be captured by the lobby save snapshot. slot={weaponSlot}, itemID={weaponData.itemID}", context);
             return true;
         }
 
@@ -511,7 +615,7 @@ namespace DeadZone.Actors.UI
                 return true;
             }
 
-            Debug.LogWarning($"[InventorySlotUI] 무기 장착 해제 동기화 대상을 찾지 못했습니다. UI 슬롯 이동만 처리합니다. slot={weaponSlot}", context);
+            Debug.Log($"[InventorySlotUI] No spawned equipment sync target in this scene. The UI clear will be captured by the lobby save snapshot. slot={weaponSlot}", context);
             return true;
         }
 
@@ -531,6 +635,30 @@ namespace DeadZone.Actors.UI
             }
 
             return null;
+        }
+
+        private static EquipmentSlotsBridge ResolveAnyEquipmentSlotsBridge()
+        {
+            EquipmentSlotsBridge[] candidates = FindObjectsByType<EquipmentSlotsBridge>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                    return candidate;
+            }
+
+            foreach (EquipmentSlotsBridge candidate in candidates)
+            {
+                if (candidate != null)
+                    return candidate;
+            }
+
+            return null;
+        }
+
+        private static LobbyPlayerInventoryUI ResolveLobbyPlayerInventoryUI()
+        {
+            LobbyPlayerInventoryUI[] candidates = FindObjectsByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            return candidates.Length > 0 ? candidates[0] : null;
         }
 
         private static EquipmentSlots ResolveEquipmentSlots()
@@ -621,6 +749,13 @@ namespace DeadZone.Actors.UI
             return false;
         }
 
+        private bool IsPrimary2Slot()
+        {
+            string path = GetHierarchyPath(transform).ToLowerInvariant();
+            string objectName = name.ToLowerInvariant();
+            return path.Contains("primary2") || objectName.Contains("primary2") || objectName.Contains("_2");
+        }
+
         private bool CanAccept(ItemDataSO itemData)
         {
             if (itemData == null)
@@ -680,6 +815,9 @@ namespace DeadZone.Actors.UI
             if (rarityBackground == null)
                 rarityBackground = FindImageReference("rarity", "grade", "background", "bg");
 
+            if (iconImage == null || IsEmptySlotIconName(iconImage.name.ToLowerInvariant()))
+                iconImage = FindItemIconReference();
+
             if (iconImage == null)
                 iconImage = FindImageReference("icon", "item");
 
@@ -688,6 +826,22 @@ namespace DeadZone.Actors.UI
 
             if (emptySlotIcon == null)
                 emptySlotIcon = FindEmptySlotIcon();
+        }
+
+        private Image FindItemIconReference()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+            foreach (Image image in images)
+            {
+                if (image == null || image.gameObject == gameObject)
+                    continue;
+
+                string lowerName = image.name.ToLowerInvariant();
+                if (lowerName.Contains("item") && !IsEmptySlotIconName(lowerName))
+                    return image;
+            }
+
+            return null;
         }
 
         private Image FindImageReference(params string[] nameTokens)
@@ -718,26 +872,19 @@ namespace DeadZone.Actors.UI
 
         private GameObject FindEmptySlotIcon()
         {
-            Image[] images = GetComponentsInChildren<Image>(true);
+            return FindEmptySlotIconIn(transform);
+        }
 
+        private GameObject FindEmptySlotIconIn(Transform root)
+        {
+            if (root == null)
+                return null;
+
+            Image[] images = root.GetComponentsInChildren<Image>(true);
             foreach (Image image in images)
             {
-                if (image == null || image == iconImage || image == rarityBackground)
-                    continue;
-
-                GameObject imageObject = image.gameObject;
-                if (imageObject == gameObject || imageObject == lockOverlay)
-                    continue;
-
-                if (lockOverlay != null && imageObject.transform.IsChildOf(lockOverlay.transform))
-                    continue;
-
-                string lowerName = imageObject.name.ToLowerInvariant();
-                if (lowerName.Contains("lock") || lowerName.Contains("background") || lowerName.Contains("rarity"))
-                    continue;
-
-                if (lowerName.StartsWith("icon_") && !lowerName.Contains("item"))
-                    return imageObject;
+                if (IsEmptySlotIconCandidate(image))
+                    return image.gameObject;
             }
 
             return null;
@@ -841,10 +988,65 @@ namespace DeadZone.Actors.UI
 
         private void SetEmptySlotIconVisible(bool visible)
         {
-            if (emptySlotIcon == null || emptySlotIcon == gameObject)
+            if (emptySlotIcon == gameObject)
+                emptySlotIcon = null;
+
+            if (emptySlotIcon == null)
+                emptySlotIcon = FindEmptySlotIcon();
+
+            if (!visible)
+            {
+                HideEmptySlotIconCandidates();
+                return;
+            }
+
+            if (emptySlotIcon == null)
                 return;
 
             emptySlotIcon.SetActive(visible);
+        }
+
+        private void HideEmptySlotIconCandidates()
+        {
+            HideEmptySlotIconCandidatesIn(transform);
+        }
+
+        private void HideEmptySlotIconCandidatesIn(Transform root)
+        {
+            if (root == null)
+                return;
+
+            foreach (Image image in root.GetComponentsInChildren<Image>(true))
+            {
+                if (IsEmptySlotIconCandidate(image))
+                    image.gameObject.SetActive(false);
+            }
+        }
+
+        private bool IsEmptySlotIconCandidate(Image image)
+        {
+            if (image == null || image == iconImage || image == rarityBackground)
+                return false;
+
+            GameObject imageObject = image.gameObject;
+            if (imageObject == null || imageObject == gameObject || imageObject == lockOverlay)
+                return false;
+
+            if (lockOverlay != null && imageObject.transform.IsChildOf(lockOverlay.transform))
+                return false;
+
+            string lowerName = imageObject.name.ToLowerInvariant();
+            if (lowerName.Contains("lock") || lowerName.Contains("background") || lowerName.Contains("rarity"))
+                return false;
+
+            return IsEmptySlotIconName(lowerName);
+        }
+
+        private static bool IsEmptySlotIconName(string lowerName)
+        {
+            return !string.IsNullOrEmpty(lowerName) &&
+                   lowerName.StartsWith("icon_") &&
+                   !lowerName.Contains("item");
         }
 
         private void SetStackCount(int stackCount)

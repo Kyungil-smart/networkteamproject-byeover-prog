@@ -1,8 +1,8 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
-using Unity.Netcode;
 
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -11,8 +11,8 @@ using DeadZone.Systems.Housing;
 
 namespace DeadZone.Actors.UI.Hideout
 {
-    // ½Ã¼³ ¾÷±×·¹ÀÌµå Ã¢ UI
-    // UI´Â ½Ã¼³ Á¤º¸¿Í Àç·á »óÅÂ¸¦ Ç¥½ÃÇÏ°í, ½ÇÁ¦ ¾÷±×·¹ÀÌµå´Â FacilityUpgradeController¿¡ ¿äÃ»
+    // ì‹œì„¤ ì—…ê·¸ë ˆì´ë“œ ì°½ UI
+    // ì‹œì„¤ ì˜¤ë¸Œì íŠ¸ì˜ ê³µìš© ë ˆë²¨ì´ ì•„ë‹ˆë¼, ë¡œì»¬ í”Œë ˆì´ì–´ì˜ PlayerHousingProgressë¥¼ ê¸°ì¤€ìœ¼ë¡œ í‘œì‹œ
     [DisallowMultipleComponent]
     public sealed class FacilityUpgradeWindowUI : MonoBehaviour
     {
@@ -23,34 +23,53 @@ namespace DeadZone.Actors.UI.Hideout
             public FacilityBase facility;
         }
 
-        [Header("Ã¢ ·çÆ®")]
-        [SerializeField] private GameObject windowRoot;
+        [Header("ì°½ ë£¨íŠ¸")]
+        [SerializeField]
+        private GameObject windowRoot;
 
-        [Header("½Ã¼³ ¿¬°á")]
-        [SerializeField] private List<FacilityViewBinding> facilityBindings = new();
+        [Header("ì‹œì„¤ ì—°ê²°")]
+        [SerializeField]
+        private List<FacilityViewBinding> facilityBindings = new();
 
-        [Header("ÀÎº¥Åä¸® Ç¥½Ã¿ë")]
-        [SerializeField] private MonoBehaviour inventoryBehaviour;
+        [Header("ì¸ë²¤í† ë¦¬ í‘œì‹œìš©")]
+        [SerializeField]
+        private MonoBehaviour inventoryBehaviour;
 
-        [Header("»ó´Ü Ç¥½Ã")]
-        [SerializeField] private TMP_Text facilityNameText;
-        [SerializeField] private TMP_Text currentLevelText;
-        [SerializeField] private TMP_Text currentEffectText;
+        [Header("ìƒë‹¨ í‘œì‹œ")]
+        [SerializeField]
+        private TMP_Text facilityNameText;
 
-        [Header("¾÷±×·¹ÀÌµå Row")]
-        [SerializeField] private FacilityUpgradeRowUI level2Row;
-        [SerializeField] private FacilityUpgradeRowUI level3Row;
-        [SerializeField] private FacilityUpgradeRowUI level4Row;
+        [SerializeField]
+        private TMP_Text currentLevelText;
 
-        [Header("·Î±×")]
-        [SerializeField] private bool showDebugLog = true;
+        [SerializeField]
+        private TMP_Text currentEffectText;
+
+        [SerializeField]
+        private TMP_Text messageText;
+
+        [Header("ì—…ê·¸ë ˆì´ë“œ Row")]
+        [SerializeField]
+        private FacilityUpgradeRowUI level2Row;
+
+        [SerializeField]
+        private FacilityUpgradeRowUI level3Row;
+
+        [SerializeField]
+        private FacilityUpgradeRowUI level4Row;
+
+        [Header("ë¡œê·¸")]
+        [SerializeField]
+        private bool showDebugLog = true;
 
         private HideoutCameraFacilitySelector.FacilityView currentFacilityView =
             HideoutCameraFacilitySelector.FacilityView.None;
 
         private FacilityBase currentFacility;
         private IInventory inventory;
+        private PlayerHousingProgress localHousingProgress;
         private bool isInitialized;
+        private PlayerHousingProgress subscribedHousingProgress;
 
         public bool IsOpen => windowRoot != null && windowRoot.activeSelf;
         public FacilityBase CurrentFacility => currentFacility;
@@ -66,21 +85,39 @@ namespace DeadZone.Actors.UI.Hideout
             Initialize();
         }
 
+        private void OnEnable()
+        {
+            EventBus.Subscribe<HousingUpgradeResultEvent>(HandleUpgradeResult);
+            EventBus.Subscribe<HousingSaveResultEvent>(HandleSaveResult);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<HousingUpgradeResultEvent>(HandleUpgradeResult);
+            EventBus.Unsubscribe<HousingSaveResultEvent>(HandleSaveResult);
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeHousingProgress();
+        }
+
         public void Open(HideoutCameraFacilitySelector.FacilityView facilityView)
         {
             Initialize();
 
             if (!CanUseUpgradeWindow(facilityView))
             {
-                Debug.LogWarning($"[FacilityUpgradeWindowUI] {facilityView} ½Ã¼³Àº ÇöÀç ¾÷±×·¹ÀÌµå UI ´ë»óÀÌ ¾Æ´Õ´Ï´Ù.", this);
+                Debug.LogWarning($"[FacilityUpgradeWindowUI] {facilityView} ì‹œì„¤ì€ í˜„ì¬ ì—…ê·¸ë ˆì´ë“œ UI ëŒ€ìƒì´ ì•„ë‹™ë‹ˆë‹¤.", this);
                 return;
             }
 
-            ResolveInventory();
+            ResolveLocalPlayerReferences();
+            UpdateHousingProgressSubscription();
 
             if (!TryFindFacility(facilityView, out FacilityBase facility))
             {
-                Debug.LogWarning($"[FacilityUpgradeWindowUI] {facilityView}¿¡ ¿¬°áµÈ FacilityBase°¡ ¾ø½À´Ï´Ù.", this);
+                Debug.LogWarning($"[FacilityUpgradeWindowUI] {facilityView}ì— ì—°ê²°ëœ FacilityBaseê°€ ì—†ìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
@@ -92,11 +129,12 @@ namespace DeadZone.Actors.UI.Hideout
 
             Refresh();
 
-            DebugLog($"{facilityView} ¾÷±×·¹ÀÌµå Ã¢À» ¿­¾ú½À´Ï´Ù.");
+            DebugLog($"{facilityView} ì—…ê·¸ë ˆì´ë“œ ì°½ì„ ì—´ì—ˆìŠµë‹ˆë‹¤.");
         }
 
         public void Close()
         {
+            UnsubscribeHousingProgress();
             currentFacilityView = HideoutCameraFacilitySelector.FacilityView.None;
             currentFacility = null;
 
@@ -106,12 +144,13 @@ namespace DeadZone.Actors.UI.Hideout
             ClearTexts();
             ClearRows();
 
-            DebugLog("¾÷±×·¹ÀÌµå Ã¢À» ´İ¾Ò½À´Ï´Ù.");
+            DebugLog("ì—…ê·¸ë ˆì´ë“œ ì°½ì„ ë‹«ì•˜ìŠµë‹ˆë‹¤.");
         }
 
         public void Refresh()
         {
-            ResolveInventory();
+            ResolveLocalPlayerReferences();
+            UpdateHousingProgressSubscription();
 
             if (currentFacility == null)
             {
@@ -120,27 +159,27 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            FacilityLevel currentLevelData = currentFacility.GetCurrentLevelData();
-            int currentLevel = currentFacility.GetCurrentLevel();
+            int playerCurrentLevel = GetLocalPlayerFacilityLevel();
             int maxLevel = currentFacility.GetMaxLevel();
+            FacilityLevel currentLevelData = currentFacility.GetLevelData(playerCurrentLevel);
 
             if (facilityNameText != null)
                 facilityNameText.text = GetFacilityDisplayName(currentFacilityView);
 
             if (currentLevelText != null)
-                currentLevelText.text = $"LV {currentLevel} / {maxLevel}";
+                currentLevelText.text = $"LV {playerCurrentLevel} / {maxLevel}";
 
             if (currentEffectText != null)
             {
                 currentEffectText.text =
                     currentLevelData != null && !string.IsNullOrWhiteSpace(currentLevelData.effectDescription)
                         ? currentLevelData.effectDescription
-                        : "ÇöÀç ½Ã¼³ È¿°ú°¡ ¼³Á¤µÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.";
+                        : "í˜„ì¬ ì‹œì„¤ íš¨ê³¼ê°€ ì„¤ì •ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.";
             }
 
-            RefreshUpgradeRows();
+            RefreshUpgradeRows(playerCurrentLevel);
 
-            DebugLog($"½Ã¼³ µ¥ÀÌÅÍ °»½Å: {currentFacilityView}, ÇöÀç ·¹º§ {currentLevel}, ÃÖ´ë ·¹º§ {maxLevel}");
+            DebugLog($"ì‹œì„¤ ë°ì´í„° ê°±ì‹ : {currentFacilityView}, ë‚´ í˜„ì¬ ë ˆë²¨ {playerCurrentLevel}, ìµœëŒ€ ë ˆë²¨ {maxLevel}");
         }
 
         private void Initialize()
@@ -151,13 +190,13 @@ namespace DeadZone.Actors.UI.Hideout
             if (windowRoot == null)
                 windowRoot = gameObject;
 
-            ResolveInventory();
+            ResolveLocalPlayerReferences();
 
             isInitialized = true;
-            DebugLog("ÃÊ±âÈ­ ¿Ï·á");
+            DebugLog("ì´ˆê¸°í™” ì™„ë£Œ");
         }
 
-        private void RefreshUpgradeRows()
+        private void RefreshUpgradeRows(int playerCurrentLevel)
         {
             if (currentFacility == null)
             {
@@ -165,53 +204,114 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            SetRow(level2Row, 2);
-            SetRow(level3Row, 3);
-            SetRow(level4Row, 4);
+            SetRow(level2Row, playerCurrentLevel, 2);
+            SetRow(level3Row, playerCurrentLevel, 3);
+            SetRow(level4Row, playerCurrentLevel, 4);
         }
 
-        private void SetRow(FacilityUpgradeRowUI row, int targetLevel)
+        private void SetRow(FacilityUpgradeRowUI row, int playerCurrentLevel, int targetLevel)
         {
             if (row == null)
                 return;
 
             FacilityLevel levelData = currentFacility.GetLevelData(targetLevel);
-            row.Set(currentFacility, targetLevel, levelData, inventory, RequestUpgrade);
+
+            row.Set(
+                currentFacility,
+                playerCurrentLevel,
+                targetLevel,
+                levelData,
+                inventory,
+                RequestUpgrade);
         }
 
         private void RequestUpgrade(int targetLevel)
         {
             if (currentFacility == null)
             {
-                Debug.LogWarning("[FacilityUpgradeWindowUI] ¾÷±×·¹ÀÌµåÇÒ ½Ã¼³ÀÌ ¾ø½À´Ï´Ù.", this);
+                Debug.LogWarning("[FacilityUpgradeWindowUI] ì—…ê·¸ë ˆì´ë“œí•  ì‹œì„¤ì´ ì—†ìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             if (!CanUseUpgradeWindow(currentFacilityView))
             {
-                Debug.LogWarning($"[FacilityUpgradeWindowUI] {currentFacilityView} ½Ã¼³Àº ¾÷±×·¹ÀÌµå ¿äÃ» ´ë»óÀÌ ¾Æ´Õ´Ï´Ù.", this);
+                Debug.LogWarning($"[FacilityUpgradeWindowUI] {currentFacilityView} ì‹œì„¤ì€ ì—…ê·¸ë ˆì´ë“œ ìš”ì²­ ëŒ€ìƒì´ ì•„ë‹™ë‹ˆë‹¤.", this);
                 return;
             }
 
-            if (!currentFacility.IsUpgradeTargetLevel(targetLevel))
+            int playerCurrentLevel = GetLocalPlayerFacilityLevel();
+
+            if (targetLevel != playerCurrentLevel + 1)
             {
-                Debug.LogWarning($"[FacilityUpgradeWindowUI] LV{targetLevel}Àº ÇöÀç ¾÷±×·¹ÀÌµå ´ë»ó ·¹º§ÀÌ ¾Æ´Õ´Ï´Ù.", this);
+                Debug.LogWarning(
+                    $"[FacilityUpgradeWindowUI] LV{targetLevel}ì€ í˜„ì¬ ì—…ê·¸ë ˆì´ë“œ ëŒ€ìƒ ë ˆë²¨ì´ ì•„ë‹™ë‹ˆë‹¤. ë‚´ í˜„ì¬ ë ˆë²¨: LV{playerCurrentLevel}",
+                    this
+                );
+
                 Refresh();
                 return;
             }
 
             if (!TryGetUpgradeController(out FacilityUpgradeController upgradeController))
             {
-                Debug.LogWarning("[FacilityUpgradeWindowUI] FacilityUpgradeController°¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.", this);
+                Debug.LogWarning("[FacilityUpgradeWindowUI] FacilityUpgradeControllerê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             upgradeController.RequestUpgrade();
 
-            DebugLog($"LV{targetLevel} ¾÷±×·¹ÀÌµå¸¦ ¼­¹ö¿¡ ¿äÃ»Çß½À´Ï´Ù.");
+            SetMessage($"LV{targetLevel} ì—…ê·¸ë ˆì´ë“œë¥¼ ì„œë²„ì— ìš”ì²­í–ˆìŠµë‹ˆë‹¤.");
+            DebugLog($"LV{targetLevel} ì—…ê·¸ë ˆì´ë“œë¥¼ ì„œë²„ì— ìš”ì²­í–ˆìŠµë‹ˆë‹¤.");
+        }
+
+        private void HandleUpgradeResult(HousingUpgradeResultEvent evt)
+        {
+            if (!IsOpen)
+                return;
+
+            SetMessage(evt.success ? $"ì—…ê·¸ë ˆì´ë“œ ì™„ë£Œ: LV{evt.currentLevel}" : evt.reason);
+            Refresh();
+        }
+
+        private void HandleSaveResult(HousingSaveResultEvent evt)
+        {
+            if (!IsOpen || evt.success)
+                return;
+
+            SetMessage(evt.reason);
+        }
+
+        private void UpdateHousingProgressSubscription()
+        {
+            if (subscribedHousingProgress == localHousingProgress)
+                return;
+
+            UnsubscribeHousingProgress();
+
+            subscribedHousingProgress = localHousingProgress;
+            if (subscribedHousingProgress != null)
+                subscribedHousingProgress.FacilityLevelChanged += HandleLocalHousingLevelChanged;
+        }
+
+        private void UnsubscribeHousingProgress()
+        {
+            if (subscribedHousingProgress != null)
+                subscribedHousingProgress.FacilityLevelChanged -= HandleLocalHousingLevelChanged;
+
+            subscribedHousingProgress = null;
+        }
+
+        private void HandleLocalHousingLevelChanged(FacilityType facilityType, int oldLevel, int newLevel)
+        {
+            if (!IsOpen || currentFacility == null)
+                return;
+
+            if (currentFacility.Type != facilityType)
+                return;
 
             Refresh();
         }
+
 
         private bool TryGetUpgradeController(out FacilityUpgradeController upgradeController)
         {
@@ -228,6 +328,119 @@ namespace DeadZone.Actors.UI.Hideout
             upgradeController = currentFacility.GetComponentInChildren<FacilityUpgradeController>(true);
 
             return upgradeController != null;
+        }
+
+        private int GetLocalPlayerFacilityLevel()
+        {
+            if (currentFacility == null)
+                return 1;
+
+            if (localHousingProgress == null)
+                ResolveLocalPlayerReferences();
+
+            if (localHousingProgress == null)
+                return currentFacility.GetCurrentLevel();
+
+            return localHousingProgress.GetLevel(currentFacility.Type);
+        }
+
+        private void ResolveLocalPlayerReferences()
+        {
+            inventory = null;
+            localHousingProgress = null;
+
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+                if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out NetworkClient localClient))
+                {
+                    if (localClient.PlayerObject != null)
+                    {
+                        localHousingProgress = localClient.PlayerObject.GetComponent<PlayerHousingProgress>();
+
+                        if (localHousingProgress == null)
+                            localHousingProgress = localClient.PlayerObject.GetComponentInChildren<PlayerHousingProgress>(true);
+
+                        IInventory playerInventory = localClient.PlayerObject.GetComponent<IInventory>();
+
+                        if (playerInventory == null)
+                            playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
+
+                        if (playerInventory != null)
+                        {
+                            inventory = playerInventory;
+                            inventoryBehaviour = playerInventory as MonoBehaviour;
+
+                            DebugLog($"ë¡œì»¬ í”Œë ˆì´ì–´ ì¸ë²¤í† ë¦¬ ì—°ê²° ì™„ë£Œ: {inventoryBehaviour.gameObject.name}");
+                        }
+
+                        if (localHousingProgress != null)
+                            DebugLog($"ë¡œì»¬ í”Œë ˆì´ì–´ í•˜ìš°ì§• ì§„í–‰ë„ ì—°ê²° ì™„ë£Œ: {localHousingProgress.gameObject.name}");
+
+                        if (inventory != null || localHousingProgress != null)
+                            return;
+                    }
+                }
+            }
+
+            if (inventoryBehaviour != null)
+            {
+                if (inventoryBehaviour is IInventory directInventory)
+                {
+                    inventory = directInventory;
+                    DebugLog($"IInventory ì§ì ‘ ì—°ê²° ì™„ë£Œ: {inventoryBehaviour.GetType().Name}");
+                    return;
+                }
+
+                IInventory sameObjectInventory = inventoryBehaviour.GetComponent<IInventory>();
+
+                if (sameObjectInventory != null)
+                {
+                    inventory = sameObjectInventory;
+                    DebugLog($"IInventory ê°™ì€ ì˜¤ë¸Œì íŠ¸ì—ì„œ ì—°ê²° ì™„ë£Œ: {sameObjectInventory.GetType().Name}");
+                    return;
+                }
+
+                IInventory childInventory = inventoryBehaviour.GetComponentInChildren<IInventory>(true);
+
+                if (childInventory != null)
+                {
+                    inventory = childInventory;
+                    DebugLog($"IInventory ìì‹ ì˜¤ë¸Œì íŠ¸ì—ì„œ ì—°ê²° ì™„ë£Œ: {childInventory.GetType().Name}");
+                    return;
+                }
+            }
+
+            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (inventory == null && behaviours[i] is IInventory foundInventory)
+                {
+                    inventory = foundInventory;
+                    inventoryBehaviour = behaviours[i];
+
+                    DebugLog($"IInventory ìë™ ì—°ê²° ì™„ë£Œ: {behaviours[i].GetType().Name} / ì˜¤ë¸Œì íŠ¸: {behaviours[i].gameObject.name}");
+                }
+
+                if (localHousingProgress == null && behaviours[i] is PlayerHousingProgress foundProgress)
+                {
+                    localHousingProgress = foundProgress;
+                    DebugLog($"PlayerHousingProgress ìë™ ì—°ê²° ì™„ë£Œ: {foundProgress.gameObject.name}");
+                }
+
+                if (inventory != null && localHousingProgress != null)
+                    return;
+            }
+
+            if (inventory == null)
+                Debug.LogWarning("[FacilityUpgradeWindowUI] ì”¬ì—ì„œ IInventory êµ¬í˜„ì²´ë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.", this);
+
+            if (localHousingProgress == null)
+                Debug.LogWarning("[FacilityUpgradeWindowUI] ì”¬ì—ì„œ PlayerHousingProgressë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.", this);
         }
 
         private void ClearRows()
@@ -265,86 +478,6 @@ namespace DeadZone.Actors.UI.Hideout
             return false;
         }
 
-        private void ResolveInventory()
-        {
-            inventory = null;
-
-            // 1¼øÀ§: ³×Æ®¿öÅ©¿¡¼­ ½ÇÁ¦ ·ÎÄÃ ÇÃ·¹ÀÌ¾îÀÇ PlayerObject ÀÎº¥Åä¸®¸¦ Ã£´Â´Ù.
-            // Å×½ºÆ® ¾ÆÀÌÅÛÀ» ³ÖÀº Player(Clone)ÀÇ GridInventory¸¦ Á¤È®È÷ Àâ±â À§ÇÑ ±âÁØ
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            {
-                ulong localClientId = NetworkManager.Singleton.LocalClientId;
-
-                if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out NetworkClient localClient))
-                {
-                    if (localClient.PlayerObject != null)
-                    {
-                        IInventory playerInventory = localClient.PlayerObject.GetComponent<IInventory>();
-
-                        if (playerInventory == null)
-                            playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
-
-                        if (playerInventory != null)
-                        {
-                            inventory = playerInventory;
-                            inventoryBehaviour = playerInventory as MonoBehaviour;
-
-                            DebugLog($"·ÎÄÃ ÇÃ·¹ÀÌ¾î ÀÎº¥Åä¸® ¿¬°á ¿Ï·á: {inventoryBehaviour.gameObject.name}");
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // 2¼øÀ§: Inspector¿¡ Á÷Á¢ ¿¬°áÇÑ ÀÎº¥Åä¸® »ç¿ë
-            if (inventoryBehaviour != null)
-            {
-                if (inventoryBehaviour is IInventory directInventory)
-                {
-                    inventory = directInventory;
-                    DebugLog($"IInventory Á÷Á¢ ¿¬°á ¿Ï·á: {inventoryBehaviour.GetType().Name}");
-                    return;
-                }
-
-                IInventory sameObjectInventory = inventoryBehaviour.GetComponent<IInventory>();
-
-                if (sameObjectInventory != null)
-                {
-                    inventory = sameObjectInventory;
-                    DebugLog($"IInventory °°Àº ¿ÀºêÁ§Æ®¿¡¼­ ¿¬°á ¿Ï·á: {sameObjectInventory.GetType().Name}");
-                    return;
-                }
-
-                IInventory childInventory = inventoryBehaviour.GetComponentInChildren<IInventory>(true);
-
-                if (childInventory != null)
-                {
-                    inventory = childInventory;
-                    DebugLog($"IInventory ÀÚ½Ä ¿ÀºêÁ§Æ®¿¡¼­ ¿¬°á ¿Ï·á: {childInventory.GetType().Name}");
-                    return;
-                }
-            }
-
-            // 3¼øÀ§: ÃÖÈÄÀÇ fallback. ÀÚµ¿ °Ë»öÀº °¡Àå ¸¶Áö¸·¿¡¸¸ »ç¿ë
-            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is not IInventory foundInventory)
-                    continue;
-
-                inventory = foundInventory;
-                inventoryBehaviour = behaviours[i];
-
-                DebugLog($"IInventory ÀÚµ¿ ¿¬°á ¿Ï·á: {behaviours[i].GetType().Name} / ¿ÀºêÁ§Æ®: {behaviours[i].gameObject.name}");
-                return;
-            }
-
-            Debug.LogWarning("[FacilityUpgradeWindowUI] ¾À¿¡¼­ IInventory ±¸ÇöÃ¼¸¦ Ã£Áö ¸øÇß½À´Ï´Ù.", this);
-        }
-
         private void ClearTexts()
         {
             if (facilityNameText != null)
@@ -355,6 +488,9 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (currentEffectText != null)
                 currentEffectText.text = string.Empty;
+
+            if (messageText != null)
+                messageText.text = string.Empty;
         }
 
         private bool CanUseUpgradeWindow(HideoutCameraFacilitySelector.FacilityView facilityView)
@@ -370,13 +506,21 @@ namespace DeadZone.Actors.UI.Hideout
         {
             return facilityView switch
             {
-                HideoutCameraFacilitySelector.FacilityView.Workbench => "ÃÑ±â ÀÛ¾÷´ë",
-                HideoutCameraFacilitySelector.FacilityView.Medical => "ÀÇ·á½Ã¼³",
-                HideoutCameraFacilitySelector.FacilityView.Gym => "Çï½ºÀå",
-                HideoutCameraFacilitySelector.FacilityView.Kitchen => "Á¶¸®½Ã¼³",
-                HideoutCameraFacilitySelector.FacilityView.Bed => "Ä§½Ç",
+                HideoutCameraFacilitySelector.FacilityView.Workbench => "ì´ê¸° ì‘ì—…ëŒ€",
+                HideoutCameraFacilitySelector.FacilityView.Medical => "ì˜ë£Œì‹œì„¤",
+                HideoutCameraFacilitySelector.FacilityView.Gym => "í—¬ìŠ¤ì¥",
+                HideoutCameraFacilitySelector.FacilityView.Kitchen => "ì¡°ë¦¬ì‹œì„¤",
+                HideoutCameraFacilitySelector.FacilityView.Bed => "ì¹¨ì‹¤",
                 _ => facilityView.ToString()
             };
+        }
+
+        private void SetMessage(string message)
+        {
+            if (messageText != null)
+                messageText.text = message;
+
+            DebugLog(message);
         }
 
         private void DebugLog(string message)

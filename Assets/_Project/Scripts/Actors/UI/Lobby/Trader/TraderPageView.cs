@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Save;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -94,6 +95,8 @@ namespace DeadZone.Actors.UI
         [SerializeField] private WalletSystem testWalletSystem;
         [SerializeField] private MonoBehaviour testInventoryTarget;
         [SerializeField] private StashGridUI stashGridUI;
+        [SerializeField] private LobbySaveService lobbySaveService;
+        [SerializeField] private bool saveLobbyAfterTestTrade = true;
 
         private void Reset()
         {
@@ -368,6 +371,7 @@ namespace DeadZone.Actors.UI
             testPurchasedEntries.RemoveAt(entryIndex);
             int sellPrice = CalculateSellPrice(entry);
             EarnTestCurrency(sellPrice);
+            SaveLobbyAfterTestTrade();
 
             Debug.Log($"[TraderPageView] 테스트 판매 완료. Item={entry.item.itemID}, Price={sellPrice}, TestCurrency={testCurrency}", this);
             RebuildSellList();
@@ -402,6 +406,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
             testPurchasedEntries.Add(entry);
+            SaveLobbyAfterTestTrade();
 
             Debug.Log($"[TraderPageView] 테스트 구매 완료. Item={entry.item.itemID}, Price={price}, TestCurrency={testCurrency}", this);
 
@@ -500,6 +505,9 @@ namespace DeadZone.Actors.UI
 
             if (testWalletSystem == null)
                 testWalletSystem = FindObjectOfType<WalletSystem>(true);
+
+            if (lobbySaveService == null)
+                lobbySaveService = FindObjectOfType<LobbySaveService>(true);
 
             if (selectedTraderPortraitImage == null)
                 selectedTraderPortraitImage = FindImage("Img_SelectedTrader", "SelectedTrader", "Img_Igor", "Igor", "Portrait");
@@ -1109,7 +1117,7 @@ namespace DeadZone.Actors.UI
 
         private int GetCurrentTestCurrency()
         {
-            return testWalletSystem != null ? testWalletSystem.Credits.Value : testCurrency;
+            return testWalletSystem != null ? testWalletSystem.CurrentCredits : testCurrency;
         }
 
         private bool TryPayTestCurrency(int price)
@@ -1119,7 +1127,7 @@ namespace DeadZone.Actors.UI
                 if (!testWalletSystem.TryPayLocalTest(price))
                     return false;
 
-                testCurrency = testWalletSystem.Credits.Value;
+                testCurrency = testWalletSystem.CurrentCredits;
                 return true;
             }
 
@@ -1135,11 +1143,25 @@ namespace DeadZone.Actors.UI
             if (testWalletSystem != null)
             {
                 testWalletSystem.EarnLocalTest(amount);
-                testCurrency = testWalletSystem.Credits.Value;
+                testCurrency = testWalletSystem.CurrentCredits;
                 return;
             }
 
             testCurrency += amount;
+        }
+
+        private void SaveLobbyAfterTestTrade()
+        {
+            if (!saveLobbyAfterTestTrade)
+                return;
+
+            if (lobbySaveService == null)
+                lobbySaveService = FindObjectOfType<LobbySaveService>(true);
+
+            if (lobbySaveService != null)
+                lobbySaveService.SaveLobbyDataToCloud();
+            else
+                Debug.LogWarning("[TraderPageView] LobbySaveService를 찾지 못해 거래 후 자동 저장을 건너뜁니다.", this);
         }
     }
 }

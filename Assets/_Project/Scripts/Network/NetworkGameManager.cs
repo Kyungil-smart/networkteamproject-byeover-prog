@@ -1,7 +1,8 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+using DeadZone.Actors.UI;
 using DeadZone.Core;
 
 namespace DeadZone.Network
@@ -53,6 +54,7 @@ namespace DeadZone.Network
         public void ReturnToHideoutServerRpc()
         {
             RaidTimeRemaining.Value = 0f;
+            LoadingScreenService.ShowForNetworkLoadOrFallback("Hideout");
             NetworkManager.Singleton.SceneManager.LoadScene("Hideout", LoadSceneMode.Single);
         }
 

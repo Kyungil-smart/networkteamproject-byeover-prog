@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using DeadZone.Network._LSH_Temp;
+using DeadZone.Systems.Save;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -18,7 +20,6 @@ namespace DeadZone.Actors.UI
         {
             new[] { "party", "파티" },
             new[] { "inventory", "인벤토리" },
-            new[] { "craft", "제작" },
             new[] { "trader", "트레이더" },
             new[] { "quest", "퀘스트" },
             new[] { "facility", "시설" }
@@ -28,7 +29,6 @@ namespace DeadZone.Actors.UI
         {
             "Page_Party",
             "Page_Inventory",
-            "Page_Craft",
             "Page_Trader",
             "Page_Quest",
             "Page_Facility"
@@ -47,7 +47,9 @@ namespace DeadZone.Actors.UI
         
         [Title("시설 씬 전환")]
         [SerializeField] private string facilitySceneName = "HideOut";
-        [SerializeField] private int facilityTabIndex = 5;
+        [SerializeField] private int facilityTabIndex = 4;
+        [SerializeField] private bool saveLobbyBeforeFacilityScene = true;
+        [SerializeField] private LobbySaveService lobbySaveService;
 
         [Title("자동 연결")]
         [SerializeField] private bool autoCollectTabsInScene = true;
@@ -134,7 +136,7 @@ namespace DeadZone.Actors.UI
             currentIndex = index;
             ApplyTabState(index, instant: false);
         }
-        private void LoadFacilityScene()
+        private async void LoadFacilityScene()
         {
             if (string.IsNullOrWhiteSpace(facilitySceneName))
             {
@@ -145,7 +147,17 @@ namespace DeadZone.Actors.UI
             if (logTabSelection)
                 Debug.Log($"[LobbyTabController] 시설 탭 클릭. 씬 전환: {facilitySceneName}", this);
 
-            SceneManager.LoadScene(facilitySceneName);
+            if (saveLobbyBeforeFacilityScene)
+            {
+                LobbySaveService saveService = ResolveLobbySaveService();
+                if (saveService != null)
+                    await saveService.SaveLobbyDataToCloudAsync();
+                else
+                    Debug.LogWarning("[LobbyTabController] LobbySaveService를 찾지 못해 시설 씬 전환 전 저장을 건너뜁니다.", this);
+            }
+
+            LocalNetworkTestBootstrap.SuppressNextAutoStart("Lobby to facility scene transition");
+            LoadingScreenService.LoadSceneOrFallback(facilitySceneName);
         }
 
         [Button("탭/페이지 자동 연결")]
@@ -184,6 +196,18 @@ namespace DeadZone.Actors.UI
 
             if (autoCollectPagesInScene && !HasUsableManualPages())
                 pages = ResolvePagesByName();
+
+            if (lobbySaveService == null)
+                lobbySaveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+        }
+
+        private LobbySaveService ResolveLobbySaveService()
+        {
+            if (lobbySaveService != null)
+                return lobbySaveService;
+
+            lobbySaveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            return lobbySaveService;
         }
 
         private LobbyTabButtonUI[] ResolveTabsByKeywordOrder()

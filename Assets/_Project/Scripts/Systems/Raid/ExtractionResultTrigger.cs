@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+using DeadZone.Actors.UI;
 using DeadZone.Systems.Raid;
 
 namespace DeadZone.Actors.Extraction
@@ -72,7 +74,7 @@ namespace DeadZone.Actors.Extraction
                 tracker.GetLootResults()
             );
 
-            SceneManager.LoadScene(resultSceneName);
+            LoadingScreenService.LoadSceneOrFallback(resultSceneName);
         }
     }
 }

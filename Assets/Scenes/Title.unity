@@ -875,7 +875,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 1
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -963,11 +963,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2089282434}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -283.3314, y: 324.53003}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1353.3372, y: 430.94}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 1}
 --- !u!114 &348059932
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2062,11 +2062,11 @@ RectTransform:
   - {fileID: 1776311352}
   m_Father: {fileID: 2089282434}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -748, y: -156.33482}
-  m_SizeDelta: {x: 301.7026, y: 312.6649}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 0, y: 0.5}
+  m_AnchoredPosition: {x: 30, y: -156.33}
+  m_SizeDelta: {x: 301.70264, y: 312.6649}
+  m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &694730340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3392,6 +3392,8 @@ MonoBehaviour:
   closeButton: {fileID: 2062565111}
   messageText: {fileID: 223107014}
   loadingBlocker: {fileID: 0}
+  attemptAutoLoginOnEnable: 1
+  autoLoginSystemWaitMs: 5000
   lobbySceneName: Lobby
   cloudSaveTimeoutMs: 10000
 --- !u!1 &1304664582
@@ -5967,10 +5969,6 @@ PrefabInstance:
     - target: {fileID: 3760038832540701116, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4804247100134611311, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
-      propertyPath: m_MatchWidthOrHeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6361275836623298118, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
       propertyPath: m_AnchorMax.x

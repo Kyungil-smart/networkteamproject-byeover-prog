@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: CPU
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: intel\uC5D0\uC11C \uAD70\uC0AC\uC6A9\uC73C\uB85C
     \uC81C\uC791"
-  icon: {fileID: 21300000, guid: 8ed279faa319a5441af83a40225daa26, type: 3}
+  icon: {fileID: 21300000, guid: d532f37fa93667e47b204faee5f691ec, type: 3}
   category: 7
   rarity: 1
   isValuable: 1

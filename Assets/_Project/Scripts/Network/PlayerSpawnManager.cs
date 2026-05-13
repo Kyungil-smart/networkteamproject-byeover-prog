@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DeadZone.Core;
+using DeadZone.Systems.Raid;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -145,6 +146,14 @@ namespace DeadZone.Network
                 return;
             }
 
+            if (!prefabNetworkObject.SceneMigrationSynchronization)
+            {
+                Debug.Log(
+                    "[RaidLoadout] PlayerPrefab SceneMigrationSynchronization is disabled. " +
+                    "This flow uses manual spawn after raid scene load, so loadout is applied immediately after SpawnAsPlayerObject.",
+                    this);
+            }
+
             for (int i = 0; i < spawnTargetBuffer.Count; i++)
             {
                 ulong clientId = spawnTargetBuffer[i];
@@ -272,6 +281,7 @@ namespace DeadZone.Network
             }
 
             networkObject.SpawnAsPlayerObject(clientId, true);
+            RaidLoadoutTransferService.TryApplyLoadout(clientId, instance);
 
             // Owner 권위 NetworkTransform 보정: 서버가 정한 SpawnPoint를 Owner Client에 전달.
             PlayerSpawnInitializer initializer = instance.GetComponent<PlayerSpawnInitializer>();
