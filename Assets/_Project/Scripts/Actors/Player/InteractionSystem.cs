@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace DeadZone.Actors
@@ -15,7 +15,7 @@ namespace DeadZone.Actors
         [SerializeField, Min(0.1f)] private float interactRadius = 3f;
 
         [Tooltip("Player 전방 기준으로 상호작용을 허용할 각도입니다. 360이면 주변 전체를 허용합니다.")]
-        [SerializeField, Range(1f, 360f)] private float interactAngle = 150f;
+        [SerializeField, Range(1f, 360f)] private float interactAngle = 360f;
 
         [Tooltip("상호작용 후보로 감지할 레이어입니다. 컨테이너는 ItemBox 레이어를 사용합니다.")]
         [SerializeField] private LayerMask interactMask = ~0;
@@ -131,14 +131,15 @@ namespace DeadZone.Actors
                 if (distance > interactRadius)
                     continue;
 
+                bool fullCircle = interactAngle >= 359.9f;
                 float angle = 0f;
-                if (toCandidate.sqrMagnitude > 0.0001f)
+                if (!fullCircle && toCandidate.sqrMagnitude > 0.0001f)
                 {
                     angle = Vector3.Angle(forward, toCandidate.normalized);
                 }
 
-                float halfAngle = interactAngle >= 359.9f ? 180f : interactAngle * 0.5f;
-                if (angle > halfAngle)
+                float halfAngle = fullCircle ? 180f : interactAngle * 0.5f;
+                if (!fullCircle && angle > halfAngle)
                 {
                     angleRejectedCount++;
                     continue;

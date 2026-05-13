@@ -498,6 +498,7 @@ GameObject:
   - component: {fileID: 2960883677210419207}
   - component: {fileID: 8742465977128026345}
   - component: {fileID: 5946135611297530169}
+  - component: {fileID: 3970032432765172834}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -852,6 +853,11 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
+  ReplicatedMaxHp:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
 --- !u!114 &1860151659725561128
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -965,9 +971,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 32768
   maxRange: 600
-  shotgunProjectileCount: 25
-  shotgunSpreadAngle: 120
-  shotgunPelletAngleJitter: 3
+  shotgunProjectileCount: 12
+  shotgunSpreadAngle: 24
+  shotgunPelletAngleJitter: 2
+  shotgunEffectiveRange: 6
+  shotgunMaxRange: 12
+  shotgunMinDamageMultiplier: 0.15
+  shotgunTotalDamageMultiplier: 0.55
 --- !u!114 &3096256922150323826
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1690,6 +1700,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   saveToCloud: 1
   logSaveRequest: 1
+  allowOwnerProvidedLoadDataWhenServerCloudDataMissing: 1
 --- !u!114 &2960883677210419207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1709,6 +1720,7 @@ MonoBehaviour:
   housingProgress: {fileID: 9221063217793167294}
   fillHpWhenMaxHpIncreased: 1
   fillStaminaWhenMaxStaminaIncreased: 1
+  bonusConfig: {fileID: 0}
   bonusStartLevel: 2
   medicalHealthBonusPerLevel: 5
   kitchenStaminaBonusPerLevel: 5
@@ -1749,13 +1761,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.InteractionSystem
   interactRadius: 3
-  interactAngle: 150
+  interactAngle: 360
   interactMask:
     serializedVersion: 2
     m_Bits: 65536
   triggerInteraction: 2
   enableDebugLogs: 1
   drawDebugGizmos: 0
+--- !u!114 &3970032432765172834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ff7cb160216fa646b25f2c25f457701, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerEquippedWeaponView
+  equipmentSlots: {fileID: 3096256922150323826}
+  shootingSystem: {fileID: -7812494434515924552}
+  weaponHolder: {fileID: 5664201741075324417}
+  fallbackMuzzle: {fileID: 7489591256997111823}
+  muzzlePointName: MuzzlePoint
+  resetLocalTransform: 1
+  autoBindReferences: 1
+  showDebugLogs: 0
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0
