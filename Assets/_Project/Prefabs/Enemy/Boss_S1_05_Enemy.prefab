@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boss_S1_05_Enemy
       objectReference: {fileID: 0}
+    - target: {fileID: 1521328899897398, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4077195986647316, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -52,9 +56,25 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1379151816451736462, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3481043232388762985, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 952408851
+      objectReference: {fileID: 0}
+    - target: {fileID: 3999396989876117529, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4183854989116415764, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4567764049625413843, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7428428410717088562, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
       propertyPath: statsSO

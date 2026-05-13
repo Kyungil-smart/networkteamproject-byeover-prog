@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
   m_Name: ITM_SlowHealSyringe
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
-  itemID: SlowHealSyringe
+  itemID: ITM_SlowHealSyringe
   displayName: "\uC9C0\uC18D \uD68C\uBCF5 \uC8FC\uC0AC\uAE30"
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC0C1\uCC98\uAC00
     \uC544\uBB3C\uAC8C \uD574\uC8FC\uB294 \uC8FC\uC0AC\uAE30"
-  icon: {fileID: 21300000, guid: 730b7dcde5cc8cc4185df017f2dd13d7, type: 3}
+  icon: {fileID: 21300000, guid: 9bac4f7022850e146a087cb017045364, type: 3}
   category: 5
   rarity: 1
   isValuable: 0

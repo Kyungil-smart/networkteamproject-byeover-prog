@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DeadZone.Core;
+using DeadZone.Systems.Raid;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -42,6 +44,7 @@ namespace DeadZone.Network
 
         private LobbyRaidMap offlineSelectedMap = LobbyRaidMap.MapA;
         private bool hasRaidStartRequested;
+        private bool isStartingSoloSession;
 
         public LobbyRaidMap SelectedMap => IsNetworkSessionActive() ? selectedMap.Value : offlineSelectedMap;
         public event Action<LobbyRaidMap, LobbyRaidMap> SelectedMapChanged;
@@ -63,12 +66,21 @@ namespace DeadZone.Network
 
         public void SelectMap(LobbyRaidMap map)
         {
+            Debug.Log(
+                $"[LobbyRaidStart] SelectMap requested. map={map}, object={name}, isSpawned={IsSpawned}, hasNetworkObject={NetworkObject != null}",
+                this);
+
             if (IsNetworkSessionActive())
             {
-                if (Unity.Netcode.NetworkManager.Singleton == null ||
-                    !Unity.Netcode.NetworkManager.Singleton.IsHost)
+                if (!CanSendSelectMapRpc(out string rpcBlockReason))
                 {
-                    LogDebug("맵 선택은 Host만 변경할 수 있습니다.");
+                    LogDebug(rpcBlockReason);
+                    return;
+                }
+
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    ApplySelectedMapOnServer(map, NetworkManager.ServerClientId);
                     return;
                 }
 
@@ -86,17 +98,23 @@ namespace DeadZone.Network
             offlineSelectedMap = map;
             SelectedMapChanged?.Invoke(previous, offlineSelectedMap);
         }
-
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void SelectMapServerRpc(LobbyRaidMap map, RpcParams rpcParams = default)
         {
             if (!IsServer) return;
 
             ulong senderClientId = rpcParams.Receive.SenderClientId;
+            Debug.Log($"[LobbyRaidStart] SelectMapServerRpc received. senderClientId={senderClientId}, map={map}", this);
+            ApplySelectedMapOnServer(map, senderClientId);
+        }
+
+        private void ApplySelectedMapOnServer(LobbyRaidMap map, ulong senderClientId)
+        {
+            if (!IsServer) return;
 
             if (!IsHostClient(senderClientId))
             {
-                LogDebug($"Host가 아닌 Client의 맵 선택 요청을 무시합니다. ClientId={senderClientId}");
+                LogDebug($"Map selection request ignored because sender is not host. ClientId={senderClientId}");
                 return;
             }
 
@@ -109,12 +127,58 @@ namespace DeadZone.Network
             selectedMap.Value = map;
         }
 
+        private bool CanSendSelectMapRpc(out string reason)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+
+            if (networkManager == null)
+            {
+                reason = "[LobbyRaidStart] NetworkManager null. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (!networkManager.IsListening)
+            {
+                reason = "[LobbyRaidStart] NetworkManager not listening. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (NetworkObject == null)
+            {
+                reason = "[LobbyRaidStart] NetworkObject missing. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (!IsSpawned)
+            {
+                reason = "[LobbyRaidStart] Not spawned. Cannot send ServerRpc.";
+                Debug.LogWarning(reason, this);
+                return false;
+            }
+
+            if (!networkManager.IsServer && networkManager.LocalClientId != NetworkManager.ServerClientId)
+            {
+                reason = "Map selection is restricted to the party host.";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
+        }
         public void StartRaid()
+        {
+            _ = StartRaidAsync();
+        }
+
+        private async Task StartRaidAsync()
         {
             if (!IsNetworkSessionActive())
             {
-                LogDebug("네트워크 로비가 시작된 뒤 출격할 수 있습니다.");
-                return;
+                if (!await TryStartSoloSessionAsync())
+                    return;
             }
 
             if (!CanStartRaid(out string reason))
@@ -124,6 +188,60 @@ namespace DeadZone.Network
             }
 
             StartRaidServerRpc();
+        }
+
+        private async Task<bool> TryStartSoloSessionAsync()
+        {
+            if (isStartingSoloSession)
+                return false;
+
+            ResolveReferences();
+
+            SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
+            if (sessionManager == null)
+            {
+                Debug.LogWarning("[LobbyRaidStartController] 1인 출격을 시작할 SessionManager를 찾지 못했습니다.", this);
+                return false;
+            }
+
+            isStartingSoloSession = true;
+
+            try
+            {
+                if (!sessionManager.StartHost())
+                {
+                    Debug.LogWarning("[LobbyRaidStartController] 1인 출격용 로컬 호스트 시작에 실패했습니다.", this);
+                    return false;
+                }
+
+                return await WaitForLobbyStateReadyAsync();
+            }
+            finally
+            {
+                isStartingSoloSession = false;
+            }
+        }
+
+        private async Task<bool> WaitForLobbyStateReadyAsync()
+        {
+            for (int i = 0; i < 60; i++)
+            {
+                ResolveReferences();
+
+                if (IsNetworkSessionActive() &&
+                    lobbyState != null &&
+                    lobbyState.IsSpawned &&
+                    lobbyState.Players != null &&
+                    lobbyState.Players.Count > 0)
+                {
+                    return true;
+                }
+
+                await Task.Delay(50);
+            }
+
+            Debug.LogWarning("[LobbyRaidStartController] 1인 출격용 로비 상태가 준비되지 않았습니다.", this);
+            return false;
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -156,6 +274,8 @@ namespace DeadZone.Network
                 Debug.LogWarning($"[LobbyRaidStartController] 출격 대상 확인 실패: {reason}", this);
                 return;
             }
+
+            RaidLoadoutTransferService.SaveLoadoutsForClients(expectedClientIdsBuffer);
 
             if (!TryBeginLoadTracking(sceneName, expectedClientIdsBuffer, out reason))
             {
@@ -213,7 +333,7 @@ namespace DeadZone.Network
             if (!CanSelectMap(map, out reason))
                 return false;
 
-            if (!AreAllPlayersReady())
+            if (partyCount > 1 && !AreAllPlayersReady())
             {
                 reason = "모든 파티원이 준비 완료 상태여야 합니다.";
                 return false;

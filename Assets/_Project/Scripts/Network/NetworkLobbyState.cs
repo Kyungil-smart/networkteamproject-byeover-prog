@@ -114,11 +114,13 @@ namespace DeadZone.Network
 
             LobbyPlayerState state = players[index];
             state.IsReady = ready;
+
+            // 기존 IconColorRgba는 그대로 유지됩니다.
             players[index] = state;
 
             LogDebug($"Ready 상태 변경. ClientId={senderClientId}, Ready={ready}");
         }
-        
+
         /// <summary>
         /// 각 클라이언트가 제출한 MapB 해금 여부를 서버에서 처리합니다.
         /// 실제 변경 대상은 SenderClientId 기준으로 서버가 결정합니다.
@@ -155,6 +157,8 @@ namespace DeadZone.Network
                 return;
 
             state.HasUnlockedMapB = hasUnlockedMapB;
+
+            // 기존 IconColorRgba는 그대로 유지됩니다.
             players[index] = state;
 
             LogDebug($"MapB 해금 상태 갱신. ClientId={clientId}, HasUnlockedMapB={hasUnlockedMapB}");
@@ -198,6 +202,7 @@ namespace DeadZone.Network
         {
             if (!IsServer) return;
 
+            Debug.Log($"[PartySession] Leave party. clientId={clientId}, reason=Disconnect", this);
             RemovePlayerServer(clientId);
         }
 
@@ -217,16 +222,21 @@ namespace DeadZone.Network
                 return;
             }
 
+            uint assignedColor = CreateUnusedIconColor();
+
             players.Add(new LobbyPlayerState
             {
                 ClientId = clientId,
                 DisplayName = ToFixedDisplayName(fallbackDisplayName),
                 IsHost = clientId == NetworkManager.ServerClientId,
                 IsReady = false,
-                HasUnlockedMapB = false
+                HasUnlockedMapB = false,
+
+                // 신규 플레이어 등록 시에만 색상 배정
+                IconColorRgba = assignedColor
             });
 
-            LogDebug($"플레이어 등록. ClientId={clientId}");
+            LogDebug($"플레이어 등록. ClientId={clientId}, Color=0x{assignedColor:X8}");
         }
 
         /// <summary>
@@ -250,8 +260,13 @@ namespace DeadZone.Network
             if (index < 0) return;
 
             LobbyPlayerState state = players[index];
+
             state.DisplayName = displayName;
             state.IsHost = clientId == NetworkManager.ServerClientId;
+
+            // 중요:
+            // 여기서 IconColorRgba를 다시 만들면 안 됩니다.
+            // 기존 색상을 그대로 유지해야 방장 색상이 파티원 참가 시 바뀌지 않습니다.
             players[index] = state;
 
             LogDebug($"플레이어 정보 갱신. ClientId={clientId}, 표시이름={displayName}");
@@ -301,6 +316,47 @@ namespace DeadZone.Network
                 sanitized = sanitized.Substring(0, maxDisplayNameCharacters);
 
             return new FixedString64Bytes(sanitized);
+        }
+
+        /// <summary>
+        /// 4인 파티용 고정 색상 팔레트입니다.
+        /// 랜덤을 쓰지 않아 방장/파티원 색상 중복과 재배정 문제를 막습니다.
+        /// </summary>
+        private uint CreateUnusedIconColor()
+        {
+            uint[] palette =
+            {
+                PartyPlayerColorCache.ToRgba(new Color32(255, 72, 218, 255)),  // 핑크
+                PartyPlayerColorCache.ToRgba(new Color32(76, 255, 176, 255)),  // 민트
+                PartyPlayerColorCache.ToRgba(new Color32(90, 170, 255, 255)),  // 블루
+                PartyPlayerColorCache.ToRgba(new Color32(255, 216, 76, 255)),  // 옐로우
+            };
+
+            for (int i = 0; i < palette.Length; i++)
+            {
+                uint candidate = palette[i];
+
+                if (!IsColorAlreadyUsed(candidate))
+                    return candidate;
+            }
+
+            // maxPlayers가 팔레트보다 큰 경우를 대비한 fallback
+            int fallbackIndex = players == null ? 0 : players.Count % palette.Length;
+            return palette[fallbackIndex];
+        }
+
+        private bool IsColorAlreadyUsed(uint colorRgba)
+        {
+            if (players == null)
+                return false;
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i].IconColorRgba == colorRgba)
+                    return true;
+            }
+
+            return false;
         }
 
         private void LogDebug(string msg)

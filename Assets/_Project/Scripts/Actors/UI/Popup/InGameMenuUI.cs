@@ -2,6 +2,10 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections;
+
+using DeadZone.Core;
+using DeadZone.Network;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -12,7 +16,7 @@ namespace DeadZone.Actors.UI
     public class InGameMenuUI : MonoBehaviour
     {
         private const string SettingPopupName = "Popup_Setting";
-        private const int PopupSortingOrder = 10000;
+        private const string DefaultLobbySceneName = "Lobby";
 
         [Header("팝업")]
         [SerializeField] private GameObject popupPause;
@@ -20,7 +24,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private SettingPopupUI settingPopupUI;
 
         [Header("씬")]
-        [SerializeField] private string lobbySceneName = "HJO_Lobby";
+        [SerializeField] private string lobbySceneName = DefaultLobbySceneName;
 
         [Header("마우스 설정")]
         [SerializeField] private bool lockCursorOnResume = true;
@@ -92,13 +96,20 @@ namespace DeadZone.Actors.UI
 
         public void ExitToLobby()
         {
+            string targetScene = NormalizeLobbySceneName(lobbySceneName);
+            Debug.Log($"[InGameMenu] ExitToLobby requested. targetScene={targetScene}", this);
+
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
-                NetworkManager.Singleton.Shutdown();
+                SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
+                if (sessionManager != null)
+                    sessionManager.Disconnect("ExitToLobby");
+                else
+                    NetworkManager.Singleton.Shutdown();
             }
 
             Time.timeScale = 1f;
-            SceneManager.LoadScene(lobbySceneName);
+            LoadingScreenService.LoadSceneOrFallback(targetScene, LoadSceneMode.Single, DefaultLobbySceneName);
         }
 
         public void ExitGame()
@@ -210,7 +221,6 @@ namespace DeadZone.Actors.UI
                 canvas = popup.AddComponent<Canvas>();
 
             canvas.overrideSorting = true;
-            canvas.sortingOrder = PopupSortingOrder;
 
             if (popup.GetComponent<GraphicRaycaster>() == null)
                 popup.AddComponent<GraphicRaycaster>();
@@ -242,6 +252,16 @@ namespace DeadZone.Actors.UI
             }
 
             return null;
+        }
+
+        private static string NormalizeLobbySceneName(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+                return DefaultLobbySceneName;
+
+            return string.Equals(sceneName, "HJO_Lobby", System.StringComparison.Ordinal)
+                ? DefaultLobbySceneName
+                : sceneName;
         }
     }
 }

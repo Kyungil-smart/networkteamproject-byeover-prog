@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
 
@@ -79,7 +80,7 @@ namespace DeadZone.Systems.Housing
         {
             if (useTestInventory)
             {
-                TryUpgradeWithInventory(testInventory);
+                TryUpgradeWithInventory(testInventory, GetLocalRequesterClientId());
                 return;
             }
 
@@ -100,7 +101,7 @@ namespace DeadZone.Systems.Housing
                 return;
             }
 
-            TryUpgradeWithInventory(inventory);
+            TryUpgradeWithInventory(inventory, requesterClientId);
         }
 
         public bool CanUpgradeWithInventory(IInventory inventory)
@@ -120,7 +121,7 @@ namespace DeadZone.Systems.Housing
             return CanApplyUpgradeLevel();
         }
 
-        public bool TryUpgradeWithInventory(IInventory inventory)
+        public bool TryUpgradeWithInventory(IInventory inventory, ulong? requesterClientId = null)
         {
             if (inventory == null)
             {
@@ -162,6 +163,7 @@ namespace DeadZone.Systems.Housing
 
             consumedMaterials.Clear();
             sizeController?.RefreshSize(true);
+            SyncRequesterHousingProgress(requesterClientId, nextLevelData.level);
 
             if (logUpgradeResult)
                 Debug.Log($"[StashUpgradeController] 보관함 업그레이드 성공: Lv.{nextLevelData.level}", this);
@@ -361,6 +363,29 @@ namespace DeadZone.Systems.Housing
 
             stashFacility.CurrentLevel.Value = nextLevel;
             return true;
+        }
+
+        private static ulong? GetLocalRequesterClientId()
+        {
+            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening
+                ? NetworkManager.Singleton.LocalClientId
+                : null;
+        }
+
+        private void SyncRequesterHousingProgress(ulong? requesterClientId, int nextLevel)
+        {
+            if (!IsServer || !requesterClientId.HasValue)
+                return;
+
+            if (!PlayerHousingProgressResolver.TryGetProgress(requesterClientId.Value, out PlayerHousingProgress progress))
+                return;
+
+            if (!progress.TrySetLevelFromServer(FacilityType.Stash, nextLevel))
+                return;
+
+            PlayerHousingSaveSyncer saveSyncer = progress.GetComponent<PlayerHousingSaveSyncer>();
+            if (saveSyncer != null)
+                saveSyncer.RequestSaveFromServer("Stash 시설 업그레이드");
         }
 
         private bool ShouldUseOfflineLevel()

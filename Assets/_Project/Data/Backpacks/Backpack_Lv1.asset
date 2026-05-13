@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "- \uB4F1\uAE09: \uC77C\uBC18\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5
     \n1. \uC778\uBCA4\uD1A0\uB9AC \uCE78: 5\uD655\uC7A5\n2. \uCD5C\uB300 \uBB34\uAC8C:
     10kg"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 93bcba5c0f613e0488d6537831e55beb, type: 3}
   category: 2
   rarity: 0
   isValuable: 0

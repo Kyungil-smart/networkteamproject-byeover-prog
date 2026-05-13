@@ -1,42 +1,273 @@
-﻿using UnityEngine;
-using Unity.Netcode;
-
+﻿using Unity.Netcode;
+using UnityEngine;
 
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// 쿼터뷰 참고: 카메라에서 커서를 통과하는 Raycast를 가정한다.
-    /// 카메라 팀이 ray 원점과 방향을 제공한다. 아래 기본 구현은 FPS에서 동작하는
-    /// MainCamera + 화면 중앙을 사용하며, 쿼터뷰에서도 합리적인 임시 구현이 된다
-    /// 쿼터뷰용 임시 구현 (나중에 커서-지면 레이캐스트로 교체 가능).
+    /// Player 위치와 바라보는 방향을 기준으로 가까운 IInteractable 대상을 찾는다.
+    /// 입력 권한은 Player NetworkObject Owner 기준으로 확인하고,
+    /// 실제 서버 처리는 감지된 대상의 OnInteract 흐름에 맡긴다.
     /// </summary>
     public class InteractionSystem : MonoBehaviour
     {
-        [SerializeField] private float interactDistance = 2.5f;
-        [SerializeField] private LayerMask interactMask = ~0;
-        [SerializeField] private Camera cameraOverride;
+        [Header("====상호작용 범위====")]
+        [Tooltip("Player 위치를 중심으로 상호작용 후보를 찾는 반경입니다.")]
+        [SerializeField, Min(0.1f)] private float interactRadius = 3f;
 
-        private NetworkObject netObj;
+        [Tooltip("Player 전방 기준으로 상호작용을 허용할 각도입니다. 360이면 주변 전체를 허용합니다.")]
+        [SerializeField, Range(1f, 360f)] private float interactAngle = 150f;
+
+        [Tooltip("상호작용 후보로 감지할 레이어입니다. 컨테이너는 ItemBox 레이어를 사용합니다.")]
+        [SerializeField] private LayerMask interactMask = ~0;
+
+        [Tooltip("Trigger Collider를 상호작용 후보에 포함할지 여부입니다.")]
+        [SerializeField] private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Collide;
+
+        [Header("====디버그====")]
+        [Tooltip("상호작용 후보 선택 과정을 Console에 출력합니다.")]
+        [SerializeField] private bool enableDebugLogs;
+
+        [Tooltip("Scene View에서 상호작용 반경과 전방 범위를 표시합니다.")]
+        [SerializeField] private bool drawDebugGizmos;
+
+        private NetworkObject playerNetworkObject;
 
         private void Awake()
         {
-            netObj = GetComponentInParent<NetworkObject>();
+            playerNetworkObject = GetComponentInParent<NetworkObject>();
+        }
+
+        /// <summary>
+        /// 기존 PlayerInputController의 카메라 전달 흐름과 호환하기 위한 진입점이다.
+        /// 대상 판정은 Player 위치와 방향을 기준으로 수행한다.
+        /// </summary>
+        public void SetInteractionCamera(Camera camera)
+        {
+            _ = camera;
         }
 
         public void TryInteract()
         {
-            if (netObj == null || !netObj.IsOwner) return;
-
-            Camera cam = cameraOverride != null ? cameraOverride : Camera.main;
-            if (cam == null) return;
-
-            Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0));
-
-            if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactMask))
+            if (playerNetworkObject == null)
             {
-                var interactable = hit.collider.GetComponentInParent<IInteractable>();
-                interactable?.OnInteract(netObj.OwnerClientId);
+                LogDebug("Player NetworkObject를 찾지 못해 상호작용을 중단합니다.");
+                return;
             }
+
+            if (playerNetworkObject.IsSpawned && !playerNetworkObject.IsOwner)
+            {
+                LogDebug("Owner가 아닌 Player의 상호작용 입력은 무시합니다.");
+                return;
+            }
+
+            if (!TryFindBestInteractable(
+                    out IInteractable interactable,
+                    out Collider selectedCollider,
+                    out float selectedDistance,
+                    out float selectedAngle))
+            {
+                return;
+            }
+
+            string targetName = GetInteractableName(interactable, selectedCollider);
+            LogDebug($"상호작용 대상 감지: {targetName} / 거리 {selectedDistance:F2} / 각도 {selectedAngle:F1}");
+
+            if (enableDebugLogs)
+            {
+                Vector3 origin = transform.position;
+                Vector3 targetPoint = GetCandidatePoint(selectedCollider, origin);
+                Debug.DrawLine(origin, targetPoint, Color.green, 0.5f);
+            }
+
+            interactable.OnInteract(playerNetworkObject.OwnerClientId);
+        }
+
+        private bool TryFindBestInteractable(
+            out IInteractable bestInteractable,
+            out Collider bestCollider,
+            out float bestDistance,
+            out float bestAngle)
+        {
+            bestInteractable = null;
+            bestCollider = null;
+            bestDistance = float.MaxValue;
+            bestAngle = float.MaxValue;
+
+            Vector3 origin = transform.position;
+            Vector3 forward = GetPlanarForward();
+
+            Collider[] colliders = Physics.OverlapSphere(
+                origin,
+                interactRadius,
+                interactMask,
+                triggerInteraction);
+
+            int colliderCount = 0;
+            int missingInteractableCount = 0;
+            int angleRejectedCount = 0;
+
+            foreach (Collider candidateCollider in colliders)
+            {
+                if (candidateCollider == null)
+                    continue;
+
+                if (candidateCollider.transform.IsChildOf(transform))
+                    continue;
+
+                colliderCount++;
+
+                IInteractable candidate = candidateCollider.GetComponentInParent<IInteractable>();
+                if (candidate == null)
+                {
+                    missingInteractableCount++;
+                    continue;
+                }
+
+                Vector3 candidatePoint = GetCandidatePoint(candidateCollider, origin);
+                Vector3 toCandidate = candidatePoint - origin;
+                toCandidate.y = 0f;
+
+                float distance = toCandidate.magnitude;
+                if (distance > interactRadius)
+                    continue;
+
+                float angle = 0f;
+                if (toCandidate.sqrMagnitude > 0.0001f)
+                {
+                    angle = Vector3.Angle(forward, toCandidate.normalized);
+                }
+
+                float halfAngle = interactAngle >= 359.9f ? 180f : interactAngle * 0.5f;
+                if (angle > halfAngle)
+                {
+                    angleRejectedCount++;
+                    continue;
+                }
+
+                if (!IsBetterCandidate(angle, distance, bestAngle, bestDistance))
+                    continue;
+
+                bestInteractable = candidate;
+                bestCollider = candidateCollider;
+                bestDistance = distance;
+                bestAngle = angle;
+            }
+
+            if (bestInteractable != null)
+                return true;
+
+            LogNoCandidateReason(colliderCount, missingInteractableCount, angleRejectedCount);
+            return false;
+        }
+
+        /// <summary>
+        /// 캐릭터가 바라보는 대상과 상호작용한다는 조작감을 우선하기 위해 각도를 먼저 비교한다.
+        /// 각도 차이가 작을 때는 실제 거리가 더 가까운 대상을 선택한다.
+        /// </summary>
+        private bool IsBetterCandidate(
+            float candidateAngle,
+            float candidateDistance,
+            float currentBestAngle,
+            float currentBestDistance)
+        {
+            const float angleTolerance = 3f;
+
+            if (candidateAngle < currentBestAngle - angleTolerance)
+                return true;
+
+            if (Mathf.Abs(candidateAngle - currentBestAngle) <= angleTolerance &&
+                candidateDistance < currentBestDistance)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private Vector3 GetPlanarForward()
+        {
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+
+            if (forward.sqrMagnitude < 0.0001f)
+                return Vector3.forward;
+
+            return forward.normalized;
+        }
+
+        private Vector3 GetCandidatePoint(Collider candidateCollider, Vector3 origin)
+        {
+            Vector3 point = candidateCollider.ClosestPoint(origin);
+
+            if ((point - origin).sqrMagnitude < 0.0001f)
+            {
+                point = candidateCollider.bounds.center;
+            }
+
+            return point;
+        }
+
+        private string GetInteractableName(IInteractable interactable, Collider fallbackCollider)
+        {
+            if (interactable is Component component)
+                return component.gameObject.name;
+
+            return fallbackCollider != null ? fallbackCollider.name : "Unknown";
+        }
+
+        private void LogNoCandidateReason(
+            int colliderCount,
+            int missingInteractableCount,
+            int angleRejectedCount)
+        {
+            if (colliderCount <= 0)
+            {
+                LogDebug("상호작용 반경 안에 후보 Collider가 없습니다.");
+                return;
+            }
+
+            if (missingInteractableCount == colliderCount)
+            {
+                LogDebug("상호작용 반경 안의 후보에 IInteractable이 없습니다.");
+                return;
+            }
+
+            if (angleRejectedCount > 0)
+            {
+                LogDebug("상호작용 후보가 전방 각도 범위 밖에 있습니다.");
+                return;
+            }
+
+            LogDebug("상호작용 가능한 대상을 선택하지 못했습니다.");
+        }
+
+        private void LogDebug(string message)
+        {
+            if (!enableDebugLogs)
+                return;
+
+            Debug.Log($"[InteractionSystem] {message}", this);
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!drawDebugGizmos)
+                return;
+
+            Vector3 origin = transform.position;
+            Vector3 forward = GetPlanarForward();
+
+            Gizmos.color = new Color(0f, 0.85f, 1f, 0.35f);
+            Gizmos.DrawWireSphere(origin, interactRadius);
+
+            float halfAngle = interactAngle >= 359.9f ? 180f : interactAngle * 0.5f;
+            Vector3 left = Quaternion.Euler(0f, -halfAngle, 0f) * forward;
+            Vector3 right = Quaternion.Euler(0f, halfAngle, 0f) * forward;
+
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(origin, origin + forward * interactRadius);
+            Gizmos.DrawLine(origin, origin + left * interactRadius);
+            Gizmos.DrawLine(origin, origin + right * interactRadius);
         }
     }
 

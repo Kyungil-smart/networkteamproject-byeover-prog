@@ -646,6 +646,7 @@ GameObject:
   - component: {fileID: 6472333946858239700}
   - component: {fileID: 6457312160022946967}
   - component: {fileID: 3902469609466659368}
+  - component: {fileID: 2324040151797378888}
   m_Layer: 0
   m_Name: Health
   m_TagString: Untagged
@@ -685,7 +686,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2141485126
+  GlobalObjectIdHash: 243193336
   InScenePlacedSourceGlobalObjectIdHash: 4277157340
   DeferredDespawnTick: 0
   Ownership: 1
@@ -730,10 +731,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b885154d3d68a64f86fca4d22135e2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.GymCarryWeightBonusController
+  ShowTopMostFoldoutHeaderGroup: 1
   gymFacility: {fileID: 1423150775222453968}
   bonusStartLevel: 2
   carryWeightBonusPerLevel: 7.5
-  currentGymLevel: 1
   currentCarryWeightBonusKg: 0
   logBonusChanged: 1
 --- !u!114 &6457312160022946967
@@ -772,9 +773,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 1423150775222453968}
-  useTestInventory: 0
-  testInventory: {fileID: 6457312160022946967}
   logUpgradeResult: 1
+--- !u!114 &2324040151797378888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 309419030282187945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e558267b29cd4144899125675f84082c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.HousingFacilitySaveKey
+  facilityId: gym
 --- !u!1 &493684697578442070
 GameObject:
   m_ObjectHideFlags: 0
@@ -3648,6 +3660,7 @@ GameObject:
   - component: {fileID: 2860727178649618653}
   - component: {fileID: 107077246286210929}
   - component: {fileID: 8847722623165534527}
+  - component: {fileID: 5753693819362568856}
   m_Layer: 0
   m_Name: Medical
   m_TagString: Untagged
@@ -3702,7 +3715,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3440235930
+  GlobalObjectIdHash: 1037363196
   InScenePlacedSourceGlobalObjectIdHash: 2010315281
   DeferredDespawnTick: 0
   Ownership: 1
@@ -3748,8 +3761,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 5084238007021454291}
-  useTestInventory: 0
-  testInventory: {fileID: 107077246286210929}
   logUpgradeResult: 1
 --- !u!114 &3484775161990424072
 MonoBehaviour:
@@ -3758,7 +3769,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2220792377414378791}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbc136f9579f4b54aa6a7363992c6ca0, type: 3}
   m_Name: 
@@ -3767,6 +3778,7 @@ MonoBehaviour:
   medicalFacility: {fileID: 5084238007021454291}
   bonusStartLevel: 2
   healthBonusPerLevel: 5
+  currentHealthBonus: 0
   logBonusChanged: 1
 --- !u!114 &2860727178649618653
 MonoBehaviour:
@@ -3817,9 +3829,20 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a2d59e03490bc6a4c9653c3e85b25bfe, type: 2}
   - {fileID: 11400000, guid: be4fc9ff7f5c2e74e8b45439dadacc48, type: 2}
   - {fileID: 11400000, guid: 75444941930b93e49ae44388cb90f2bf, type: 2}
-  useTestInventory: 0
-  testInventory: {fileID: 0}
   logCraftResult: 1
+--- !u!114 &5753693819362568856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2220792377414378791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e558267b29cd4144899125675f84082c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.HousingFacilitySaveKey
+  facilityId: medical
 --- !u!1 &2356304897223966483
 GameObject:
   m_ObjectHideFlags: 0
@@ -3950,6 +3973,7 @@ GameObject:
   - component: {fileID: 8030682020163179700}
   - component: {fileID: 6633002826120094855}
   - component: {fileID: 2824151517464154737}
+  - component: {fileID: 3959321523301689737}
   m_Layer: 0
   m_Name: Armory
   m_TagString: Untagged
@@ -4008,7 +4032,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3083036615
+  GlobalObjectIdHash: 657284798
   InScenePlacedSourceGlobalObjectIdHash: 2516409520
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4054,8 +4078,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 3080370456784017343}
-  useTestInventory: 0
-  testInventory: {fileID: 2824151517464154737}
   logUpgradeResult: 1
 --- !u!114 &2979632907896334124
 MonoBehaviour:
@@ -4093,8 +4115,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.WorkbenchCraftingController
   ShowTopMostFoldoutHeaderGroup: 1
   recipeCatalog: {fileID: 2979632907896334124}
-  useTestInventory: 0
-  testInventory: {fileID: 2824151517464154737}
   debugRecipeID: 
   logCraftResult: 1
 --- !u!114 &6633002826120094855
@@ -4149,6 +4169,19 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
     amount: 99
   logInventoryChange: 1
+--- !u!114 &3959321523301689737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2417206895999137166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e558267b29cd4144899125675f84082c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.HousingFacilitySaveKey
+  facilityId: workbench
 --- !u!1 &2447359588946784664
 GameObject:
   m_ObjectHideFlags: 0
@@ -5030,6 +5063,7 @@ GameObject:
   - component: {fileID: 476611804830654667}
   - component: {fileID: 7389485208524189799}
   - component: {fileID: 3745009618557303531}
+  - component: {fileID: 8945018041391328423}
   m_Layer: 0
   m_Name: BedRoom
   m_TagString: Untagged
@@ -5086,7 +5120,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 239760705
+  GlobalObjectIdHash: 4188711275
   InScenePlacedSourceGlobalObjectIdHash: 2041717472
   DeferredDespawnTick: 0
   Ownership: 1
@@ -5133,8 +5167,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 4323647542667561507}
-  useTestInventory: 0
-  testInventory: {fileID: 3745009618557303531}
   logUpgradeResult: 1
 --- !u!114 &476611804830654667
 MonoBehaviour:
@@ -5143,17 +5175,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3099241648797177602}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 751a6b17529c67c4b9befe11b626e56b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.BedStaminaBonusController
+  ShowTopMostFoldoutHeaderGroup: 1
   bedFacility: {fileID: 4323647542667561507}
   bonusStartLevel: 2
   staminaBonusPerLevel: 5
-  useOfflineTestLevel: 1
-  offlineTestLevel: 1
-  currentBedLevel: 1
   currentMaxStaminaBonus: 0
   logBonusChanged: 1
 --- !u!114 &7389485208524189799
@@ -5193,6 +5223,19 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: be884a024d1ace14487ad8ca2af8974c, type: 2}
     amount: 99
   logInventoryChange: 1
+--- !u!114 &8945018041391328423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099241648797177602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e558267b29cd4144899125675f84082c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.HousingFacilitySaveKey
+  facilityId: bed
 --- !u!1 &3141140399667383748
 GameObject:
   m_ObjectHideFlags: 0
@@ -8378,7 +8421,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2301808801
+  GlobalObjectIdHash: 1044772029
   InScenePlacedSourceGlobalObjectIdHash: 2279848007
   DeferredDespawnTick: 0
   Ownership: 1
@@ -11670,7 +11713,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1332320655
+  GlobalObjectIdHash: 3706713578
   InScenePlacedSourceGlobalObjectIdHash: 79234030
   DeferredDespawnTick: 0
   Ownership: 1
@@ -12403,6 +12446,7 @@ GameObject:
   - component: {fileID: 5321491569543065141}
   - component: {fileID: 5899704069498589576}
   - component: {fileID: 6511453558979551739}
+  - component: {fileID: 1447983818510818861}
   m_Layer: 0
   m_Name: Kitchen
   m_TagString: Untagged
@@ -12454,7 +12498,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1830478394
+  GlobalObjectIdHash: 930302021
   InScenePlacedSourceGlobalObjectIdHash: 4185684075
   DeferredDespawnTick: 0
   Ownership: 1
@@ -12501,8 +12545,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.FacilityUpgradeController
   ShowTopMostFoldoutHeaderGroup: 1
   targetFacility: {fileID: 8284461573681137658}
-  useTestInventory: 0
-  testInventory: {fileID: 6511453558979551739}
   logUpgradeResult: 1
 --- !u!114 &5321491569543065141
 MonoBehaviour:
@@ -12511,17 +12553,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7182126194974234011}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8453139b2a8b11747a7813b535d96347, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.KitchenStaminaBonusController
+  ShowTopMostFoldoutHeaderGroup: 1
   kitchenFacility: {fileID: 8284461573681137658}
   bonusStartLevel: 2
   staminaBonusPerLevel: 5
-  useOfflineTestLevel: 1
-  offlineTestLevel: 1
-  currentKitchenLevel: 1
   currentMaxStaminaBonus: 0
   logBonusChanged: 1
 --- !u!114 &5899704069498589576
@@ -12565,6 +12605,19 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 767b74ff11969224e8c3e739ffb9f6d2, type: 2}
     amount: 99
   logInventoryChange: 1
+--- !u!114 &1447983818510818861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7182126194974234011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e558267b29cd4144899125675f84082c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Housing.HousingFacilitySaveKey
+  facilityId: kitchen
 --- !u!1 &7196341102485185054
 GameObject:
   m_ObjectHideFlags: 0

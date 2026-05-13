@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: SSD
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC0BC\uC131\uC5D0\uC11C
     \uD2B9\uC218 \uC81C\uC791\uD55C \uB0B4\uC7A5\uD558\uB4DC"
-  icon: {fileID: 21300000, guid: 31469ff931e0b0f4180f02305074755c, type: 3}
+  icon: {fileID: 21300000, guid: b498aab3bd97da2458d81f242faf35f8, type: 3}
   category: 8
   rarity: 1
   isValuable: 0

@@ -81,13 +81,11 @@ namespace DeadZone.Actors
 
             if (!IsLocalClient(e.shooterClientId))
             {
-                Debug.LogWarning("[WeaponStatsUI] 로컬 플레이어 발사 이벤트가 아니라서 무시됨", this);
                 return;
             }
 
             if (lastProcessedFireFrame == Time.frameCount)
             {
-                Debug.LogWarning("[WeaponStatsUI] 같은 프레임 중복 발사 이벤트라서 무시됨", this);
                 return;
             }
 

@@ -15,6 +15,9 @@ namespace DeadZone.Actors.UI
 {
     public class LobbyRoomController : MonoBehaviour
     {
+        public static event Action PartyRoomVisibilityChanged;
+        public static bool IsPartyRoomVisible { get; private set; }
+
         private enum RoomUiState
         {
             Idle,
@@ -42,6 +45,9 @@ namespace DeadZone.Actors.UI
         
         [Tooltip("현재 표시된 JoinCode를 클립보드에 복사하는 버튼")]
         [SerializeField] private Button copyJoinCodeButton;
+
+        [Tooltip("파티 생성 전에는 꺼지고, 파티 생성/참가 후 켜지는 Slot_Party 오브젝트")]
+        [SerializeField] private GameObject slotPartyRoot;
         
         [Header("====방 생성/참가 UI====")]
         [Tooltip("JoinCode 입력용 팝업 루트")]
@@ -86,7 +92,7 @@ namespace DeadZone.Actors.UI
         {
             ResolveMissingReferences();
             BindButtons();
-            SetRoomState(RoomUiState.Idle);
+            RestoreRoomStateFromNetworkSession();
         }
         
         private void OnDisable() => UnbindButtons();
@@ -135,6 +141,8 @@ namespace DeadZone.Actors.UI
         
         private void InitializeView()
         {
+            RestoreRoomStateFromNetworkSession();
+            PartyPlayerColorCache.Clear();
             currentJoinCode = string.Empty;
             SetJoinCodeText(emptyJoinCodeText);
             SetJoinPopupVisible(false);
@@ -207,6 +215,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
             
+            Debug.Log($"[Party] CreateParty called. userId={GetCurrentUserId()}", this);
             SetRoomState(RoomUiState.Busy);
             ShowStatus("Relay 방을 생성하는 중입니다...");
 
@@ -224,6 +233,7 @@ namespace DeadZone.Actors.UI
                 }
 
                 currentJoinCode = joinCode.Trim();
+                Debug.Log($"[Party] Party created. partyId={currentJoinCode}, memberCount={GetConnectedClientCount()}", this);
 
                 SetJoinCodeText(currentJoinCode);
                 SetJoinPopupVisible(false);
@@ -305,9 +315,28 @@ namespace DeadZone.Actors.UI
             currentJoinCode = string.Empty;
             SetJoinCodeText(emptyJoinCodeText);
             SetJoinPopupVisible(false);
+            PartyPlayerColorCache.Clear();
             SetRoomState(RoomUiState.Idle);
             
             ShowStatus("방 연결을 종료했습니다.");
+        }
+
+        private static string GetCurrentUserId()
+        {
+            DeadZone.Network.CloudSaveSystem cloudSave = ServiceLocator.Get<DeadZone.Network.CloudSaveSystem>();
+
+            if (cloudSave != null && !string.IsNullOrWhiteSpace(cloudSave.LoadedFirebaseUid))
+                return cloudSave.LoadedFirebaseUid;
+
+            return "unknown";
+        }
+
+        private static int GetConnectedClientCount()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            return networkManager != null && networkManager.ConnectedClients != null
+                ? networkManager.ConnectedClients.Count
+                : 0;
         }
 
         private bool TryGetSessionManager(out SessionManager sessionManager)
@@ -333,6 +362,33 @@ namespace DeadZone.Actors.UI
                 || networkManager.IsServer
                 || networkManager.IsClient;
         }
+
+        private void RestoreRoomStateFromNetworkSession()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            bool isListening = networkManager != null && networkManager.IsListening;
+            bool isServer = isListening && networkManager.IsServer;
+            bool isClient = isListening && networkManager.IsClient;
+
+            if (isServer)
+            {
+                SetRoomState(RoomUiState.HostRoom);
+                Debug.Log("[LobbyPartyUI] Restored party UI from active network session. role=Server, Slot_Party=Visible", this);
+                ShowStatus("네트워크 파티 상태를 복구했습니다. 현재 서버로 연결 중입니다.");
+                return;
+            }
+
+            if (isClient)
+            {
+                SetRoomState(RoomUiState.ClientRoom);
+                Debug.Log("[LobbyPartyUI] Restored party UI from active network session. role=Client, Slot_Party=Visible", this);
+                ShowStatus("네트워크 파티 상태를 복구했습니다. 현재 파티에 참가 중입니다.");
+                return;
+            }
+
+            SetRoomState(RoomUiState.Idle);
+            Debug.Log("[LobbyPartyUI] No active network session found. Slot_Party=Hidden", this);
+        }
         
         private bool IsBusyState()
         {
@@ -350,8 +406,29 @@ namespace DeadZone.Actors.UI
 
             bool isBusy = IsBusyState();
             SetLoadingBlocker(isBusy);
+            bool isPartyRoomState = state is RoomUiState.HostRoom or RoomUiState.ClientRoom;
+            SetPartyRoomVisible(isPartyRoomState);
+            SetPartyObjectsVisible(isPartyRoomState);
 
             ApplyButtonsForCurrentState();
+        }
+
+        private void SetPartyObjectsVisible(bool visible)
+        {
+            if (slotPartyRoot != null)
+                slotPartyRoot.SetActive(visible);
+
+            if (leaveRoomButton != null)
+                leaveRoomButton.gameObject.SetActive(visible);
+        }
+
+        private static void SetPartyRoomVisible(bool visible)
+        {
+            if (IsPartyRoomVisible == visible)
+                return;
+
+            IsPartyRoomVisible = visible;
+            PartyRoomVisibilityChanged?.Invoke();
         }
 
         private void ApplyButtonsForCurrentState()

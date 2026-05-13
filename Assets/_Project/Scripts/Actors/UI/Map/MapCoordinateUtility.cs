@@ -5,7 +5,7 @@ namespace DeadZone.Actors
     public static class MapCoordinateUtility
     {
         public static readonly Vector2 FullMapWorldMin = new(-406.74f, -149.42f);
-        public static readonly Vector2 FullMapWorldMax = new(6.08078f, 55.42514f);
+        public static readonly Vector2 FullMapWorldMax = new(12f, 55.42514f);
         public static readonly Vector2 FenceWorldMin = new(-285.20f, -139.10f);
         public static readonly Vector2 FenceWorldMax = new(-31.20f, 55.43f);
 

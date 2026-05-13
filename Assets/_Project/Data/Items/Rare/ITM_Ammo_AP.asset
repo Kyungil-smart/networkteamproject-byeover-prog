@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "AP \uD0C4\uC57D"
   description: "- \uB4F1\uAE09: \uB808\uC5B4\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
     \uACE0\uC544\uBA38 \uAD00\uD1B5 \uD2B9\uD654."
-  icon: {fileID: 21300000, guid: afa8963bc4f74274f8e1416a0f449054, type: 3}
+  icon: {fileID: 21300000, guid: 65d14d5248d92f047b524fe7ce6ccdae, type: 3}
   category: 1
   rarity: 2
   isValuable: 0

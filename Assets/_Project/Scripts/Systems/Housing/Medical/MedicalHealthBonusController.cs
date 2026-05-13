@@ -2,38 +2,35 @@ using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
-using DeadZone.Systems;
 
 namespace DeadZone.Systems.Housing
 {
-    // 의료시설 레벨에 따른 최대 체력 보너스를 계산하고 이벤트로 알림
-    // PlayerStats를 직접 참조하지 않기 때문에 추후 플레이어/UI 시스템과 연결
+    // 의료시설 레벨에 따라 플레이어 최대 체력 보너스를 계산하고 이벤트로 전달
+    // 실제 PlayerHealthSystem 적용은 PlayerHousingBonusReceiver가 담당
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MedicalFacility))]
-    public class MedicalHealthBonusController : NetworkBehaviour
+    public sealed class MedicalHealthBonusController : NetworkBehaviour
     {
-        [Header("의료시설")]
+        [Header("대상 의료시설")]
         [SerializeField]
-        [Tooltip("효과를 계산할 의료시설입니다. 비워두면 같은 오브젝트에서 자동으로 찾습니다.")]
         private MedicalFacility medicalFacility;
 
-        [Header("체력 보너스 규칙")]
+        [Header("보너스 설정")]
         [SerializeField]
         [Min(1)]
-        [Tooltip("보너스가 적용되기 시작하는 레벨입니다. 의료시설은 Lv2부터 적용합니다.")]
         private int bonusStartLevel = 2;
 
         [SerializeField]
         [Min(0)]
-        [Tooltip("레벨이 오를 때마다 증가하는 최대 체력 보너스입니다.")]
         private int healthBonusPerLevel = 5;
+
+        [Header("런타임 확인")]
+        [SerializeField]
+        private int currentHealthBonus;
 
         [Header("로그")]
         [SerializeField]
-        [Tooltip("보너스 변경 결과를 Console에 출력할지 여부입니다.")]
         private bool logBonusChanged = true;
-
-        private int currentHealthBonus;
 
         public int CurrentHealthBonus => currentHealthBonus;
 
@@ -47,23 +44,34 @@ namespace DeadZone.Systems.Housing
             FindRequiredComponents();
         }
 
-        private void OnEnable()
+        private void OnValidate()
         {
+            FindRequiredComponents();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (!IsServer)
+                return;
+
             FindRequiredComponents();
 
             if (medicalFacility == null)
+            {
+                Debug.LogWarning("[MedicalHealthBonusController] MedicalFacility가 없어 의료시설 효과를 적용할 수 없습니다.", this);
                 return;
+            }
 
-            medicalFacility.CurrentLevel.OnValueChanged += HandleMedicalLevelChanged;
-            ApplyBonus(medicalFacility.CurrentLevel.Value);
+            medicalFacility.CurrentLevel.OnValueChanged -= HandleFacilityLevelChanged;
+            medicalFacility.CurrentLevel.OnValueChanged += HandleFacilityLevelChanged;
+
+            RecalculateAndPublish();
         }
 
-        private void OnDisable()
+        public override void OnNetworkDespawn()
         {
-            if (medicalFacility == null)
-                return;
-
-            medicalFacility.CurrentLevel.OnValueChanged -= HandleMedicalLevelChanged;
+            if (medicalFacility != null)
+                medicalFacility.CurrentLevel.OnValueChanged -= HandleFacilityLevelChanged;
         }
 
         private void FindRequiredComponents()
@@ -72,52 +80,59 @@ namespace DeadZone.Systems.Housing
                 medicalFacility = GetComponent<MedicalFacility>();
         }
 
-        private void HandleMedicalLevelChanged(int oldLevel, int newLevel)
+        private void HandleFacilityLevelChanged(int previousLevel, int currentLevel)
         {
-            ApplyBonus(newLevel);
+            RecalculateAndPublish();
         }
 
-        public int CalculateHealthBonus(int level)
+        public void RecalculateAndPublish()
         {
-            if (level < bonusStartLevel)
-                return 0;
-
-            int bonusStep = level - bonusStartLevel + 1;
-            return bonusStep * healthBonusPerLevel;
-        }
-
-        [ContextMenu("의료시설 효과 다시 계산")]
-        public void RecalculateBonusForTest()
-        {
-            if (medicalFacility == null)
-            {
-                Debug.LogWarning("[MedicalHealthBonusController] 의료시설이 연결되어 있지 않습니다.", this);
+            if (!IsServer)
                 return;
-            }
 
-            ApplyBonus(medicalFacility.CurrentLevel.Value);
-        }
+            if (medicalFacility == null)
+                return;
 
-        private void ApplyBonus(int level)
-        {
-            currentHealthBonus = CalculateHealthBonus(level);
+            int currentLevel = medicalFacility.GetCurrentLevel();
 
-            if (logBonusChanged)
+            if (currentLevel < bonusStartLevel)
             {
-                Debug.Log(
-                    $"[MedicalHealthBonusController] 의료시설 Lv.{level} 효과 적용\n" +
-                    $"최대 체력 보너스: +{currentHealthBonus}",
-                    this
-                );
+                currentHealthBonus = 0;
+            }
+            else
+            {
+                int bonusLevelCount = currentLevel - bonusStartLevel + 1;
+                currentHealthBonus = Mathf.Max(0, bonusLevelCount * healthBonusPerLevel);
             }
 
             EventBus.Publish(new MedicalHealthBonusChangedEvent
             {
-                facilityType = FacilityType.Medical,
-                level = level,
-                maxHealthBonus = currentHealthBonus,
-                source = "MedicalFacility"
+                level = currentLevel,
+                maxHealthBonus = currentHealthBonus
             });
+
+            if (logBonusChanged)
+            {
+                Debug.Log(
+                    $"[MedicalHealthBonusController] 의료시설 Lv.{currentLevel} 효과 적용\n" +
+                    $"최대 체력 보너스: +{currentHealthBonus}",
+                    this
+                );
+            }
         }
+
+#if UNITY_EDITOR
+        [ContextMenu("의료시설 효과 다시 계산")]
+        private void DebugRecalculate()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[MedicalHealthBonusController] 플레이 중에만 다시 계산할 수 있습니다.", this);
+                return;
+            }
+
+            RecalculateAndPublish();
+        }
+#endif
     }
 }

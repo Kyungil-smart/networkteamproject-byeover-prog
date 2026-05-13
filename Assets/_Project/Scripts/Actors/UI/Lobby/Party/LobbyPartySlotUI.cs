@@ -21,6 +21,8 @@ namespace DeadZone.Actors.UI
                  "\nPartySlot_1(host)는 별도 루트가 없으면 비워둘 수 있습니다.")]
         [SerializeField] private GameObject filledRoot;
 
+        [SerializeField] private Image playerIconImage;
+
         [Header("==== 텍스트 ====")]
         [Tooltip("플레이어 이름을 표시할 TMP 텍스트입니다.")]
         [SerializeField] private TMP_Text playerNameText;
@@ -51,6 +53,12 @@ namespace DeadZone.Actors.UI
 
         public event Action<bool> ReadyClicked;
 
+        private void Awake()
+        {
+            if (emptyRoot != null || filledRoot != null)
+                RenderEmpty();
+        }
+
         private void OnEnable()
         {
             if (readyButton != null)
@@ -80,7 +88,16 @@ namespace DeadZone.Actors.UI
             SetActive(filledRoot, true);
 
             if (playerNameText != null)
-                playerNameText.text = data.DisplayName ?? string.Empty;
+            {
+                string displayName = data.DisplayName;
+
+                if (string.IsNullOrWhiteSpace(displayName))
+                {
+                    displayName = data.IsLocalPlayer ? "나" : "플레이어";
+                }
+
+                playerNameText.text = displayName;
+            }
 
             if (hostText != null)
             {
@@ -93,6 +110,8 @@ namespace DeadZone.Actors.UI
 
             if (readyButton != null)
                 readyButton.interactable = data.IsLocalPlayer;
+
+            ApplyPlayerIconColor(data.IconColor);
         }
 
         /// <summary>
@@ -109,9 +128,18 @@ namespace DeadZone.Actors.UI
             if (hostText != null) hostText.gameObject.SetActive(false);
             if (readyText != null) readyText.text = notReadyLabel;
             if (readyButton != null) readyButton.interactable = false;
+            ApplyPlayerIconColor(Color.white);
         }
 
         private void HandleReadyButtonClicked() => ReadyClicked?.Invoke(!currentReady);
+
+        private void ApplyPlayerIconColor(Color color)
+        {
+            if (playerIconImage == null)
+                return;
+
+            playerIconImage.color = color;
+        }
         
         private void SetActive(GameObject target, bool active)
         {

@@ -3,30 +3,24 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
 
 namespace DeadZone.Systems.Housing
 {
     // 시설 업그레이드 요청을 서버에서 처리
-    // SO는 업그레이드 재료 기준표만 제공하고, 실제 레벨 변경은 CurrentLevel NetworkVariable로 동기화
+    // 시설 오브젝트의 공용 레벨이 아니라, 요청한 플레이어의 개인 하우징 레벨을 변경
     [DisallowMultipleComponent]
     public sealed class FacilityUpgradeController : NetworkBehaviour
     {
         [Header("대상 시설")]
-        [SerializeField] private FacilityBase targetFacility;
-
-        [Header("테스트 인벤토리")]
         [SerializeField]
-        [Tooltip("테스트 전용입니다. 실제 네트워크 플레이에서는 꺼야 합니다.")]
-        private bool useTestInventory = false;
-
-        [SerializeField]
-        [Tooltip("테스트 전용 인벤토리입니다. 실제 네트워크 플레이에서는 비워도 됩니다.")]
-        private WorkbenchTestInventory testInventory;
+        private FacilityBase targetFacility;
 
         [Header("로그")]
-        [SerializeField] private bool logUpgradeResult = true;
+        [SerializeField]
+        private bool logUpgradeResult = true;
 
         private readonly List<ItemRequirement> consumedMaterials = new();
 
@@ -49,49 +43,19 @@ namespace DeadZone.Systems.Housing
         {
             if (targetFacility == null)
                 targetFacility = GetComponent<FacilityBase>();
-
-            if (testInventory == null)
-                testInventory = GetComponent<WorkbenchTestInventory>();
         }
 
         public void RequestUpgrade()
         {
             if (targetFacility == null)
             {
-                FailUpgrade("업그레이드 대상 시설이 없습니다.");
+                FailUpgrade("업그레이드 대상 시설이 없습니다.", 0, 0);
                 return;
             }
 
-            int currentLevel = targetFacility.GetCurrentLevel();
-            int nextLevel = currentLevel + 1;
-
-            if (currentLevel >= targetFacility.GetMaxLevel())
+            if (!HousingInventoryResolver.IsNetworkReady(out string failReason))
             {
-                FailUpgrade("이미 최대 레벨입니다.");
-                return;
-            }
-
-            if (!targetFacility.IsUpgradeTargetLevel(nextLevel))
-            {
-                FailUpgrade($"LV{nextLevel}은 현재 업그레이드 가능한 레벨이 아닙니다.");
-                return;
-            }
-
-            if (useTestInventory)
-            {
-                TryUpgradeWithInventory(testInventory);
-                return;
-            }
-
-            if (NetworkManager.Singleton == null)
-            {
-                FailUpgrade("NetworkManager가 없습니다.");
-                return;
-            }
-
-            if (!NetworkManager.Singleton.IsListening)
-            {
-                FailUpgrade("네트워크가 시작되지 않았습니다. Host 또는 Client 실행 후 업그레이드해야 합니다.");
+                FailUpgrade(failReason, 0, 0);
                 return;
             }
 
@@ -106,41 +70,69 @@ namespace DeadZone.Systems.Housing
 
             ulong requesterClientId = rpcParams.Receive.SenderClientId;
 
-            if (!TryGetRequesterInventory(requesterClientId, out IInventory inventory))
+            if (!HousingInventoryResolver.TryGetRequesterInventory(
+                    requesterClientId,
+                    out IInventory inventory,
+                    out string inventoryFailReason))
             {
-                FailUpgrade($"업그레이드 요청자의 인벤토리를 찾지 못했습니다. ClientId: {requesterClientId}");
+                FailUpgrade(inventoryFailReason, 0, 0);
                 return;
             }
 
-            TryUpgradeWithInventory(inventory);
+            if (!PlayerHousingProgressResolver.TryGetProgress(
+                    requesterClientId,
+                    out PlayerHousingProgress progress))
+            {
+                FailUpgrade("요청자의 하우징 진행도를 찾을 수 없습니다.", 0, 0);
+                return;
+            }
+
+            TryUpgradeWithRequesterData(requesterClientId, inventory, progress);
         }
 
-        public bool TryUpgradeWithInventory(IInventory inventory)
+        private bool TryUpgradeWithRequesterData(
+            ulong requesterClientId,
+            IInventory inventory,
+            PlayerHousingProgress progress)
         {
-            if (!IsServer && !useTestInventory)
+            if (!IsServer)
             {
-                FailUpgrade("시설 업그레이드는 서버에서만 처리할 수 있습니다.");
+                FailUpgrade("시설 업그레이드는 서버에서만 처리할 수 있습니다.", 0, 0);
                 return false;
             }
 
             if (targetFacility == null)
             {
-                FailUpgrade("업그레이드 대상 시설이 없습니다.");
+                FailUpgrade("업그레이드 대상 시설이 없습니다.", 0, 0);
                 return false;
             }
 
             if (inventory == null)
             {
-                FailUpgrade("업그레이드에 사용할 인벤토리가 없습니다.");
+                FailUpgrade("업그레이드에 사용할 요청자 인벤토리가 없습니다.", 0, 0);
                 return false;
             }
 
-            int currentLevel = targetFacility.GetCurrentLevel();
+            if (progress == null)
+            {
+                FailUpgrade("요청자의 하우징 진행도가 없습니다.", 0, 0);
+                return false;
+            }
+
+            FacilityType facilityType = targetFacility.Type;
+            int currentLevel = progress.GetLevel(facilityType);
+            int maxLevel = targetFacility.GetMaxLevel();
             int nextLevel = currentLevel + 1;
 
-            if (currentLevel >= targetFacility.GetMaxLevel())
+            if (maxLevel <= 0)
             {
-                FailUpgrade("이미 최대 레벨입니다.");
+                FailUpgrade("FacilityDataSO의 레벨 데이터가 없습니다.", currentLevel, currentLevel);
+                return false;
+            }
+
+            if (currentLevel >= maxLevel)
+            {
+                FailUpgrade("이미 최대 레벨입니다.", currentLevel, currentLevel);
                 return false;
             }
 
@@ -148,53 +140,64 @@ namespace DeadZone.Systems.Housing
 
             if (nextLevelData == null)
             {
-                FailUpgrade($"LV{nextLevel} 데이터가 FacilityDataSO에 없습니다.");
+                FailUpgrade($"LV{nextLevel} 데이터가 FacilityDataSO에 없습니다.", currentLevel, currentLevel);
                 return false;
             }
 
             if (!HasAllMaterials(inventory, nextLevelData))
             {
-                FailUpgrade($"LV{nextLevel} 업그레이드 재료가 부족합니다.");
+                FailUpgrade($"LV{nextLevel} 업그레이드 재료가 부족합니다.", currentLevel, currentLevel);
                 return false;
             }
 
             if (!ConsumeAllMaterials(inventory, nextLevelData))
             {
-                FailUpgrade($"LV{nextLevel} 업그레이드 재료 소모에 실패했습니다.");
+                FailUpgrade($"LV{nextLevel} 업그레이드 재료 소모에 실패했습니다.", currentLevel, currentLevel);
                 return false;
             }
 
-            if (!ApplyUpgradeLevel(nextLevel))
+            if (!progress.TrySetLevelFromServer(facilityType, nextLevel))
             {
                 RestoreConsumedMaterials(inventory);
-                FailUpgrade($"LV{nextLevel} 적용에 실패했습니다. 소모한 재료를 되돌렸습니다.");
+                FailUpgrade($"LV{nextLevel} 적용에 실패했습니다. 소모한 재료를 되돌렸습니다.", currentLevel, currentLevel);
                 return false;
             }
 
             consumedMaterials.Clear();
 
+            PlayerHousingSaveSyncer saveSyncer = progress.GetComponent<PlayerHousingSaveSyncer>();
+
+            if (saveSyncer != null)
+            {
+                saveSyncer.RequestSaveFromServer($"{facilityType} 시설 업그레이드");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[FacilityUpgradeController] PlayerHousingSaveSyncer가 없어 시설 레벨 저장 요청을 보낼 수 없습니다. ClientId: {requesterClientId}",
+                    progress
+                );
+            }
+
+            PublishUpgradeResult(currentLevel, nextLevel, true, "업그레이드 성공");
+
+            EventBus.Publish(new FacilityUpgradedEvent
+            {
+                facilityType = facilityType,
+                newLevel = nextLevel
+            });
+
             if (logUpgradeResult)
             {
                 Debug.Log(
-                    $"[FacilityUpgradeController] {targetFacility.name} 업그레이드 성공: LV{currentLevel} → LV{nextLevel}",
-                    this);
+                    $"[FacilityUpgradeController] 플레이어별 시설 업그레이드 성공\n" +
+                    $"ClientId: {requesterClientId}\n" +
+                    $"시설: {facilityType}\n" +
+                    $"레벨: LV{currentLevel} → LV{nextLevel}",
+                    this
+                );
             }
 
-            return true;
-        }
-
-        private bool ApplyUpgradeLevel(int nextLevel)
-        {
-            if (targetFacility == null)
-                return false;
-
-            if (!IsServer && !useTestInventory)
-                return false;
-
-            if (targetFacility.CurrentLevel == null)
-                return false;
-
-            targetFacility.CurrentLevel.Value = nextLevel;
             return true;
         }
 
@@ -282,30 +285,10 @@ namespace DeadZone.Systems.Housing
             consumedMaterials.Clear();
         }
 
-        private bool TryGetRequesterInventory(ulong requesterClientId, out IInventory inventory)
+        private void FailUpgrade(string reason, int previousLevel, int currentLevel)
         {
-            inventory = null;
+            PublishUpgradeResult(previousLevel, currentLevel, false, reason);
 
-            if (NetworkManager.Singleton == null)
-                return false;
-
-            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(requesterClientId, out NetworkClient client))
-                return false;
-
-            if (client.PlayerObject == null)
-                return false;
-
-            inventory = client.PlayerObject.GetComponent<IInventory>();
-
-            if (inventory != null)
-                return true;
-
-            inventory = client.PlayerObject.GetComponentInChildren<IInventory>(true);
-            return inventory != null;
-        }
-
-        private void FailUpgrade(string reason)
-        {
             if (!logUpgradeResult)
                 return;
 
@@ -313,9 +296,23 @@ namespace DeadZone.Systems.Housing
             Debug.LogWarning($"[FacilityUpgradeController] {facilityName} 업그레이드 실패: {reason}", this);
         }
 
+        private void PublishUpgradeResult(int previousLevel, int currentLevel, bool success, string reason)
+        {
+            string facilityName = targetFacility != null ? targetFacility.name : "None";
+
+            EventBus.Publish(new HousingUpgradeResultEvent
+            {
+                facilityName = facilityName,
+                previousLevel = previousLevel,
+                currentLevel = currentLevel,
+                success = success,
+                reason = reason
+            });
+        }
+
 #if UNITY_EDITOR
-        [ContextMenu("디버그 업그레이드 실행")]
-        private void DebugUpgrade()
+        [ContextMenu("디버그 업그레이드 요청")]
+        private void DebugForceUpgradeRequest()
         {
             if (!Application.isPlaying)
             {

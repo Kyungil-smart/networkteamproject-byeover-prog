@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DeadZone.Actors.UI.Hideout
 {
@@ -42,6 +43,15 @@ namespace DeadZone.Actors.UI.Hideout
         [SerializeField]
         [Tooltip("기존 우측 인벤토리 패널입니다. 새 업그레이드 UI에서는 사용하지 않습니다.")]
         private GameObject rightInventoryPanelRoot;
+
+        [Header("로비 복귀")]
+        [SerializeField]
+        [Tooltip("기본 시점에서 뒤로가기 버튼을 한 번 더 눌렀을 때 이동할 로비 씬 이름입니다.")]
+        private string lobbySceneName = "Lobby";
+
+        [SerializeField]
+        [Tooltip("로비 복귀 시 현재 시설 창과 선택 상태를 정리합니다.")]
+        private bool clearStateBeforeReturnToLobby = true;
 
         [Header("동작 옵션")]
         [SerializeField]
@@ -169,6 +179,37 @@ namespace DeadZone.Actors.UI.Hideout
             DebugLog($"{selectedFacility} 아이템 제작 창을 열었습니다.");
         }
 
+        public void HandleBackButton()
+        {
+            if (IsFacilityDetailActive())
+            {
+                CloseFacilityView();
+                return;
+            }
+
+            ReturnToLobbyScene();
+        }
+
+        public void ReturnToLobbyScene()
+        {
+            if (clearStateBeforeReturnToLobby)
+            {
+                selectedFacility = HideoutCameraFacilitySelector.FacilityView.None;
+                CloseContentOnly();
+                SetOpenFacilityButtonVisible(false);
+                SetItemCraftButtonVisible(false);
+            }
+
+            if (string.IsNullOrWhiteSpace(lobbySceneName))
+            {
+                Debug.LogWarning("[HideoutFacilityUIController] 로비 씬 이름이 비어 있어 로비로 돌아갈 수 없습니다.", this);
+                return;
+            }
+
+            DebugLog($"로비 씬으로 이동합니다. Scene={lobbySceneName}");
+            SceneManager.LoadScene(lobbySceneName);
+        }
+
         public void CloseFacilityView()
         {
             selectedFacility = HideoutCameraFacilitySelector.FacilityView.None;
@@ -225,6 +266,17 @@ namespace DeadZone.Actors.UI.Hideout
         public void SelectMedical()
         {
             SelectFacility(HideoutCameraFacilitySelector.FacilityView.Medical);
+        }
+
+        private bool IsFacilityDetailActive()
+        {
+            if (selectedFacility != HideoutCameraFacilitySelector.FacilityView.None)
+                return true;
+
+            if (facilityUpgradeWindowUI != null && facilityUpgradeWindowUI.IsOpen)
+                return true;
+
+            return facilityCraftWindowUI != null && facilityCraftWindowUI.IsOpen;
         }
 
         private bool CanOpenItemCraft(HideoutCameraFacilitySelector.FacilityView facilityView)
