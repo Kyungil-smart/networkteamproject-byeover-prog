@@ -20,7 +20,6 @@ namespace DeadZone.Actors.UI
         {
             new[] { "party", "파티" },
             new[] { "inventory", "인벤토리" },
-            new[] { "craft", "제작" },
             new[] { "trader", "트레이더" },
             new[] { "quest", "퀘스트" },
             new[] { "facility", "시설" }
@@ -30,7 +29,6 @@ namespace DeadZone.Actors.UI
         {
             "Page_Party",
             "Page_Inventory",
-            "Page_Craft",
             "Page_Trader",
             "Page_Quest",
             "Page_Facility"
@@ -49,7 +47,7 @@ namespace DeadZone.Actors.UI
         
         [Title("시설 씬 전환")]
         [SerializeField] private string facilitySceneName = "HideOut";
-        [SerializeField] private int facilityTabIndex = 5;
+        [SerializeField] private int facilityTabIndex = 4;
         [SerializeField] private bool saveLobbyBeforeFacilityScene = true;
         [SerializeField] private LobbySaveService lobbySaveService;
 

@@ -121,7 +121,7 @@ namespace DeadZone.Systems.Save
                 if (!facility.CanSetLevel(savedLevel))
                     continue;
 
-                if (facility.IsSpawned && !facility.IsServer)
+                if (!facility.IsSpawned || !facility.IsServer)
                     continue;
 
                 int previousLevel = facility.GetCurrentLevel();

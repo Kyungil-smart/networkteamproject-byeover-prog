@@ -26,7 +26,7 @@ namespace DeadZone.Systems.Save
         {
             if (dontDestroyOnLoad)
             {
-                Debug.LogWarning(
+                Debug.Log(
                     "[LobbyInventoryState] dontDestroyOnLoad is ignored. Lobby inventory state is a scene-local cache; CloudSaveSystem is the persistent authority.",
                     this);
             }

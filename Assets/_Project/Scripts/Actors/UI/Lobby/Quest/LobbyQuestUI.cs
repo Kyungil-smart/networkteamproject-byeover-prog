@@ -143,14 +143,14 @@ namespace DeadZone.Actors.UI.Lobby
 
             ResolveQuestManager();
 
-            if (questManager == null || NetworkManager.Singleton == null)
+            if (questManager == null)
             {
                 return HasPrerequisiteText(quest)
                     ? QuestViewState.Locked
                     : QuestViewState.Available;
             }
 
-            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            ulong localClientId = questManager.GetLocalClientIdForState();
 
             if (questManager.IsQuestCompleted(localClientId, quest.questID))
                 return QuestViewState.Completed;
@@ -177,10 +177,10 @@ namespace DeadZone.Actors.UI.Lobby
 
             ResolveQuestManager();
 
-            if (questManager == null || NetworkManager.Singleton == null)
+            if (questManager == null)
                 return string.Empty;
 
-            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            ulong localClientId = questManager.GetLocalClientIdForState();
 
             List<string> lines = new();
 
@@ -211,13 +211,11 @@ namespace DeadZone.Actors.UI.Lobby
             if (state != QuestViewState.Available)
                 return;
 
-            if (NetworkManager.Singleton == null)
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
-                Debug.LogWarning("[LobbyQuestUI] NetworkManager가 없습니다. 퀘스트 수락은 네트워크 세션에서 처리됩니다.");
-                return;
+                questManager.AcceptQuest(questManager.GetLocalClientIdForState(), quest.questID);
             }
-
-            if (NetworkManager.Singleton.IsServer)
+            else if (NetworkManager.Singleton.IsServer)
             {
                 questManager.AcceptQuest(NetworkManager.Singleton.LocalClientId, quest.questID);
             }
