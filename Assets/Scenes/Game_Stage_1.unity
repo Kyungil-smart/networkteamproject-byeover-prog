@@ -3234,6 +3234,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5542994929067147256, guid: 0fb053d98b9907448b8b067fcefc82e1, type: 3}
   m_PrefabInstance: {fileID: 343251974}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &355405269 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8318187533033355834, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &355405271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 355405269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &395070617
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3508,6 +3526,19 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.968, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &426005499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 426005492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &437254487
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3968,6 +3999,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4077195986647316, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
   m_PrefabInstance: {fileID: 482464906}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &494686997 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5543248780247932136, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &494686999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 494686997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &502819801
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4768,6 +4817,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4519663843527638, guid: 7f0b4051ed0c7104da43204b2ecb5c04, type: 3}
   m_PrefabInstance: {fileID: 607361063}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &610982922 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7069920243894799803, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &610982924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 610982922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &618688986
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5175,6 +5242,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 655281527}
+    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 655281528}
   m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
 --- !u!4 &655281525 stripped
 Transform:
@@ -5202,6 +5272,19 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.9340001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &655281528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 655281526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &661115578
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5779,6 +5862,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4546259155988080, guid: 6c5763059d78ddc449acd2e31e6f24d1, type: 3}
   m_PrefabInstance: {fileID: 677580416}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &726966618 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8876169112615335864, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &726966620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 726966618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &749211539
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6069,6 +6170,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7775289706674549485, guid: 4cdb435cc772d964f833f1d76fa035e3, type: 3}
   m_PrefabInstance: {fileID: 766301187}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &782631602 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5956269117546032564, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &782631604
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782631602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &782702887
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6324,6 +6443,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 788582831}
+    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 788582832}
   m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
 --- !u!4 &788582829 stripped
 Transform:
@@ -6351,6 +6473,19 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.9340001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &788582832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788582830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &791279095
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6661,6 +6796,24 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.6250001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &816979775 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3116291483654385272, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &816979777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 816979775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &819147362
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6903,6 +7056,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4119474506877484, guid: 31ff660a93c8f2b48a763837974041d0, type: 3}
   m_PrefabInstance: {fileID: 831194096}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &846877583 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8297823767338666729, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &846877585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846877583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &851865408
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6985,6 +7156,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4077195986647316, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
   m_PrefabInstance: {fileID: 851865408}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &854921860 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8278455943235509792, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &854921862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 854921860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &858255204
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7235,6 +7424,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4077195986647316, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
   m_PrefabInstance: {fileID: 900383333}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &921536041 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 787508195731728634, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &921536043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921536041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1 &926744912
 GameObject:
   m_ObjectHideFlags: 0
@@ -7714,6 +7921,42 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6983492648746362662, guid: 676f260b778b3984daace8f34df634cd, type: 3}
   m_PrefabInstance: {fileID: 952060967}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &959038012 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5643888417776072576, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &959038014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 959038012}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
+--- !u!1 &959080040 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6905896433815177540, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &959080042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 959080040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &966616574
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7780,6 +8023,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4519663843527638, guid: 7f0b4051ed0c7104da43204b2ecb5c04, type: 3}
   m_PrefabInstance: {fileID: 966616574}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &977795495 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5267539731400656648, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &977795497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 977795495}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1 &991259892
 GameObject:
   m_ObjectHideFlags: 0
@@ -7917,6 +8178,24 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -1.0120001, y: 1.143, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &1009068587 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3609206886432670980, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1009068589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1009068587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1018222007
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9703,6 +9982,63 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -1.0120001, y: 1.143, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1001 &1209138208
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2691956723851317198, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_Name
+      value: CameraCutoutManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 16.16917
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.00016
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -65.23599
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383042113797328954, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 70d5efc14b43bd247ad80917bc13efa8, type: 3}
 --- !u!1001 &1216572792
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10170,6 +10506,24 @@ Transform:
   - {fileID: 1449737066}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1272080788 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8703873706424450058, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1272080790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1272080788}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1274514199
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11110,6 +11464,24 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -0.28800002, y: 1.4790001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &1396226005 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2193236607426290113, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1396226007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1396226005}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1397454739
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11404,6 +11776,24 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -1.0120001, y: 1.143, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &1418018012 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2967611989604737899, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1418018014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1418018012}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1419620373
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13456,6 +13846,24 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.588, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &1508445560 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1118334708113382421, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1508445562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1508445560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1 &1510720686
 GameObject:
   m_ObjectHideFlags: 0
@@ -15921,6 +16329,42 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
+--- !u!1 &1781792926 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8715717755725154671, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1781792928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1781792926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
+--- !u!1 &1790133127 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5738027328635904394, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1790133129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790133127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1794966511
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16545,6 +16989,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1903230513}
+    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1903230514}
   m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
 --- !u!4 &1903230511 stripped
 Transform:
@@ -16572,6 +17019,19 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.9340001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &1903230514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1903230512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1930210543
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16631,6 +17091,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1930210546}
+    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1930210547}
   m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
 --- !u!4 &1930210544 stripped
 Transform:
@@ -16658,6 +17121,19 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.9340001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &1930210547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930210545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1934859272
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16724,6 +17200,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4519663843527638, guid: 7f0b4051ed0c7104da43204b2ecb5c04, type: 3}
   m_PrefabInstance: {fileID: 1934859272}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1943209335 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3546839911188347450, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1943209337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1943209335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &1944986130
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17294,6 +17788,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4519663843527638, guid: 7f0b4051ed0c7104da43204b2ecb5c04, type: 3}
   m_PrefabInstance: {fileID: 1995027095}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2014921077
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 16.16917
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.00016
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -65.23599
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2674972352721433135, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7217342209426395768, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+      propertyPath: m_Name
+      value: VisionMaskManager
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
 --- !u!1001 &2019820783
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17635,6 +18186,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4519663843527638, guid: 7f0b4051ed0c7104da43204b2ecb5c04, type: 3}
   m_PrefabInstance: {fileID: 2067714309}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2074340867 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6405370960759673358, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+  m_PrefabInstance: {fileID: 2448597528699807093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2074340869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074340867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
+  renderers: []
 --- !u!1001 &2104100340
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18897,9 +19466,75 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5845977849223007242, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       insertIndex: -1
       addedObject: {fileID: 203151948}
+    - targetCorrespondingSourceObject: {fileID: 5738027328635904394, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1790133129}
+    - targetCorrespondingSourceObject: {fileID: 8278455943235509792, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 854921862}
+    - targetCorrespondingSourceObject: {fileID: 3609206886432670980, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1009068589}
+    - targetCorrespondingSourceObject: {fileID: 6905896433815177540, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 959080042}
+    - targetCorrespondingSourceObject: {fileID: 8703873706424450058, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1272080790}
+    - targetCorrespondingSourceObject: {fileID: 8876169112615335864, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 726966620}
+    - targetCorrespondingSourceObject: {fileID: 5267539731400656648, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 977795497}
+    - targetCorrespondingSourceObject: {fileID: 7069920243894799803, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 610982924}
+    - targetCorrespondingSourceObject: {fileID: 8297823767338666729, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 846877585}
+    - targetCorrespondingSourceObject: {fileID: 1118334708113382421, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1508445562}
+    - targetCorrespondingSourceObject: {fileID: 5956269117546032564, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 782631604}
+    - targetCorrespondingSourceObject: {fileID: 2193236607426290113, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1396226007}
+    - targetCorrespondingSourceObject: {fileID: 3546839911188347450, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1943209337}
+    - targetCorrespondingSourceObject: {fileID: 5643888417776072576, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 959038014}
+    - targetCorrespondingSourceObject: {fileID: 2967611989604737899, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1418018014}
+    - targetCorrespondingSourceObject: {fileID: 3116291483654385272, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 816979777}
+    - targetCorrespondingSourceObject: {fileID: 8715717755725154671, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1781792928}
+    - targetCorrespondingSourceObject: {fileID: 8318187533033355834, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 355405271}
+    - targetCorrespondingSourceObject: {fileID: 6405370960759673358, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2074340869}
+    - targetCorrespondingSourceObject: {fileID: 787508195731728634, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 921536043}
+    - targetCorrespondingSourceObject: {fileID: 5543248780247932136, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 494686999}
     - targetCorrespondingSourceObject: {fileID: 6127813013495371032, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       insertIndex: -1
       addedObject: {fileID: 426005497}
+    - targetCorrespondingSourceObject: {fileID: 6127813013495371032, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 426005499}
   m_SourcePrefab: {fileID: 100100000, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
 --- !u!4 &2448597528699807094 stripped
 Transform:
@@ -19030,3 +19665,5 @@ SceneRoots:
   - {fileID: 284445560}
   - {fileID: 131602578}
   - {fileID: 3861023729096314976}
+  - {fileID: 2014921077}
+  - {fileID: 1209138208}

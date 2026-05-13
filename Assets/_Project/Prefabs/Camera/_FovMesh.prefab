@@ -48,7 +48,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.FOVMesh
   viewDistance: 18
   viewAngle: 90
-  minimumRange: 3
+  minimumRange: 5
   topHeight: 7
   bottomDepth: 3
   segments: 30
