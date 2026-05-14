@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Unity.Netcode;
 using DeadZone.Actors.UI;
 
 namespace DeadZone.Core
@@ -24,6 +25,8 @@ namespace DeadZone.Core
             }
             instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            RemoveDuplicateNetworkManagers();
 
             Application.targetFrameRate = 60;
             Debug.Log("[Bootstrap] 초기화 완료");
@@ -41,6 +44,60 @@ namespace DeadZone.Core
         {
             EventBus.Clear();
             ServiceLocator.Clear();
+        }
+
+        private void OnDestroy()
+        {
+            if (instance != this)
+                return;
+
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            instance = null;
+        }
+
+        private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            RemoveDuplicateNetworkManagers();
+        }
+
+        private static void RemoveDuplicateNetworkManagers()
+        {
+            NetworkManager[] managers = FindObjectsByType<NetworkManager>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            if (managers == null || managers.Length <= 1)
+                return;
+
+            NetworkManager keeper = NetworkManager.Singleton;
+            if (keeper == null)
+            {
+                for (int i = 0; i < managers.Length; i++)
+                {
+                    if (managers[i] != null)
+                    {
+                        keeper = managers[i];
+                        break;
+                    }
+                }
+            }
+
+            for (int i = 0; i < managers.Length; i++)
+            {
+                NetworkManager manager = managers[i];
+                if (manager == null || manager == keeper)
+                    continue;
+
+                Debug.Log(
+                    $"[Bootstrap] Duplicate NetworkManager removed. Keep={GetObjectName(keeper)}, Remove={GetObjectName(manager)}",
+                    manager);
+                Destroy(manager.gameObject);
+            }
+        }
+
+        private static string GetObjectName(Object target)
+        {
+            return target != null ? target.name : "None";
         }
     }
 }

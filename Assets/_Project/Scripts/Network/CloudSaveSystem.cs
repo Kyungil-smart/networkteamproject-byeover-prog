@@ -1151,7 +1151,7 @@ namespace DeadZone.Network
 
             int remaining = entry.Amount;
             int maxStack = Mathf.Max(1, entry.Item.maxStackSize);
-            Vector2Int itemSize = GetSafeGridSize(entry.Item);
+            Vector2Int itemSize = Vector2Int.one;
 
             while (remaining > 0)
             {
