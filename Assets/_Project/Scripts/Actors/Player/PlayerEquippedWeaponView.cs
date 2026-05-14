@@ -218,11 +218,12 @@ namespace DeadZone.Actors
         {
             if (equipmentSlots == null || subscribedToEquipment)
                 return;
-
+            
             equipmentSlots.CurrentEquipped.OnValueChanged += OnCurrentEquippedChanged;
             equipmentSlots.Primary1Id.OnValueChanged += OnWeaponSlotIdChanged;
             equipmentSlots.Primary2Id.OnValueChanged += OnWeaponSlotIdChanged;
             equipmentSlots.SecondaryId.OnValueChanged += OnWeaponSlotIdChanged;
+            equipmentSlots.MeleeId.OnValueChanged += OnWeaponSlotIdChanged;
             subscribedToEquipment = true;
         }
 
@@ -235,6 +236,7 @@ namespace DeadZone.Actors
             equipmentSlots.Primary1Id.OnValueChanged -= OnWeaponSlotIdChanged;
             equipmentSlots.Primary2Id.OnValueChanged -= OnWeaponSlotIdChanged;
             equipmentSlots.SecondaryId.OnValueChanged -= OnWeaponSlotIdChanged;
+            equipmentSlots.MeleeId.OnValueChanged -= OnWeaponSlotIdChanged;
             subscribedToEquipment = false;
         }
 

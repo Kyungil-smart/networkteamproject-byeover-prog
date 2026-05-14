@@ -499,6 +499,7 @@ GameObject:
   - component: {fileID: 8742465977128026345}
   - component: {fileID: 5946135611297530169}
   - component: {fileID: 3970032432765172834}
+  - component: {fileID: 1506123448504329859}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -586,7 +587,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 146189795
+  GlobalObjectIdHash: 2875219163
   InScenePlacedSourceGlobalObjectIdHash: 146189795
   DeferredDespawnTick: 0
   Ownership: 1
@@ -978,6 +979,13 @@ MonoBehaviour:
   shotgunMaxRange: 12
   shotgunMinDamageMultiplier: 0.15
   shotgunTotalDamageMultiplier: 0.55
+  autoEquipWeaponVisual: 1
+  weaponHolder: {fileID: 0}
+  weaponHolderName: WeaponHolder
+  weaponMuzzlePointName: MuzzlePoint
+  weaponVisualPositionOffset: {x: 0, y: 0, z: 0}
+  weaponVisualRotationOffset: {x: 0, y: 0, z: 0}
+  weaponVisualScale: {x: 1, y: 1, z: 1}
 --- !u!114 &3096256922150323826
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1589,6 +1597,7 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
+  showDebugLogs: 0
 --- !u!114 &-3200219425098209382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1786,6 +1795,29 @@ MonoBehaviour:
   fallbackMuzzle: {fileID: 7489591256997111823}
   muzzlePointName: MuzzlePoint
   resetLocalTransform: 1
+  autoBindReferences: 1
+  showDebugLogs: 0
+--- !u!114 &1506123448504329859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 509168f2250592145a69730111e7842b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerAnimatorDriver
+  ShowTopMostFoldoutHeaderGroup: 1
+  animator: {fileID: 95481129507444498}
+  equipmentSlots: {fileID: 3096256922150323826}
+  playerHealthSystem: {fileID: 0}
+  weaponTypeParameterName: WeaponType
+  rollingParameterName: IsRolling
+  combatLayerName: Combat Upper Body
+  useCombatLayerWeight: 1
+  layerBlendSpeed: 12
   autoBindReferences: 1
   showDebugLogs: 0
 --- !u!1 &1136982649051480

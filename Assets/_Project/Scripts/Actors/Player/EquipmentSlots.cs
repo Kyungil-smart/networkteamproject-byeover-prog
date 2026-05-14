@@ -32,7 +32,7 @@ namespace DeadZone.Actors
         // 서버 상태를 기준으로 클라이언트 표시 정보를 다시 맞췄을 때 사용한다.
         Synced
     }
-    
+
     public class EquipmentSlots : NetworkBehaviour, IArmored
     {
         // ----------- 무기 런타임 상태 -----------
@@ -56,6 +56,12 @@ namespace DeadZone.Actors
 
         public NetworkVariable<float> HelmetDurability = new(0f);
         public NetworkVariable<float> ArmorDurability  = new(0f);
+
+        // ----------- 디버그 -----------
+
+        [Header("디버그")]
+        [Tooltip("장비 슬롯 변경 로그를 출력합니다. 일반 플레이 테스트나 최종 빌드 전에는 꺼두는 것을 권장합니다.")]
+        [SerializeField] private bool showDebugLogs = false;
 
         // ----------- 서비스 -----------
 
@@ -89,9 +95,16 @@ namespace DeadZone.Actors
             get
             {
                 FixedString64Bytes curId = CurrentEquipped.Value;
+
+                // CurrentEquipped와 빈 슬롯 ID가 서로 같다고 판단되는 것을 막는다.
+                // 비무장 상태에서는 탄약/장전 로직이 어떤 슬롯도 현재 무기로 오판하면 안 된다.
+                if (curId.Length == 0)
+                    return default;
+
                 if (curId == Primary1Id.Value)  return Primary1State.Value;
                 if (curId == Primary2Id.Value)  return Primary2State.Value;
                 if (curId == SecondaryId.Value) return SecondaryState.Value;
+
                 return default;
             }
         }
@@ -147,6 +160,14 @@ namespace DeadZone.Actors
         public bool TryGetCurrentWeaponSlot(out WeaponSlot slot)
         {
             FixedString64Bytes curId = CurrentEquipped.Value;
+
+            // 빈 CurrentEquipped가 빈 Primary 슬롯과 같다고 판정되는 것을 방지한다.
+            // 이 방어가 없으면 비무장 상태에서도 Primary1 장착으로 오판할 수 있다.
+            if (curId.Length == 0)
+            {
+                slot = WeaponSlot.None;
+                return false;
+            }
 
             if (curId == Primary1Id.Value)
             {
@@ -415,59 +436,159 @@ namespace DeadZone.Actors
             return 0f;
         }
 
+        /// <summary>
+        /// 저장 데이터가 요청한 현재 장착 무기를 복원할 수 있으면 그 무기를 사용한다.
+        /// 요청값이 비어 있거나 실제 슬롯에 없으면 Primary1 → Primary2 → Secondary → Melee 순서로 대체 장착 무기를 선택한다.
+        /// </summary>
         private FixedString64Bytes ResolveCurrentEquipped(string requestedItemId)
         {
             if (!string.IsNullOrWhiteSpace(requestedItemId))
             {
                 FixedString64Bytes requested = new FixedString64Bytes(requestedItemId);
 
-                if (requested == Primary1Id.Value ||
-                    requested == Primary2Id.Value ||
-                    requested == SecondaryId.Value ||
-                    requested == MeleeId.Value)
-                {
+                if (IsEquippedIdValid(requested))
                     return requested;
-                }
             }
 
+            return GetFirstAvailableWeaponId();
+        }
+
+        /// <summary>
+        /// 서버 권한으로 무기 슬롯 ID와 WeaponState를 갱신한다.
+        /// 슬롯 변경 후 CurrentEquipped가 실제 슬롯 상태와 어긋나지 않도록 즉시 보정한다.
+        /// </summary>
+        public void UpdateSlot(WeaponSlot slot, string itemId, WeaponState state)
+        {
+            if (!IsServer) return;
+
+            FixedString64Bytes previousSlotId = GetWeaponSlotId(slot);
+            FixedString64Bytes nextSlotId = string.IsNullOrWhiteSpace(itemId)
+                ? new FixedString64Bytes("")
+                : new FixedString64Bytes(itemId);
+
+            if (showDebugLogs)
+            {
+                Debug.Log(
+                    $"[EquipmentSlots] UpdateSlot: owner={OwnerClientId}, slot={slot}, itemId={nextSlotId}, ammo={state.currentAmmo}",
+                    this);
+            }
+
+            switch (slot)
+            {
+                case WeaponSlot.Primary1:
+                    Primary1Id.Value = nextSlotId;
+                    Primary1State.Value = state;
+                    break;
+
+                case WeaponSlot.Primary2:
+                    Primary2Id.Value = nextSlotId;
+                    Primary2State.Value = state;
+                    break;
+
+                case WeaponSlot.Secondary:
+                    SecondaryId.Value = nextSlotId;
+                    SecondaryState.Value = state;
+                    break;
+
+                case WeaponSlot.Melee:
+                    MeleeId.Value = nextSlotId;
+                    break;
+
+                default:
+                    return;
+            }
+
+            ReconcileCurrentEquippedAfterSlotUpdate(previousSlotId, nextSlotId);
+        }
+
+        /// <summary>
+        /// 무기 슬롯 변경 이후 CurrentEquipped가 실제 슬롯 상태와 일치하도록 보정한다.
+        /// 현재 장착 중인 슬롯이 비워지면 Primary1 → Primary2 → Secondary → Melee 순서로 fallback을 선택한다.
+        /// </summary>
+        private void ReconcileCurrentEquippedAfterSlotUpdate(
+            FixedString64Bytes previousSlotId,
+            FixedString64Bytes nextSlotId)
+        {
+            FixedString64Bytes currentEquipped = CurrentEquipped.Value;
+
+            // 아직 어떤 무기도 현재 장착으로 지정되지 않은 상태에서 새 무기가 들어오면 첫 장착 무기로 사용한다.
+            if (currentEquipped.Length == 0)
+            {
+                if (nextSlotId.Length > 0)
+                    CurrentEquipped.Value = nextSlotId;
+
+                return;
+            }
+
+            bool updatedSlotWasCurrent =
+                previousSlotId.Length > 0 &&
+                currentEquipped == previousSlotId;
+
+            // 현재 장착 중이던 슬롯이 교체되거나 비워진 경우, 새 ID 또는 fallback으로 현재 장착 무기를 정리한다.
+            if (updatedSlotWasCurrent)
+            {
+                CurrentEquipped.Value = nextSlotId.Length > 0
+                    ? nextSlotId
+                    : GetFirstAvailableWeaponId();
+
+                return;
+            }
+
+            // CurrentEquipped가 어느 슬롯에도 없는 오래된 ID라면 실제 슬롯 기준으로 다시 맞춘다.
+            if (!IsEquippedIdValid(currentEquipped))
+            {
+                CurrentEquipped.Value = GetFirstAvailableWeaponId();
+            }
+        }
+
+        /// <summary>
+        /// 지정한 무기 슬롯의 현재 itemId를 반환한다.
+        /// 슬롯 변경 전후 비교와 CurrentEquipped 정합성 보정에서 사용한다.
+        /// </summary>
+        private FixedString64Bytes GetWeaponSlotId(WeaponSlot slot)
+        {
+            return slot switch
+            {
+                WeaponSlot.Primary1 => Primary1Id.Value,
+                WeaponSlot.Primary2 => Primary2Id.Value,
+                WeaponSlot.Secondary => SecondaryId.Value,
+                WeaponSlot.Melee => MeleeId.Value,
+                _ => new FixedString64Bytes("")
+            };
+        }
+
+        /// <summary>
+        /// CurrentEquipped가 실제 장착 슬롯 중 하나를 가리키는지 확인한다.
+        /// 빈 슬롯과 빈 CurrentEquipped가 같다고 처리되지 않도록 빈 값은 항상 유효하지 않은 값으로 본다.
+        /// </summary>
+        private bool IsEquippedIdValid(FixedString64Bytes equippedId)
+        {
+            if (equippedId.Length == 0)
+                return false;
+
+            return IsSameOccupiedSlot(Primary1Id.Value, equippedId) ||
+                   IsSameOccupiedSlot(Primary2Id.Value, equippedId) ||
+                   IsSameOccupiedSlot(SecondaryId.Value, equippedId) ||
+                   IsSameOccupiedSlot(MeleeId.Value, equippedId);
+        }
+
+        private bool IsSameOccupiedSlot(FixedString64Bytes slotId, FixedString64Bytes itemId)
+        {
+            return slotId.Length > 0 && slotId == itemId;
+        }
+
+        /// <summary>
+        /// 현재 장착 무기 fallback을 선택한다.
+        /// 저장 복원, 슬롯 해제, stale CurrentEquipped 보정에서 같은 우선순위를 사용한다.
+        /// </summary>
+        private FixedString64Bytes GetFirstAvailableWeaponId()
+        {
             if (Primary1Id.Value.Length > 0) return Primary1Id.Value;
             if (Primary2Id.Value.Length > 0) return Primary2Id.Value;
             if (SecondaryId.Value.Length > 0) return SecondaryId.Value;
             if (MeleeId.Value.Length > 0) return MeleeId.Value;
 
             return new FixedString64Bytes("");
-        }
-
-        // 임시 슬롯 업데이트함수 
-        public void UpdateSlot(WeaponSlot slot, string itemId, WeaponState state)
-        {
-            if (!IsServer) return;
-
-            Debug.Log($"[EquipmentSlots] UpdateSlot: owner={OwnerClientId}, slot={slot}, itemID={itemId}, ammo={state.currentAmmo}", this);
-
-            switch (slot)
-            {
-                case WeaponSlot.Primary1:
-                    Primary1Id.Value = itemId;
-                    Primary1State.Value = state;
-                    break;
-                case WeaponSlot.Primary2:
-                    Primary2Id.Value = itemId;
-                    Primary2State.Value = state;
-                    break;
-                case WeaponSlot.Secondary:
-                    SecondaryId.Value = itemId;
-                    SecondaryState.Value = state;
-                    break;
-                case WeaponSlot.Melee:
-                    MeleeId.Value = itemId;
-                    break;
-            }
-            
-            if (CurrentEquipped.Value.Length == 0)
-            {
-                CurrentEquipped.Value = itemId;
-            }
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -546,5 +667,12 @@ namespace DeadZone.Actors
         }
     }
 
-    public enum WeaponSlot : byte { None, Primary1, Primary2, Secondary, Melee }
+    public enum WeaponSlot : byte
+    {
+        None,
+        Primary1,
+        Primary2,
+        Secondary,
+        Melee
+    }
 }
