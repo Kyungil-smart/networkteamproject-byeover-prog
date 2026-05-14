@@ -16,7 +16,8 @@ MonoBehaviour:
     cueId: 10
     displayName: "AR \uC18C\uCD1D \uBC1C\uC0AC"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: fc4c1ca26a3264a259dfa43a61a2f70e, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -30,7 +31,8 @@ MonoBehaviour:
     cueId: 11
     displayName: "AR \uC18C\uCD1D \uC7A5\uC804"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -44,7 +46,8 @@ MonoBehaviour:
     cueId: 20
     displayName: "HG \uBC1C\uC0AC"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: bc8c3727d81b340f685d13c544c0662c, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -58,7 +61,8 @@ MonoBehaviour:
     cueId: 21
     displayName: "HG \uC7A5\uC804"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -72,7 +76,8 @@ MonoBehaviour:
     cueId: 30
     displayName: "SR \uB4DC\uB77C\uADF8\uC18C\uCD1D \uBC1C\uC0AC"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: 78174f5aab0e44190ad3ba5cd6047dc0, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -86,7 +91,8 @@ MonoBehaviour:
     cueId: 31
     displayName: "SR \uB4DC\uB77C\uADF8\uC18C\uCD1D \uC7A5\uC804"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -100,7 +106,8 @@ MonoBehaviour:
     cueId: 40
     displayName: "SMG \uBC1C\uC0AC"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: 400bfadff74d1423c93ffffb0666fa04, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -114,7 +121,8 @@ MonoBehaviour:
     cueId: 41
     displayName: "SMG \uC7A5\uC804"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: d58a6efe3c9ea4cbc930c9fc149ecade, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -128,7 +136,10 @@ MonoBehaviour:
     cueId: 100
     displayName: "\uD50C\uB808\uC774\uC5B4 \uBC1C\uAC78\uC74C"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: 3376c0b6a8c5f4b539dbbf44b0698d59, type: 3}
+    - {fileID: 8300000, guid: d1d3cb96244b84eb8bb9acd2272505ce, type: 3}
+    - {fileID: 8300000, guid: c8ad05c7ac4804d67a9aba9617b6abcc, type: 3}
     baseVolume: 0.75
     individualVolume: 1
     use3D: 1
@@ -142,9 +153,12 @@ MonoBehaviour:
     cueId: 101
     displayName: "\uC801 \uBC1C\uAC78\uC74C"
     group: 0
-    clips: []
-    baseVolume: 0.75
-    individualVolume: 1
+    clips:
+    - {fileID: 8300000, guid: 3376c0b6a8c5f4b539dbbf44b0698d59, type: 3}
+    - {fileID: 8300000, guid: d1d3cb96244b84eb8bb9acd2272505ce, type: 3}
+    - {fileID: 8300000, guid: c8ad05c7ac4804d67a9aba9617b6abcc, type: 3}
+    baseVolume: 0.4
+    individualVolume: 0.5
     use3D: 1
     loop: 0
     minPitch: 0.92
@@ -156,7 +170,8 @@ MonoBehaviour:
     cueId: 102
     displayName: "\uC801 \uBC1C\uAC01\uC74C"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: 7e492ad07b6d548eea10ccbd1962e88f, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 1
@@ -170,7 +185,8 @@ MonoBehaviour:
     cueId: 202
     displayName: "\uD50C\uB808\uC774\uC5B4 \uBD80\uC0C1"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: 7a1a2eee05f0d4891a7a693b1866521b, type: 3}
     baseVolume: 1
     individualVolume: 1
     use3D: 0
@@ -180,11 +196,27 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0
+  playerKnocked:
+    cueId: 203
+    displayName: "\uD50C\uB808\uC774\uC5B4 \uAE30\uC808"
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 92eb18dca6674154980d37823d0a644c, type: 3}
+    baseVolume: 1
+    individualVolume: 1
+    use3D: 0
+    loop: 1
+    minPitch: 0.98
+    maxPitch: 1.02
+    minDistance: 1
+    maxDistance: 20
+    fadeSeconds: 0
   loot1:
     cueId: 200
     displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC1"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: f639e61dd44ef481583e240c959848d9, type: 3}
     baseVolume: 0.9
     individualVolume: 1
     use3D: 0
@@ -198,7 +230,8 @@ MonoBehaviour:
     cueId: 201
     displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC2"
     group: 0
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: dcabc9bcc2a8340ada5729e569aebd48, type: 3}
     baseVolume: 0.9
     individualVolume: 1
     use3D: 0
@@ -228,8 +261,8 @@ MonoBehaviour:
     displayName: Title BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: 14283eca126d6c345a0b665b4f84509d, type: 3}
-    baseVolume: 0.75
+    - {fileID: 8300000, guid: d3aef59892a432d4eb6d69dd70136385, type: 3}
+    baseVolume: 1
     individualVolume: 1
     use3D: 0
     loop: 1
@@ -243,8 +276,8 @@ MonoBehaviour:
     displayName: Stage1 BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: 5d99dc50e9bf9974b8fa92873d4de940, type: 3}
-    baseVolume: 0.75
+    - {fileID: 8300000, guid: 85d7db0ad86d7354eadd9e8636fc692d, type: 3}
+    baseVolume: 1
     individualVolume: 1
     use3D: 0
     loop: 1
@@ -258,8 +291,8 @@ MonoBehaviour:
     displayName: Stage2 BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: 1436614517abb974c9537df25ce2717a, type: 3}
-    baseVolume: 0.75
+    - {fileID: 8300000, guid: 9d8080bd8b85eca40bef850c0478b497, type: 3}
+    baseVolume: 1
     individualVolume: 1
     use3D: 0
     loop: 1
@@ -273,8 +306,8 @@ MonoBehaviour:
     displayName: Ending BGM
     group: 1
     clips:
-    - {fileID: 8300000, guid: 83178add6255fb945b8f2cbb7f9e367f, type: 3}
-    baseVolume: 0.75
+    - {fileID: 8300000, guid: a31a9eb8c785f6d49a9c9a9c2027fe71, type: 3}
+    baseVolume: 1
     individualVolume: 1
     use3D: 0
     loop: 1

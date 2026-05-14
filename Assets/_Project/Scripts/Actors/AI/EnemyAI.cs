@@ -3,6 +3,9 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
+using DeadZone.Core;
+using DeadZone.Systems.Audio;
+
 namespace DeadZone.Actors
 {
     /// <summary>
@@ -126,6 +129,25 @@ namespace DeadZone.Actors
         [Tooltip("AI끼리 같은 우선순위로 밀고 들어가지 않도록 개체별로 뽑을 회피 우선순위 범위입니다.")]
         [SerializeField] private Vector2Int avoidancePriorityRange = new(30, 70);
 
+        [Header("오디오")]
+        [Tooltip("적이 플레이어를 발각했을 때 발각음을 다시 재생할 수 있기까지 기다리는 시간입니다.")]
+        [SerializeField, Min(0f)] private float alertSoundCooldown = 3f;
+
+        [Tooltip("적 발각음 볼륨 배율입니다. AudioLibrary의 개별 볼륨과 AudioManager의 SFX 볼륨이 함께 적용됩니다.")]
+        [SerializeField, Range(0f, 2f)] private float alertSoundVolumeMultiplier = 1f;
+
+        [Tooltip("켜면 적이 NavMeshAgent로 실제 이동 중일 때 AudioManager 이벤트로 발걸음 소리를 재생합니다.")]
+        [SerializeField] private bool playFootstepSound = true;
+
+        [Tooltip("적 발걸음 소리를 다시 재생하기까지의 시간입니다.")]
+        [SerializeField, Min(0.05f)] private float footstepInterval = 0.55f;
+
+        [Tooltip("이 속도보다 느리면 적 발걸음 소리를 재생하지 않습니다.")]
+        [SerializeField, Min(0f)] private float footstepMinSpeed = 0.15f;
+
+        [Tooltip("적 발걸음 볼륨 배율입니다. AudioLibrary의 개별 볼륨과 AudioManager의 SFX 볼륨이 함께 적용됩니다.")]
+        [SerializeField, Range(0f, 2f)] private float footstepVolumeMultiplier = 0.9f;
+
         [Header("네트워크 상태")]
         [Tooltip("현재 AI 상태입니다. 서버가 값을 변경하고 클라이언트는 읽습니다.")]
         public NetworkVariable<AIState> State = new(AIState.Patrol);
@@ -165,7 +187,10 @@ namespace DeadZone.Actors
         private float nextStuckCheckTime;
         private float lastMemoryUpdateTime;
         private float activeSearchPointEnterTime;
+        private float footstepTimer;
         private Vector3 lastStuckCheckPosition;
+        private bool canPlayAlertSound = true;
+        private Coroutine alertSoundCooldownRoutine;
 
         private bool CanUseNetworkState => IsSpawned && NetworkObject != null && NetworkObject.IsSpawned;
         private AIState CurrentState => CanUseNetworkState ? State.Value : localState;
@@ -192,6 +217,17 @@ namespace DeadZone.Actors
             CacheSOData();
             localState = State.Value;
             EnterPatrol();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (alertSoundCooldownRoutine != null)
+            {
+                StopCoroutine(alertSoundCooldownRoutine);
+                alertSoundCooldownRoutine = null;
+            }
+
+            base.OnNetworkDespawn();
         }
 
         private void Start()
@@ -235,6 +271,8 @@ namespace DeadZone.Actors
                     TickReturn();
                     break;
             }
+
+            TickFootstepAudio();
         }
 
         /// <summary>
@@ -645,11 +683,15 @@ namespace DeadZone.Actors
 
         private void EnterChase(Transform target)
         {
+            bool wasAlreadyAlerted = CurrentState == AIState.Chase || CurrentState == AIState.Combat;
             currentTarget = target;
             RememberTargetPosition(target.position);
             EnterState(AIState.Chase);
             SetAgentStopped(false);
             RefreshDestination(lastKnownPos, true);
+
+            if (!wasAlreadyAlerted)
+                TryPlayAlertSound(target);
         }
 
         private void EnterInvestigate(Vector3 position)
@@ -708,6 +750,113 @@ namespace DeadZone.Actors
 
             stateEnterTime = Time.time;
             repathTimer = repathInterval;
+        }
+
+        private void TryPlayAlertSound(Transform target)
+        {
+            if (!canPlayAlertSound)
+                return;
+
+            canPlayAlertSound = false;
+            if (alertSoundCooldownRoutine != null)
+                StopCoroutine(alertSoundCooldownRoutine);
+
+            alertSoundCooldownRoutine = StartCoroutine(AlertSoundCooldownRoutine());
+
+            ulong enemyId = NetworkObject != null ? NetworkObject.NetworkObjectId : 0;
+            ulong targetId = 0;
+            NetworkObject targetNetworkObject = target != null ? target.GetComponentInParent<NetworkObject>() : null;
+            if (targetNetworkObject != null)
+                targetId = targetNetworkObject.NetworkObjectId;
+
+            EventBus.Publish(new EnemyAlertedEvent
+            {
+                enemyNetworkObjectId = enemyId,
+                targetNetworkObjectId = targetId,
+                position = transform.position
+            });
+
+            if (IsSpawned)
+            {
+                PlayEnemyAlertAudioClientRpc(transform.position, alertSoundVolumeMultiplier);
+            }
+            else
+            {
+                PublishEnemyAlertAudio(transform.position, alertSoundVolumeMultiplier);
+            }
+        }
+
+        private System.Collections.IEnumerator AlertSoundCooldownRoutine()
+        {
+            yield return new WaitForSeconds(alertSoundCooldown);
+            canPlayAlertSound = true;
+            alertSoundCooldownRoutine = null;
+        }
+
+        [ClientRpc]
+        private void PlayEnemyAlertAudioClientRpc(Vector3 position, float volumeMultiplier)
+        {
+            PublishEnemyAlertAudio(position, volumeMultiplier);
+        }
+
+        private static void PublishEnemyAlertAudio(Vector3 position, float volumeMultiplier)
+        {
+            EventBus.Publish(new AudioPlayRequestedEvent
+            {
+                cueId = AudioCueId.EnemyAlert,
+                position = position,
+                use3D = true,
+                volumeMultiplier = volumeMultiplier
+            });
+        }
+
+        private void TickFootstepAudio()
+        {
+            if (!playFootstepSound || agent == null || !agent.enabled || !agent.isOnNavMesh || agent.isStopped)
+            {
+                footstepTimer = 0f;
+                return;
+            }
+
+            Vector3 velocity = agent.velocity;
+            velocity.y = 0f;
+            if (velocity.magnitude < footstepMinSpeed)
+            {
+                footstepTimer = 0f;
+                return;
+            }
+
+            footstepTimer += Time.deltaTime;
+            if (footstepTimer < footstepInterval)
+                return;
+
+            footstepTimer = 0f;
+
+            if (IsSpawned)
+            {
+                PlayEnemyFootstepAudioClientRpc(transform.position, footstepVolumeMultiplier);
+            }
+            else
+            {
+                PublishEnemyFootstepAudio(transform.position, footstepVolumeMultiplier);
+            }
+        }
+
+        [ClientRpc]
+        private void PlayEnemyFootstepAudioClientRpc(Vector3 position, float volumeMultiplier)
+        {
+            PublishEnemyFootstepAudio(position, volumeMultiplier);
+        }
+
+        private static void PublishEnemyFootstepAudio(Vector3 position, float volumeMultiplier)
+        {
+            EventBus.Publish(new AudioPlayRequestedEvent
+            {
+                cueId = AudioCueId.EnemyFootstep,
+                position = position,
+                use3D = true,
+                volumeMultiplier = volumeMultiplier
+            });
         }
 
         private void EnterSearchCover(Vector3 searchOrigin, Collider coverCollider)

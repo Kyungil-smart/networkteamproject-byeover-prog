@@ -1058,10 +1058,31 @@ namespace DeadZone.Network
         {
             currentData.progress.credits = starterPack.StartingCredits;
             currentData.stash.slots = BuildStarterPackStashSlots(starterPack);
+            currentData.facilities ??= new FacilitiesData();
+            currentData.facilities.stash = 1;
+            ApplyBankruptcyStashLevelToRuntimeState();
+            MirrorFacilitiesToLobbySave();
             currentData.safePocket.slots.Clear();
             currentData.equipment = new EquipmentData();
             currentData.insurance.Clear();
             currentData.schemaVersion = Mathf.Max(currentData.schemaVersion, EconomyStarterPackSchemaVersion);
+        }
+
+        private void ApplyBankruptcyStashLevelToRuntimeState()
+        {
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+            facilityState?.SetFacilityLevel("Stash", 1);
+
+            NetworkObject localPlayer = FindLocalPlayer();
+            PlayerHousingProgress housingProgress = localPlayer != null
+                ? localPlayer.GetComponent<PlayerHousingProgress>()
+                : null;
+
+            if (housingProgress == null && localPlayer != null)
+                housingProgress = localPlayer.GetComponentInChildren<PlayerHousingProgress>(true);
+
+            if (housingProgress != null && housingProgress.IsServer)
+                housingProgress.TrySetLevelFromServer(FacilityType.Stash, 1);
         }
 
         private bool TryApplyStarterPackMigration()

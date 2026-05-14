@@ -15,6 +15,10 @@ namespace DeadZone.Systems.Audio
     [DisallowMultipleComponent]
     public sealed class AudioManager : MonoBehaviour
     {
+        public const string MasterVolumePrefsKey = "Audio.MasterVolume";
+        public const string BgmVolumePrefsKey = "Audio.BgmVolume";
+        public const string SfxVolumePrefsKey = "Audio.SfxVolume";
+
         public static AudioManager Instance { get; private set; }
 
         [Header("====사운드 라이브러리====")]
@@ -41,6 +45,9 @@ namespace DeadZone.Systems.Audio
         [Tooltip("Title BGM을 자동 재생할 씬 이름")]
         [SerializeField] private string titleSceneName = "Title";
 
+        [Tooltip("Lobby 씬에서 재생할 BGM은 Title BGM을 공유합니다.")]
+        [SerializeField] private string lobbySceneName = "Lobby";
+
         [Tooltip("Stage1 BGM을 자동 재생할 씬 이름")]
         [SerializeField] private string stage1SceneName = "Game_Stage_1";
 
@@ -56,6 +63,9 @@ namespace DeadZone.Systems.Audio
 
         [Tooltip("PlayerHpChangedEvent를 받아 로컬 플레이어 체력이 감소하면 부상음을 재생")]
         [SerializeField] private bool playPlayerInjuredFromEvent = true;
+
+        [Tooltip("PlayerKnockedEvent를 받아 로컬 플레이어가 기절 상태가 되면 기절음을 재생")]
+        [SerializeField] private bool playPlayerKnockedFromEvent = true;
 
         [Tooltip("네트워크 세션 중에는 로컬 플레이어의 체력 감소 이벤트에만 부상음을 재생")]
         [SerializeField] private bool onlyLocalPlayerInjurySound = true;
@@ -75,8 +85,10 @@ namespace DeadZone.Systems.Audio
         private readonly Dictionary<AudioCueId, float> runtimeCueVolumeOverrides = new();
         private AudioSource bgmSource;
         private AudioSource sfx2DSource;
+        private AudioSource knockedLoopSource;
         private Coroutine bgmFadeRoutine;
         private AudioCueId currentBgmCueId = AudioCueId.None;
+        private ulong currentKnockedLoopClientId = ulong.MaxValue;
 
         public float MasterVolume => masterVolume;
         public float BgmVolume => bgmVolume;
@@ -96,6 +108,7 @@ namespace DeadZone.Systems.Audio
             ServiceLocator.Register(this);
 
             CreateAudioSources();
+            LoadSavedVolumeSettings();
         }
 
         private void OnEnable()
@@ -105,6 +118,8 @@ namespace DeadZone.Systems.Audio
             EventBus.Subscribe<BgmChangeRequestedEvent>(OnBgmChangeRequested);
             EventBus.Subscribe<ItemLootedEvent>(OnItemLooted);
             EventBus.Subscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
+            EventBus.Subscribe<PlayerKnockedEvent>(OnPlayerKnocked);
+            EventBus.Subscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
 
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
@@ -122,8 +137,11 @@ namespace DeadZone.Systems.Audio
             EventBus.Unsubscribe<BgmChangeRequestedEvent>(OnBgmChangeRequested);
             EventBus.Unsubscribe<ItemLootedEvent>(OnItemLooted);
             EventBus.Unsubscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
+            EventBus.Unsubscribe<PlayerKnockedEvent>(OnPlayerKnocked);
+            EventBus.Unsubscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
 
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            StopPlayerKnockedLoop();
         }
 
         private void OnDestroy()
@@ -227,6 +245,7 @@ namespace DeadZone.Systems.Audio
         {
             masterVolume = Mathf.Clamp01(value);
             RefreshBgmVolume();
+            RefreshKnockedLoopVolume();
         }
 
         public void SetBgmVolume(float value)
@@ -238,11 +257,19 @@ namespace DeadZone.Systems.Audio
         public void SetSfxVolume(float value)
         {
             sfxVolume = Mathf.Clamp01(value);
+            RefreshKnockedLoopVolume();
         }
 
         public void SetUiVolume(float value)
         {
             uiVolume = Mathf.Clamp01(value);
+        }
+
+        public void SetEffectVolume(float value)
+        {
+            float clampedValue = Mathf.Clamp01(value);
+            SetSfxVolume(clampedValue);
+            SetUiVolume(clampedValue);
         }
 
         public void SetCueVolume(AudioCueId cueId, float value)
@@ -252,6 +279,7 @@ namespace DeadZone.Systems.Audio
 
             runtimeCueVolumeOverrides[cueId] = Mathf.Clamp01(value);
             RefreshBgmVolume();
+            RefreshKnockedLoopVolume();
         }
 
         private void OnAudioPlayRequested(AudioPlayRequestedEvent e)
@@ -292,8 +320,87 @@ namespace DeadZone.Systems.Audio
             Play(AudioCueId.PlayerInjured);
         }
 
+        private void OnPlayerKnocked(PlayerKnockedEvent e)
+        {
+            TryPlayPlayerKnockedSound(e.victimClientId);
+        }
+
+        private void OnPlayerStateChanged(PlayerStateChangedEvent e)
+        {
+            if (e.newState == PlayerState.Knocked)
+            {
+                TryStartPlayerKnockedLoop(e.clientId);
+            }
+            else if (e.oldState == PlayerState.Knocked)
+            {
+                TryStopPlayerKnockedLoop(e.clientId);
+            }
+        }
+
+        private void TryPlayPlayerKnockedSound(ulong clientId)
+        {
+            TryStartPlayerKnockedLoop(clientId);
+        }
+
+        private void TryStartPlayerKnockedLoop(ulong clientId)
+        {
+            if (!playPlayerKnockedFromEvent)
+                return;
+
+            if (onlyLocalPlayerInjurySound && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                if (clientId != NetworkManager.Singleton.LocalClientId)
+                    return;
+            }
+
+            if (knockedLoopSource != null &&
+                knockedLoopSource.isPlaying &&
+                currentKnockedLoopClientId == clientId)
+            {
+                return;
+            }
+
+            if (!TryGetCueClip(AudioCueId.PlayerKnocked, out AudioCueData cue, out AudioClip clip))
+                return;
+
+            currentKnockedLoopClientId = clientId;
+            knockedLoopSource.clip = clip;
+            knockedLoopSource.loop = true;
+            knockedLoopSource.spatialBlend = 0f;
+            knockedLoopSource.pitch = cue.GetPitch();
+            knockedLoopSource.volume = CalculateFinalVolume(cue, 1f);
+            knockedLoopSource.Play();
+        }
+
+        private void TryStopPlayerKnockedLoop(ulong clientId)
+        {
+            if (onlyLocalPlayerInjurySound && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                if (clientId != NetworkManager.Singleton.LocalClientId)
+                    return;
+            }
+
+            if (currentKnockedLoopClientId != clientId)
+                return;
+
+            StopPlayerKnockedLoop();
+        }
+
+        private void StopPlayerKnockedLoop()
+        {
+            if (knockedLoopSource != null)
+            {
+                knockedLoopSource.Stop();
+                knockedLoopSource.clip = null;
+            }
+
+            currentKnockedLoopClientId = ulong.MaxValue;
+        }
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            StopPlayerKnockedLoop();
+
             if (playBgmByScene)
                 TryPlayBgmForScene(scene.name);
         }
@@ -303,7 +410,7 @@ namespace DeadZone.Systems.Audio
             if (string.IsNullOrWhiteSpace(sceneName))
                 return;
 
-            if (IsSceneName(sceneName, titleSceneName))
+            if (IsSceneName(sceneName, titleSceneName) || IsSceneName(sceneName, lobbySceneName))
                 PlayBgm(AudioCueId.TitleBGM, useFade: true);
             else if (IsSceneName(sceneName, stage1SceneName))
                 PlayBgm(AudioCueId.Stage1BGM, useFade: true);
@@ -331,9 +438,42 @@ namespace DeadZone.Systems.Audio
             sfx2DSource.loop = false;
             sfx2DSource.spatialBlend = 0f;
 
+            knockedLoopSource = gameObject.AddComponent<AudioSource>();
+            knockedLoopSource.playOnAwake = false;
+            knockedLoopSource.loop = true;
+            knockedLoopSource.spatialBlend = 0f;
+
             int count = Mathf.Max(1, pooledSourceCount);
             for (int i = 0; i < count; i++)
                 pooledSources.Add(CreatePooledSource());
+        }
+
+        private void LoadSavedVolumeSettings()
+        {
+            SetMasterVolume(PlayerPrefs.GetFloat(MasterVolumePrefsKey, masterVolume));
+            SetBgmVolume(PlayerPrefs.GetFloat(BgmVolumePrefsKey, bgmVolume));
+            SetEffectVolume(PlayerPrefs.GetFloat(SfxVolumePrefsKey, sfxVolume));
+        }
+
+        private bool TryGetCueClip(AudioCueId cueId, out AudioCueData cue, out AudioClip clip)
+        {
+            cue = null;
+            clip = null;
+
+            if (audioLibrary == null || !audioLibrary.TryGetCue(cueId, out cue))
+            {
+                LogMissing($"Cue를 찾을 수 없습니다. cueId={cueId}");
+                return false;
+            }
+
+            clip = cue.GetRandomClip();
+            if (clip == null)
+            {
+                LogMissing($"AudioClip이 연결되지 않았습니다. cueId={cueId}");
+                return false;
+            }
+
+            return true;
         }
 
         private AudioSource CreatePooledSource()
@@ -462,6 +602,15 @@ namespace DeadZone.Systems.Audio
 
             if (audioLibrary.TryGetCue(currentBgmCueId, out AudioCueData cue))
                 bgmSource.volume = CalculateFinalVolume(cue, 1f);
+        }
+
+        private void RefreshKnockedLoopVolume()
+        {
+            if (knockedLoopSource == null || !knockedLoopSource.isPlaying || audioLibrary == null)
+                return;
+
+            if (audioLibrary.TryGetCue(AudioCueId.PlayerKnocked, out AudioCueData cue))
+                knockedLoopSource.volume = CalculateFinalVolume(cue, 1f);
         }
 
         private void LogMissing(string message)

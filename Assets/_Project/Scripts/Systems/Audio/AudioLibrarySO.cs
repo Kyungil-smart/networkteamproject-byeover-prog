@@ -43,6 +43,9 @@ namespace DeadZone.Systems.Audio
         [Tooltip("플레이어 부상 사운드 설정")]
         [SerializeField] private AudioCueData playerInjured = new();
 
+        [Tooltip("플레이어 기절 상태 진입 사운드 설정")]
+        [SerializeField] private AudioCueData playerKnocked = new();
+
         [Header("====상호작용 사운드====")]
         [Tooltip("파밍 사운드1 설정")]
         [SerializeField] private AudioCueData loot1 = new();
@@ -83,6 +86,7 @@ namespace DeadZone.Systems.Audio
             loot1,
             loot2,
             playerInjured,
+            playerKnocked,
             uiButtonClick,
             titleBgm,
             stage1Bgm,
@@ -114,6 +118,7 @@ namespace DeadZone.Systems.Audio
                 AudioCueId.Loot1 => loot1,
                 AudioCueId.Loot2 => loot2,
                 AudioCueId.PlayerInjured => playerInjured,
+                AudioCueId.PlayerKnocked => playerKnocked,
                 AudioCueId.UIButtonClick => uiButtonClick,
                 AudioCueId.TitleBGM => titleBgm,
                 AudioCueId.Stage1BGM => stage1Bgm,
@@ -145,6 +150,7 @@ namespace DeadZone.Systems.Audio
             ValidateCue(loot1);
             ValidateCue(loot2);
             ValidateCue(playerInjured);
+            ValidateCue(playerKnocked);
             ValidateCue(uiButtonClick);
             ValidateCue(titleBgm);
             ValidateCue(stage1Bgm);
@@ -168,6 +174,7 @@ namespace DeadZone.Systems.Audio
             if (loot1 == null) loot1 = new AudioCueData();
             if (loot2 == null) loot2 = new AudioCueData();
             if (playerInjured == null) playerInjured = new AudioCueData();
+            if (playerKnocked == null) playerKnocked = new AudioCueData();
             if (uiButtonClick == null) uiButtonClick = new AudioCueData();
             if (titleBgm == null) titleBgm = new AudioCueData();
             if (stage1Bgm == null) stage1Bgm = new AudioCueData();
@@ -188,6 +195,7 @@ namespace DeadZone.Systems.Audio
             loot1.SetFixedInfo(AudioCueId.Loot1, "파밍 사운드1", AudioGroup.SFX);
             loot2.SetFixedInfo(AudioCueId.Loot2, "파밍 사운드2", AudioGroup.SFX);
             playerInjured.SetFixedInfo(AudioCueId.PlayerInjured, "플레이어 부상", AudioGroup.SFX);
+            playerKnocked.SetFixedInfo(AudioCueId.PlayerKnocked, "플레이어 기절", AudioGroup.SFX);
             uiButtonClick.SetFixedInfo(AudioCueId.UIButtonClick, "UI 버튼 클릭", AudioGroup.UI);
             titleBgm.SetFixedInfo(AudioCueId.TitleBGM, "Title BGM", AudioGroup.BGM);
             stage1Bgm.SetFixedInfo(AudioCueId.Stage1BGM, "Stage1 BGM", AudioGroup.BGM);

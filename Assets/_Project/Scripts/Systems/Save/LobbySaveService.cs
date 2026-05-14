@@ -41,6 +41,7 @@ namespace DeadZone.Systems.Save
         private bool isCloudSaveRunning;
         private Coroutine pendingCloudLoadCoroutine;
         private bool isInitialLoadCompleted;
+        private bool forceApplyIncomingInventoryItemsOnce;
 
         public bool IsInitialLoadCompleted => isInitialLoadCompleted;
 
@@ -271,6 +272,9 @@ namespace DeadZone.Systems.Save
 
         private void ApplyLobbySaveDTO(LobbySaveDTO dto, bool preserveRuntimeInventoryOnEmptyInput)
         {
+            bool forceApplyIncomingInventoryItems = forceApplyIncomingInventoryItemsOnce;
+            forceApplyIncomingInventoryItemsOnce = false;
+
             if (inventoryState != null)
             {
                 if (dto.hasCredits)

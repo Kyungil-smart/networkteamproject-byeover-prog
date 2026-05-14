@@ -2,6 +2,9 @@
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Core;
+using DeadZone.Systems.Audio;
+
 
 namespace DeadZone.Actors
 {
@@ -44,6 +47,25 @@ namespace DeadZone.Actors
         [SerializeField] private float gravity = -20f;
         [SerializeField] private LayerMask groundMask = ~0;
 
+        [Header("====발걸음 오디오====")]
+        [Tooltip("켜면 플레이어가 땅 위에서 이동할 때 AudioManager 이벤트로 발걸음 소리를 재생합니다.")]
+        [SerializeField] private bool playFootstepSound = true;
+
+        [Tooltip("걷기 상태에서 발걸음 소리를 다시 재생하기까지의 시간입니다.")]
+        [SerializeField, Min(0.05f)] private float walkFootstepInterval = 0.45f;
+
+        [Tooltip("달리기 상태에서 발걸음 소리를 다시 재생하기까지의 시간입니다.")]
+        [SerializeField, Min(0.05f)] private float sprintFootstepInterval = 0.32f;
+
+        [Tooltip("기어가기 상태에서 발걸음 소리를 다시 재생하기까지의 시간입니다.")]
+        [SerializeField, Min(0.05f)] private float crawlFootstepInterval = 0.75f;
+
+        [Tooltip("이 속도보다 느리면 발걸음 소리를 재생하지 않습니다.")]
+        [SerializeField, Min(0f)] private float footstepMinSpeed = 0.2f;
+
+        [Tooltip("플레이어 발걸음 볼륨 배율입니다. AudioLibrary의 개별 볼륨과 AudioManager의 SFX 볼륨이 함께 적용됩니다.")]
+        [SerializeField, Range(0f, 2f)] private float footstepVolumeMultiplier = 1f;
+
         private CharacterController cc;
         private PlayerStaminaSystem stamina;
         private RollSystem rollSystem;
@@ -54,6 +76,7 @@ namespace DeadZone.Actors
         private bool isCrawling;
         private float verticalVelocity;
         private bool isMoveLocked;
+        private float footstepTimer;
 
         public Vector2 LookInput => lookInput;
         public Vector2 MoveInput => moveInput;
@@ -109,6 +132,7 @@ namespace DeadZone.Actors
             velocity.y = verticalVelocity;
 
             cc.Move(velocity * Time.deltaTime);
+            TickFootstepAudio(moveDir, speed);
         }
 
         public void SetMoveLocked(bool locked)
@@ -184,6 +208,71 @@ namespace DeadZone.Actors
             
             Vector3 velocity = Vector3.up * verticalVelocity;
             cc.Move(velocity * Time.deltaTime);
+        }
+
+        private void TickFootstepAudio(Vector3 moveDir, float moveSpeed)
+        {
+            if (!playFootstepSound || cc == null || !cc.isGrounded)
+            {
+                footstepTimer = 0f;
+                return;
+            }
+
+            if (moveDir.sqrMagnitude < 0.001f || moveSpeed < footstepMinSpeed)
+            {
+                footstepTimer = 0f;
+                return;
+            }
+
+            footstepTimer += Time.deltaTime;
+            float interval = GetFootstepInterval();
+            if (footstepTimer < interval)
+                return;
+
+            footstepTimer = 0f;
+
+            if (IsSpawned)
+            {
+                RequestPlayerFootstepServerRpc(transform.position, footstepVolumeMultiplier);
+            }
+            else
+            {
+                PublishPlayerFootstepAudio(transform.position, footstepVolumeMultiplier);
+            }
+        }
+
+        private float GetFootstepInterval()
+        {
+            if (isCrawling)
+                return crawlFootstepInterval;
+
+            if (isSprinting && stamina != null && stamina.CurrentStamina.Value > 0)
+                return sprintFootstepInterval;
+
+            return walkFootstepInterval;
+        }
+
+        [ServerRpc]
+        private void RequestPlayerFootstepServerRpc(Vector3 position, float volumeMultiplier)
+        {
+            PlayPlayerFootstepClientRpc(position, volumeMultiplier);
+        }
+
+        [ClientRpc]
+        private void PlayPlayerFootstepClientRpc(Vector3 position, float volumeMultiplier)
+        {
+            PublishPlayerFootstepAudio(position, volumeMultiplier);
+        }
+
+        private static void PublishPlayerFootstepAudio(Vector3 position, float volumeMultiplier)
+        {
+            EventBus.Publish(new AudioPlayRequestedEvent
+            {
+                cueId = AudioCueId.PlayerFootstep,
+                position = position,
+                use3D = true,
+                volumeMultiplier = volumeMultiplier
+            });
         }
         
         public void SetMove(Vector2 v) => moveInput = v;
