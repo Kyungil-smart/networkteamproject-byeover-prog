@@ -27,11 +27,11 @@ namespace DeadZone.Systems.Audio
         [Tooltip("재생할 AudioClip 목록, 여러 개를 넣으면 재생할 때마다 무작위로 하나를 고릅니다.")]
         public AudioClip[] clips;
 
-        [Tooltip("라이브러리 기준 기본 볼륨. 0이면 무음, 1이면 원본 크기")]
-        [Range(0f, 1f)] public float baseVolume = 1f;
+        [Tooltip("라이브러리 기준 기본 볼륨. 0이면 무음, 1이면 원본 크기, 1보다 크면 해당 사운드를 증폭합니다.")]
+        [Range(0f, 2f)] public float baseVolume = 1f;
 
-        [Tooltip("개별 사운드 볼륨, 옵션 메뉴나 밸런싱에서 이 사운드만 따로 줄일 때 사용")]
-        [Range(0f, 1f)] public float individualVolume = 1f;
+        [Tooltip("개별 사운드 볼륨, 옵션 메뉴나 밸런싱에서 이 사운드만 따로 줄이거나 키울 때 사용합니다.")]
+        [Range(0f, 2f)] public float individualVolume = 1f;
 
         [Tooltip("켜면 월드 위치에서 들리는 3D 사운드로 재생, 끄면 UI처럼 2D 사운드로 재생")]
         public bool use3D;

@@ -265,6 +265,7 @@ namespace DeadZone.Actors
                 WeaponCategory.SMG => AudioCueId.SMGReload,
                 WeaponCategory.Handgun => AudioCueId.HGReload,
                 WeaponCategory.Sniper => AudioCueId.SRDragReload,
+                WeaponCategory.Shotgun => AudioCueId.ShotgunReload,
                 _ => AudioCueId.None,
             };
         }

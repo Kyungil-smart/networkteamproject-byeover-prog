@@ -14,6 +14,8 @@ namespace DeadZone.Systems.Audio
         SRDragReload = 31,
         SMGFire = 40,
         SMGReload = 41,
+        ShotgunFire = 50,
+        ShotgunReload = 51,
 
         PlayerFootstep = 100,
         EnemyFootstep = 101,
