@@ -22,6 +22,11 @@ namespace DeadZone.Actors
         [SerializeField] private LayerMask groundMask;
         [SerializeField] private float maxRange = 600f;
 
+        [Header("Projectile Tuning")]
+        [SerializeField, Range(0.1f, 1f)] private float projectileVelocityMultiplier = 0.45f;
+        [SerializeField, Min(1f)] private float maxProjectileVelocity = 280f;
+        [SerializeField, Min(1f)] private float maxProjectileRange = 70f;
+
         [Header("Shotgun")]
         [Tooltip("샷건 1회 사격 시 동시에 생성할 투사체 수")]
         [SerializeField, Min(1)] private int shotgunProjectileCount = 12;
@@ -29,10 +34,10 @@ namespace DeadZone.Actors
         [SerializeField, Range(0f, 180f)] private float shotgunSpreadAngle = 24f;
         [Tooltip("샷건 투사체마다 더해지는 무작위 각도 오차")]
         [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 2f;
-        [SerializeField, Min(0.1f)] private float shotgunEffectiveRange = 6f;
-        [SerializeField, Min(0.1f)] private float shotgunMaxRange = 12f;
-        [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.15f;
-        [SerializeField, Range(0.1f, 1f)] private float shotgunTotalDamageMultiplier = 0.55f;
+        [SerializeField, Min(0.1f)] private float shotgunEffectiveRange = 8f;
+        [SerializeField, Min(0.1f)] private float shotgunMaxRange = 18f;
+        [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.3f;
+        [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.2f;
 
         [Header("Weapon Visual")]
         [SerializeField] private bool autoEquipWeaponVisual = true;
@@ -229,7 +234,10 @@ namespace DeadZone.Actors
 
             // 2. 탄속 계산: 무기 기본 탄속 * 탄약 배율
             // V_final = V_muzzle * M_velocity
-            float finalVelocity = weapon.muzzleVelocity * ammo.velocityMultiplier;
+            float finalVelocity = Mathf.Min(
+                weapon.muzzleVelocity * ammo.velocityMultiplier * projectileVelocityMultiplier,
+                maxProjectileVelocity);
+            finalVelocity = Mathf.Max(1f, finalVelocity);
 
             // 3. 투사체 데이터 생성
             ProjectileData pData = CreateProjectileData(rpc.Receive.SenderClientId, tId, head, weapon, ammo);
@@ -258,6 +266,9 @@ namespace DeadZone.Actors
         private ProjectileData CreateProjectileData(ulong shooter, ulong target, 
             bool isHead, WeaponDataSO w, AmmoDataSO a)
         {
+            float range = Mathf.Min(Mathf.Max(1f, w.engageRange.y), maxProjectileRange);
+            float falloffStart = Mathf.Clamp(w.engageRange.x, 0f, range);
+
             return new ProjectileData
             {
                 ShooterId = shooter,
@@ -267,8 +278,8 @@ namespace DeadZone.Actors
                 Penetration = a.penetration,
                 TargetNetId = target,
                 WasHeadAim = isHead,
-                Range = w.engageRange.y,
-                DamageFalloffStart = w.engageRange.y,
+                Range = range,
+                DamageFalloffStart = falloffStart,
                 MinDamageMultiplier = 1f
             };
         }

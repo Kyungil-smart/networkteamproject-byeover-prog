@@ -22,6 +22,9 @@ namespace DeadZone.Actors
         [Tooltip("충돌 시 즉시 소멸할 환경 레이어입니다. (예: Ground, Env)")]
         [SerializeField] private LayerMask environmentMask;
 
+        [Tooltip("탄 판정 보정 반경입니다. 0이면 기존 Raycast처럼 동작합니다.")]
+        [SerializeField, Min(0f)] private float collisionRadius = 0.08f;
+
         private ProjectileData data;
         private Vector3 direction;
         private float speed;
@@ -57,8 +60,12 @@ namespace DeadZone.Actors
             Vector3 currentPos = transform.position;
 
             // 이번 프레임 이동 궤적 내에 장애물이 있는지 미리 검사 (CCD)
-            if (Physics.Raycast(currentPos, direction, out RaycastHit hit, 
-                moveDistance, collisionMask))
+            bool hasHit = collisionRadius > 0f
+                ? Physics.SphereCast(currentPos, collisionRadius, direction, out RaycastHit hit,
+                    moveDistance, collisionMask)
+                : Physics.Raycast(currentPos, direction, out hit, moveDistance, collisionMask);
+
+            if (hasHit)
             {
                 HandleCollision(hit);
             }

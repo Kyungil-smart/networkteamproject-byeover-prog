@@ -371,6 +371,171 @@ namespace DeadZone.Actors
             }
         }
 
+        public void RequestMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot)
+        {
+            RequestMoveEquipmentSlotToInventory(targetSlot, byte.MaxValue, byte.MaxValue);
+        }
+
+        public void RequestMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
+        {
+            if (targetSlot == EquipmentTargetSlot.None)
+                return;
+
+            if (IsSpawned)
+            {
+                MoveEquipmentSlotToInventoryRpc(targetSlot, preferredGridX, preferredGridY);
+                return;
+            }
+
+            if (IsServer)
+                TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void MoveEquipmentSlotToInventoryRpc(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
+        }
+
+        private bool TryMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
+        {
+            if (!IsServer)
+                return false;
+
+            equipment ??= GetComponent<EquipmentSlots>();
+            if (equipment == null)
+                return false;
+
+            if (!TryGetEquipmentItemId(targetSlot, out string itemId))
+                return false;
+
+            ItemDataSO item = ResolveItem(itemId);
+            if (item == null)
+                return false;
+
+            if (!TryBuildEquipmentInventorySlot(targetSlot, item, out ItemSlotData slot))
+                return false;
+
+            bool hasPreferredPosition = preferredGridX != byte.MaxValue && preferredGridY != byte.MaxValue;
+            bool canAdd = hasPreferredPosition
+                ? CanAddItemSlotAt(item, slot, preferredGridX, preferredGridY)
+                : CanAddItemSlot(item, slot);
+
+            if (!canAdd)
+            {
+                Debug.LogWarning($"[GridInventory] Cannot move equipment to inventory because no valid grid space exists. slot={targetSlot}, itemId={item.itemID}", this);
+                return false;
+            }
+
+            if (!equipment.TryRemoveEquipmentSlotForDrop(targetSlot, out _))
+                return false;
+
+            bool added = hasPreferredPosition
+                ? TryAddItemSlotAt(item, slot, preferredGridX, preferredGridY)
+                : TryAddItemSlot(item, slot);
+
+            if (added)
+                return true;
+
+            Debug.LogError($"[GridInventory] Failed to add equipment item after clearing equipment slot. itemId={item.itemID}, slot={targetSlot}", this);
+            return false;
+        }
+
+        private bool TryBuildEquipmentInventorySlot(EquipmentTargetSlot targetSlot, ItemDataSO item, out ItemSlotData slot)
+        {
+            slot = default;
+
+            if (item == null)
+                return false;
+
+            slot = new ItemSlotData
+            {
+                itemId = item.itemID,
+                stackCount = 1,
+                gridX = 0,
+                gridY = 0,
+                rotated = false,
+                currentDurability = 0f,
+                currentAmmo = 0
+            };
+
+            switch (targetSlot)
+            {
+                case EquipmentTargetSlot.Head:
+                    slot.currentDurability = equipment.HelmetDurability.Value;
+                    break;
+
+                case EquipmentTargetSlot.Armor:
+                    slot.currentDurability = equipment.ArmorDurability.Value;
+                    break;
+
+                case EquipmentTargetSlot.Primary1:
+                    ApplyWeaponSlotState(item, equipment.Primary1State.Value, ref slot);
+                    break;
+
+                case EquipmentTargetSlot.Primary2:
+                    ApplyWeaponSlotState(item, equipment.Primary2State.Value, ref slot);
+                    break;
+
+                case EquipmentTargetSlot.Secondary:
+                    ApplyWeaponSlotState(item, equipment.SecondaryState.Value, ref slot);
+                    break;
+
+                case EquipmentTargetSlot.Backpack:
+                case EquipmentTargetSlot.Melee:
+                    break;
+
+                default:
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static void ApplyWeaponSlotState(ItemDataSO item, WeaponState weaponState, ref ItemSlotData slot)
+        {
+            if (item is WeaponDataSO weapon)
+                slot.currentDurability = Mathf.Max(0f, weapon.maxDurability);
+
+            slot.currentAmmo = (ushort)Mathf.Clamp(weaponState.currentAmmo, 0, ushort.MaxValue);
+        }
+
+        private bool CanAddItemSlotAt(ItemDataSO item, ItemSlotData sourceSlot, byte gridX, byte gridY)
+        {
+            if (!IsServer || item == null || sourceSlot.stackCount <= 0)
+                return false;
+
+            List<ItemSlotData> simulatedSlots = new(ServerGrid.Count);
+            for (int i = 0; i < ServerGrid.Count; i++)
+                simulatedSlots.Add(ServerGrid[i]);
+
+            return CanPlaceAt(simulatedSlots, gridX, gridY, item.gridSize, false);
+        }
+
+        private bool TryAddItemSlotAt(ItemDataSO item, ItemSlotData sourceSlot, byte gridX, byte gridY)
+        {
+            if (!CanAddItemSlotAt(item, sourceSlot, gridX, gridY))
+                return false;
+
+            sourceSlot.gridX = gridX;
+            sourceSlot.gridY = gridY;
+            sourceSlot.rotated = false;
+            sourceSlot.stackCount = (ushort)Mathf.Clamp(sourceSlot.stackCount, 1, Mathf.Max(1, item.maxStackSize));
+
+            ServerGrid.Add(sourceSlot);
+
+            EventBus.Publish(new ItemAddedEvent
+            {
+                clientId = OwnerClientId,
+                itemId = item.itemID
+            });
+
+            return true;
+        }
+
         private bool TryRemoveSlotAt(byte gridX, byte gridY, out ItemSlotData removedSlot)
         {
             removedSlot = default;

@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 910000000000000001}
   - component: {fileID: 910000000000000002}
   - component: {fileID: 910000000000000003}
-  - component: {fileID: 910000000000000004}
   m_Layer: 16
   m_Name: Corpse
   m_TagString: Untagged
@@ -157,7 +156,6 @@ MonoBehaviour:
   despawnWithItems: 120
   despawnWhenEmpty: 30
   durabilityRatioRange: {x: 0.3, y: 0.8}
-  ammoDropRange: {x: 30, y: 60}
 --- !u!114 &910000000000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -176,27 +174,6 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
---- !u!65 &910000000000000004
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2706845702117162606}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.2, y: 0.8, z: 1.2}
-  m_Center: {x: 0, y: 0.4, z: 0}
 --- !u!1 &3123682291420517444
 GameObject:
   m_ObjectHideFlags: 0
@@ -213,7 +190,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8878040601174953718
 Transform:
   m_ObjectHideFlags: 0
