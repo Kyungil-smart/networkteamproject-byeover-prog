@@ -908,10 +908,13 @@ MonoBehaviour:
   muzzleTransform: {fileID: 7489591256997111823}
   hitMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 2097152
   groundMask:
     serializedVersion: 2
     m_Bits: 32768
+  muzzleObstructionMask:
+    serializedVersion: 2
+    m_Bits: 128
   maxRange: 600
   projectileVelocityMultiplier: 0.45
   maxProjectileVelocity: 280
