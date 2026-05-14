@@ -597,6 +597,13 @@ namespace DeadZone.Actors.UI
 
             if (!HasItem)
             {
+                if (slotKind == InventorySlotKind.Bag &&
+                    source.TryGetEquipmentTargetSlot(out EquipmentTargetSlot sourceEquipmentSlot) &&
+                    TryRequestEquipmentMoveToInventory(sourceEquipmentSlot, slotIndex))
+                {
+                    return true;
+                }
+
                 if (!TrySyncEquipmentSlotAfterDrop(this, sourceItem) ||
                     !TrySyncEquipmentSlotAfterDrop(source, null))
                 {
@@ -648,6 +655,18 @@ namespace DeadZone.Actors.UI
             SetItem(sourceItem, sourceCount);
             source.SetItem(targetItem, targetCount);
             CaptureLobbyInventoryStateIfPresent(this, source);
+            return true;
+        }
+
+        private static bool TryRequestEquipmentMoveToInventory(EquipmentTargetSlot sourceEquipmentSlot, int targetSlotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, targetSlotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, targetSlotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestMoveEquipmentSlotToInventory(sourceEquipmentSlot, gridX, gridY);
             return true;
         }
 
