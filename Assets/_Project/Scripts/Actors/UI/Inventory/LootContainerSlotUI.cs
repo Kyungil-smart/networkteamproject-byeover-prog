@@ -59,6 +59,12 @@ namespace DeadZone.Actors.UI
 
             if (sourceIsContainer)
             {
+                if (Container != null && TryGetEquipmentTargetSlot(target, out EquipmentTargetSlot equipmentTargetSlot))
+                {
+                    Container.RequestEquipSlotToPlayer(sourceIndex, equipmentTargetSlot);
+                    return true;
+                }
+
                 Container.RequestTakeSlotToPlayer(sourceIndex);
                 return true;
             }
@@ -69,6 +75,33 @@ namespace DeadZone.Actors.UI
 
             Container.RequestDepositFromPlayer(itemData.itemID, source.CurrentStackCount, targetIndex);
             return true;
+        }
+
+        private static bool TryGetEquipmentTargetSlot(InventorySlotUI target, out EquipmentTargetSlot targetSlot)
+        {
+            targetSlot = EquipmentTargetSlot.None;
+
+            if (target == null)
+                return false;
+
+            string slotId = target.GetEquipmentSaveSlotId();
+            if (string.IsNullOrWhiteSpace(slotId))
+                return false;
+
+            string normalized = slotId.Trim().Replace("_", "").Replace(" ", "").ToLowerInvariant();
+            targetSlot = normalized switch
+            {
+                "equipmenthead" or "head" => EquipmentTargetSlot.Head,
+                "equipmentbackpack" or "backpack" => EquipmentTargetSlot.Backpack,
+                "equipmentarmor" or "torso" => EquipmentTargetSlot.Armor,
+                "equipmentprimaryweapon" or "primary1" => EquipmentTargetSlot.Primary1,
+                "primary2" => EquipmentTargetSlot.Primary2,
+                "equipmentsecondaryweapon" or "secondary" => EquipmentTargetSlot.Secondary,
+                "equipmentmeleeweapon" or "melee" => EquipmentTargetSlot.Melee,
+                _ => EquipmentTargetSlot.None
+            };
+
+            return targetSlot != EquipmentTargetSlot.None;
         }
     }
 }

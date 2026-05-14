@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -20,6 +21,12 @@ namespace DeadZone.Actors
         private EquipmentSlots equipment;
         private IItemDatabase itemDb;
         private int activeSlotCount = BASE_WIDTH * BASE_HEIGHT;
+
+        [Header("월드 드롭")]
+        [SerializeField] private GameObject droppedLootItemPrefab;
+        [SerializeField] private float dropForwardDistance = 1.25f;
+        [SerializeField] private float dropGroundRayHeight = 1.5f;
+        [SerializeField] private float dropGroundRayDistance = 4f;
 
         public byte Width => BASE_WIDTH;
         public byte Height => (byte)Mathf.CeilToInt(activeSlotCount / (float)BASE_WIDTH);
@@ -288,6 +295,259 @@ namespace DeadZone.Actors
             }
 
             return true;
+        }
+
+        [ServerRpc]
+        public void DropInventorySlotServerRpc(byte gridX, byte gridY)
+        {
+            if (!IsServer)
+                return;
+
+            if (!TryGetSlotAt(gridX, gridY, out ItemSlotData slotToDrop))
+                return;
+
+            ItemDataSO item = ResolveItem(slotToDrop.itemId.ToString());
+            if (item == null)
+                return;
+
+            GameObject prefab = ResolveDroppedLootItemPrefab(item);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[GridInventory] Dropped loot prefab is missing. itemId={item.itemID}", this);
+                return;
+            }
+
+            if (!TryRemoveSlotAt(gridX, gridY, out ItemSlotData removedSlot))
+                return;
+
+            SpawnDroppedLootItem(item, Mathf.Max(1, removedSlot.stackCount), prefab);
+        }
+
+        [ServerRpc]
+        public void DropEquipmentSlotServerRpc(EquipmentTargetSlot targetSlot)
+        {
+            if (!IsServer)
+                return;
+
+            equipment ??= GetComponent<EquipmentSlots>();
+            if (equipment == null)
+                return;
+
+            if (!TryGetEquipmentItemId(targetSlot, out string itemId))
+                return;
+
+            ItemDataSO item = ResolveItem(itemId);
+            if (item == null)
+                return;
+
+            GameObject prefab = ResolveDroppedLootItemPrefab(item);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[GridInventory] Dropped loot prefab is missing. itemId={item.itemID}", this);
+                return;
+            }
+
+            if (!equipment.TryRemoveEquipmentSlotForDrop(targetSlot, out _))
+                return;
+
+            SpawnDroppedLootItem(item, 1, prefab);
+        }
+
+        private bool TryRemoveSlotAt(byte gridX, byte gridY, out ItemSlotData removedSlot)
+        {
+            removedSlot = default;
+
+            if (!IsServer || ServerGrid == null)
+                return false;
+
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                ItemSlotData slot = ServerGrid[i];
+                if (slot.gridX != gridX || slot.gridY != gridY)
+                    continue;
+
+                removedSlot = slot;
+                ServerGrid.RemoveAt(i);
+
+                EventBus.Publish(new ItemRemovedEvent
+                {
+                    clientId = OwnerClientId,
+                    itemId = slot.itemId
+                });
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetSlotAt(byte gridX, byte gridY, out ItemSlotData foundSlot)
+        {
+            foundSlot = default;
+
+            if (ServerGrid == null)
+                return false;
+
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                ItemSlotData slot = ServerGrid[i];
+                if (slot.gridX != gridX || slot.gridY != gridY)
+                    continue;
+
+                foundSlot = slot;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void SpawnDroppedLootItem(ItemDataSO item, int amount, GameObject prefab)
+        {
+            if (!IsServer || item == null)
+                return;
+
+            Vector3 spawnPosition = ResolveDropPosition();
+            GameObject instance = Instantiate(prefab, spawnPosition, Quaternion.identity);
+
+            if (instance.TryGetComponent(out LootInteractable lootInteractable))
+            {
+                lootInteractable.Initialize(item, amount);
+            }
+            else
+            {
+                ILootCarrier carrier = instance.GetComponent<ILootCarrier>();
+                carrier?.Initialize(item);
+            }
+
+            NetworkObject networkObject = instance.GetComponent<NetworkObject>();
+            if (networkObject != null)
+            {
+                networkObject.Spawn(destroyWithScene: true);
+                return;
+            }
+
+            Debug.LogError("[GridInventory] Dropped loot prefab missing NetworkObject.", instance);
+            Destroy(instance);
+        }
+
+        private Vector3 ResolveDropPosition()
+        {
+            Transform playerTransform = transform;
+            Vector3 forward = playerTransform.forward;
+            if (forward.sqrMagnitude < 0.01f)
+                forward = Vector3.forward;
+
+            Vector3 fallback = playerTransform.position + forward.normalized * dropForwardDistance;
+            Vector3 rayOrigin = fallback + Vector3.up * dropGroundRayHeight;
+
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, dropGroundRayDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                return hit.point + Vector3.up * 0.05f;
+
+            return fallback;
+        }
+
+        private GameObject ResolveDroppedLootItemPrefab(ItemDataSO item)
+        {
+            if (droppedLootItemPrefab != null)
+                return droppedLootItemPrefab;
+
+            GameObject networkPrefab = FindLootInteractableNetworkPrefab();
+            if (networkPrefab != null)
+                return networkPrefab;
+
+            LootSpawner spawner = FindFirstObjectByType<LootSpawner>(FindObjectsInactive.Include);
+            if (spawner != null)
+            {
+                FieldInfo field = typeof(LootSpawner).GetField("lootItemPrefab", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (field?.GetValue(spawner) is GameObject spawnerPrefab)
+                    return spawnerPrefab;
+            }
+
+            if (item != null &&
+                item.worldPrefab != null &&
+                item.worldPrefab.GetComponent<NetworkObject>() != null &&
+                item.worldPrefab.GetComponent<ILootCarrier>() != null)
+            {
+                return item.worldPrefab;
+            }
+
+            return null;
+        }
+
+        private static GameObject FindLootInteractableNetworkPrefab()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.NetworkConfig == null)
+                return null;
+
+            IReadOnlyList<NetworkPrefab> prefabs = networkManager.NetworkConfig.Prefabs?.Prefabs;
+            if (prefabs != null)
+            {
+                for (int i = 0; i < prefabs.Count; i++)
+                {
+                    GameObject prefab = prefabs[i]?.Prefab;
+                    if (IsLootInteractablePrefab(prefab))
+                        return prefab;
+                }
+            }
+
+            List<NetworkPrefabsList> prefabLists = networkManager.NetworkConfig.Prefabs?.NetworkPrefabsLists;
+            if (prefabLists == null)
+                return null;
+
+            for (int listIndex = 0; listIndex < prefabLists.Count; listIndex++)
+            {
+                NetworkPrefabsList prefabList = prefabLists[listIndex];
+                if (prefabList == null || prefabList.PrefabList == null)
+                    continue;
+
+                for (int prefabIndex = 0; prefabIndex < prefabList.PrefabList.Count; prefabIndex++)
+                {
+                    GameObject prefab = prefabList.PrefabList[prefabIndex]?.Prefab;
+                    if (IsLootInteractablePrefab(prefab))
+                        return prefab;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsLootInteractablePrefab(GameObject prefab)
+        {
+            return prefab != null &&
+                   prefab.GetComponent<NetworkObject>() != null &&
+                   prefab.GetComponent<LootInteractable>() != null;
+        }
+
+        private bool TryGetEquipmentItemId(EquipmentTargetSlot targetSlot, out string itemId)
+        {
+            itemId = string.Empty;
+
+            if (equipment == null)
+                return false;
+
+            itemId = targetSlot switch
+            {
+                EquipmentTargetSlot.Head => equipment.HeadSlotId.Value.ToString(),
+                EquipmentTargetSlot.Backpack => equipment.BackpackSlotId.Value.ToString(),
+                EquipmentTargetSlot.Armor => equipment.TorsoSlotId.Value.ToString(),
+                EquipmentTargetSlot.Primary1 => equipment.Primary1Id.Value.ToString(),
+                EquipmentTargetSlot.Primary2 => equipment.Primary2Id.Value.ToString(),
+                EquipmentTargetSlot.Secondary => equipment.SecondaryId.Value.ToString(),
+                EquipmentTargetSlot.Melee => equipment.MeleeId.Value.ToString(),
+                _ => string.Empty
+            };
+
+            return !string.IsNullOrWhiteSpace(itemId);
+        }
+
+        private ItemDataSO ResolveItem(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return null;
+
+            EnsureItemDatabase();
+            return itemDb?.GetById(itemId);
         }
 
         public void RequestUseMedicalItem(string itemId)
