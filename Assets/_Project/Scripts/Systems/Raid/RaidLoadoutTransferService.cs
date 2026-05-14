@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using DeadZone.Actors;
 using DeadZone.Actors.UI;
@@ -43,7 +43,6 @@ namespace DeadZone.Systems.Raid
                     loadoutsByClientId[clientId] = savedLobbyLoadout;
                     Debug.Log(
                         $"[RaidLoadout] Saved loadout from lobby save snapshot clientId={clientId}, inventory={savedLobbyLoadout.inventoryItems.Count}, quickSlots={savedLobbyLoadout.quickSlotItems.Count}, equipment={CountEquippedItems(savedLobbyLoadout.equipmentItems)}, current={savedLobbyLoadout.currentEquippedItemId}");
-                        $"[RaidLoadout] Saved loadout from lobby save snapshot clientId={clientId}, inventory={savedLobbyLoadout.inventoryItems.Count}, equipment={CountEquippedItems(savedLobbyLoadout.equipmentItems)}, quickslots={savedLobbyLoadout.quickSlotItems.Count}, current={savedLobbyLoadout.currentEquippedItemId}");
                     continue;
                 }
 
@@ -89,7 +88,6 @@ namespace DeadZone.Systems.Raid
                 loadoutsByClientId[clientId] = loadout;
                 Debug.Log(
                     $"[RaidLoadout] Recovered loadout during apply clientId={clientId}, inventory={loadout.inventoryItems.Count}, quickSlots={loadout.quickSlotItems.Count}, equipment={CountEquippedItems(loadout.equipmentItems)}, current={loadout.currentEquippedItemId}",
-                    $"[RaidLoadout] Recovered loadout during apply clientId={clientId}, inventory={loadout.inventoryItems.Count}, equipment={CountEquippedItems(loadout.equipmentItems)}, quickslots={loadout.quickSlotItems.Count}, current={loadout.currentEquippedItemId}",
                     playerObject);
             }
 
@@ -136,6 +134,8 @@ namespace DeadZone.Systems.Raid
 
             quickSlotItems = loadout.quickSlotItems;
             return true;
+        }
+
         public static int ApplyLocalQuickSlotsToUi()
         {
             NetworkManager networkManager = NetworkManager.Singleton;
@@ -322,22 +322,7 @@ namespace DeadZone.Systems.Raid
                     {
                         itemId = item.itemId,
                         instanceId = item.instanceId,
-                        slotIndex = Mathf.Max(0, item.x),
-            if (quickSlotItems != null)
-            {
-                for (int i = 0; i < quickSlotItems.Count; i++)
-                {
-                    ItemSaveDTO item = quickSlotItems[i];
-                    if (item == null || string.IsNullOrWhiteSpace(item.itemId))
-                        continue;
-
-                    loadout.quickSlotItems.Add(new InventoryItemSaveData
-                    {
-                        itemId = item.itemId,
-                        instanceId = item.instanceId,
-                        gridX = Mathf.Clamp(item.x, 0, 5),
-                        gridY = 0,
-                        rotated = false,
+                        slotIndex = Mathf.Clamp(item.x, 0, 5),
                         stackCount = Mathf.Max(1, item.stackCount),
                         currentDurability = Mathf.Max(0f, item.currentDurability),
                         currentAmmo = Mathf.Max(0, item.currentAmmo)
@@ -395,9 +380,9 @@ namespace DeadZone.Systems.Raid
             return loadout;
         }
 
-        private static List<InventoryItemSaveData> CaptureCurrentQuickSlotSnapshot()
+        private static List<QuickSlotSaveData> CaptureCurrentQuickSlotSnapshot()
         {
-            List<InventoryItemSaveData> snapshot = new();
+            List<QuickSlotSaveData> snapshot = new();
             InventorySlotUI[] quickSlots = ResolveQuickSlotSlots();
 
             for (int i = 0; i < quickSlots.Length; i++)
@@ -406,13 +391,11 @@ namespace DeadZone.Systems.Raid
                 if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
                     continue;
 
-                snapshot.Add(new InventoryItemSaveData
+                snapshot.Add(new QuickSlotSaveData
                 {
                     itemId = slot.CurrentItemData.itemID,
                     instanceId = $"{slot.CurrentItemData.itemID}_quickslot_{slot.SlotIndex}",
-                    gridX = Mathf.Clamp(slot.SlotIndex, 0, 5),
-                    gridY = 0,
-                    rotated = false,
+                    slotIndex = Mathf.Clamp(slot.SlotIndex, 0, 5),
                     stackCount = Mathf.Max(1, slot.CurrentStackCount),
                     currentDurability = 0f,
                     currentAmmo = 0
@@ -422,7 +405,7 @@ namespace DeadZone.Systems.Raid
             return snapshot;
         }
 
-        private static int ApplyQuickSlotsToUi(IReadOnlyList<InventoryItemSaveData> quickSlotItems)
+        private static int ApplyQuickSlotsToUi(IReadOnlyList<QuickSlotSaveData> quickSlotItems)
         {
             InventorySlotUI[] quickSlots = ResolveQuickSlotSlots();
             if (quickSlots.Length == 0)
@@ -445,11 +428,11 @@ namespace DeadZone.Systems.Raid
 
             for (int i = 0; i < quickSlotItems.Count; i++)
             {
-                InventoryItemSaveData savedItem = quickSlotItems[i];
+                QuickSlotSaveData savedItem = quickSlotItems[i];
                 if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
                     continue;
 
-                int slotIndex = Mathf.Clamp(savedItem.gridY * 6 + savedItem.gridX, 0, 5);
+                int slotIndex = Mathf.Clamp(savedItem.slotIndex, 0, 5);
                 InventorySlotUI slot = FindQuickSlotByIndex(quickSlots, slotIndex);
                 ItemDataSO itemData = itemDatabase.GetById(savedItem.itemId);
 
@@ -799,8 +782,6 @@ namespace DeadZone.Systems.Raid
                    (HasItems(dto.inventoryItems) ||
                     HasItems(dto.quickSlotItems) ||
                     HasItems(dto.equipmentItems));
-                    HasItems(dto.equipmentItems) ||
-                    HasItems(dto.quickSlotItems));
         }
 
         private static bool HasMeaningfulLoadout(RaidLoadoutSaveData loadout)
@@ -809,8 +790,6 @@ namespace DeadZone.Systems.Raid
                    (HasItems(loadout.inventoryItems) ||
                     HasItems(loadout.quickSlotItems) ||
                     CountEquippedItems(loadout.equipmentItems) > 0);
-                    CountEquippedItems(loadout.equipmentItems) > 0 ||
-                    HasItems(loadout.quickSlotItems));
         }
 
         private static bool TryResolveLoadoutSource(
@@ -828,7 +807,7 @@ namespace DeadZone.Systems.Raid
                 HasLoadoutComponents(client.PlayerObject.gameObject))
             {
                 source = client.PlayerObject.gameObject;
-                return true;https://github.com/Kyungil-smart/networkteamproject-byeover-prog/pull/144/conflict?name=Assets%252F_Project%252FScripts%252FSystems%252FSave%252FLobbyInventoryStateUiBridge.cs&ancestor_oid=12c88411c797146655fe00d57719944300011633&base_oid=f6df680fb6d879e213374362b55778066154c44a&head_oid=f76d109c25be996eae0f84e3cceab350b82de5eb
+                return true;
             }
 
             foreach (NetworkObject networkObject in networkManager.SpawnManager.SpawnedObjectsList)

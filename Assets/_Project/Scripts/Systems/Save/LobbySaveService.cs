@@ -637,7 +637,6 @@ namespace DeadZone.Systems.Save
             Debug.Log(
                 $"[LobbySaveService] Merged local JSON lobby sections into loaded server save. Reason={reason}, Path={path}, " +
                 $"preferLocal={preferLocalJsonInventorySections}, inventory={dto.inventoryItems.Count}, stash={dto.stashItems.Count}, quickSlots={dto.quickSlotItems?.Count ?? 0}, equipment={dto.equipmentItems.Count}",
-                $"preferLocal={preferLocalJsonInventorySections}, inventory={dto.inventoryItems.Count}, stash={dto.stashItems.Count}, equipment={dto.equipmentItems.Count}, quickslots={dto.quickSlotItems.Count}",
                 this);
         }
 
@@ -990,8 +989,6 @@ namespace DeadZone.Systems.Save
                    HasAny(dto.stashItems) ||
                    HasAny(dto.quickSlotItems) ||
                    HasAny(dto.equipmentItems);
-                   HasAny(dto.equipmentItems) ||
-                   HasAny(dto.quickSlotItems);
         }
 
         private static void NormalizeSectionFlags(LobbySaveDTO dto)
