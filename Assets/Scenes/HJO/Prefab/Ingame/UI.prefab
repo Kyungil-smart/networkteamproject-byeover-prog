@@ -14791,7 +14791,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 262131
+    m_Bits: 190419
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -15046,6 +15046,7 @@ MonoBehaviour:
   progressText: {fileID: 3616778782892229526}
   panelRoot: {fileID: 3496165489500548032}
   nearCompleteThreshold: 0.8
+  defaultText: "\uD018\uC2A4\uD2B8"
   onQuestAcceptedFeedback: {fileID: 2784328056468505177}
   onQuestProgressFeedback: {fileID: 6800393107654420215}
   onNearCompleteFeedback: {fileID: 1261502259998784213}
