@@ -39,6 +39,9 @@ namespace DeadZone.Actors
         [Tooltip("발사 애니메이션을 재생할 Trigger 파라미터 이름입니다.")]
         [SerializeField] private string fireTriggerParameterName = "Fire";
 
+        [Tooltip("재장전 애니메이션 상태를 표시할 Bool 파라미터 이름입니다.")]
+        [SerializeField] private string reloadingParameterName = "IsReloading";
+
         [Tooltip("무기 장착 시 Weight를 올릴 상체 전투 레이어 이름입니다. " +
                  "레이어가 없으면 Weight 갱신만 건너뜁니다.")]
         [SerializeField] private string combatLayerName = "Combat Upper Body";
@@ -59,15 +62,18 @@ namespace DeadZone.Actors
         private PlayerWeaponAnimationType currentWeaponType = PlayerWeaponAnimationType.Unarmed;
         private float targetCombatLayerWeight;
         private float currentCombatLayerWeight;
+        private bool isReloadingAnimation;
 
         private int weaponTypeHash;
         private int rollingHash;
         private int fireTriggerHash;
+        private int reloadingHash;
         private int combatLayerIndex = -1;
 
         private bool hasWeaponTypeParameter;
         private bool hasRollingParameter;
         private bool hasFireTriggerParameter;
+        private bool hasReloadingParameter;
         private bool subscribedToEquipment;
 
         private bool loggedMissingAnimator;
@@ -76,9 +82,11 @@ namespace DeadZone.Actors
         private bool loggedMissingWeaponTypeParameter;
         private bool loggedMissingRollingParameter;
         private bool loggedMissingFireTriggerParameter;
+        private bool loggedMissingReloadingParameter;
         private bool loggedWeaponTypeMismatch;
         private bool loggedRollingParameterMismatch;
         private bool loggedFireTriggerParameterMismatch;
+        private bool loggedReloadingParameterMismatch;
         private bool loggedMissingCombatLayer;
 
         private void Awake()
@@ -106,10 +114,12 @@ namespace DeadZone.Actors
             SubscribeEquipmentEvents();
 
             RefreshWeaponAnimationState(immediateLayerWeight: true);
+            UpdateReloadingParameter();
         }
 
         public override void OnNetworkDespawn()
         {
+            SetReloadingAnimation(false);
             UnsubscribeEquipmentEvents();
             base.OnNetworkDespawn();
         }
@@ -123,6 +133,7 @@ namespace DeadZone.Actors
             CacheAnimatorBindings();
             SubscribeEquipmentEvents();
             RefreshWeaponAnimationState(immediateLayerWeight: true);
+            UpdateReloadingParameter();
         }
 
         private void OnDisable()
@@ -133,11 +144,12 @@ namespace DeadZone.Actors
         private void Update()
         {
             UpdateCombatLayerWeight();
+            UpdateReloadingParameter();
         }
 
         /// <summary>
         /// 서버에서 확정된 발사 액션을 현재 로컬 Animator에 반영한다.
-        /// Roll, Knocked, Dead 중에는 상체 전투 자세가 억제되므로 발사 Trigger도 실행하지 않는다.
+        /// Roll, Knocked, Dead, Reload 중에는 상체 전투 자세가 충돌하므로 발사 Trigger를 실행하지 않는다.
         /// </summary>
         public void TriggerFireAnimation()
         {
@@ -147,11 +159,27 @@ namespace DeadZone.Actors
             if (!hasFireTriggerParameter)
                 return;
 
-            if (!CanPlayWeaponAction())
+            if (!CanPlayFireAnimation())
                 return;
 
             animator.ResetTrigger(fireTriggerHash);
             animator.SetTrigger(fireTriggerHash);
+        }
+
+        /// <summary>
+        /// 서버에서 확정된 재장전 표시 상태를 현재 로컬 Animator에 반영한다.
+        /// 실제 탄약 처리와 장전 성공 여부는 ReloadSystem/GridInventory가 담당하고,
+        /// 이 함수는 표시용 IsReloading Bool만 관리한다.
+        /// </summary>
+        public void SetReloadingAnimation(bool isReloading)
+        {
+            bool nextReloading = isReloading && IsSupportedWeaponActionType();
+            isReloadingAnimation = nextReloading;
+
+            if (nextReloading && hasFireTriggerParameter && animator != null)
+                animator.ResetTrigger(fireTriggerHash);
+
+            UpdateReloadingParameter();
         }
 
         private void AutoBindReferences()
@@ -174,9 +202,11 @@ namespace DeadZone.Actors
             hasWeaponTypeParameter = false;
             hasRollingParameter = false;
             hasFireTriggerParameter = false;
+            hasReloadingParameter = false;
             weaponTypeHash = 0;
             rollingHash = 0;
             fireTriggerHash = 0;
+            reloadingHash = 0;
             combatLayerIndex = -1;
 
             if (animator == null)
@@ -189,6 +219,7 @@ namespace DeadZone.Actors
             CacheWeaponTypeParameter();
             CacheRollingParameter();
             CacheFireTriggerParameter();
+            CacheReloadingParameter();
             CacheCombatLayer();
 
             if (playerHealthSystem == null)
@@ -307,6 +338,43 @@ namespace DeadZone.Actors
             WarnOnce(
                 ref loggedMissingFireTriggerParameter,
                 $"[PlayerAnimatorDriver] Animator에서 Trigger 파라미터 '{fireTriggerParameterName}'를 찾지 못했습니다.");
+        }
+
+        private void CacheReloadingParameter()
+        {
+            if (string.IsNullOrWhiteSpace(reloadingParameterName))
+            {
+                WarnOnce(ref loggedMissingReloadingParameter,
+                    "[PlayerAnimatorDriver] IsReloading 파라미터 이름이 비어 있습니다.");
+                return;
+            }
+
+            reloadingHash = Animator.StringToHash(reloadingParameterName);
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.name != reloadingParameterName)
+                    continue;
+
+                if (parameter.type != AnimatorControllerParameterType.Bool)
+                {
+                    WarnOnce(
+                        ref loggedReloadingParameterMismatch,
+                        $"[PlayerAnimatorDriver] Animator 파라미터 '{reloadingParameterName}'" +
+                        $" 타입이 Bool이 아닙니다. 현재 타입: {parameter.type}");
+
+                    return;
+                }
+
+                hasReloadingParameter = true;
+                return;
+            }
+
+            WarnOnce(
+                ref loggedMissingReloadingParameter,
+                $"[PlayerAnimatorDriver] Animator에서 Bool 파라미터 '{reloadingParameterName}'를 찾지 못했습니다.");
         }
 
         private void CacheCombatLayer()
@@ -458,6 +526,11 @@ namespace DeadZone.Actors
 
             SetWeaponTypeParameter(nextWeaponType);
 
+            if (!IsSupportedWeaponActionType())
+                isReloadingAnimation = false;
+
+            UpdateReloadingParameter();
+
             if (immediateLayerWeight)
             {
                 ApplyCombatLayerWeight(GetEffectiveCombatLayerWeight());
@@ -509,6 +582,19 @@ namespace DeadZone.Actors
             ApplyCombatLayerWeight(nextWeight);
         }
 
+        private void UpdateReloadingParameter()
+        {
+            if (animator == null || !hasReloadingParameter)
+                return;
+
+            bool shouldShowReloading = isReloadingAnimation && CanPlayWeaponAction();
+
+            if (animator.GetBool(reloadingHash) == shouldShowReloading)
+                return;
+
+            animator.SetBool(reloadingHash, shouldShowReloading);
+        }
+
         private float GetEffectiveCombatLayerWeight()
         {
             if (ShouldSuppressCombatLayer())
@@ -522,15 +608,26 @@ namespace DeadZone.Actors
             return IsRolling() || IsKnockedOrDead();
         }
 
+        private bool CanPlayFireAnimation()
+        {
+            if (isReloadingAnimation)
+                return false;
+
+            return CanPlayWeaponAction();
+        }
+
         private bool CanPlayWeaponAction()
         {
-            if (currentWeaponType != PlayerWeaponAnimationType.RifleLike &&
-                currentWeaponType != PlayerWeaponAnimationType.Handgun)
-            {
+            if (!IsSupportedWeaponActionType())
                 return false;
-            }
 
             return !ShouldSuppressCombatLayer();
+        }
+
+        private bool IsSupportedWeaponActionType()
+        {
+            return currentWeaponType == PlayerWeaponAnimationType.RifleLike ||
+                   currentWeaponType == PlayerWeaponAnimationType.Handgun;
         }
 
         private bool IsRolling()
