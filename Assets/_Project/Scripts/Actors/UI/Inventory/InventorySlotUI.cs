@@ -294,6 +294,9 @@ namespace DeadZone.Actors.UI
         {
             if (draggingSlot == this)
             {
+                if (HasItem && !IsPointerOverValidDropTarget(eventData))
+                    TryRequestWorldDrop();
+
                 draggingSlot = null;
                 DestroyDragIcon();
             }
@@ -333,6 +336,121 @@ namespace DeadZone.Actors.UI
             }
 
             return false;
+        }
+
+        private bool IsPointerOverValidDropTarget(PointerEventData eventData)
+        {
+            if (eventData == null)
+                return false;
+
+            if (IsValidDropTargetObject(eventData.pointerEnter))
+                return true;
+
+            if (eventData.hovered != null)
+            {
+                for (int i = 0; i < eventData.hovered.Count; i++)
+                {
+                    if (IsValidDropTargetObject(eventData.hovered[i]))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsValidDropTargetObject(GameObject targetObject)
+        {
+            if (targetObject == null)
+                return false;
+
+            return targetObject.GetComponentInParent<InventorySlotUI>() != null ||
+                   targetObject.GetComponentInParent<IInventorySlotDropHandler>() != null;
+        }
+
+        private void TryRequestWorldDrop()
+        {
+            if (!HasItem || IsContainerSourceSlot() || IsLobbyInventorySlot())
+                return;
+
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return;
+
+            if (slotKind == InventorySlotKind.Bag)
+            {
+                int x = Mathf.Max(0, slotIndex) % GridInventory.BASE_WIDTH;
+                int y = Mathf.Max(0, slotIndex) / GridInventory.BASE_WIDTH;
+                inventory.DropInventorySlotServerRpc((byte)x, (byte)y);
+                return;
+            }
+
+            if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot equipmentTargetSlot))
+                inventory.DropEquipmentSlotServerRpc(equipmentTargetSlot);
+        }
+
+        private bool IsContainerSourceSlot()
+        {
+            return GetComponent<LootContainerSlotUI>() != null;
+        }
+
+        private bool IsLobbyInventorySlot()
+        {
+            return GetComponentInParent<LobbyPlayerInventoryUI>(true) != null ||
+                   GetComponentInParent<StashGridUI>(true) != null ||
+                   GetComponentInParent<LobbyInventoryStateUiBridge>(true) != null;
+        }
+
+        private bool TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetSlot)
+        {
+            targetSlot = EquipmentTargetSlot.None;
+
+            switch (slotKind)
+            {
+                case InventorySlotKind.EquipmentHead:
+                    targetSlot = EquipmentTargetSlot.Head;
+                    return true;
+
+                case InventorySlotKind.EquipmentBackpack:
+                    targetSlot = EquipmentTargetSlot.Backpack;
+                    return true;
+
+                case InventorySlotKind.EquipmentArmor:
+                    targetSlot = EquipmentTargetSlot.Armor;
+                    return true;
+
+                case InventorySlotKind.EquipmentPrimaryWeapon:
+                    targetSlot = IsPrimary2Slot() ? EquipmentTargetSlot.Primary2 : EquipmentTargetSlot.Primary1;
+                    return true;
+
+                case InventorySlotKind.EquipmentSecondaryWeapon:
+                    targetSlot = EquipmentTargetSlot.Secondary;
+                    return true;
+
+                case InventorySlotKind.EquipmentMeleeWeapon:
+                    targetSlot = EquipmentTargetSlot.Melee;
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static GridInventory ResolveOwnerGridInventory()
+        {
+            GridInventory[] candidates = FindObjectsByType<GridInventory>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (GridInventory candidate in candidates)
+            {
+                if (candidate != null && candidate.IsSpawned && candidate.IsOwner)
+                    return candidate;
+            }
+
+            foreach (GridInventory candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                    return candidate;
+            }
+
+            return null;
         }
 
         public void ClearItem()

@@ -178,6 +178,17 @@ namespace DeadZone.Actors
             Debug.LogWarning("[LootContainer] 네트워크가 실행 중이 아니어서 상자 내부 이동은 서버 검증 없이 처리하지 않습니다.", this);
         }
 
+        public void RequestEquipSlotToPlayer(int sourceSlotIndex, EquipmentTargetSlot targetSlot)
+        {
+            if (IsNetworkActive())
+            {
+                TryEquipSlotToPlayerRpc(sourceSlotIndex, targetSlot);
+                return;
+            }
+
+            Debug.LogWarning("[LootContainer] Network is not active. Container to equipment move skipped.", this);
+        }
+
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void TryOpenRpc(RpcParams rpcParams = default)
         {
@@ -292,6 +303,39 @@ namespace DeadZone.Actors
 
             Slots[sourceSlotIndex] = targetSlot;
             Slots[targetSlotIndex] = sourceSlot;
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void TryEquipSlotToPlayerRpc(
+            int sourceSlotIndex,
+            EquipmentTargetSlot targetSlot,
+            RpcParams rpcParams = default)
+        {
+            if (targetSlot == EquipmentTargetSlot.None)
+                return;
+
+            if (!TryGetServerSlot(sourceSlotIndex, out global::ContainerSlotNetData sourceSlot) || sourceSlot.IsEmpty)
+                return;
+
+            EquipmentSlots equipmentSlots = ResolvePlayerEquipment(rpcParams.Receive.SenderClientId);
+            if (equipmentSlots == null)
+                return;
+
+            ItemDataSO itemData = ResolveItemData(sourceSlot.itemId.ToString());
+            if (itemData == null || !equipmentSlots.CanEquipItemToSlot(itemData, targetSlot))
+                return;
+
+            if (!equipmentSlots.TryEquipItemToEmptySlot(itemData, targetSlot))
+                return;
+
+            if (sourceSlot.amount <= 1)
+            {
+                Slots[sourceSlotIndex] = new global::ContainerSlotNetData();
+                return;
+            }
+
+            sourceSlot.amount--;
+            Slots[sourceSlotIndex] = sourceSlot;
         }
 
         private void OpenLocalForEditorDebug(ulong clientId)
@@ -535,6 +579,20 @@ namespace DeadZone.Actors
                 return null;
 
             return client.PlayerObject.GetComponent<GridInventory>();
+        }
+
+        private EquipmentSlots ResolvePlayerEquipment(ulong clientId)
+        {
+            if (!IsServer || NetworkManager.Singleton == null)
+                return null;
+
+            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out NetworkClient client))
+                return null;
+
+            if (client.PlayerObject == null)
+                return null;
+
+            return client.PlayerObject.GetComponent<EquipmentSlots>();
         }
 
         private ItemDataSO ResolveItemData(string itemId)

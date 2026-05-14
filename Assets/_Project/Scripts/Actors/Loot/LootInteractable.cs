@@ -10,6 +10,7 @@ namespace DeadZone.Actors
     public class LootInteractable : NetworkBehaviour, IInteractable, ILootCarrier
     {
         public NetworkVariable<FixedString64Bytes> ItemId = new("");
+        public NetworkVariable<ushort> Amount = new(1);
 
         private ItemDataSO cachedItem;
         private IItemDatabase itemDb;
@@ -36,6 +37,15 @@ namespace DeadZone.Actors
         {
             if (!IsServer || item == null) return;
             ItemId.Value = item.itemID;
+            Amount.Value = 1;
+            cachedItem = item;
+        }
+
+        public void Initialize(ItemDataSO item, int amount)
+        {
+            if (!IsServer || item == null) return;
+            ItemId.Value = item.itemID;
+            Amount.Value = (ushort)Mathf.Clamp(amount, 1, ushort.MaxValue);
             cachedItem = item;
         }
 
@@ -66,13 +76,14 @@ namespace DeadZone.Actors
             var item = itemDb.GetById(ItemId.Value.ToString());
             if (item == null) return;
 
-            if (inv.TryAddItem(item))
+            int amount = Mathf.Max(1, Amount.Value);
+            if (inv.TryAddItem(item, amount))
             {
                 EventBus.Publish(new ItemLootedEvent
                 {
                     clientId = clientId,
                     itemId = ItemId.Value,
-                    amount = 1,
+                    amount = amount,
                 });
                 NetworkObject.Despawn(destroy: true);
             }
