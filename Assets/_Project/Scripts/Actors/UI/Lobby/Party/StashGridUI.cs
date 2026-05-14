@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems;
 using Sirenix.OdinInspector;
@@ -920,8 +920,6 @@ namespace DeadZone.Actors.UI
 
             Debug.Log($"[StashGridUI] Applied LobbyInventoryState stash items. Applied={appliedCount}/{stashItems.Count}", this);
         }
-<<<<<<< HEAD
-
         private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem, bool shiftOneBasedLinearIndex)
         {
             if (savedItem == null)
@@ -941,8 +939,6 @@ namespace DeadZone.Actors.UI
             return FindFirstEmptySlot();
         }
 
-=======
->>>>>>> origin/Develop3
         public List<ItemSaveDTO> CaptureSavedStashItems()
         {
             RefreshSlots();
@@ -976,11 +972,6 @@ namespace DeadZone.Actors.UI
             }
 
             return items;
-        }
-
-        private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem, bool shiftOneBasedLinearIndex)
-        {
-            return FindSlotForLobbyItem(savedItem, false);
         }
 
         private static bool ShouldShiftOneBasedLinearIndex(IReadOnlyList<ItemSaveDTO> stashItems)

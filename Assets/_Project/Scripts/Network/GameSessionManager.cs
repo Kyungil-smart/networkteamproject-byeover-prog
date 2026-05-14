@@ -312,7 +312,7 @@ namespace DeadZone.Network
             if (!isRegisteredToServiceLocator)
                 return;
 
-            ServiceLocator.Unregister<GameSessionManager>();
+            ServiceLocator.Unregister(this);
             isRegisteredToServiceLocator = false;
 
             LogDebug("ServiceLocator 등록 해제 완료.");

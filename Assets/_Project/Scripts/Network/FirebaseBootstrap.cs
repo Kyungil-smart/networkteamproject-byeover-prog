@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Firebase;
 using Firebase.Extensions;
 using UnityEngine;
@@ -34,7 +34,7 @@ namespace DeadZone.Network
 
         private void OnDestroy()
         {
-            ServiceLocator.Unregister<FirebaseBootstrap>();
+            ServiceLocator.Unregister(this);
         }
 
         private Task InitializeAsync()

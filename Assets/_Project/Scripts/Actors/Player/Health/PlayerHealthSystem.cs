@@ -213,7 +213,6 @@ namespace DeadZone.Actors
             return rollSystem != null && rollSystem.IsDamageImmune;
         }
 
-<<<<<<< HEAD
         private bool ShouldIgnoreFriendlyFire(ulong attackerClientId)
         {
             if (attackerClientId == DamageSystem.AI_SHOOTER_ID)
@@ -223,7 +222,8 @@ namespace DeadZone.Actors
                 return false;
 
             return true;
-=======
+        }
+
         private void PlayHitReaction()
         {
             if (IsSpawned)
@@ -245,7 +245,6 @@ namespace DeadZone.Actors
                 animatorDriver = GetComponent<PlayerAnimatorDriver>();
 
             animatorDriver?.TriggerHitReaction();
->>>>>>> origin/Develop3
         }
 
         public void Heal(float amount)

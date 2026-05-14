@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -52,6 +52,19 @@ namespace DeadZone.Core
         public static void Unregister<T>() where T : class
         {
             services.Remove(typeof(T));
+        }
+
+        public static void Unregister<T>(T service) where T : class
+        {
+            if (service == null)
+                return;
+
+            Type type = typeof(T);
+            if (!services.TryGetValue(type, out object registeredService))
+                return;
+
+            if (ReferenceEquals(registeredService, service))
+                services.Remove(type);
         }
 
         /// <summary>모든 서비스를 제거한다. 앱 종료 시에만 호출.</summary>

@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.Relay.Models;
@@ -57,7 +57,7 @@ namespace DeadZone.Network
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
-            ServiceLocator.Unregister<SessionManager>();
+            ServiceLocator.Unregister(this);
         }
 
         private void OnApplicationQuit()

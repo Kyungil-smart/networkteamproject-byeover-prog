@@ -88,7 +88,7 @@ namespace DeadZone.Actors.UI
         {
             if (instance == this)
             {
-                ServiceLocator.Unregister<LoadingScreenService>();
+                ServiceLocator.Unregister(this);
                 instance = null;
             }
         }

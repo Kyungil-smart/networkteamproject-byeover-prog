@@ -69,7 +69,14 @@ namespace DeadZone.Core
             if (managers == null || managers.Length <= 1)
                 return;
 
-            NetworkManager keeper = NetworkManager.Singleton;
+            NetworkManager bootstrapManager = instance != null
+                ? instance.GetComponent<NetworkManager>()
+                : null;
+
+            NetworkManager keeper = bootstrapManager != null
+                ? bootstrapManager
+                : NetworkManager.Singleton;
+
             if (keeper == null)
             {
                 for (int i = 0; i < managers.Length; i++)
@@ -91,6 +98,9 @@ namespace DeadZone.Core
                 Debug.Log(
                     $"[Bootstrap] Duplicate NetworkManager removed. Keep={GetObjectName(keeper)}, Remove={GetObjectName(manager)}",
                     manager);
+                if (manager.IsListening)
+                    manager.Shutdown();
+
                 Destroy(manager.gameObject);
             }
         }
