@@ -8,6 +8,7 @@ namespace DeadZone.Actors.UI
     {
         public ContainerGridView GridView { get; private set; }
         public LootContainer Container { get; private set; }
+        public LootInteractable DroppedItem { get; private set; }
         public CorpseInventory CorpseInventory { get; private set; }
         public int SlotIndex { get; private set; } = -1;
 
@@ -15,6 +16,16 @@ namespace DeadZone.Actors.UI
         {
             GridView = gridView;
             Container = container;
+            DroppedItem = null;
+            CorpseInventory = null;
+            SlotIndex = slotIndex;
+        }
+
+        public void Bind(ContainerGridView gridView, LootInteractable droppedItem, int slotIndex)
+        {
+            GridView = gridView;
+            Container = null;
+            DroppedItem = droppedItem;
             CorpseInventory = null;
             SlotIndex = slotIndex;
         }
@@ -23,13 +34,14 @@ namespace DeadZone.Actors.UI
         {
             GridView = gridView;
             Container = null;
+            DroppedItem = null;
             CorpseInventory = corpseInventory;
             SlotIndex = slotIndex;
         }
 
         public bool TryHandleDrop(InventorySlotUI source, InventorySlotUI target)
         {
-            if ((Container == null && CorpseInventory == null) || GridView == null || source == null || target == null)
+            if ((Container == null && DroppedItem == null && CorpseInventory == null) || GridView == null || source == null || target == null)
                 return false;
 
             bool sourceIsContainer = GridView.IsContainerSlot(source, out int sourceIndex);
@@ -37,6 +49,14 @@ namespace DeadZone.Actors.UI
 
             if (!sourceIsContainer && !targetIsContainer)
                 return false;
+
+            if (DroppedItem != null)
+            {
+                if (sourceIsContainer && !targetIsContainer)
+                    DroppedItem.RequestTakeSlotToPlayer(sourceIndex);
+
+                return true;
+            }
 
             if (CorpseInventory != null)
             {
