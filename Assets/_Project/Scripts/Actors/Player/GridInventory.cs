@@ -450,6 +450,10 @@ namespace DeadZone.Actors
             if (droppedLootItemPrefab != null)
                 return droppedLootItemPrefab;
 
+            GameObject networkPrefab = FindLootInteractableNetworkPrefab();
+            if (networkPrefab != null)
+                return networkPrefab;
+
             LootSpawner spawner = FindFirstObjectByType<LootSpawner>(FindObjectsInactive.Include);
             if (spawner != null)
             {
@@ -467,6 +471,51 @@ namespace DeadZone.Actors
             }
 
             return null;
+        }
+
+        private static GameObject FindLootInteractableNetworkPrefab()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.NetworkConfig == null)
+                return null;
+
+            IReadOnlyList<NetworkPrefab> prefabs = networkManager.NetworkConfig.Prefabs?.Prefabs;
+            if (prefabs != null)
+            {
+                for (int i = 0; i < prefabs.Count; i++)
+                {
+                    GameObject prefab = prefabs[i]?.Prefab;
+                    if (IsLootInteractablePrefab(prefab))
+                        return prefab;
+                }
+            }
+
+            List<NetworkPrefabsList> prefabLists = networkManager.NetworkConfig.Prefabs?.NetworkPrefabsLists;
+            if (prefabLists == null)
+                return null;
+
+            for (int listIndex = 0; listIndex < prefabLists.Count; listIndex++)
+            {
+                NetworkPrefabsList prefabList = prefabLists[listIndex];
+                if (prefabList == null || prefabList.PrefabList == null)
+                    continue;
+
+                for (int prefabIndex = 0; prefabIndex < prefabList.PrefabList.Count; prefabIndex++)
+                {
+                    GameObject prefab = prefabList.PrefabList[prefabIndex]?.Prefab;
+                    if (IsLootInteractablePrefab(prefab))
+                        return prefab;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsLootInteractablePrefab(GameObject prefab)
+        {
+            return prefab != null &&
+                   prefab.GetComponent<NetworkObject>() != null &&
+                   prefab.GetComponent<LootInteractable>() != null;
         }
 
         private bool TryGetEquipmentItemId(EquipmentTargetSlot targetSlot, out string itemId)

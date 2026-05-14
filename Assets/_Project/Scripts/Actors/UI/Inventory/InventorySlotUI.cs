@@ -1,6 +1,7 @@
 using DeadZone.Core;
 using DeadZone.Actors;
 using DeadZone.Systems.Save;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Collections;
@@ -343,14 +344,22 @@ namespace DeadZone.Actors.UI
             if (eventData == null)
                 return false;
 
+            if (IsPointerOverThisSlot(eventData))
+                return true;
+
+            if (IsValidDropTargetObject(eventData.pointerCurrentRaycast.gameObject))
+                return true;
+
             if (IsValidDropTargetObject(eventData.pointerEnter))
                 return true;
 
-            if (eventData.hovered != null)
+            if (EventSystem.current != null)
             {
-                for (int i = 0; i < eventData.hovered.Count; i++)
+                List<RaycastResult> raycastResults = new();
+                EventSystem.current.RaycastAll(eventData, raycastResults);
+                for (int i = 0; i < raycastResults.Count; i++)
                 {
-                    if (IsValidDropTargetObject(eventData.hovered[i]))
+                    if (IsValidDropTargetObject(raycastResults[i].gameObject))
                         return true;
                 }
             }
@@ -358,13 +367,26 @@ namespace DeadZone.Actors.UI
             return false;
         }
 
-        private static bool IsValidDropTargetObject(GameObject targetObject)
+        private bool IsValidDropTargetObject(GameObject targetObject)
         {
             if (targetObject == null)
                 return false;
 
-            return targetObject.GetComponentInParent<InventorySlotUI>() != null ||
-                   targetObject.GetComponentInParent<IInventorySlotDropHandler>() != null;
+            InventorySlotUI targetSlot = targetObject.GetComponentInParent<InventorySlotUI>();
+            if (targetSlot != null)
+                return targetSlot != this;
+
+            return targetObject.GetComponentInParent<IInventorySlotDropHandler>() != null;
+        }
+
+        private bool IsPointerOverThisSlot(PointerEventData eventData)
+        {
+            RectTransform rectTransform = transform as RectTransform;
+            return rectTransform != null &&
+                   RectTransformUtility.RectangleContainsScreenPoint(
+                       rectTransform,
+                       eventData.position,
+                       eventData.pressEventCamera);
         }
 
         private void TryRequestWorldDrop()
