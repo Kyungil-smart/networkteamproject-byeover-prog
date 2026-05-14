@@ -290,6 +290,7 @@ namespace DeadZone.Network
             if (teamIdentity != null)
                 teamIdentity.ApplyLobbyColorServer();
 
+            LobbyPlayerCustomizeCache.TryApplyCustomize(clientId, instance);
             RaidLoadoutTransferService.TryApplyLoadout(clientId, instance);
 
             // Owner 권위 NetworkTransform 보정: 서버가 정한 SpawnPoint를 Owner Client에 전달.

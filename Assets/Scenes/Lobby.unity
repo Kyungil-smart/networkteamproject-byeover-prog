@@ -92017,7 +92017,7 @@ MonoBehaviour:
   partyView: {fileID: 1696538374}
   fallbackDisplayName: Player
   maxDisplayNameCharacters: 20
-  logDebug: 0
+  logDebug: 1
 --- !u!1 &1698034159
 GameObject:
   m_ObjectHideFlags: 0

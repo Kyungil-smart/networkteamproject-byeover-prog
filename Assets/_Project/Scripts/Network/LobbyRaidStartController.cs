@@ -197,6 +197,8 @@ namespace DeadZone.Network
         {
             RaidLoadoutTransferService.Clear();
             RaidLoadoutTransferService.StoreLocalLobbyLoadoutForLocalClient();
+            LobbyPlayerCustomizeCache.Clear();
+            LobbyPlayerCustomizeCache.StoreLocalCustomizeForLocalClient();
 
             if (!IsServer || NetworkManager.Singleton == null || NetworkManager.Singleton.ConnectedClientsIds.Count <= 1)
                 return;
@@ -294,6 +296,7 @@ namespace DeadZone.Network
             }
 
             CacheLobbyTeamColorsForRaid();
+            LobbyPlayerCustomizeCache.SaveCustomizesForClients(expectedClientIdsBuffer);
             RaidLoadoutTransferService.SaveLoadoutsForClients(expectedClientIdsBuffer);
 
             if (!TryBeginLoadTracking(sceneName, expectedClientIdsBuffer, out reason))
@@ -316,10 +319,12 @@ namespace DeadZone.Network
         private void RequestRaidLoadoutSubmissionClientRpc()
         {
             string loadoutJson = RaidLoadoutTransferService.CreateLocalLobbyLoadoutJson();
-            if (string.IsNullOrWhiteSpace(loadoutJson))
-                return;
+            if (!string.IsNullOrWhiteSpace(loadoutJson))
+                SubmitRaidLoadoutServerRpc(loadoutJson);
 
-            SubmitRaidLoadoutServerRpc(loadoutJson);
+            string customizeJson = LobbyPlayerCustomizeCache.CreateLocalCustomizeJson();
+            if (!string.IsNullOrWhiteSpace(customizeJson))
+                SubmitRaidCustomizeServerRpc(customizeJson);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -329,6 +334,15 @@ namespace DeadZone.Network
                 return;
 
             RaidLoadoutTransferService.StoreSubmittedLobbyLoadout(rpcParams.Receive.SenderClientId, loadoutJson);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SubmitRaidCustomizeServerRpc(string customizeJson, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            LobbyPlayerCustomizeCache.StoreSubmittedCustomize(rpcParams.Receive.SenderClientId, customizeJson);
         }
 
         public bool CanStartRaid()
