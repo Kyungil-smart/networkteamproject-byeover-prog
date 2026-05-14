@@ -732,7 +732,9 @@ namespace DeadZone.Network
                 bankruptcyLobbySave.hasCredits = true;
                 bankruptcyLobbySave.credits = starterPack.StartingCredits;
                 bankruptcyLobbySave.inventoryItems.Clear();
+                bankruptcyLobbySave.quickSlotItems.Clear();
                 bankruptcyLobbySave.equipmentItems.Clear();
+                ForceFacilityLevel(bankruptcyLobbySave, "Stash", 1);
                 bankruptcyLobbySave.quickSlotItems.Clear();
                 bankruptcyLobbySave.hasInventorySection = true;
                 bankruptcyLobbySave.hasStashSection = true;
@@ -740,6 +742,7 @@ namespace DeadZone.Network
                 bankruptcyLobbySave.hasQuickSlotSection = true;
 
                 currentData.lobbySave = ToLobbySaveCloudData(bankruptcyLobbySave);
+                ApplyBankruptcyLobbyStateToRuntime(bankruptcyLobbySave);
 
                 currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -1094,6 +1097,45 @@ namespace DeadZone.Network
 
             if (housingProgress != null && housingProgress.IsServer)
                 housingProgress.TrySetLevelFromServer(FacilityType.Stash, 1);
+
+            DeadZone.Actors.UI.StashGridUI stashGridUI = FindFirstObjectByType<DeadZone.Actors.UI.StashGridUI>(FindObjectsInactive.Include);
+            if (stashGridUI != null)
+                stashGridUI.SetLevel(1);
+        }
+
+        private static void ApplyBankruptcyLobbyStateToRuntime(LobbySaveDTO bankruptcyLobbySave)
+        {
+            if (bankruptcyLobbySave == null)
+                return;
+
+            LobbyInventoryState inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            if (inventoryState != null)
+            {
+                inventoryState.SetCredits(bankruptcyLobbySave.credits);
+                inventoryState.SetInventoryItems(bankruptcyLobbySave.inventoryItems);
+                inventoryState.SetStashItems(bankruptcyLobbySave.stashItems);
+                inventoryState.SetQuickSlotItems(bankruptcyLobbySave.quickSlotItems);
+                inventoryState.SetEquipmentItems(bankruptcyLobbySave.equipmentItems);
+            }
+
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+            if (facilityState != null)
+                facilityState.SetFacilities(bankruptcyLobbySave.facilities);
+
+            LobbyInventoryStateUiBridge uiBridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            if (uiBridge != null)
+                uiBridge.ApplyStateToUi();
+
+            WalletSystem walletSystem = FindFirstObjectByType<WalletSystem>(FindObjectsInactive.Include);
+            if (walletSystem != null)
+                walletSystem.SetCreditsLocalTest(bankruptcyLobbySave.credits);
+
+            DeadZone.Actors.UI.StashGridUI stashGridUI = FindFirstObjectByType<DeadZone.Actors.UI.StashGridUI>(FindObjectsInactive.Include);
+            if (stashGridUI != null)
+            {
+                stashGridUI.SetLevel(1);
+                stashGridUI.ApplySavedStashItems(bankruptcyLobbySave.stashItems, ServiceLocator.Get<IItemDatabase>());
+            }
         }
 
         private bool TryApplyStarterPackMigration()
@@ -2116,6 +2158,38 @@ namespace DeadZone.Network
 
                 facility.facilityId = facilityId;
                 facility.level = Mathf.Max(Mathf.Max(1, facility.level), safeLevel);
+                return;
+            }
+
+            dto.facilities.Add(new FacilitySaveDTO
+            {
+                facilityId = facilityId,
+                level = safeLevel
+            });
+        }
+
+        private static void ForceFacilityLevel(LobbySaveDTO dto, string facilityId, int level)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(facilityId))
+                return;
+
+            dto.facilities ??= new List<FacilitySaveDTO>();
+
+            string normalizedId = NormalizeFacilityId(facilityId);
+            int safeLevel = Mathf.Max(1, level);
+
+            for (int i = 0; i < dto.facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = dto.facilities[i];
+
+                if (facility == null)
+                    continue;
+
+                if (NormalizeFacilityId(facility.facilityId) != normalizedId)
+                    continue;
+
+                facility.facilityId = facilityId;
+                facility.level = safeLevel;
                 return;
             }
 
