@@ -48,6 +48,7 @@ namespace DeadZone.Actors
         [SerializeField] private Vector3 weaponVisualScale = Vector3.one;
 
         private EquipmentSlots equipment;
+        private PlayerAnimatorDriver animatorDriver;
         private Camera aimCamera;
         private float nextFireAllowed;
         private float currentSpreadAngle;
@@ -67,6 +68,7 @@ namespace DeadZone.Actors
         private void Awake()
         {
             equipment = GetComponent<EquipmentSlots>();
+            animatorDriver = GetComponent<PlayerAnimatorDriver>();
             fallbackMuzzleTransform = muzzleTransform;
         }
 
@@ -247,6 +249,9 @@ namespace DeadZone.Actors
             {
                 SpawnProjectile(pData, target, weapon, finalVelocity);
             }
+
+            // 서버에서 발사가 확정된 경우에만 모든 클라이언트에서 발사 애니메이션을 재생한다.
+            PlayWeaponFireAnimationClientRpc();
 
             // 5. 이벤트 발행
             PublishFireEvent(rpc.Receive.SenderClientId, weaponId, weapon);
@@ -431,6 +436,19 @@ namespace DeadZone.Actors
                 velocity,
                 range,
                 maxLifetime);
+        }
+
+        /// <summary>
+        /// 서버에서 확정된 발사 액션을 모든 클라이언트의 해당 Player Animator에 반영한다.
+        /// Host도 발사 애니메이션을 봐야 하므로 서버 클라이언트에서 생략하지 않는다.
+        /// </summary>
+        [ClientRpc]
+        private void PlayWeaponFireAnimationClientRpc()
+        {
+            if (animatorDriver == null)
+                animatorDriver = GetComponent<PlayerAnimatorDriver>();
+
+            animatorDriver?.TriggerFireAnimation();
         }
 
         private GameObject ResolveProjectileVisualPrefab(FixedString64Bytes weaponId)

@@ -36,6 +36,9 @@ namespace DeadZone.Actors
                  "이 값이 true이면 상체 전투 레이어 Weight를 0으로 낮춥니다.")]
         [SerializeField] private string rollingParameterName = "IsRolling";
 
+        [Tooltip("발사 애니메이션을 재생할 Trigger 파라미터 이름입니다.")]
+        [SerializeField] private string fireTriggerParameterName = "Fire";
+
         [Tooltip("무기 장착 시 Weight를 올릴 상체 전투 레이어 이름입니다. " +
                  "레이어가 없으면 Weight 갱신만 건너뜁니다.")]
         [SerializeField] private string combatLayerName = "Combat Upper Body";
@@ -59,10 +62,12 @@ namespace DeadZone.Actors
 
         private int weaponTypeHash;
         private int rollingHash;
+        private int fireTriggerHash;
         private int combatLayerIndex = -1;
 
         private bool hasWeaponTypeParameter;
         private bool hasRollingParameter;
+        private bool hasFireTriggerParameter;
         private bool subscribedToEquipment;
 
         private bool loggedMissingAnimator;
@@ -70,8 +75,10 @@ namespace DeadZone.Actors
         private bool loggedMissingPlayerHealthSystem;
         private bool loggedMissingWeaponTypeParameter;
         private bool loggedMissingRollingParameter;
+        private bool loggedMissingFireTriggerParameter;
         private bool loggedWeaponTypeMismatch;
         private bool loggedRollingParameterMismatch;
+        private bool loggedFireTriggerParameterMismatch;
         private bool loggedMissingCombatLayer;
 
         private void Awake()
@@ -128,6 +135,25 @@ namespace DeadZone.Actors
             UpdateCombatLayerWeight();
         }
 
+        /// <summary>
+        /// 서버에서 확정된 발사 액션을 현재 로컬 Animator에 반영한다.
+        /// Roll, Knocked, Dead 중에는 상체 전투 자세가 억제되므로 발사 Trigger도 실행하지 않는다.
+        /// </summary>
+        public void TriggerFireAnimation()
+        {
+            if (animator == null)
+                return;
+
+            if (!hasFireTriggerParameter)
+                return;
+
+            if (!CanPlayWeaponAction())
+                return;
+
+            animator.ResetTrigger(fireTriggerHash);
+            animator.SetTrigger(fireTriggerHash);
+        }
+
         private void AutoBindReferences()
         {
             if (!autoBindReferences)
@@ -147,8 +173,10 @@ namespace DeadZone.Actors
         {
             hasWeaponTypeParameter = false;
             hasRollingParameter = false;
+            hasFireTriggerParameter = false;
             weaponTypeHash = 0;
             rollingHash = 0;
+            fireTriggerHash = 0;
             combatLayerIndex = -1;
 
             if (animator == null)
@@ -160,6 +188,7 @@ namespace DeadZone.Actors
 
             CacheWeaponTypeParameter();
             CacheRollingParameter();
+            CacheFireTriggerParameter();
             CacheCombatLayer();
 
             if (playerHealthSystem == null)
@@ -241,6 +270,43 @@ namespace DeadZone.Actors
             WarnOnce(
                 ref loggedMissingRollingParameter,
                 $"[PlayerAnimatorDriver] Animator에서 Bool 파라미터 '{rollingParameterName}'를 찾지 못했습니다.");
+        }
+
+        private void CacheFireTriggerParameter()
+        {
+            if (string.IsNullOrWhiteSpace(fireTriggerParameterName))
+            {
+                WarnOnce(ref loggedMissingFireTriggerParameter,
+                    "[PlayerAnimatorDriver] Fire Trigger 파라미터 이름이 비어 있습니다.");
+                return;
+            }
+
+            fireTriggerHash = Animator.StringToHash(fireTriggerParameterName);
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.name != fireTriggerParameterName)
+                    continue;
+
+                if (parameter.type != AnimatorControllerParameterType.Trigger)
+                {
+                    WarnOnce(
+                        ref loggedFireTriggerParameterMismatch,
+                        $"[PlayerAnimatorDriver] Animator 파라미터 '{fireTriggerParameterName}'" +
+                        $" 타입이 Trigger가 아닙니다. 현재 타입: {parameter.type}");
+
+                    return;
+                }
+
+                hasFireTriggerParameter = true;
+                return;
+            }
+
+            WarnOnce(
+                ref loggedMissingFireTriggerParameter,
+                $"[PlayerAnimatorDriver] Animator에서 Trigger 파라미터 '{fireTriggerParameterName}'를 찾지 못했습니다.");
         }
 
         private void CacheCombatLayer()
@@ -454,6 +520,17 @@ namespace DeadZone.Actors
         private bool ShouldSuppressCombatLayer()
         {
             return IsRolling() || IsKnockedOrDead();
+        }
+
+        private bool CanPlayWeaponAction()
+        {
+            if (currentWeaponType != PlayerWeaponAnimationType.RifleLike &&
+                currentWeaponType != PlayerWeaponAnimationType.Handgun)
+            {
+                return false;
+            }
+
+            return !ShouldSuppressCombatLayer();
         }
 
         private bool IsRolling()
