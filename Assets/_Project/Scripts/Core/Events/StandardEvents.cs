@@ -254,6 +254,18 @@ namespace DeadZone.Core
         public FixedString64Bytes targetId;
     }
 
+    /// <summary>QuestManager가 저장된 퀘스트 상태를 복원한 뒤, HUD가 현재 표시해야 할 퀘스트 진행도를 초기화할 때 발행된다.</summary>
+    public struct QuestTrackerSnapshotEvent : IGameEvent
+    {
+        public FixedString64Bytes questId;
+        public ObjectiveType objectiveType;
+        public int currentCount;
+        public int requiredCount;
+        public ulong clientId;
+        public FixedString64Bytes targetId;
+        public bool isPendingCompletion;
+    }
+
     public struct QuestCompletedEvent : IGameEvent
     {
         public FixedString64Bytes questId;
