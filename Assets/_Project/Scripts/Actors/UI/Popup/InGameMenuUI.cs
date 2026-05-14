@@ -39,6 +39,13 @@ namespace DeadZone.Actors.UI
             CloseSetting();
         }
 
+        private void OnDisable()
+        {
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Pause, false);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Setting, false);
+            CursorStateController.PopUiOwner(this);
+        }
+
         public void HandleEscapeInput()
         {
             if (IsSettingOpen())
@@ -59,6 +66,7 @@ namespace DeadZone.Actors.UI
             EnsurePopupScale(popupPause);
             BringPopupToFront(popupPause);
 
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Pause, true);
             CursorStateController.PushUiOwner(this);
         }
 
@@ -66,6 +74,8 @@ namespace DeadZone.Actors.UI
         {
             SetPopupVisible(popupSetting, false);
             SetPopupVisible(popupPause, false);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Setting, false);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Pause, false);
 
             if (lockCursorOnResume)
                 CursorStateController.PopUiOwner(this);
@@ -81,6 +91,7 @@ namespace DeadZone.Actors.UI
                 SetPopupVisible(popupSetting, true);
 
             BringPopupToFront(popupSetting);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Setting, true);
             CursorStateController.PushUiOwner(this);
         }
 
@@ -92,6 +103,8 @@ namespace DeadZone.Actors.UI
                 settingPopupUI.Close();
             else
                 SetPopupVisible(popupSetting, false);
+
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Setting, false);
         }
 
         public void ExitToLobby()

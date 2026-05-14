@@ -114,6 +114,8 @@ namespace DeadZone.Actors
         private void OnDisable()
         {
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, false);
+            CursorStateController.PopUiOwner(this);
 
             if (activeToggleMapAction != null)
             {
@@ -177,6 +179,7 @@ namespace DeadZone.Actors
             if (worldMapUI != null)
                 worldMapUI.SetActive(true);
 
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, true);
             CursorStateController.PushUiOwner(this);
             RefreshAllAreaLocks();
             UIFeedbackTester.Play(onOpenFeedback, this, "전체 맵 열기");
@@ -191,6 +194,7 @@ namespace DeadZone.Actors
             if (worldMapUI != null)
                 worldMapUI.SetActive(false);
 
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, false);
             CursorStateController.PopUiOwner(this);
             UIFeedbackTester.Play(onCloseFeedback, this, "전체 맵 닫기");
         }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DeadZone.Actors;
+using DeadZone.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -61,6 +62,8 @@ namespace DeadZone.Actors.UI
 
         private void OnDestroy()
         {
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Looting, false);
+
             if (ActiveInstance == this)
                 ActiveInstance = null;
         }
@@ -98,6 +101,8 @@ namespace DeadZone.Actors.UI
             if (lootingPanel != null)
                 lootingPanel.SetActive(true);
 
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Looting, true);
+
             ApplyLootingPosition();
 
             if (containerGridView != null)
@@ -133,6 +138,8 @@ namespace DeadZone.Actors.UI
             if (lootingPanel != null)
                 lootingPanel.SetActive(true);
 
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Looting, true);
+
             ApplyLootingPosition();
 
             if (containerGridView != null)
@@ -165,6 +172,8 @@ namespace DeadZone.Actors.UI
 
             if (lootingPanel != null)
                 lootingPanel.SetActive(true);
+
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Looting, true);
 
             ApplyLootingPosition();
 
@@ -230,6 +239,8 @@ namespace DeadZone.Actors.UI
             if (lootingPanel != null)
                 lootingPanel.SetActive(true);
 
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Looting, true);
+
             ApplyLootingPosition();
 
             if (containerGridView != null)
@@ -267,6 +278,8 @@ namespace DeadZone.Actors.UI
         {
             if (lootingPanel != null)
                 lootingPanel.SetActive(false);
+
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Looting, false);
         }
 
         private void ApplyLootingPosition()
