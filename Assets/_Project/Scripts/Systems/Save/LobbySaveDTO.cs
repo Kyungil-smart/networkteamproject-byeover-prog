@@ -14,6 +14,7 @@ namespace DeadZone.Systems.Save
         public bool hasQuickSlotSection;
         public List<ItemSaveDTO> inventoryItems = new();
         public List<ItemSaveDTO> stashItems = new();
+        public List<ItemSaveDTO> quickSlotItems = new();
         public List<EquipmentSaveDTO> equipmentItems = new();
         public List<ItemSaveDTO> quickSlotItems = new();
         public List<FacilitySaveDTO> facilities = new();

@@ -8,6 +8,7 @@ namespace DeadZone.Systems.Raid
     {
         public ulong clientId;
         public List<InventoryItemSaveData> inventoryItems = new();
+        public List<QuickSlotSaveData> quickSlotItems = new();
         public List<EquipmentSaveData> equipmentItems = new();
         public List<InventoryItemSaveData> quickSlotItems = new();
         public string currentEquippedItemId;
@@ -35,5 +36,16 @@ namespace DeadZone.Systems.Raid
         public string loadedAmmoId;
         public int currentAmmo;
         public float currentDurability;
+    }
+
+    [Serializable]
+    public class QuickSlotSaveData
+    {
+        public string itemId;
+        public string instanceId;
+        public int slotIndex;
+        public int stackCount;
+        public float currentDurability;
+        public int currentAmmo;
     }
 }
