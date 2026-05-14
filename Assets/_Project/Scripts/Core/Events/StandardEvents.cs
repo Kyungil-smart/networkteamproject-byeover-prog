@@ -162,6 +162,14 @@ namespace DeadZone.Core
         public FixedString64Bytes itemId;
     }
 
+    // ShootingSystem이 플레이어와 총구 사이의 장애물을 감지해 투사체 대신 벽 피격 FX를 출력해야 할 때 발행된다.
+    public struct BlockedShotImpactEvent : IGameEvent
+    {
+        public ulong shooterClientId;
+        public Vector3 hitPoint;
+        public Vector3 hitNormal;
+    }
+
     public struct DoorStateChangedEvent : IGameEvent
     {
         public Vector3 position;

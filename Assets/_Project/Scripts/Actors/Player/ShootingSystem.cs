@@ -20,6 +20,8 @@ namespace DeadZone.Actors
         [SerializeField] private LayerMask hitMask = ~0;
         [Tooltip("바닥의 레이어 입니다")]
         [SerializeField] private LayerMask groundMask;
+        [Tooltip("벽의 레이어 입니다")]
+        [SerializeField] private LayerMask muzzleObstructionMask;
         [SerializeField] private float maxRange = 600f;
 
         [Header("Projectile Tuning")]
@@ -250,33 +252,39 @@ namespace DeadZone.Actors
 
             if (weapon == null || ammo == null || state.currentAmmo <= 0) return;
             
-            // 1. 탄환 소모
-            equipment.ConsumeCurrentWeaponAmmo();
-
-            // 2. 탄속 계산: 무기 기본 탄속 * 탄약 배율
+            // 1. 탄속 계산: 무기 기본 탄속 * 탄약 배율
             // V_final = V_muzzle * M_velocity
             float finalVelocity = Mathf.Min(
                 weapon.muzzleVelocity * ammo.velocityMultiplier * projectileVelocityMultiplier,
                 maxProjectileVelocity);
             finalVelocity = Mathf.Max(1f, finalVelocity);
 
-            // 3. 투사체 데이터 생성
+            // 2. 투사체 데이터 생성
             ProjectileData pData = CreateProjectileData(rpc.Receive.SenderClientId, tId, head, weapon, ammo);
-    
-            // 4. 투사체 생성 시 계산된 탄속 전달
-            if (weapon.weaponCategory == WeaponCategory.Shotgun)
+
+            // 3. 플레이어와 총구 사이에 장애물이 있는지 확인한다.
+            bool blockedByObstacle = TryGetMuzzleObstructionHit(out RaycastHit obstructionHit);
+
+            // 4. 장애물에 막힌 경우에도 사격은 발생하므로 탄환을 소모한다.
+            equipment.ConsumeCurrentWeaponAmmo();
+
+            // 5. 장애물이 있으면 투사체 대신 벽 피격 FX를 요청하고, 없으면 무기 타입에 맞는 투사체를 생성한다.
+            if (blockedByObstacle)
             {
-                SpawnShotgunProjectiles(pData, target, weapon, finalVelocity);
+                PlayBlockedShotImpactClientRpc(
+                    obstructionHit.point,
+                    obstructionHit.normal,
+                    rpc.Receive.SenderClientId);
             }
             else
             {
-                SpawnProjectile(pData, target, weapon, finalVelocity);
+                SpawnProjectilesByWeaponType(pData, target, weapon, finalVelocity);
             }
 
             // 서버에서 발사가 확정된 경우에만 모든 클라이언트에서 발사 애니메이션을 재생한다.
             PlayWeaponFireAnimationClientRpc();
 
-            // 5. 이벤트 발행
+            // 6. 이벤트 발행
             PublishFireEvent(rpc.Receive.SenderClientId, weaponId, weapon);
 
             AudioCueId fireCueId = GetFireCueId(weapon.weaponCategory);
@@ -318,6 +326,45 @@ namespace DeadZone.Actors
             Vector3 fireDir = ApplySpread((target - spawnPos).normalized, w);
 
             SpawnProjectileWithDirection(pData, w, fireDir, velocity);
+        }
+
+        // 무기 타입에 맞는 투사체 생성 함수
+        private void SpawnProjectilesByWeaponType(ProjectileData pData, Vector3 target,
+            WeaponDataSO w, float velocity)
+        {
+            if (w.weaponCategory == WeaponCategory.Shotgun)
+            {
+                SpawnShotgunProjectiles(pData, target, w, velocity);
+            }
+            else
+            {
+                SpawnProjectile(pData, target, w, velocity);
+            }
+        }
+
+        // 플레이어 기준점과 총구 사이의 장애물 검출 함수
+        private bool TryGetMuzzleObstructionHit(out RaycastHit hit)
+        {
+            hit = default;
+
+            if (muzzleTransform == null)
+                return false;
+
+            Vector3 muzzlePosition = muzzleTransform.position;
+            Vector3 origin = new Vector3(transform.position.x, muzzlePosition.y, transform.position.z);
+            Vector3 directionToMuzzle = muzzlePosition - origin;
+            float distance = directionToMuzzle.magnitude;
+
+            if (distance <= 0.001f)
+                return false;
+
+            return Physics.Raycast(
+                origin,
+                directionToMuzzle / distance,
+                out hit,
+                distance,
+                muzzleObstructionMask,
+                QueryTriggerInteraction.Ignore);
         }
 
         /// <summary>
@@ -462,6 +509,18 @@ namespace DeadZone.Actors
                 velocity,
                 range,
                 maxLifetime);
+        }
+
+        // 벽 피격 FX 이벤트를 각 클라이언트에 전달하는 함수
+        [ClientRpc]
+        private void PlayBlockedShotImpactClientRpc(Vector3 hitPoint, Vector3 hitNormal, ulong shooterClientId)
+        {
+            EventBus.Publish(new BlockedShotImpactEvent
+            {
+                shooterClientId = shooterClientId,
+                hitPoint = hitPoint,
+                hitNormal = hitNormal
+            });
         }
 
         /// <summary>
