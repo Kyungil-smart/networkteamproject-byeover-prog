@@ -9,6 +9,7 @@ namespace DeadZone.Systems.Raid
         public ulong clientId;
         public List<InventoryItemSaveData> inventoryItems = new();
         public List<EquipmentSaveData> equipmentItems = new();
+        public List<InventoryItemSaveData> quickSlotItems = new();
         public string currentEquippedItemId;
     }
 

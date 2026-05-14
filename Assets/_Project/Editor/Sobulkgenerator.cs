@@ -373,7 +373,7 @@ namespace DeadZone.Editor
                 2.0f, 6.0f, 2.0f, 25f,
                 30f, 110f, 15f, 1.5f,
                 5f, 20f,
-                false, false, 5f,
+                false,
                 "Enemy_Zone1_Any", 0);
 
             count += CreateEnemy(folder, "Enemy_T2", "T2 정규",
@@ -384,7 +384,7 @@ namespace DeadZone.Editor
                 1.5f, 4.5f, 1.8f, 35f,
                 50f, 110f, 20f, 1.0f,
                 8f, 30f,
-                false, false, 5f,
+                false,
                 "Enemy_Zone1_Any", 1);
 
             count += CreateEnemy(folder, "Enemy_T3", "T3 베테랑",
@@ -395,7 +395,7 @@ namespace DeadZone.Editor
                 0.8f, 3.0f, 1.5f, 60f,
                 70f, 110f, 25f, 0.7f,
                 15f, 50f,
-                true, true, 25f,
+                true,
                 "", 1);
 
             count += CreateEnemy(folder, "Enemy_T4", "T4 엘리트",
@@ -406,7 +406,7 @@ namespace DeadZone.Editor
                 0.5f, 2.0f, 1.3f, 80f,
                 90f, 110f, 30f, 0.5f,
                 20f, 70f,
-                true, true, 20f,
+                true,
                 "", 2);
 
             count += CreateEnemy(folder, "Enemy_T5", "T5 보스급",
@@ -417,7 +417,7 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 30f, 90f,
-                true, true, 15f,
+                true,
                 "", 2);
 
             // ── Stage 1 보스 5종 ──
@@ -431,10 +431,10 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 80f,
                 100f, 110f, 35f, 0.3f,
                 25f, 70f,
-                true, true, 15f,
+                true,
                 "Boss_Warehouse", 3);
 
-            // 군사 막사 보스 (Q4 Kill target, grenadeCooldown=10)
+            // 군사 막사 보스 (Q4 Kill target)
             count += CreateEnemy(folder, "Boss_S1_02", "군사 막사 보스",
                 EnemyTier.T5, Faction.Conscript, true,
                 400f, 5.0f, "Armor_C4", "Weapon_SK74", "Ammo_AR_BP",
@@ -443,7 +443,7 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 80f,
                 100f, 110f, 35f, 0.3f,
                 25f, 70f,
-                true, true, 10f,
+                true,
                 "Boss_MilitaryBase", 3);
 
             // 제재소 보스 (Q3-1 Kill target)
@@ -455,7 +455,7 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 90f,
                 110f, 110f, 35f, 0.3f,
                 20f, 60f,
-                true, true, 15f,
+                true,
                 "Boss_Sawmill", 3);
 
             // 숲 보스 (Q2-1 Kill target, 스나이퍼)
@@ -467,7 +467,7 @@ namespace DeadZone.Editor
                 0.1f, 0.5f, 1.2f, 200f,
                 150f, 110f, 30f, 0.3f,
                 80f, 180f,
-                false, false, 5f,
+                false,
                 "Boss_Forest_Sniper", 2);
 
             // 발전시설 보스 (Q2 Kill target)
@@ -479,7 +479,7 @@ namespace DeadZone.Editor
                 0.4f, 1.5f, 1.3f, 70f,
                 100f, 110f, 30f, 0.3f,
                 15f, 60f,
-                true, true, 20f,
+                true,
                 "Boss_PowerPlant", 2);
 
             // ── Stage 2 보스 3종 (Q6 Kill target — 3종 공유 ID) ──
@@ -493,7 +493,7 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 25f, 80f,
-                true, true, 15f,
+                true,
                 "Boss_Stage2_All", 3);
 
             // 보스 2-2 (HP 1000, C6)
@@ -505,7 +505,7 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 30f, 90f,
-                true, true, 12f,
+                true,
                 "Boss_Stage2_All", 4);
 
             // 보스 2-3
@@ -517,7 +517,7 @@ namespace DeadZone.Editor
                 0.3f, 1.0f, 1.2f, 100f,
                 120f, 110f, 40f, 0.3f,
                 25f, 80f,
-                true, true, 15f,
+                true,
                 "Boss_Stage2_All", 3);
 
             return count;
@@ -533,7 +533,7 @@ namespace DeadZone.Editor
             float spMin, float spMax, float rangeMult, float maxRange,
             float vision, float fov, float hearing, float reaction,
             float prefMin, float prefMax,
-            bool canReinforce, bool canGrenade, float grenadeCd,
+            bool canReinforce,
             string enemyId = "", int extraLootCount = 1)
         {
             string path = $"{folder}/{file}.asset";
@@ -592,8 +592,6 @@ namespace DeadZone.Editor
 
             // 확장 능력
             so.canCallReinforcements = canReinforce;
-            so.canThrowGrenades      = canGrenade;
-            so.grenadeCooldown       = grenadeCd;
 
             // 사망 드랍
             so.dropEquippedGear = true;

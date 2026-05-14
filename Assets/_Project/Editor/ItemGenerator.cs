@@ -195,7 +195,6 @@ namespace DeadZone.EditorTools
             Mk("SlowHealSyringe",     "지속 회복 주사기", ItemCategory.Med,   RarityTier.Uncommon, new Vector2Int(1,1), 3,  0.1f, 1500),
             Mk("Watch",               "시계",         ItemCategory.Valuable, RarityTier.Uncommon, new Vector2Int(1,1), 1,  0.1f, 800,  valuable:true),
             Mk("AcousticGuitar",      "통기타",       ItemCategory.Valuable, RarityTier.Uncommon, new Vector2Int(2,4), 1,  2.5f, 1500, valuable:true),
-            Mk("Grenade",             "수류탄",       ItemCategory.Material, RarityTier.Uncommon, new Vector2Int(1,1), 1,  0.5f, 3000),
             Mk("Armor_C3",            "3 클래스 아머", ItemCategory.Armor,    RarityTier.Uncommon, new Vector2Int(2,3), 1,  4.0f, 5500),
             Mk("Armor_C4",            "4 클래스 아머", ItemCategory.Armor,    RarityTier.Uncommon, new Vector2Int(2,3), 1,  6.0f, 12000),
             Mk("Helmet_C3",           "3 클래스 헬멧", ItemCategory.Helmet,   RarityTier.Uncommon, new Vector2Int(2,2), 1,  2.0f, 5000),

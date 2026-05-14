@@ -12,8 +12,10 @@ namespace DeadZone.Systems.Save
     {
         private const string InventoryContainerId = "inventory";
         private const string StashContainerId = "stash";
+        private const string QuickSlotContainerId = "quickslot";
         private const int PlayerInventoryGridWidth = 4;
         private const int StashGridWidth = 10;
+        private const int QuickSlotGridWidth = 6;
 
         [Header("저장 상태")]
         [SerializeField] private LobbyInventoryState inventoryState;
@@ -28,10 +30,47 @@ namespace DeadZone.Systems.Save
         [SerializeField] private Transform inventorySlotsRoot;
         [SerializeField] private Transform stashSlotsRoot;
         [SerializeField] private Transform equipmentSlotsRoot;
+        [SerializeField] private Transform quickSlotsRoot;
         [SerializeField] private ItemTooltipUI tooltipUI;
 
         [Header("동기화")]
         [SerializeField] private bool captureOnStart = true;
+
+        public bool CanAuthorInventorySection
+        {
+            get
+            {
+                ResolveMissingReferences();
+                return inventorySlotsRoot != null;
+            }
+        }
+
+        public bool CanAuthorStashSection
+        {
+            get
+            {
+                ResolveMissingReferences();
+                return stashSlotsRoot != null;
+            }
+        }
+
+        public bool CanAuthorEquipmentSection
+        {
+            get
+            {
+                ResolveMissingReferences();
+                return equipmentSlotsRoot != null;
+            }
+        }
+
+        public bool CanAuthorQuickSlotSection
+        {
+            get
+            {
+                ResolveMissingReferences();
+                return quickSlotsRoot != null;
+            }
+        }
 
         private void Start()
         {
@@ -59,7 +98,8 @@ namespace DeadZone.Systems.Save
             return inventoryState != null &&
                    ((inventoryState.InventoryItems != null && inventoryState.InventoryItems.Count > 0) ||
                     (inventoryState.StashItems != null && inventoryState.StashItems.Count > 0) ||
-                    (inventoryState.EquipmentItems != null && inventoryState.EquipmentItems.Count > 0));
+                    (inventoryState.EquipmentItems != null && inventoryState.EquipmentItems.Count > 0) ||
+                    (inventoryState.QuickSlotItems != null && inventoryState.QuickSlotItems.Count > 0));
         }
 
         [Button("UI 상태를 저장 상태로 반영")]
@@ -89,7 +129,7 @@ namespace DeadZone.Systems.Save
 
             if (stashSlotsRoot != null)
             {
-                List<ItemSaveDTO> capturedStashItems = CollectItemSlots(stashSlotsRoot, StashContainerId);
+                List<ItemSaveDTO> capturedStashItems = CollectStashSlots(stashSlotsRoot);
                 if (capturedStashItems.Count > 0 || inventoryState.StashItems == null || inventoryState.StashItems.Count == 0)
                     inventoryState.SetStashItems(capturedStashItems);
                 else
@@ -103,6 +143,15 @@ namespace DeadZone.Systems.Save
                 inventoryState.SetEquipmentItems(capturedEquipmentItems);
             else
                 Debug.Log("[LobbyInventoryStateUiBridge] Equipment UI scan returned 0 items. Keeping existing equipment state to avoid wiping equipped lobby items.", this);
+
+            if (quickSlotsRoot != null)
+            {
+                List<ItemSaveDTO> capturedQuickSlotItems = CollectItemSlots(quickSlotsRoot, QuickSlotContainerId);
+                if (capturedQuickSlotItems.Count > 0 || inventoryState.QuickSlotItems == null || inventoryState.QuickSlotItems.Count == 0)
+                    inventoryState.SetQuickSlotItems(capturedQuickSlotItems);
+                else
+                    Debug.Log("[LobbyInventoryStateUiBridge] QuickSlot UI scan returned 0 items. Keeping existing quickslot state to avoid wiping saved quickslots.", this);
+            }
         }
 
         public void CaptureChangedEquipmentSlots(params InventorySlotUI[] changedSlots)
@@ -166,8 +215,10 @@ namespace DeadZone.Systems.Save
 
             List<ItemSaveDTO> inventoryItems = CloneItems(inventoryState.InventoryItems);
             List<ItemSaveDTO> stashItems = CloneItems(inventoryState.StashItems);
+            List<ItemSaveDTO> quickSlotItems = CloneItems(inventoryState.QuickSlotItems);
             bool inventoryChanged = false;
             bool stashChanged = false;
+            bool quickSlotChanged = false;
 
             for (int i = 0; i < changedSlots.Length; i++)
             {
@@ -177,13 +228,17 @@ namespace DeadZone.Systems.Save
 
                 slot.PrepareForSaveSnapshot();
 
-                if (slot.SlotKind != InventorySlotKind.Bag)
+                if (slot.SlotKind != InventorySlotKind.Bag && slot.SlotKind != InventorySlotKind.QuickSlot)
                     continue;
 
                 string containerId = ResolveChangedItemContainerId(slot);
-                List<ItemSaveDTO> targetItems = string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase)
-                    ? stashItems
-                    : inventoryItems;
+                List<ItemSaveDTO> targetItems;
+                if (string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase))
+                    targetItems = stashItems;
+                else if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                    targetItems = quickSlotItems;
+                else
+                    targetItems = inventoryItems;
 
                 int slotIndex = Mathf.Max(0, slot.SlotIndex);
                 int gridWidth = GetGridWidth(containerId);
@@ -208,6 +263,8 @@ namespace DeadZone.Systems.Save
 
                 if (string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase))
                     stashChanged = true;
+                else if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                    quickSlotChanged = true;
                 else
                     inventoryChanged = true;
             }
@@ -218,10 +275,13 @@ namespace DeadZone.Systems.Save
             if (stashChanged)
                 inventoryState.SetStashItems(stashItems);
 
-            if (inventoryChanged || stashChanged)
+            if (quickSlotChanged)
+                inventoryState.SetQuickSlotItems(quickSlotItems);
+
+            if (inventoryChanged || stashChanged || quickSlotChanged)
             {
                 Debug.Log(
-                    $"[LobbyInventoryStateUiBridge] Changed item slots captured. InventoryItems={inventoryItems.Count}, StashItems={stashItems.Count}",
+                    $"[LobbyInventoryStateUiBridge] Changed item slots captured. InventoryItems={inventoryItems.Count}, StashItems={stashItems.Count}, QuickSlotItems={quickSlotItems.Count}",
                     this);
             }
         }
@@ -250,8 +310,10 @@ namespace DeadZone.Systems.Save
                 walletSystem.SetCreditsLocalTest(inventoryState.Credits);
 
             ApplyItemSlots(inventorySlotsRoot, inventoryState.InventoryItems, database, InventoryContainerId);
-            ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database, StashContainerId);
+            if (!ApplyStashGridSlots(stashSlotsRoot, inventoryState.StashItems, database))
+                ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database, StashContainerId);
             ApplyEquipmentSlots(equipmentSlotsRoot, inventoryState.EquipmentItems, database);
+            ApplyItemSlots(quickSlotsRoot, inventoryState.QuickSlotItems, database, QuickSlotContainerId);
         }
 
         private static bool ApplyStashGridSlots(
@@ -312,6 +374,21 @@ namespace DeadZone.Systems.Save
             }
 
             return items;
+        }
+
+        private static List<ItemSaveDTO> CollectStashSlots(Transform root)
+        {
+            if (root != null)
+            {
+                StashGridUI stashGridUI = root.GetComponentInParent<StashGridUI>(true);
+                if (stashGridUI == null)
+                    stashGridUI = root.GetComponentInChildren<StashGridUI>(true);
+
+                if (stashGridUI != null)
+                    return stashGridUI.CaptureSavedStashItems();
+            }
+
+            return CollectItemSlots(root, StashContainerId);
         }
 
         private static List<EquipmentSaveDTO> CollectEquipmentSlots(Transform root)
@@ -432,10 +509,19 @@ namespace DeadZone.Systems.Save
             if (stashSlotsRoot != null && slot.transform.IsChildOf(stashSlotsRoot))
                 return StashContainerId;
 
+            if (quickSlotsRoot != null && slot.transform.IsChildOf(quickSlotsRoot))
+                return QuickSlotContainerId;
+
+            if (slot.SlotKind == InventorySlotKind.QuickSlot)
+                return QuickSlotContainerId;
+
             if (inventorySlotsRoot != null && slot.transform.IsChildOf(inventorySlotsRoot))
                 return InventoryContainerId;
 
             string path = BuildTransformPath(slot.transform);
+            if (path.Contains("quickslot", StringComparison.OrdinalIgnoreCase))
+                return QuickSlotContainerId;
+
             return path.Contains("stash", StringComparison.OrdinalIgnoreCase)
                 ? StashContainerId
                 : InventoryContainerId;
@@ -585,9 +671,13 @@ namespace DeadZone.Systems.Save
 
         private static int GetGridWidth(string containerId)
         {
-            return string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase)
-                ? StashGridWidth
-                : PlayerInventoryGridWidth;
+            if (string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase))
+                return StashGridWidth;
+
+            if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                return QuickSlotGridWidth;
+
+            return PlayerInventoryGridWidth;
         }
 
         private static int ToGridX(int slotIndex, int gridWidth)
@@ -723,6 +813,16 @@ namespace DeadZone.Systems.Save
                 }
             }
 
+            if (quickSlotsRoot == null)
+            {
+                Transform quickSlotPanel = FindSceneTransformByName("QuickSlotPanel");
+                if (quickSlotPanel != null)
+                {
+                    quickSlotsRoot = quickSlotPanel;
+                    Debug.Log($"[LobbyInventoryStateUiBridge] Auto-bound quickslot root={BuildTransformPath(quickSlotsRoot)}", this);
+                }
+            }
+
             if (itemDatabase == null)
                 itemDatabase = FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
 
@@ -735,6 +835,7 @@ namespace DeadZone.Systems.Save
             RefreshLobbyInventory(inventorySlotsRoot);
             RefreshStash(stashSlotsRoot);
             RefreshStash(equipmentSlotsRoot);
+            RefreshQuickSlots(quickSlotsRoot);
         }
 
         private static void RefreshLobbyInventory(Transform root)
@@ -761,6 +862,19 @@ namespace DeadZone.Systems.Save
 
             if (stashGridUI != null)
                 stashGridUI.RefreshSlots();
+        }
+
+        private static void RefreshQuickSlots(Transform root)
+        {
+            if (root == null)
+                return;
+
+            InventorySlotUI[] slots = root.GetComponentsInChildren<InventorySlotUI>(true);
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                    slots[i].PrepareForSaveSnapshot();
+            }
         }
 
         private void PrepareEquipmentSlotsForTooltip(InventorySlotUI[] slots)
