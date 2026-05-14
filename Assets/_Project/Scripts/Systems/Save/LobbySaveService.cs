@@ -290,6 +290,7 @@ namespace DeadZone.Systems.Save
                 }
 
                 inventoryState.SetStashItems(dto.stashItems);
+                inventoryState.SetQuickSlotItems(dto.quickSlotItems);
                 inventoryState.SetEquipmentItems(dto.equipmentItems);
             }
             else
@@ -465,6 +466,9 @@ namespace DeadZone.Systems.Save
                 if (inventoryState.StashItems != null)
                     dto.stashItems.AddRange(inventoryState.StashItems);
 
+                if (inventoryState.QuickSlotItems != null)
+                    dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
+
                 if (inventoryState.EquipmentItems != null)
                     dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
             }
@@ -560,6 +564,12 @@ namespace DeadZone.Systems.Save
                 changed = true;
             }
 
+            if (HasAny(localDto.quickSlotItems))
+            {
+                dto.quickSlotItems = new List<ItemSaveDTO>(localDto.quickSlotItems);
+                changed = true;
+            }
+
             if (HasAny(localDto.equipmentItems))
             {
                 dto.equipmentItems = new List<EquipmentSaveDTO>(localDto.equipmentItems);
@@ -571,7 +581,7 @@ namespace DeadZone.Systems.Save
 
             Debug.Log(
                 $"[LobbySaveService] Merged local JSON lobby sections into loaded server save. Reason={reason}, Path={path}, " +
-                $"preferLocal={preferLocalJsonInventorySections}, inventory={dto.inventoryItems.Count}, stash={dto.stashItems.Count}, equipment={dto.equipmentItems.Count}",
+                $"preferLocal={preferLocalJsonInventorySections}, inventory={dto.inventoryItems.Count}, stash={dto.stashItems.Count}, quickSlots={dto.quickSlotItems?.Count ?? 0}, equipment={dto.equipmentItems.Count}",
                 this);
         }
 
@@ -829,6 +839,7 @@ namespace DeadZone.Systems.Save
             return dto.hasCredits ||
                    HasAny(dto.inventoryItems) ||
                    HasAny(dto.stashItems) ||
+                   HasAny(dto.quickSlotItems) ||
                    HasAny(dto.equipmentItems) ||
                    HasAny(dto.facilities);
         }
@@ -840,6 +851,7 @@ namespace DeadZone.Systems.Save
 
             return HasAny(dto.inventoryItems) ||
                    HasAny(dto.stashItems) ||
+                   HasAny(dto.quickSlotItems) ||
                    HasAny(dto.equipmentItems);
         }
 
@@ -855,6 +867,7 @@ namespace DeadZone.Systems.Save
 
             return !HasAny(dto.inventoryItems) &&
                    !HasAny(dto.stashItems) &&
+                   !HasAny(dto.quickSlotItems) &&
                    !HasAny(dto.equipmentItems) &&
                    !HasNonDefaultFacility(dto);
         }
@@ -866,6 +879,7 @@ namespace DeadZone.Systems.Save
 
             return HasAny(dto.inventoryItems) ||
                    HasAny(dto.stashItems) ||
+                   HasAny(dto.quickSlotItems) ||
                    HasAny(dto.equipmentItems) ||
                    HasNonDefaultFacility(dto);
         }

@@ -14,12 +14,14 @@ namespace DeadZone.Systems.Save
         [SerializeField] private int credits;
         [SerializeField] private List<ItemSaveDTO> inventoryItems = new();
         [SerializeField] private List<ItemSaveDTO> stashItems = new();
+        [SerializeField] private List<ItemSaveDTO> quickSlotItems = new();
         [SerializeField] private List<EquipmentSaveDTO> equipmentItems = new();
 
         public bool HasCredits => hasCredits;
         public int Credits => credits;
         public IReadOnlyList<ItemSaveDTO> InventoryItems => inventoryItems;
         public IReadOnlyList<ItemSaveDTO> StashItems => stashItems;
+        public IReadOnlyList<ItemSaveDTO> QuickSlotItems => quickSlotItems;
         public IReadOnlyList<EquipmentSaveDTO> EquipmentItems => equipmentItems;
 
         private void Awake()
@@ -48,6 +50,11 @@ namespace DeadZone.Systems.Save
             ReplaceList(stashItems, items);
         }
 
+        public void SetQuickSlotItems(IEnumerable<ItemSaveDTO> items)
+        {
+            ReplaceList(quickSlotItems, items);
+        }
+
         public void SetEquipmentItems(IEnumerable<EquipmentSaveDTO> items)
         {
             ReplaceList(equipmentItems, items);
@@ -60,6 +67,7 @@ namespace DeadZone.Systems.Save
             credits = 0;
             inventoryItems.Clear();
             stashItems.Clear();
+            quickSlotItems.Clear();
             equipmentItems.Clear();
         }
 

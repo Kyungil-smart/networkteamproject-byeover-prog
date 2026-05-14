@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Raid;
 using Unity.Collections;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -83,6 +84,7 @@ namespace DeadZone.Actors.UI
             ResolveTooltipUI();
             EnsureDropSlots();
             InitializeSlots();
+            ApplyRaidQuickSlotLoadoutIfAvailable();
             RefreshBagSlots();
 
             Close();
@@ -94,6 +96,12 @@ namespace DeadZone.Actors.UI
             EventBus.Subscribe<BackpackChangedEvent>(HandleBackpackChanged);
             SubscribeGridInventory();
             SubscribeEquipmentSlots();
+            ApplyRaidQuickSlotLoadoutIfAvailable();
+        }
+
+        private void Start()
+        {
+            ApplyRaidQuickSlotLoadoutIfAvailable();
         }
 
         private void OnDisable()
@@ -145,6 +153,7 @@ namespace DeadZone.Actors.UI
             ResolveTooltipUI();
             EnsureDropSlots();
             AssignTooltipToSlots();
+            ApplyRaidQuickSlotLoadoutIfAvailable();
             RefreshBagSlots();
 
             if (autoBindOwnerGridInventory)
@@ -855,6 +864,67 @@ namespace DeadZone.Actors.UI
             }
 
             return result;
+        }
+
+        private void ApplyRaidQuickSlotLoadoutIfAvailable()
+        {
+            if (!RaidLoadoutTransferService.TryGetQuickSlotItemsForLocalClient(out IReadOnlyList<QuickSlotSaveData> quickSlotItems))
+                return;
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+                return;
+
+            List<InventorySlotUI> quickSlots = GetQuickSlotDisplaySlots();
+            if (quickSlots.Count == 0)
+                return;
+
+            for (int i = 0; i < quickSlots.Count; i++)
+                quickSlots[i]?.ClearItem();
+
+            for (int i = 0; i < quickSlotItems.Count; i++)
+            {
+                QuickSlotSaveData savedItem = quickSlotItems[i];
+                if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
+                    continue;
+
+                ItemDataSO itemData = itemDatabase.GetById(savedItem.itemId);
+                if (itemData == null)
+                    continue;
+
+                SetQuickSlotsByIndex(quickSlots, Mathf.Max(0, savedItem.slotIndex), itemData, Mathf.Max(1, savedItem.stackCount));
+            }
+        }
+
+        private List<InventorySlotUI> GetQuickSlotDisplaySlots()
+        {
+            List<InventorySlotUI> slots = new();
+            HashSet<InventorySlotUI> visited = new();
+
+            foreach (InventorySlotUI slot in GetAllKnownSlots())
+            {
+                if (slot == null || !visited.Add(slot))
+                    continue;
+
+                slot.PrepareForSaveSnapshot();
+                if (slot.SlotKind == InventorySlotKind.QuickSlot)
+                    slots.Add(slot);
+            }
+
+            return slots;
+        }
+
+        private static void SetQuickSlotsByIndex(List<InventorySlotUI> slots, int slotIndex, ItemDataSO itemData, int stackCount)
+        {
+            if (slots == null || itemData == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot != null && slot.SlotIndex == slotIndex)
+                    slot.SetItem(itemData, stackCount);
+            }
         }
 
         private void ResolveTooltipUI()

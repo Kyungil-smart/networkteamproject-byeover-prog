@@ -651,19 +651,19 @@ namespace DeadZone.Actors.UI
 
             if (targetLevel <= stashLevel)
             {
-                text = "완료";
+                text = "\uC644\uB8CC";
             }
             else if (targetLevel > stashLevel + 1)
             {
-                text = "이전 레벨 필요";
+                text = "\uC774\uC804 \uB808\uBCA8 \uD544\uC694";
             }
             else if (GetCurrentCredits() < GetUpgradeCost(targetLevel))
             {
-                text = "잔액부족";
+                text = "\uC794\uC561\uBD80\uC871";
             }
             else
             {
-                text = "업그레이드";
+                text = "\uC5C5\uADF8\uB808\uC774\uB4DC";
                 interactable = true;
             }
 
@@ -684,7 +684,7 @@ namespace DeadZone.Actors.UI
             int cost = GetUpgradeCost(targetLevel);
             if (GetCurrentCredits() < cost || walletSystem == null || !walletSystem.TryPayLocalTest(cost))
             {
-                SetUpgradeButtonText(GetUpgradeButton(targetLevel), GetUpgradeText(targetLevel), "잔액부족");
+                SetUpgradeButtonText(GetUpgradeButton(targetLevel), GetUpgradeText(targetLevel), "\uC794\uC561\uBD80\uC871");
                 RefreshUpgradePopup();
                 return;
             }
@@ -891,6 +891,7 @@ namespace DeadZone.Actors.UI
                 return;
 
             int appliedCount = 0;
+            bool shiftOneBasedLinearIndex = ShouldShiftOneBasedLinearIndex(stashItems);
 
             for (int i = 0; i < stashItems.Count; i++)
             {
@@ -906,7 +907,7 @@ namespace DeadZone.Actors.UI
                     continue;
                 }
 
-                InventorySlotUI targetSlot = FindSlotForLobbyItem(savedItem);
+                InventorySlotUI targetSlot = FindSlotForLobbyItem(savedItem, shiftOneBasedLinearIndex);
                 if (targetSlot == null)
                 {
                     Debug.LogWarning($"[StashGridUI] LobbyInventoryState stash slot could not be resolved. itemId={savedItem.itemId}, x={savedItem.x}", this);
@@ -920,21 +921,45 @@ namespace DeadZone.Actors.UI
             Debug.Log($"[StashGridUI] Applied LobbyInventoryState stash items. Applied={appliedCount}/{stashItems.Count}", this);
         }
 
-        private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem)
+        private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem, bool shiftOneBasedLinearIndex)
         {
             if (savedItem == null)
                 return null;
 
             int requestedIndex = ToLinearSlotIndex(savedItem.x, savedItem.y);
+            if (shiftOneBasedLinearIndex)
+                requestedIndex = Mathf.Max(0, requestedIndex - 1);
 
             if (requestedIndex >= 0 && requestedIndex < activeSlotCount && requestedIndex < slots.Count)
             {
                 InventorySlotUI requestedSlot = slots[requestedIndex];
-                if (requestedSlot != null && requestedSlot != slotPrefab)
+                if (requestedSlot != null && requestedSlot != slotPrefab && !requestedSlot.HasItem)
                     return requestedSlot;
             }
 
             return FindFirstEmptySlot();
+        }
+
+        private static bool ShouldShiftOneBasedLinearIndex(IReadOnlyList<ItemSaveDTO> stashItems)
+        {
+            if (stashItems == null || stashItems.Count == 0)
+                return false;
+
+            bool hasItem = false;
+            int minIndex = int.MaxValue;
+
+            for (int i = 0; i < stashItems.Count; i++)
+            {
+                ItemSaveDTO item = stashItems[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                    continue;
+
+                hasItem = true;
+                int index = ToLinearSlotIndex(item.x, item.y);
+                minIndex = Mathf.Min(minIndex, index);
+            }
+
+            return hasItem && minIndex == 1;
         }
 
         private static int ToLinearSlotIndex(int x, int y)

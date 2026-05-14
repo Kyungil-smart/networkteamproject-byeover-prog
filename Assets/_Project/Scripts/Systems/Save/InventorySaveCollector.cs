@@ -65,10 +65,13 @@ namespace DeadZone.Systems.Save
 
             dto.inventoryItems.Clear();
             dto.stashItems.Clear();
+            dto.quickSlotItems ??= new List<ItemSaveDTO>();
+            dto.quickSlotItems.Clear();
             dto.equipmentItems.Clear();
 
             dto.inventoryItems.AddRange(inventoryState.InventoryItems);
             dto.stashItems.AddRange(inventoryState.StashItems);
+            dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
             dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
 
             if (logCollectResult)
@@ -77,6 +80,7 @@ namespace DeadZone.Systems.Save
                     $"[InventorySaveCollector] 저장 데이터 수집 완료\n" +
                     $"InventoryItems: {dto.inventoryItems.Count}\n" +
                     $"StashItems: {dto.stashItems.Count}\n" +
+                    $"QuickSlotItems: {dto.quickSlotItems.Count}\n" +
                     $"EquipmentItems: {dto.equipmentItems.Count}",
                     this
                 );
