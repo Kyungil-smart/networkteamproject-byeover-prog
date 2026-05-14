@@ -39,6 +39,9 @@ namespace DeadZone.Actors
         [Tooltip("발사 애니메이션을 재생할 Trigger 파라미터 이름입니다.")]
         [SerializeField] private string fireTriggerParameterName = "Fire";
 
+        [Tooltip("피격 반응 애니메이션을 재생할 Trigger 파라미터 이름입니다.")]
+        [SerializeField] private string hitTriggerParameterName = "Hit";
+
         [Tooltip("재장전 애니메이션 상태를 표시할 Bool 파라미터 이름입니다.")]
         [SerializeField] private string reloadingParameterName = "IsReloading";
 
@@ -67,12 +70,14 @@ namespace DeadZone.Actors
         private int weaponTypeHash;
         private int rollingHash;
         private int fireTriggerHash;
+        private int hitTriggerHash;
         private int reloadingHash;
         private int combatLayerIndex = -1;
 
         private bool hasWeaponTypeParameter;
         private bool hasRollingParameter;
         private bool hasFireTriggerParameter;
+        private bool hasHitTriggerParameter;
         private bool hasReloadingParameter;
         private bool subscribedToEquipment;
 
@@ -82,10 +87,12 @@ namespace DeadZone.Actors
         private bool loggedMissingWeaponTypeParameter;
         private bool loggedMissingRollingParameter;
         private bool loggedMissingFireTriggerParameter;
+        private bool loggedMissingHitTriggerParameter;
         private bool loggedMissingReloadingParameter;
         private bool loggedWeaponTypeMismatch;
         private bool loggedRollingParameterMismatch;
         private bool loggedFireTriggerParameterMismatch;
+        private bool loggedHitTriggerParameterMismatch;
         private bool loggedReloadingParameterMismatch;
         private bool loggedMissingCombatLayer;
 
@@ -167,6 +174,25 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
+        /// 서버에서 확정된 실제 피해를 현재 로컬 Animator에 반영한다.
+        /// 재장전/발사 중에는 피격 반응이 끼어들 수 있지만, Roll/Knocked/Dead 상태에서는 기존 특수 상태를 우선한다.
+        /// </summary>
+        public void TriggerHitReaction()
+        {
+            if (animator == null)
+                return;
+
+            if (!hasHitTriggerParameter)
+                return;
+
+            if (!CanPlayHitReaction())
+                return;
+
+            animator.ResetTrigger(hitTriggerHash);
+            animator.SetTrigger(hitTriggerHash);
+        }
+
+        /// <summary>
         /// 서버에서 확정된 재장전 표시 상태를 현재 로컬 Animator에 반영한다.
         /// 실제 탄약 처리와 장전 성공 여부는 ReloadSystem/GridInventory가 담당하고,
         /// 이 함수는 표시용 IsReloading Bool만 관리한다.
@@ -202,10 +228,12 @@ namespace DeadZone.Actors
             hasWeaponTypeParameter = false;
             hasRollingParameter = false;
             hasFireTriggerParameter = false;
+            hasHitTriggerParameter = false;
             hasReloadingParameter = false;
             weaponTypeHash = 0;
             rollingHash = 0;
             fireTriggerHash = 0;
+            hitTriggerHash = 0;
             reloadingHash = 0;
             combatLayerIndex = -1;
 
@@ -219,6 +247,7 @@ namespace DeadZone.Actors
             CacheWeaponTypeParameter();
             CacheRollingParameter();
             CacheFireTriggerParameter();
+            CacheHitTriggerParameter();
             CacheReloadingParameter();
             CacheCombatLayer();
 
@@ -338,6 +367,43 @@ namespace DeadZone.Actors
             WarnOnce(
                 ref loggedMissingFireTriggerParameter,
                 $"[PlayerAnimatorDriver] Animator에서 Trigger 파라미터 '{fireTriggerParameterName}'를 찾지 못했습니다.");
+        }
+
+        private void CacheHitTriggerParameter()
+        {
+            if (string.IsNullOrWhiteSpace(hitTriggerParameterName))
+            {
+                WarnOnce(ref loggedMissingHitTriggerParameter,
+                    "[PlayerAnimatorDriver] Hit Trigger 파라미터 이름이 비어 있습니다.");
+                return;
+            }
+
+            hitTriggerHash = Animator.StringToHash(hitTriggerParameterName);
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.name != hitTriggerParameterName)
+                    continue;
+
+                if (parameter.type != AnimatorControllerParameterType.Trigger)
+                {
+                    WarnOnce(
+                        ref loggedHitTriggerParameterMismatch,
+                        $"[PlayerAnimatorDriver] Animator 파라미터 '{hitTriggerParameterName}'" +
+                        $" 타입이 Trigger가 아닙니다. 현재 타입: {parameter.type}");
+
+                    return;
+                }
+
+                hasHitTriggerParameter = true;
+                return;
+            }
+
+            WarnOnce(
+                ref loggedMissingHitTriggerParameter,
+                $"[PlayerAnimatorDriver] Animator에서 Trigger 파라미터 '{hitTriggerParameterName}'를 찾지 못했습니다.");
         }
 
         private void CacheReloadingParameter()
@@ -613,6 +679,11 @@ namespace DeadZone.Actors
             if (isReloadingAnimation)
                 return false;
 
+            return CanPlayWeaponAction();
+        }
+
+        private bool CanPlayHitReaction()
+        {
             return CanPlayWeaponAction();
         }
 
