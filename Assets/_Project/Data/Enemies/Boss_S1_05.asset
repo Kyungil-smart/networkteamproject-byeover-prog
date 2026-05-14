@@ -16,7 +16,7 @@ MonoBehaviour:
   tier: 5
   faction: 1
   isBoss: 1
-  enemyId: 
+  enemyId: Boss_PowerPlant
   maxHP: 300
   defaultArmor: {fileID: 11400000, guid: 9f51616f2f98c7e42b29bfcd6d27af3d, type: 2}
   defaultWeapon: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}

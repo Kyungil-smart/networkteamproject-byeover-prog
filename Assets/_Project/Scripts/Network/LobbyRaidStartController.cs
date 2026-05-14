@@ -20,6 +20,8 @@ namespace DeadZone.Network
     /// </summary>
     public class LobbyRaidStartController : NetworkBehaviour
     {
+        private const int RaidLoadoutSubmissionWaitMs = 350;
+
         [Header("==== 로비 참조 ====")]
         [SerializeField] private NetworkLobbyState lobbyState;
         [SerializeField] private NetworkGameManager gameManager;
@@ -187,7 +189,20 @@ namespace DeadZone.Network
                 return;
             }
 
+            await SubmitRaidLoadoutsBeforeStartAsync();
             StartRaidServerRpc();
+        }
+
+        private async Task SubmitRaidLoadoutsBeforeStartAsync()
+        {
+            RaidLoadoutTransferService.Clear();
+            RaidLoadoutTransferService.StoreLocalLobbyLoadoutForLocalClient();
+
+            if (!IsServer || NetworkManager.Singleton == null || NetworkManager.Singleton.ConnectedClientsIds.Count <= 1)
+                return;
+
+            RequestRaidLoadoutSubmissionClientRpc();
+            await Task.Delay(RaidLoadoutSubmissionWaitMs);
         }
 
         private async Task<bool> TryStartSoloSessionAsync()
@@ -291,6 +306,25 @@ namespace DeadZone.Network
                 CancelLoadTracking(reason);
                 Debug.LogWarning($"[LobbyRaidStartController] 레이드 씬 로드 실패: {reason}", this);
             }
+        }
+
+        [ClientRpc]
+        private void RequestRaidLoadoutSubmissionClientRpc()
+        {
+            string loadoutJson = RaidLoadoutTransferService.CreateLocalLobbyLoadoutJson();
+            if (string.IsNullOrWhiteSpace(loadoutJson))
+                return;
+
+            SubmitRaidLoadoutServerRpc(loadoutJson);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SubmitRaidLoadoutServerRpc(string loadoutJson, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            RaidLoadoutTransferService.StoreSubmittedLobbyLoadout(rpcParams.Receive.SenderClientId, loadoutJson);
         }
 
         public bool CanStartRaid()

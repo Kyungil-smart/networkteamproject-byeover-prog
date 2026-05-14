@@ -60,8 +60,10 @@ namespace DeadZone.Systems.Save
             ReplaceList(equipmentItems, items);
         }
 
+        [Button("인벤토리 상태 비우기")]
 
         [Button("Clear Inventory State")]
+
         public void Clear()
         {
             hasCredits = false;

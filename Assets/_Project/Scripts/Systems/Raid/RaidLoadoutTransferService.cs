@@ -1,4 +1,9 @@
+<<<<<<< HEAD
+using System;
+using System.Collections.Generic;
+=======
 ﻿using System.Collections.Generic;
+>>>>>>> origin/Develop3
 
 using DeadZone.Actors;
 using DeadZone.Actors.UI;
@@ -8,6 +13,7 @@ using DeadZone.Systems.Save;
 
 using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DeadZone.Systems.Raid
 {
@@ -22,8 +28,6 @@ namespace DeadZone.Systems.Raid
 
         public static void SaveLoadoutsForClients(IReadOnlyList<ulong> clientIds)
         {
-            loadoutsByClientId.Clear();
-
             if (!TryGetServerNetworkManager(out NetworkManager networkManager))
                 return;
 
@@ -33,9 +37,20 @@ namespace DeadZone.Systems.Raid
                 return;
             }
 
+            RemoveUnexpectedLoadouts(clientIds);
+
             for (int i = 0; i < clientIds.Count; i++)
             {
                 ulong clientId = clientIds[i];
+
+                if (loadoutsByClientId.TryGetValue(clientId, out RaidLoadoutSaveData submittedLoadout) &&
+                    HasMeaningfulLoadout(submittedLoadout))
+                {
+                    Debug.Log(
+                        $"[RaidLoadout] Using submitted lobby loadout clientId={clientId}, inventory={submittedLoadout.inventoryItems.Count}, quickSlots={submittedLoadout.quickSlotItems.Count}, equipment={CountEquippedItems(submittedLoadout.equipmentItems)}, current={submittedLoadout.currentEquippedItemId}");
+                    continue;
+                }
+
                 bool hasSavedLobbyLoadout = TryBuildSavedLobbyLoadout(clientId, out RaidLoadoutSaveData savedLobbyLoadout);
 
                 if (hasSavedLobbyLoadout)
@@ -64,6 +79,58 @@ namespace DeadZone.Systems.Raid
                     $"[RaidLoadout] Saved loadout clientId={clientId}, inventory={liveLoadout.inventoryItems.Count}, equipment={CountEquippedItems(liveLoadout.equipmentItems)}, quickslots={liveLoadout.quickSlotItems.Count}",
                     playerObject);
             }
+        }
+
+        public static bool StoreLocalLobbyLoadoutForLocalClient()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return false;
+
+            if (!TryBuildSavedLobbyLoadout(networkManager.LocalClientId, out RaidLoadoutSaveData loadout))
+                return false;
+
+            loadoutsByClientId[networkManager.LocalClientId] = loadout;
+            return true;
+        }
+
+        public static string CreateLocalLobbyLoadoutJson()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return string.Empty;
+
+            if (!TryBuildSavedLobbyLoadout(networkManager.LocalClientId, out RaidLoadoutSaveData loadout))
+                return string.Empty;
+
+            return JsonUtility.ToJson(loadout);
+        }
+
+        public static bool StoreSubmittedLobbyLoadout(ulong clientId, string loadoutJson)
+        {
+            if (string.IsNullOrWhiteSpace(loadoutJson))
+                return false;
+
+            RaidLoadoutSaveData loadout;
+
+            try
+            {
+                loadout = JsonUtility.FromJson<RaidLoadoutSaveData>(loadoutJson);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[RaidLoadout] Submitted loadout JSON could not be parsed. clientId={clientId}, error={ex.Message}");
+                return false;
+            }
+
+            if (!HasMeaningfulLoadout(loadout))
+                return false;
+
+            loadout.clientId = clientId;
+            loadoutsByClientId[clientId] = loadout;
+            Debug.Log(
+                $"[RaidLoadout] Submitted lobby loadout received clientId={clientId}, inventory={loadout.inventoryItems.Count}, quickSlots={loadout.quickSlotItems.Count}, equipment={CountEquippedItems(loadout.equipmentItems)}, current={loadout.currentEquippedItemId}");
+            return true;
         }
 
         public static bool TryApplyLoadout(ulong clientId, GameObject playerObject)
@@ -285,7 +352,6 @@ namespace DeadZone.Systems.Raid
             };
 
             IReadOnlyList<ItemSaveDTO> inventoryItems = dto.inventoryItems;
-            IReadOnlyList<ItemSaveDTO> quickSlotItems = dto.quickSlotItems;
             List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems, dto.quickSlotItems);
 
             if (inventoryItems != null)
@@ -322,6 +388,7 @@ namespace DeadZone.Systems.Raid
                     {
                         itemId = item.itemId,
                         instanceId = item.instanceId,
+                        slotIndex = Mathf.Max(0, item.x),
                         slotIndex = Mathf.Clamp(item.x, 0, 5),
                         stackCount = Mathf.Max(1, item.stackCount),
                         currentDurability = Mathf.Max(0f, item.currentDurability),
@@ -831,6 +898,43 @@ namespace DeadZone.Systems.Raid
             return candidate != null &&
                    candidate.GetComponent<GridInventory>() != null &&
                    candidate.GetComponent<EquipmentSlots>() != null;
+        }
+
+        private static void RemoveUnexpectedLoadouts(IReadOnlyList<ulong> expectedClientIds)
+        {
+            if (expectedClientIds == null)
+                return;
+
+            List<ulong> keysToRemove = null;
+
+            foreach (ulong clientId in loadoutsByClientId.Keys)
+            {
+                if (ContainsClientId(expectedClientIds, clientId))
+                    continue;
+
+                keysToRemove ??= new List<ulong>();
+                keysToRemove.Add(clientId);
+            }
+
+            if (keysToRemove == null)
+                return;
+
+            for (int i = 0; i < keysToRemove.Count; i++)
+                loadoutsByClientId.Remove(keysToRemove[i]);
+        }
+
+        private static bool ContainsClientId(IReadOnlyList<ulong> clientIds, ulong clientId)
+        {
+            if (clientIds == null)
+                return false;
+
+            for (int i = 0; i < clientIds.Count; i++)
+            {
+                if (clientIds[i] == clientId)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool TryGetServerNetworkManager(out NetworkManager networkManager)

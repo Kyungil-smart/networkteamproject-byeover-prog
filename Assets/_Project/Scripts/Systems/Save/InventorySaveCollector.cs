@@ -78,7 +78,6 @@ namespace DeadZone.Systems.Save
             dto.quickSlotItems ??= new List<ItemSaveDTO>();
             dto.quickSlotItems.Clear();
             dto.equipmentItems.Clear();
-            dto.quickSlotItems.Clear();
 
             dto.inventoryItems.AddRange(inventoryState.InventoryItems);
             dto.stashItems.AddRange(inventoryState.StashItems);

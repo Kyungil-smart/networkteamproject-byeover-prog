@@ -8,6 +8,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using Unity.Netcode;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -157,6 +158,18 @@ namespace DeadZone.Actors.UI
             }
 
             LocalNetworkTestBootstrap.SuppressNextAutoStart("Lobby to facility scene transition");
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                if (!NetworkManager.Singleton.IsServer)
+                {
+                    Debug.LogWarning("[LobbyTabController] Party session is active. Facility scene transition is blocked on non-host clients to avoid leaving the party session.", this);
+                    return;
+                }
+
+                NetworkManager.Singleton.SceneManager.LoadScene(facilitySceneName, LoadSceneMode.Single);
+                return;
+            }
+
             LoadingScreenService.LoadSceneOrFallback(facilitySceneName);
         }
 

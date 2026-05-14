@@ -1,4 +1,4 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using UnityEngine;
 
 using DeadZone.Actors;
@@ -37,6 +37,7 @@ namespace DeadZone.Core
     {
         public ulong attackerClientId;
         public EnemyTier tier;
+        public bool isBoss;
         public Vector3 position;
         /// <summary>[v2.1 추가] 처치된 적의 식별자 (Boss_PowerPlant, Enemy_Zone1_Any 등). QuestManager가 Kill objective 매칭에 사용.</summary>
         public FixedString64Bytes enemyId;

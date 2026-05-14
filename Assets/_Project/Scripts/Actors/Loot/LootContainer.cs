@@ -90,6 +90,7 @@ namespace DeadZone.Actors
         private List<global::ContainerSlotNetData> localSlots;
         private int lastGeneratedItemCount;
         private Coroutine searchRoutine;
+        private bool hasGeneratedLoot;
 
         public LootTableSO LootTable => lootTable;
         public int SlotCount => slotCount;
@@ -164,6 +165,9 @@ namespace DeadZone.Actors
         {
             if (IsNetworkActive())
             {
+                if (IsSearching.Value)
+                    return;
+
                 if (IsOpened.Value)
                 {
                     OpenLootingUI();
@@ -245,7 +249,9 @@ namespace DeadZone.Actors
 
             if (IsOpened.Value)
             {
-                OpenLootingUiRpc(RpcTarget.Single(senderClientId, RpcTargetUse.Temp));
+                if (!IsSearching.Value)
+                    OpenLootingUiRpc(RpcTarget.Single(senderClientId, RpcTargetUse.Temp));
+
                 return;
             }
 
@@ -258,6 +264,7 @@ namespace DeadZone.Actors
             if (searchRoutine != null)
                 StopCoroutine(searchRoutine);
 
+            IsOpened.Value = true;
             searchRoutine = StartCoroutine(SearchAndOpenRoutine(senderClientId));
         }
 
@@ -271,11 +278,11 @@ namespace DeadZone.Actors
             if (searchDurationSeconds > 0f)
                 yield return new WaitForSeconds(searchDurationSeconds);
 
-            if (!IsOpened.Value)
+            if (!hasGeneratedLoot)
             {
                 List<global::ContainerSlotNetData> generated = GenerateSlotList();
                 ApplyGeneratedSlotsToNetworkList(generated);
-                IsOpened.Value = true;
+                hasGeneratedLoot = true;
             }
 
             IsSearching.Value = false;
@@ -284,6 +291,9 @@ namespace DeadZone.Actors
 
             if (printDebugLogOnOpen)
                 PrintNetworkSlotsDebug(requesterClientId);
+
+            if (playLootSoundOnOpen)
+                PlayLootSoundForClient(requesterClientId);
 
             OpenLootingUiRpc(RpcTarget.Single(requesterClientId, RpcTargetUse.Temp));
         }
@@ -454,6 +464,13 @@ namespace DeadZone.Actors
             if (!IsServer)
                 return;
 
+            EventBus.Publish(new ItemLootedEvent
+            {
+                clientId = clientId,
+                itemId = itemId,
+                amount = amount,
+            });
+
             ClientRpcParams rpcParams = new ClientRpcParams
             {
                 Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
@@ -481,6 +498,9 @@ namespace DeadZone.Actors
             int amount,
             ClientRpcParams rpcParams = default)
         {
+            if (IsServer)
+                return;
+
             EventBus.Publish(new ItemLootedEvent
             {
                 clientId = clientId,

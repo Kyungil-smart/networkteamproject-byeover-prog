@@ -59,6 +59,7 @@ namespace DeadZone.Systems.Quests
             if (IsServer)
             {
                 EventBus.Subscribe<EnemyKilledEvent>(OnEnemyKilled);
+                EventBus.Subscribe<ItemLootedEvent>(OnItemLooted);
                 EventBus.Subscribe<ZoneEnteredEvent>(OnZoneEntered);
                 EventBus.Subscribe<SceneChangedEvent>(OnSceneChanged);
             }
@@ -69,6 +70,7 @@ namespace DeadZone.Systems.Quests
             if (IsServer)
             {
                 EventBus.Unsubscribe<EnemyKilledEvent>(OnEnemyKilled);
+                EventBus.Unsubscribe<ItemLootedEvent>(OnItemLooted);
                 EventBus.Unsubscribe<ZoneEnteredEvent>(OnZoneEntered);
                 EventBus.Unsubscribe<SceneChangedEvent>(OnSceneChanged);
             }
@@ -295,14 +297,30 @@ namespace DeadZone.Systems.Quests
                         && !state.PendingCompletionIds.Contains(questId))
                     {
                         state.PendingCompletionIds.Add(questId);
+                        EventBus.Publish(new QuestTrackerSnapshotEvent
+                        {
+                            questId = new FixedString64Bytes(questId),
+                            objectiveType = type,
+                            currentCount = newCount,
+                            requiredCount = obj.requiredCount,
+                            clientId = clientId,
+                            targetId = new FixedString64Bytes(targetId),
+                            isPendingCompletion = true
+                        });
                         Debug.Log($"[QuestManager] Client {clientId}: {questId} objectives done → pending (Hideout에서 완료 처리)");
 
                         if (HasNetworkSession())
                         {
-                            NotifyQuestPendingClientRpc(questId, new ClientRpcParams
-                            {
-                                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
-                            });
+                            NotifyQuestPendingClientRpc(
+                                questId,
+                                targetId,
+                                type,
+                                newCount,
+                                obj.requiredCount,
+                                new ClientRpcParams
+                                {
+                                    Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+                                });
                         }
                     }
                 }
@@ -447,8 +465,26 @@ namespace DeadZone.Systems.Quests
         {
             if (!CanWriteQuestState()) return;
             string enemyId = e.enemyId.ToString();
-            if (string.IsNullOrEmpty(enemyId)) return;
-            ReportProgress(e.attackerClientId, ObjectiveType.Kill, enemyId, 1);
+            if (!string.IsNullOrEmpty(enemyId))
+                ReportProgress(e.attackerClientId, ObjectiveType.Kill, enemyId, 1);
+
+            if (!e.isBoss)
+            {
+                if (enemyId != "Enemy_Zone1_Any")
+                    ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Enemy_Zone1_Any", 1);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(enemyId))
+                ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Boss_Stage2_All", 1);
+        }
+
+        private void OnItemLooted(ItemLootedEvent e)
+        {
+            if (!CanWriteQuestState()) return;
+            string itemId = e.itemId.ToString();
+            if (string.IsNullOrEmpty(itemId)) return;
+            ReportProgress(e.clientId, ObjectiveType.Collect, itemId, Mathf.Max(1, e.amount));
         }
 
         private void OnZoneEntered(ZoneEnteredEvent e)
@@ -494,6 +530,15 @@ namespace DeadZone.Systems.Quests
         [ClientRpc]
         private void NotifyQuestAcceptedClientRpc(string questId, ClientRpcParams rpcParams = default)
         {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new QuestAcceptedEvent
+            {
+                questId = new FixedString64Bytes(questId),
+                clientId = GetLocalClientIdForState()
+            });
+
             Debug.Log($"[QuestManager] Quest accepted: {questId}");
         }
 
@@ -501,19 +546,84 @@ namespace DeadZone.Systems.Quests
         private void NotifyQuestProgressClientRpc(string questId, string targetId,
             int currentCount, int requiredCount, ClientRpcParams rpcParams = default)
         {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new QuestProgressEvent
+            {
+                questId = new FixedString64Bytes(questId),
+                objectiveType = ResolveObjectiveType(questId, targetId),
+                currentCount = currentCount,
+                requiredCount = requiredCount,
+                clientId = GetLocalClientIdForState(),
+                targetId = new FixedString64Bytes(targetId)
+            });
+
             Debug.Log($"[QuestManager] Progress: {questId}/{targetId} ({currentCount}/{requiredCount})");
         }
 
         [ClientRpc]
-        private void NotifyQuestPendingClientRpc(string questId, ClientRpcParams rpcParams = default)
+        private void NotifyQuestPendingClientRpc(
+            string questId,
+            string targetId,
+            ObjectiveType objectiveType,
+            int currentCount,
+            int requiredCount,
+            ClientRpcParams rpcParams = default)
         {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new QuestTrackerSnapshotEvent
+            {
+                questId = new FixedString64Bytes(questId),
+                objectiveType = objectiveType,
+                currentCount = currentCount,
+                requiredCount = requiredCount,
+                clientId = GetLocalClientIdForState(),
+                targetId = new FixedString64Bytes(targetId),
+                isPendingCompletion = true
+            });
+
             Debug.Log($"[QuestManager] Quest ready to complete (return to Hideout): {questId}");
         }
 
         [ClientRpc]
         private void NotifyQuestCompletedClientRpc(string questId, ClientRpcParams rpcParams = default)
         {
+            if (IsServer)
+                return;
+
+            string unlockZoneId = string.Empty;
+            if (TryGetQuestData(questId, out QuestDataSO questData) && questData != null)
+                unlockZoneId = questData.unlockZoneID ?? string.Empty;
+
+            EventBus.Publish(new QuestCompletedEvent
+            {
+                questId = new FixedString64Bytes(questId),
+                clientId = GetLocalClientIdForState(),
+                unlockZoneId = new FixedString64Bytes(unlockZoneId)
+            });
+
             Debug.Log($"[QuestManager] Quest completed: {questId}");
+        }
+
+        private ObjectiveType ResolveObjectiveType(string questId, string targetId)
+        {
+            if (!TryGetQuestData(questId, out QuestDataSO questData) ||
+                questData.objectives == null)
+            {
+                return ObjectiveType.Kill;
+            }
+
+            for (int i = 0; i < questData.objectives.Length; i++)
+            {
+                QuestObjectiveData objective = questData.objectives[i];
+                if (objective.targetID == targetId)
+                    return objective.type;
+            }
+
+            return ObjectiveType.Kill;
         }
 
         // ───────── 세션 관리 ─────────

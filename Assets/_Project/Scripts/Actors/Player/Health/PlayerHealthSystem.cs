@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -145,6 +145,9 @@ namespace DeadZone.Actors
             if (ShouldIgnoreDamage())
                 return;
 
+            if (ShouldIgnoreFriendlyFire(attackerClientId))
+                return;
+
             if (IsAlive)
             {
                 float previousHp = CurrentHP.Value;
@@ -174,6 +177,9 @@ namespace DeadZone.Actors
                 return;
 
             if (ShouldIgnoreDamage())
+                return;
+
+            if (ShouldIgnoreFriendlyFire(attackerClientId))
                 return;
 
             if (IsAlive)
@@ -207,6 +213,17 @@ namespace DeadZone.Actors
             return rollSystem != null && rollSystem.IsDamageImmune;
         }
 
+<<<<<<< HEAD
+        private bool ShouldIgnoreFriendlyFire(ulong attackerClientId)
+        {
+            if (attackerClientId == DamageSystem.AI_SHOOTER_ID)
+                return false;
+
+            if (attackerClientId == OwnerClientId)
+                return false;
+
+            return true;
+=======
         private void PlayHitReaction()
         {
             if (IsSpawned)
@@ -228,6 +245,7 @@ namespace DeadZone.Actors
                 animatorDriver = GetComponent<PlayerAnimatorDriver>();
 
             animatorDriver?.TriggerHitReaction();
+>>>>>>> origin/Develop3
         }
 
         public void Heal(float amount)

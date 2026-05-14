@@ -31,7 +31,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private bool saveToCloudOnApplicationPause = true;
         [SerializeField] private bool saveToCloudOnApplicationQuit = true;
         [SerializeField] private bool useLocalJsonFallback = true;
-        [SerializeField] private bool preferLocalJsonInventorySections = true;
+        [SerializeField] private bool preferLocalJsonInventorySections = false;
         [SerializeField] private bool allowLifecycleAutoSave;
 
         [Header("Debug JSON")]
@@ -190,7 +190,7 @@ namespace DeadZone.Systems.Save
         [Button("Load Lobby From Firebase")]
         public void LoadLobbyDataFromCloud()
         {
-            LoadLobbyDataFromCloud(allowLocalJsonMerge: true, localSyncReason: "Server load success sync");
+            LoadLobbyDataFromCloud(allowLocalJsonMerge: false, localSyncReason: "Server load success sync");
         }
 
         public void LoadLobbyDataFromCloudIgnoringLocalJson(string localSyncReason)
@@ -615,13 +615,6 @@ namespace DeadZone.Systems.Save
                 changed = true;
             }
 
-            if (HasAny(localDto.quickSlotItems))
-            {
-                dto.quickSlotItems = new List<ItemSaveDTO>(localDto.quickSlotItems);
-                changed = true;
-            }
-
-            if (HasAny(localDto.equipmentItems))
             if (localDto.hasQuickSlotSection || HasAny(localDto.quickSlotItems))
             {
                 dto.quickSlotItems = localDto.quickSlotItems != null
@@ -972,7 +965,6 @@ namespace DeadZone.Systems.Save
                    HasAny(dto.stashItems) ||
                    HasAny(dto.quickSlotItems) ||
                    HasAny(dto.equipmentItems) ||
-                   HasAny(dto.quickSlotItems) ||
                    HasAny(dto.facilities);
         }
 

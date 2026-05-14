@@ -164,6 +164,17 @@ namespace DeadZone.Systems.Save
                     "[LobbyInventoryStateUiBridge] Equipment UI scan returned 0 items. Keeping existing equipment state to avoid wiping equipped lobby items.",
                     this);
 
+<<<<<<< HEAD
+            if (quickSlotsRoot != null)
+            {
+                List<ItemSaveDTO> capturedQuickSlotsRootItems = CollectItemSlots(quickSlotsRoot, QuickSlotContainerId);
+                if (capturedQuickSlotsRootItems.Count > 0 || inventoryState.QuickSlotItems == null || inventoryState.QuickSlotItems.Count == 0)
+                    inventoryState.SetQuickSlotItems(capturedQuickSlotsRootItems);
+                else
+                    Debug.Log("[LobbyInventoryStateUiBridge] QuickSlot UI scan returned 0 items. Keeping existing quickslot state to avoid wiping saved quickslots.", this);
+            }
+=======
+>>>>>>> origin/Develop3
         }
 
         public void CaptureChangedEquipmentSlots(params InventorySlotUI[] changedSlots)
@@ -244,8 +255,12 @@ namespace DeadZone.Systems.Save
                     continue;
 
                 string containerId = ResolveChangedItemContainerId(slot);
+<<<<<<< HEAD
+                List<ItemSaveDTO> targetItems = ResolveItemList(containerId, inventoryItems, stashItems, quickSlotItems);
+=======
                 List<ItemSaveDTO> targetItems =
                     ResolveItemList(containerId, inventoryItems, stashItems, quickSlotItems);
+>>>>>>> origin/Develop3
 
                 int slotIndex = Mathf.Max(0, slot.SlotIndex);
                 int gridWidth = GetGridWidth(containerId);
@@ -436,7 +451,13 @@ namespace DeadZone.Systems.Save
             }
         }
 
+<<<<<<< HEAD
+        private static List<ItemSaveDTO> CollectStashSlots(Transform root)
+        {
+            if (root != null)
+=======
             private static List<ItemSaveDTO> CollectStashSlots(Transform root)
+>>>>>>> origin/Develop3
             {
                 if (root != null)
                 {
@@ -1061,8 +1082,466 @@ namespace DeadZone.Systems.Save
                 InventorySlotUI[] slots = root.GetComponentsInChildren<InventorySlotUI>(true);
                 for (int i = 0; i < slots.Length; i++)
                 {
+<<<<<<< HEAD
+                    slotId = slotId,
+                    itemId = slot.CurrentItemData.itemID,
+                    instanceId = string.Empty,
+                    loadedAmmoId = string.Empty,
+                    currentAmmo = GetDefaultAmmo(slot.CurrentItemData),
+                    durability = GetDefaultDurability(slot.CurrentItemData)
+                });
+            }
+        }
+
+        private static int GetDefaultAmmo(ItemDataSO itemData)
+        {
+            return itemData is WeaponDataSO weaponData
+                ? Mathf.Max(0, weaponData.magSize)
+                : 0;
+        }
+
+        private static float GetDefaultDurability(ItemDataSO itemData)
+        {
+            return itemData switch
+            {
+                HelmetDataSO helmetData => Mathf.Max(0f, helmetData.maxDurability),
+                ArmorDataSO armorData => Mathf.Max(0f, armorData.maxDurability),
+                _ => 0f
+            };
+        }
+
+        private static EquipmentSaveDTO CloneEquipment(EquipmentSaveDTO source)
+        {
+            return new EquipmentSaveDTO
+            {
+                slotId = source.slotId ?? string.Empty,
+                itemId = source.itemId ?? string.Empty,
+                instanceId = source.instanceId ?? string.Empty,
+                loadedAmmoId = source.loadedAmmoId ?? string.Empty,
+                currentAmmo = Mathf.Max(0, source.currentAmmo),
+                durability = Mathf.Max(0f, source.durability)
+            };
+        }
+
+        private static List<ItemSaveDTO> CloneItems(IReadOnlyList<ItemSaveDTO> source)
+        {
+            List<ItemSaveDTO> items = new();
+
+            if (source == null)
+                return items;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                ItemSaveDTO item = source[i];
+                if (item == null)
+                    continue;
+
+                items.Add(new ItemSaveDTO
+                {
+                    itemId = item.itemId,
+                    instanceId = item.instanceId,
+                    containerId = item.containerId,
+                    x = item.x,
+                    y = item.y,
+                    rotated = item.rotated,
+                    stackCount = item.stackCount,
+                    currentDurability = item.currentDurability,
+                    currentAmmo = item.currentAmmo
+                });
+            }
+
+            return items;
+        }
+
+        private string ResolveChangedItemContainerId(InventorySlotUI slot)
+        {
+            if (slot == null)
+                return InventoryContainerId;
+
+            if (stashSlotsRoot != null && slot.transform.IsChildOf(stashSlotsRoot))
+                return StashContainerId;
+
+            if (quickSlotSlotsRoot != null && slot.transform.IsChildOf(quickSlotSlotsRoot))
+                return QuickSlotContainerId;
+
+            if (quickSlotsRoot != null && slot.transform.IsChildOf(quickSlotsRoot))
+                return QuickSlotContainerId;
+
+            if (slot.SlotKind == InventorySlotKind.QuickSlot)
+                return QuickSlotContainerId;
+
+            if (inventorySlotsRoot != null && slot.transform.IsChildOf(inventorySlotsRoot))
+                return InventoryContainerId;
+
+            string path = BuildTransformPath(slot.transform);
+            if (path.Contains("quickslot", StringComparison.OrdinalIgnoreCase))
+                return QuickSlotContainerId;
+
+            return path.Contains("stash", StringComparison.OrdinalIgnoreCase)
+                ? StashContainerId
+                : InventoryContainerId;
+        }
+
+        private static List<ItemSaveDTO> ResolveItemList(
+            string containerId,
+            List<ItemSaveDTO> inventoryItems,
+            List<ItemSaveDTO> stashItems,
+            List<ItemSaveDTO> quickSlotItems)
+        {
+            if (string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase))
+                return stashItems;
+
+            if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                return quickSlotItems;
+
+            return inventoryItems;
+        }
+
+        private static void RemoveItemAtSlot(List<ItemSaveDTO> items, int slotIndex, int gridWidth)
+        {
+            if (items == null)
+                return;
+
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                ItemSaveDTO item = items[i];
+                if (item != null && ToLinearSlotIndex(item.x, item.y, gridWidth) == slotIndex)
+                    items.RemoveAt(i);
+            }
+        }
+
+        private static void RemoveEquipment(List<EquipmentSaveDTO> equipmentItems, string slotId)
+        {
+            if (equipmentItems == null || string.IsNullOrWhiteSpace(slotId))
+                return;
+
+            for (int i = equipmentItems.Count - 1; i >= 0; i--)
+            {
+                EquipmentSaveDTO item = equipmentItems[i];
+                if (item != null && string.Equals(item.slotId, slotId, StringComparison.OrdinalIgnoreCase))
+                    equipmentItems.RemoveAt(i);
+            }
+        }
+
+        private void ApplyItemSlots(Transform root, IReadOnlyList<ItemSaveDTO> items, IItemDatabase database, string containerId)
+        {
+            InventorySlotUI[] slots = GetSlots(root);
+            ClearSlots(slots);
+            int gridWidth = GetGridWidth(containerId);
+
+            if (slots.Length == 0 || items == null)
+                return;
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                ItemSaveDTO item = items[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                    continue;
+
+                int slotIndex = ToLinearSlotIndex(item.x, item.y, gridWidth);
+                InventorySlotUI slot = FindSlotByIndex(slots, slotIndex);
+                if (slot == null)
+                {
+                    Debug.LogWarning($"[LobbyInventoryStateUiBridge] 슬롯 인덱스 {slotIndex}를 찾지 못해 아이템을 복원하지 못했습니다. itemId={item.itemId}", this);
+                    continue;
+                }
+
+                ItemDataSO itemData = database.GetById(item.itemId);
+                if (itemData == null)
+                {
+                    Debug.LogWarning($"[LobbyInventoryStateUiBridge] ItemDataSO를 찾지 못했습니다. itemId={item.itemId}", this);
+                    continue;
+                }
+
+                slot.SetItem(itemData, Mathf.Max(1, item.stackCount));
+            }
+        }
+
+        private void ApplyEquipmentSlots(Transform root, IReadOnlyList<EquipmentSaveDTO> equipmentItems, IItemDatabase database)
+        {
+            InventorySlotUI[] slots = GetEquipmentSlotsForApply(root);
+            ClearSlots(slots);
+
+            if (slots.Length == 0 || equipmentItems == null)
+                return;
+
+            for (int i = 0; i < equipmentItems.Count; i++)
+            {
+                EquipmentSaveDTO equipmentItem = equipmentItems[i];
+                if (equipmentItem == null || string.IsNullOrWhiteSpace(equipmentItem.itemId))
+                    continue;
+
+                InventorySlotUI slot = FindEquipmentSlot(slots, equipmentItem.slotId);
+                if (slot == null)
+                {
+                    Debug.LogWarning($"[LobbyInventoryStateUiBridge] 장착 슬롯을 찾지 못해 아이템을 복원하지 못했습니다. slotId={equipmentItem.slotId}, itemId={equipmentItem.itemId}", this);
+                    continue;
+                }
+
+                ItemDataSO itemData = database.GetById(equipmentItem.itemId);
+                if (itemData == null)
+                {
+                    Debug.LogWarning($"[LobbyInventoryStateUiBridge] ItemDataSO를 찾지 못했습니다. itemId={equipmentItem.itemId}", this);
+                    continue;
+                }
+
+                slot.SetItem(itemData, 1);
+            }
+        }
+
+        private void ApplyQuickSlotItems(Transform root, IReadOnlyList<ItemSaveDTO> quickSlotItems, IItemDatabase database)
+        {
+            InventorySlotUI[] slots = GetQuickSlotsForApply(root);
+            ClearSlots(slots);
+
+            if (slots.Length == 0 || quickSlotItems == null)
+                return;
+
+            for (int i = 0; i < quickSlotItems.Count; i++)
+            {
+                ItemSaveDTO item = quickSlotItems[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                    continue;
+
+                ItemDataSO itemData = database.GetById(item.itemId);
+                if (itemData == null)
+                {
+                    Debug.LogWarning($"[LobbyInventoryStateUiBridge] QuickSlot ItemDataSO not found. itemId={item.itemId}", this);
+                    continue;
+                }
+
+                SetQuickSlotsByIndex(slots, Mathf.Max(0, item.x), itemData, Mathf.Max(1, item.stackCount));
+            }
+        }
+
+        private static InventorySlotUI[] GetSlots(Transform root)
+        {
+            return root != null
+                ? root.GetComponentsInChildren<InventorySlotUI>(true)
+                : System.Array.Empty<InventorySlotUI>();
+        }
+
+        private static InventorySlotUI[] GetEquipmentSlotsForApply(Transform root)
+        {
+            InventorySlotUI[] rootSlots = GetSlots(root);
+            if (rootSlots.Length > 0)
+                return rootSlots;
+
+            InventorySlotUI[] allSlots =
+                FindObjectsByType<InventorySlotUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            List<InventorySlotUI> equipmentSlots = new();
+
+            for (int i = 0; i < allSlots.Length; i++)
+            {
+                InventorySlotUI slot = allSlots[i];
+                if (slot == null || string.IsNullOrWhiteSpace(slot.GetEquipmentSaveSlotId()))
+                    continue;
+
+                equipmentSlots.Add(slot);
+            }
+
+            return equipmentSlots.ToArray();
+        }
+
+        private static InventorySlotUI[] GetQuickSlotsForApply(Transform root)
+        {
+            List<InventorySlotUI> quickSlots = new();
+            HashSet<InventorySlotUI> visited = new();
+
+            AddQuickSlotsForApply(quickSlots, visited, GetSlots(root));
+
+            InventorySlotUI[] allSlots =
+                FindObjectsByType<InventorySlotUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            AddQuickSlotsForApply(quickSlots, visited, allSlots);
+
+            return quickSlots.ToArray();
+        }
+
+        private static void AddQuickSlotsForApply(
+            List<InventorySlotUI> quickSlots,
+            HashSet<InventorySlotUI> visited,
+            InventorySlotUI[] slots)
+        {
+            if (quickSlots == null || visited == null || slots == null)
+                return;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null || !visited.Add(slot))
+                    continue;
+
+                slot.PrepareForSaveSnapshot();
+                if (slot.SlotKind == InventorySlotKind.QuickSlot)
+                    quickSlots.Add(slot);
+            }
+        }
+
+        private static void SetQuickSlotsByIndex(InventorySlotUI[] slots, int slotIndex, ItemDataSO itemData, int stackCount)
+        {
+            if (slots == null || itemData == null)
+                return;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot != null && slot.SlotIndex == slotIndex)
+                    slot.SetItem(itemData, stackCount);
+            }
+        }
+
+        private static void ClearSlots(InventorySlotUI[] slots)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                    slots[i].ClearItem();
+            }
+        }
+
+        private static InventorySlotUI FindSlotByIndex(InventorySlotUI[] slots, int slotIndex)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot != null && slot.SlotIndex == slotIndex)
+                    return slot;
+            }
+
+            return null;
+        }
+
+        private static int GetGridWidth(string containerId)
+        {
+            if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                return 100;
+
+            return string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase)
+                ? StashGridWidth
+                : PlayerInventoryGridWidth;
+            if (string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase))
+                return StashGridWidth;
+
+            if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                return QuickSlotGridWidth;
+
+            return PlayerInventoryGridWidth;
+        }
+
+        private static int ToGridX(int slotIndex, int gridWidth)
+        {
+            int width = Mathf.Max(1, gridWidth);
+            return Mathf.Max(0, slotIndex) % width;
+        }
+
+        private static int ToGridY(int slotIndex, int gridWidth)
+        {
+            int width = Mathf.Max(1, gridWidth);
+            return Mathf.Max(0, slotIndex) / width;
+        }
+
+        private static int ToLinearSlotIndex(int x, int y, int gridWidth)
+        {
+            int width = Mathf.Max(1, gridWidth);
+            if (y <= 0 && x >= width)
+                return x;
+
+            return Mathf.Max(0, y) * width + Mathf.Max(0, x);
+        }
+
+        private static InventorySlotUI FindEquipmentSlot(InventorySlotUI[] slots, string slotId)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot != null && slot.SlotKind.ToString() == slotId)
+                    return slot;
+            }
+
+            if (string.Equals(slotId, "primary1", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(slotId, "EquipmentPrimaryWeapon", StringComparison.OrdinalIgnoreCase))
+            {
+                return FindPrimaryWeaponSlot(slots, false);
+            }
+
+            if (string.Equals(slotId, "primary2", StringComparison.OrdinalIgnoreCase))
+            {
+                return FindPrimaryWeaponSlot(slots, true);
+            }
+
+            return null;
+        }
+
+        private static InventorySlotUI FindPrimaryWeaponSlot(InventorySlotUI[] slots, bool secondSlot)
+        {
+            InventorySlotUI fallback = null;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null || slot.SlotKind != InventorySlotKind.EquipmentPrimaryWeapon)
+                    continue;
+
+                fallback ??= slot;
+
+                string path = BuildTransformPath(slot.transform);
+                bool looksLikeSecondSlot =
+                    path.Contains("primary2", StringComparison.OrdinalIgnoreCase) ||
+                    path.Contains("_2", StringComparison.OrdinalIgnoreCase);
+
+                if (secondSlot == looksLikeSecondSlot)
+                    return slot;
+            }
+
+            return secondSlot ? null : fallback;
+        }
+
+        private static string BuildTransformPath(Transform transform)
+        {
+            if (transform == null)
+                return string.Empty;
+
+            string path = transform.name;
+            Transform parent = transform.parent;
+
+            while (parent != null)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+
+            return path;
+        }
+
+        private IItemDatabase ResolveItemDatabase()
+        {
+            if (itemDatabase != null)
+                return itemDatabase;
+
+            IItemDatabase database = ServiceLocator.Get<IItemDatabase>();
+            if (database != null)
+                return database;
+
+            itemDatabase = FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
+            return itemDatabase;
+        }
+
+        private void ResolveMissingReferences()
+        {
+            if (inventoryState == null)
+                inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+
+            if (inventorySlotsRoot == null)
+            {
+                LobbyPlayerInventoryUI inventoryUI = FindFirstObjectByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include);
+                if (inventoryUI != null)
+                {
+                    inventorySlotsRoot = inventoryUI.transform;
+                    Debug.Log($"[LobbyInventoryStateUiBridge] Auto-bound player inventory root={BuildTransformPath(inventorySlotsRoot)}", this);
+=======
                     if (slots[i] != null)
                         slots[i].PrepareForSaveSnapshot();
+>>>>>>> origin/Develop3
                 }
             }
 
