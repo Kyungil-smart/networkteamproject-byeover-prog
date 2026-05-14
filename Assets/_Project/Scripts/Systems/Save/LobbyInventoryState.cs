@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -6,10 +6,10 @@ namespace DeadZone.Systems.Save
 {
     public class LobbyInventoryState : MonoBehaviour
     {
-        [Header("씬 유지")]
+        [Header("???좎?")]
         [SerializeField] private bool dontDestroyOnLoad = true;
 
-        [Header("저장 상태")]
+        [Header("????곹깭")]
         [SerializeField] private bool hasCredits;
         [SerializeField] private int credits;
         [SerializeField] private List<ItemSaveDTO> inventoryItems = new();
@@ -61,6 +61,9 @@ namespace DeadZone.Systems.Save
         }
 
         [Button("인벤토리 상태 비우기")]
+
+        [Button("Clear Inventory State")]
+
         public void Clear()
         {
             hasCredits = false;

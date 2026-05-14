@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
+using DeadZone.Actors.UI;
 using DeadZone.Systems;
 using DeadZone.Systems.Audio;
 
@@ -748,20 +749,18 @@ namespace DeadZone.Actors
 
         private void OpenLootingUI()
         {
-            MonoBehaviour[] behaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
-            foreach (MonoBehaviour behaviour in behaviours)
+            // 로컬 클라이언트에 떠 있는 루팅 UI를 찾아 이 상자 컨테이너를 바인딩합니다.
+            LootingUIController controller = LootingUIController.ActiveInstance != null
+                ? LootingUIController.ActiveInstance
+                : Object.FindFirstObjectByType<LootingUIController>(FindObjectsInactive.Include);
+
+            if (controller == null)
             {
-                if (behaviour == null || behaviour.GetType().Name != "LootingUIController")
-                    continue;
-
-                if (!behaviour.gameObject.scene.IsValid())
-                    continue;
-
-                behaviour.SendMessage("Open", this, SendMessageOptions.DontRequireReceiver);
+                Debug.LogWarning("[LootContainer] LootingUIController를 찾지 못했습니다. 씬 UI에 LootingUIController를 배치하세요.", this);
                 return;
             }
 
-            Debug.LogWarning("[LootContainer] LootingUIController를 찾지 못했습니다. 씬 UI에 LootingUIController를 배치하세요.", this);
+            controller.Open(this);
         }
 
         private bool IsNetworkActive()

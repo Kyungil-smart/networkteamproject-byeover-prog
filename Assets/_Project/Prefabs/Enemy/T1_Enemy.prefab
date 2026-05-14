@@ -877,6 +877,12 @@ MonoBehaviour:
   minimumAgentStoppingDistance: 1.2
   obstacleAvoidanceType: 4
   avoidancePriorityRange: {x: 30, y: 70}
+  alertSoundCooldown: 3
+  alertSoundVolumeMultiplier: 1
+  playFootstepSound: 1
+  footstepInterval: 0.55
+  footstepMinSpeed: 0.15
+  footstepVolumeMultiplier: 0.9
   State:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -3438,7 +3444,7 @@ GameObject:
   - component: {fileID: 3761001769809381656}
   - component: {fileID: 2514790329455139048}
   - component: {fileID: 7787063733367754104}
-  m_Layer: 6
+  m_Layer: 21
   m_Name: Hitbox_Torso
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4277,7 +4283,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 203860936281497292}
-  m_Layer: 6
+  m_Layer: 21
   m_Name: HitboxRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5018,7 +5024,7 @@ GameObject:
   - component: {fileID: 6082482119911403060}
   - component: {fileID: 7572825722357980052}
   - component: {fileID: 8436125829196079576}
-  m_Layer: 6
+  m_Layer: 21
   m_Name: Hitbox_Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}

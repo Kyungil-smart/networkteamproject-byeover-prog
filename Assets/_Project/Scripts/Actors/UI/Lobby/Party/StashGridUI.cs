@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems;
 using Sirenix.OdinInspector;
@@ -12,7 +12,7 @@ using DeadZone.Systems.Save;
 namespace DeadZone.Actors.UI
 {
     /// <summary>
-    /// 로비 보관함 그리드 UI를 생성하고 아이템 추가/소모 요청을 처리합니다.
+    /// 濡쒕퉬 蹂닿???洹몃━??UI瑜??앹꽦?섍퀬 ?꾩씠??異붽?/?뚮え ?붿껌??泥섎━?⑸땲??
     /// </summary>
     public class StashGridUI : MonoBehaviour, IInventory
     {
@@ -24,7 +24,7 @@ namespace DeadZone.Actors.UI
         private const int UpgradeLevel3Cost = 50000;
         private const int UpgradeLevel4Cost = 100000;
 
-        [Title("참조")]
+        [Title("李몄“")]
         [Required]
         [SerializeField] private RectTransform contentRoot;
 
@@ -37,7 +37,7 @@ namespace DeadZone.Actors.UI
 
         [SerializeField] private TMP_Text slotCountText;
 
-        [Title("보관함 업그레이드")]
+        [Title("Stash Upgrade")]
         [SerializeField] private Button openUpgradePopupButton;
         [SerializeField] private GameObject upgradePopupRoot;
         [SerializeField] private Button closeUpgradePopupButton;
@@ -52,7 +52,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private LobbyFacilityState facilityState;
         [SerializeField] private LobbySaveService lobbySaveService;
 
-        [Title("스크롤 설정")]
+        [Title("?ㅽ겕濡??ㅼ젙")]
         [SerializeField] private ScrollRect scrollRect;
 
         [SerializeField] private RectTransform viewport;
@@ -64,24 +64,24 @@ namespace DeadZone.Actors.UI
         [MinValue(1f)]
         [SerializeField] private float scrollSensitivity = 35f;
 
-        [Title("보관함 설정")]
+        [Title("蹂닿????ㅼ젙")]
         [MinValue(1)]
         [MaxValue(MaxStashLevel)]
         [SerializeField] private int stashLevel = 1;
 
         [SerializeField] private bool refreshOnAwake = true;
 
-        [Title("클라우드 저장")]
-        [Tooltip("Cloud Save 로드 이벤트를 받으면 보관함 UI를 저장된 stash 데이터로 갱신합니다.")]
+        [Title("Cloud Save")]
+        [Tooltip("Cloud Save 濡쒕뱶 ?대깽?몃? 諛쏆쑝硫?蹂닿???UI瑜???λ맂 stash ?곗씠?곕줈 媛깆떊?⑸땲??")]
         [SerializeField] private bool loadCloudStashOnLoadedEvent = true;
 
-        [Tooltip("IItemDatabase 서비스가 아직 등록되지 않은 로비 씬에서 Cloud Save itemId를 해석할 보조 데이터베이스입니다.")]
+        [Tooltip("IItemDatabase ?쒕퉬?ㅺ? ?꾩쭅 ?깅줉?섏? ?딆? 濡쒕퉬 ?ъ뿉??Cloud Save itemId瑜??댁꽍??蹂댁“ ?곗씠?곕쿋?댁뒪?낅땲??")]
         [SerializeField] private ItemDatabaseSO cloudStashItemDatabase;
 
-        [Tooltip("클라우드 보관함 데이터가 비어 있을 때 현재 UI 슬롯을 비울지 여부입니다.")]
+        [Tooltip("?대씪?곕뱶 蹂닿????곗씠?곌? 鍮꾩뼱 ?덉쓣 ???꾩옱 UI ?щ’??鍮꾩슱吏 ?щ??낅땲??")]
         [SerializeField] private bool clearSlotsWhenCloudStashEmpty = true;
 
-        [Title("그리드 설정")]
+        [Title("洹몃━???ㅼ젙")]
         [SerializeField] private Vector2 cellSize = new Vector2(100f, 100f);
 
         [SerializeField] private Vector2 spacing = new Vector2(4f, 4f);
@@ -96,18 +96,18 @@ namespace DeadZone.Actors.UI
 
         [SerializeField] private TextAnchor childAlignment = TextAnchor.UpperLeft;
 
-        [Title("테스트 아이템 생성")]
-        [Tooltip("보관함 랜덤 배치 테스트에 사용할 아이템 목록입니다.")]
+        [Title("?뚯뒪???꾩씠???앹꽦")]
+        [Tooltip("蹂닿????쒕뜡 諛곗튂 ?뚯뒪?몄뿉 ?ъ슜???꾩씠??紐⑸줉?낅땲??")]
         [SerializeField] private List<ItemDataSO> testItemPool = new List<ItemDataSO>();
 
-        [Tooltip("스택 가능한 아이템을 생성할 때 1개가 아니라 랜덤 수량으로 생성합니다.")]
+        [Tooltip("?ㅽ깮 媛?ν븳 ?꾩씠?쒖쓣 ?앹꽦????1媛쒓? ?꾨땲???쒕뜡 ?섎웾?쇰줈 ?앹꽦?⑸땲??")]
         [SerializeField] private bool randomizeStackCount = true;
 
-        [Title("디버그")]
-        [Tooltip("Play 중 보관함 슬롯 캐시와 0번 슬롯 상태를 콘솔에 출력합니다.")]
+        [Title("Debug")]
+        [Tooltip("Play 以?蹂닿????щ’ 罹먯떆? 0踰??щ’ ?곹깭瑜?肄섏넄??異쒕젰?⑸땲??")]
         [SerializeField] private bool logSlotCacheOnRefresh = true;
 
-        [Title("상태")]
+        [Title("?곹깭")]
         [ReadOnly]
         [SerializeField] private int activeSlotCount;
 
@@ -309,67 +309,67 @@ namespace DeadZone.Actors.UI
             return foundCount;
         }
 
-        [Button("Lv1 테스트")]
+        [Button("Lv1 Test")]
         private void TestLevel1()
         {
             SetLevel(1);
         }
 
-        [Button("Lv2 테스트")]
+        [Button("Lv2 Test")]
         private void TestLevel2()
         {
             SetLevel(2);
         }
 
-        [Button("Lv3 테스트")]
+        [Button("Lv3 Test")]
         private void TestLevel3()
         {
             SetLevel(3);
         }
 
-        [Button("Lv4 테스트")]
+        [Button("Lv4 Test")]
         private void TestLevel4()
         {
             SetLevel(4);
         }
 
-        [Button("보관함 갱신")]
+        [Button("蹂닿???媛깆떊")]
         private void RefreshFromInspector()
         {
             RefreshSlots();
         }
 
-        [Button("랜덤 10개 생성")]
+        [Button("?쒕뜡 10媛??앹꽦")]
         private void GenerateRandom10()
         {
             GenerateRandomTestItems(10);
         }
 
-        [Button("랜덤 20개 생성")]
+        [Button("?쒕뜡 20媛??앹꽦")]
         private void GenerateRandom20()
         {
             GenerateRandomTestItems(20);
         }
 
-        [Button("랜덤 30개 생성")]
+        [Button("?쒕뜡 30媛??앹꽦")]
         private void GenerateRandom30()
         {
             GenerateRandomTestItems(30);
         }
 
-        [Button("랜덤 40개 생성")]
+        [Button("?쒕뜡 40媛??앹꽦")]
         private void GenerateRandom40()
         {
             GenerateRandomTestItems(40);
         }
 
-        [Button("랜덤 50개 생성")]
+        [Button("?쒕뜡 50媛??앹꽦")]
         private void GenerateRandom50()
         {
             GenerateRandomTestItems(50);
         }
 
-        [Button("테스트 아이템 비우기")]
+        [Button("Clear Test Items")]
         private void ClearTestItems()
         {
             RefreshSlots();
@@ -381,13 +381,13 @@ namespace DeadZone.Actors.UI
             }
         }
 
-        [Button("스크롤 상태 로그")]
+        [Button("?ㅽ겕濡??곹깭 濡쒓렇")]
         private void LogScrollState()
         {
             Debug.Log($"[StashGridUI] ScrollRect={scrollRect}, Viewport={viewport}, Content={contentRoot}, ContentHeight={(contentRoot != null ? contentRoot.rect.height : 0f)}, ViewportHeight={(viewport != null ? viewport.rect.height : 0f)}, Vertical={(scrollRect != null && scrollRect.vertical)}", this);
         }
 
-        [Button("참조 자동 연결")]
+        [Button("李몄“ ?먮룞 ?곌껐")]
         private void AutoBindReferences()
         {
             if (scrollRect == null)
@@ -442,7 +442,7 @@ namespace DeadZone.Actors.UI
 
             if (contentRoot == transform)
             {
-                Debug.LogError("[StashGridUI] Content Root가 StashGridUI 자신으로 잡혀 있습니다. ScrollView/Viewport/Content 오브젝트를 Content Root에 연결해야 합니다.", this);
+                Debug.LogError("[StashGridUI] Content Root媛 StashGridUI ?먯떊?쇰줈 ?≫? ?덉뒿?덈떎. ScrollView/Viewport/Content ?ㅻ툕?앺듃瑜?Content Root???곌껐?댁빞 ?⑸땲??", this);
                 return;
             }
 
@@ -920,6 +920,7 @@ namespace DeadZone.Actors.UI
 
             Debug.Log($"[StashGridUI] Applied LobbyInventoryState stash items. Applied={appliedCount}/{stashItems.Count}", this);
         }
+<<<<<<< HEAD
 
         private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem, bool shiftOneBasedLinearIndex)
         {
@@ -940,6 +941,8 @@ namespace DeadZone.Actors.UI
             return FindFirstEmptySlot();
         }
 
+=======
+>>>>>>> origin/Develop3
         public List<ItemSaveDTO> CaptureSavedStashItems()
         {
             RefreshSlots();
@@ -975,7 +978,7 @@ namespace DeadZone.Actors.UI
             return items;
         }
 
-        private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem)
+        private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem, bool shiftOneBasedLinearIndex)
         {
             return FindSlotForLobbyItem(savedItem, false);
         }
@@ -1067,7 +1070,7 @@ namespace DeadZone.Actors.UI
             IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
             if (itemDatabase == null && cloudStashItemDatabase == null)
             {
-                Debug.LogWarning("[StashGridUI] Cloud Save 보관함을 적용할 수 없습니다. IItemDatabase 서비스 또는 보조 ItemDatabaseSO가 필요합니다.", this);
+                Debug.LogWarning("[StashGridUI] Cloud Save 蹂닿??⑥쓣 ?곸슜?????놁뒿?덈떎. IItemDatabase ?쒕퉬???먮뒗 蹂댁“ ItemDatabaseSO媛 ?꾩슂?⑸땲??", this);
                 return;
             }
 
@@ -1082,14 +1085,14 @@ namespace DeadZone.Actors.UI
                 ItemDataSO itemData = ResolveCloudStashItemData(cloudSlot.itemId, itemDatabase);
                 if (itemData == null)
                 {
-                    Debug.LogWarning($"[StashGridUI] Cloud Save 보관함 아이템을 찾을 수 없습니다. ItemId={cloudSlot.itemId}", this);
+                    Debug.LogWarning($"[StashGridUI] Cloud Save 蹂닿????꾩씠?쒖쓣 李얠쓣 ???놁뒿?덈떎. ItemId={cloudSlot.itemId}", this);
                     continue;
                 }
 
                 InventorySlotUI targetSlot = FindSlotForCloudSlot(cloudSlot);
                 if (targetSlot == null)
                 {
-                    Debug.LogWarning($"[StashGridUI] Cloud Save 보관함 슬롯이 부족합니다. ItemId={cloudSlot.itemId}", this);
+                    Debug.LogWarning($"[StashGridUI] Cloud Save 蹂닿????щ’??遺議깊빀?덈떎. ItemId={cloudSlot.itemId}", this);
                     continue;
                 }
 
@@ -1187,7 +1190,7 @@ namespace DeadZone.Actors.UI
         {
             if (contentRoot == null || slotPrefab == null)
             {
-                Debug.LogWarning("[StashGridUI] Content 또는 슬롯 프리팹이 연결되지 않았습니다.", this);
+                Debug.LogWarning("[StashGridUI] Content ?먮뒗 ?щ’ ?꾨━?뱀씠 ?곌껐?섏? ?딆븯?듬땲??", this);
                 return;
             }
 
@@ -1333,7 +1336,7 @@ namespace DeadZone.Actors.UI
             List<ItemDataSO> validItems = GetValidTestItems();
             if (validItems.Count == 0)
             {
-                Debug.LogWarning("[StashGridUI] 테스트 아이템 풀이 비어 있습니다. Inspector의 '테스트 아이템 생성' 목록에 ItemDataSO를 넣어주세요.", this);
+                Debug.LogWarning("[StashGridUI] ?뚯뒪???꾩씠?????鍮꾩뼱 ?덉뒿?덈떎. Inspector??'?뚯뒪???꾩씠???앹꽦' 紐⑸줉??ItemDataSO瑜??ｌ뼱二쇱꽭??", this);
                 return;
             }
 

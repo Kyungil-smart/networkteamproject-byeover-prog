@@ -61,6 +61,7 @@ namespace DeadZone.Actors
             NetworkVariableWritePermission.Server);
 
         private RollSystem rollSystem;
+        private PlayerAnimatorDriver animatorDriver;
 
         public float BaseMaxHP => maxHP;
         public float HousingMaxHpBonus => housingMaxHpBonus;
@@ -78,6 +79,7 @@ namespace DeadZone.Actors
         private void Awake()
         {
             rollSystem = GetComponent<RollSystem>();
+            animatorDriver = GetComponent<PlayerAnimatorDriver>();
         }
 
         private void OnValidate()
@@ -148,10 +150,17 @@ namespace DeadZone.Actors
 
             if (IsAlive)
             {
+                float previousHp = CurrentHP.Value;
                 CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
 
                 if (CurrentHP.Value <= 0f)
+                {
                     TransitionToKnocked(attackerClientId);
+                }
+                else if (CurrentHP.Value < previousHp)
+                {
+                    PlayHitReaction();
+                }
             }
             else if (IsKnocked)
             {
@@ -175,10 +184,17 @@ namespace DeadZone.Actors
 
             if (IsAlive)
             {
+                float previousHp = CurrentHP.Value;
                 CurrentHP.Value = Mathf.Max(0f, CurrentHP.Value - damage);
 
                 if (CurrentHP.Value <= 0f)
+                {
                     TransitionToKnocked(attackerClientId);
+                }
+                else if (CurrentHP.Value < previousHp)
+                {
+                    PlayHitReaction();
+                }
             }
             else if (IsKnocked)
             {
@@ -197,6 +213,7 @@ namespace DeadZone.Actors
             return rollSystem != null && rollSystem.IsDamageImmune;
         }
 
+<<<<<<< HEAD
         private bool ShouldIgnoreFriendlyFire(ulong attackerClientId)
         {
             if (attackerClientId == DamageSystem.AI_SHOOTER_ID)
@@ -206,6 +223,29 @@ namespace DeadZone.Actors
                 return false;
 
             return true;
+=======
+        private void PlayHitReaction()
+        {
+            if (IsSpawned)
+            {
+                PlayHitReactionClientRpc();
+                return;
+            }
+
+            if (animatorDriver == null)
+                animatorDriver = GetComponent<PlayerAnimatorDriver>();
+
+            animatorDriver?.TriggerHitReaction();
+        }
+
+        [ClientRpc]
+        private void PlayHitReactionClientRpc()
+        {
+            if (animatorDriver == null)
+                animatorDriver = GetComponent<PlayerAnimatorDriver>();
+
+            animatorDriver?.TriggerHitReaction();
+>>>>>>> origin/Develop3
         }
 
         public void Heal(float amount)
