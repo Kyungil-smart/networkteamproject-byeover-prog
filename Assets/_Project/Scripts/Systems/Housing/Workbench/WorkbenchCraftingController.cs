@@ -59,12 +59,136 @@ namespace DeadZone.Systems.Housing
 
             if (!HousingInventoryResolver.IsNetworkReady(out string failReason))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (TryCraftOfflineForDebug(recipeID))
+                    return;
+#endif
                 FailCraft(recipeID, failReason);
                 return;
             }
 
             RequestCraftRpc(recipeID);
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool TryCraftOfflineForDebug(string recipeID)
+        {
+            IInventory inventory = HousingCraftMaterialDebugInventory.Instance;
+
+            if (inventory == null)
+                return false;
+
+            if (!TryGetRecipeByDebugLevel(recipeID, out RecipeSO recipe, out string failReason))
+            {
+                FailCraft(recipeID, failReason);
+                return true;
+            }
+
+            if (!IsRecipeValid(recipe))
+                return true;
+
+            if (!HasAllIngredients(inventory, recipe))
+            {
+                FailCraft(recipe.recipeID, "오프라인 테스트 인벤토리에 제작 재료가 부족합니다.");
+                return true;
+            }
+
+            int resultCount = Mathf.Max(1, recipe.resultCount);
+
+            if (!CanAcceptCraftResult(inventory, recipe, resultCount))
+            {
+                FailCraft(recipe.recipeID, "오프라인 테스트 인벤토리가 제작 결과를 받을 수 없습니다.");
+                return true;
+            }
+
+            if (!ConsumeAllIngredients(inventory, recipe))
+            {
+                FailCraft(recipe.recipeID, "오프라인 테스트 제작 재료 소모에 실패했습니다.");
+                return true;
+            }
+
+            if (!TryAddCraftResult(inventory, recipe, resultCount, out int addedCount))
+            {
+                RemoveAddedCraftResult(inventory, recipe, addedCount);
+                RestoreConsumedIngredients(inventory);
+                FailCraft(recipe.recipeID, "오프라인 테스트 제작 결과 지급에 실패했습니다. 재료를 복구했습니다.");
+                return true;
+            }
+
+            // 오프라인 테스트 제작은 메모리 인벤토리에만 결과가 들어가므로, 로비 보관함 저장 데이터에도 같은 제작 결과를 반영합니다.
+            if (!HousingOfflineCraftSaveSync.TryApplyCraftToLobbyStash(recipe, resultCount, out string saveFailReason))
+            {
+                RemoveAddedCraftResult(inventory, recipe, addedCount);
+                RestoreConsumedIngredients(inventory);
+                FailCraft(recipe.recipeID, saveFailReason);
+                return true;
+            }
+
+            consumedIngredients.Clear();
+
+            EventBus.Publish(new WorkbenchCraftSucceededEvent
+            {
+                recipeId = recipe.recipeID,
+                resultItemId = recipe.result.itemID,
+                resultCount = resultCount
+            });
+
+            EventBus.Publish(new HousingCraftResultEvent
+            {
+                facilityName = "Workbench",
+                recipeId = recipe.recipeID,
+                resultItemId = recipe.result.itemID,
+                resultCount = resultCount,
+                success = true,
+                reason = "오프라인 테스트 제작 성공"
+            });
+
+            if (logCraftResult)
+            {
+                Debug.Log(
+                    $"[WorkbenchCraftingController] 오프라인 테스트 작업대 제작 성공\n" +
+                    $"RecipeID: {recipe.recipeID}\n" +
+                    $"Result: {recipe.result.itemID} x{resultCount}",
+                    this);
+            }
+
+            return true;
+        }
+
+        private bool TryGetRecipeByDebugLevel(string recipeID, out RecipeSO recipe, out string failReason)
+        {
+            recipe = null;
+            failReason = string.Empty;
+
+            if (recipeCatalog == null)
+                recipeCatalog = GetComponent<WorkbenchRecipeCatalog>();
+
+            if (recipeCatalog == null)
+            {
+                failReason = "WorkbenchRecipeCatalog가 없습니다.";
+                return false;
+            }
+
+            if (!recipeCatalog.TryGetRecipe(recipeID, out recipe))
+            {
+                failReason = $"레시피를 찾지 못했습니다. RecipeID: {recipeID}";
+                return false;
+            }
+
+            int debugWorkbenchLevel = HousingCraftMaterialDebugInventory.ResolveFacilityLevel(
+                FacilityType.Workbench,
+                recipeCatalog.CurrentWorkbenchLevel);
+            int requiredLevel = recipeCatalog.GetRequiredWorkbenchLevel(recipe);
+
+            if (debugWorkbenchLevel < requiredLevel)
+            {
+                failReason = $"작업대 Lv.{requiredLevel} 이상이 필요합니다. 현재 작업대 Lv.{debugWorkbenchLevel}";
+                return false;
+            }
+
+            return true;
+        }
+#endif
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void RequestCraftRpc(string recipeID, RpcParams rpcParams = default)
@@ -161,7 +285,7 @@ namespace DeadZone.Systems.Housing
 
             if (saveSyncer != null)
             {
-                saveSyncer.RequestSaveFromServer($"Workbench 제작 성공: {recipe.recipeID}");
+                saveSyncer.RequestLobbyInventorySaveFromServer($"Workbench craft inventory snapshot: {recipe.recipeID}");
             }
             else
             {

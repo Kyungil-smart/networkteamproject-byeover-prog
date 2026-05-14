@@ -194,7 +194,12 @@ namespace DeadZone.Actors
         private void OnStaminaChanged(PlayerStaminaChangedEvent e)
         {
             if (!IsLocalClient(e.clientId)) return;
-            RefreshStaminaUI(e.newValue);
+            // 하우징 보너스가 적용된 최대 스태미너가 이벤트에 들어오면 그 값을 우선 사용합니다.
+            float resolvedMaxStamina = e.maxValue > 0f
+                ? e.maxValue
+                : ResolveLocalMaxStamina(e.newValue);
+
+            RefreshStaminaUI(e.newValue, resolvedMaxStamina);
         }
 
         private void RefreshHpUI(float value)
@@ -306,9 +311,48 @@ namespace DeadZone.Actors
 
         private void RefreshStaminaUI(float value)
         {
-            float clamped = Mathf.Clamp(value, 0f, maxStamina);
-            if (staminaFill != null) staminaFill.fillAmount = Mathf.Clamp01(clamped / maxStamina);
+            RefreshStaminaUI(value, ResolveLocalMaxStamina(value));
+        }
+
+        private void RefreshStaminaUI(float value, float maxValue)
+        {
+            // 최대 스태미너가 100을 넘어도 Fill 비율이 올바르게 보이도록 최대값을 함께 받아 계산합니다.
+            float resolvedMax = Mathf.Max(1f, maxValue);
+            float clamped = Mathf.Clamp(value, 0f, resolvedMax);
+
+            if (staminaFill != null) staminaFill.fillAmount = Mathf.Clamp01(clamped / resolvedMax);
             if (staminaValueText != null) staminaValueText.text = Mathf.CeilToInt(clamped).ToString();
+        }
+
+        private float ResolveLocalMaxStamina(float currentStamina)
+        {
+            float resolvedMax = Mathf.Max(1f, maxStamina, currentStamina);
+
+            // 이벤트에 최대값이 없을 때는 로컬 플레이어의 PlayerStaminaSystem 복제 값을 찾아 보정합니다.
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || nm.SpawnManager == null || nm.SpawnManager.SpawnedObjectsList == null)
+                return resolvedMax;
+
+            ulong localId = nm.LocalClientId;
+            foreach (NetworkObject netObj in nm.SpawnManager.SpawnedObjectsList)
+            {
+                if (netObj == null || netObj.OwnerClientId != localId)
+                    continue;
+
+                PlayerStaminaSystem stamina = netObj.GetComponent<PlayerStaminaSystem>();
+                if (stamina == null)
+                    stamina = netObj.GetComponentInChildren<PlayerStaminaSystem>(true);
+
+                if (stamina == null)
+                    continue;
+
+                if (stamina.IsSpawned && stamina.ReplicatedMaxStamina.Value > 0f)
+                    return Mathf.Max(resolvedMax, stamina.ReplicatedMaxStamina.Value);
+
+                return Mathf.Max(resolvedMax, stamina.MaxStamina);
+            }
+
+            return resolvedMax;
         }
 
         // 플레이어 상태 변경 시 패널 전환 + 상태별 피드백 재생

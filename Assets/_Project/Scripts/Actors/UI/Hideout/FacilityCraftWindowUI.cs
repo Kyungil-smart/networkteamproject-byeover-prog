@@ -349,6 +349,20 @@ namespace DeadZone.Actors.UI.Hideout
             }
 
             // 인스펙터에 직접 연결된 인벤토리입니다.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // 네트워크 플레이어가 없는 로비/하이드아웃 테스트에서는 F12 제작 재료 테스트 인벤토리를 사용합니다.
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            {
+                HousingCraftMaterialDebugInventory debugInventory = HousingCraftMaterialDebugInventory.Instance;
+                if (debugInventory != null)
+                {
+                    inventory = debugInventory;
+                    inventoryBehaviour = debugInventory;
+                    DebugLog("F12 오프라인 제작 테스트 인벤토리 연결 완료");
+                }
+            }
+#endif
+
             if (inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
