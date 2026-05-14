@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
     \uC6A9 \uC544\uC774\uD15C(\uC758\uB8CC \uC2DC\uC124)"
   icon: {fileID: 21300000, guid: 09b70b3701ad4984f93bafa541d5c47c, type: 3}
-  category: 5
+  category: 8
   rarity: 0
   isValuable: 0
   gridSize: {x: 1, y: 1}

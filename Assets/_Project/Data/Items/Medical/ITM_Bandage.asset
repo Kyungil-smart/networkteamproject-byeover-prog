@@ -9,14 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
+  m_Script: {fileID: 11500000, guid: c539c0f8f4614e84bb126ef54bd7892a, type: 3}
   m_Name: ITM_Bandage
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: Bandage
-  displayName: "\uBD95\uB300"
-  description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC6A9\uB3C4: \uAC00\uBCBC\uC6B4
-    \uC0C1\uCC98 \uCE58\uB8CC\uC6A9 \uBD95\uB300\n\n- \uD2B9\uC9D5\n1. \uD6A8\uACFC:
-    HP +25\uD68C\uBCF5\n2. \uC0AC\uC6A9\uC2DC\uAC04: 3\uCD08"
+  displayName: "붕대"
+  description: "- 등급: 일반\n- 용도: 가벼운 상처 치료용 붕대\n\n- 효과\n1. 사용 시간: 2초\n2. 지속 회복: 5초 동안 초당 5 회복\n3. 총 회복량: 25"
   icon: {fileID: 21300000, guid: dd5d6811385504a4f81c4d817d2b2b8c, type: 3}
   category: 5
   rarity: 0
@@ -26,3 +24,10 @@ MonoBehaviour:
   weightKg: 0.1
   baseSellPrice: 150
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
+  useSeconds: 2
+  instantHeal: 0
+  healDurationSeconds: 5
+  healPerSecond: 5
+  buffDurationSeconds: 0
+  weightCapacityMultiplierBonus: 0
+  staminaCostMultiplierBonus: 0

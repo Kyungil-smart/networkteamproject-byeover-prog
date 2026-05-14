@@ -9,13 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
+  m_Script: {fileID: 11500000, guid: c539c0f8f4614e84bb126ef54bd7892a, type: 3}
   m_Name: ITM_AdvancedFirstAidKit
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: ITM_AdvancedFirstAidKit
-  displayName: "\uACE0\uAE09 \uAD6C\uAE09\uC0C1\uC790"
-  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uBAA8\uB4E0 \uC0C1\uCC98\uB97C
-    \uC644\uBCBD \uCE58\uB8CC\uD558\uB294 \uAD6C\uAE09\uC0C1\uC790"
+  displayName: "고급 구급상자"
+  description: "- 등급: 레어\n- 용도: 큰 부상을 치료하는 고급 구급상자\n\n- 효과\n1. 사용 시간: 4초\n2. 지속 회복: 5초 동안 초당 15 회복\n3. 총 회복량: 75"
   icon: {fileID: 21300000, guid: 02a20bd54b27b094eb92caf69e172a8b, type: 3}
   category: 5
   rarity: 2
@@ -25,3 +24,10 @@ MonoBehaviour:
   weightKg: 0.7
   baseSellPrice: 6000
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
+  useSeconds: 4
+  instantHeal: 0
+  healDurationSeconds: 5
+  healPerSecond: 15
+  buffDurationSeconds: 0
+  weightCapacityMultiplierBonus: 0
+  staminaCostMultiplierBonus: 0
