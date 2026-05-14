@@ -193,6 +193,7 @@ namespace DeadZone.Actors.UI
         public void SetTooltip(ItemTooltipUI tooltip)
         {
             tooltipUI = tooltip;
+            EnsureRaycastTarget();
         }
 
         public void CopyRarityBackgroundSpritesFrom(InventorySlotUI source)
