@@ -165,6 +165,7 @@ namespace DeadZone.Actors.UI
             RefreshGridInventorySlots();
             RefreshEquipmentSlotViews();
             DeadZone.Systems.Raid.RaidLoadoutTransferService.ApplyLocalQuickSlotsToUi();
+            RefreshQuickSlotsFromInventory();
         }
 
         public void Close()
@@ -542,6 +543,7 @@ namespace DeadZone.Actors.UI
         private void HandleGridInventoryChanged(Unity.Netcode.NetworkListEvent<ItemSlotData> changeEvent)
         {
             RefreshGridInventorySlots();
+            RefreshQuickSlotsFromInventory();
         }
 
         private void HandleEquipmentSlotIdChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
@@ -598,6 +600,7 @@ namespace DeadZone.Actors.UI
             }
 
             RefreshBagSlots();
+            RefreshQuickSlotsFromInventory();
 
             if (debugGridInventoryView)
                 Debug.Log($"[InventoryUI] GridInventory 표시 갱신 완료. count={boundGridInventory.ServerGrid.Count}", this);
@@ -897,6 +900,39 @@ namespace DeadZone.Actors.UI
                     continue;
 
                 SetQuickSlotsByIndex(quickSlots, Mathf.Max(0, savedItem.slotIndex), itemData, Mathf.Max(1, savedItem.stackCount));
+            }
+
+            RefreshQuickSlotsFromInventory();
+        }
+
+        private void RefreshQuickSlotsFromInventory()
+        {
+            if (boundGridInventory == null && autoBindOwnerGridInventory)
+                BindOwnerGridInventoryIfNeeded();
+
+            if (boundGridInventory == null || boundGridInventory.ServerGrid == null)
+                return;
+
+            List<InventorySlotUI> quickSlots = GetQuickSlotDisplaySlots();
+            if (quickSlots.Count == 0)
+                return;
+
+            for (int i = 0; i < quickSlots.Count; i++)
+            {
+                InventorySlotUI slot = quickSlots[i];
+                if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
+                    continue;
+
+                int availableCount = boundGridInventory.GetItemCount(slot.CurrentItemData.itemID);
+                if (availableCount <= 0)
+                {
+                    // 퀵슬롯은 실제 아이템이 아니라 바로가기이므로, 원본 아이템이 없으면 즉시 비운다.
+                    slot.ClearItem();
+                    continue;
+                }
+
+                if (slot.CurrentStackCount != availableCount)
+                    slot.SetItem(slot.CurrentItemData, availableCount);
             }
         }
 

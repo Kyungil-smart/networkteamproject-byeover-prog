@@ -22,6 +22,7 @@ namespace DeadZone.Actors
         private EquipmentSlots equipment;
         private IItemDatabase itemDb;
         private int activeSlotCount = BASE_WIDTH * BASE_HEIGHT;
+        private bool isUsingMedicalItem;
 
         [Header("월드 드롭")]
         [SerializeField] private GameObject droppedLootItemPrefab;
@@ -867,30 +868,67 @@ namespace DeadZone.Actors
             if (!IsServer || string.IsNullOrWhiteSpace(itemId))
                 return false;
 
+            if (isUsingMedicalItem)
+            {
+                Debug.LogWarning("[GridInventory] 이미 의료 아이템을 사용 중입니다.", this);
+                return false;
+            }
+
             EnsureItemDatabase();
 
             ItemDataSO itemData = itemDb?.GetById(itemId);
             if (itemData == null || itemData.category != ItemCategory.Med)
                 return false;
 
-            if (!TryGetMedicalEffect(itemData.itemID, out MedicalUseEffect effect))
+            if (!TryGetMedicalEffect(itemData, out MedicalUseEffect effect))
                 return false;
 
-            if (!ConsumeItem(itemId, 1) &&
-                !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
-                !ConsumeItem(itemData.itemID, 1))
+            if (!CanApplyMedicalEffectNow(effect))
             {
+                Debug.LogWarning($"[GridInventory] 현재 상태에서는 의료 아이템 효과를 적용할 수 없습니다. itemId={itemData.itemID}", this);
                 return false;
             }
 
+            if (!HasItem(itemId, 1) &&
+                (string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) || !HasItem(itemData.itemID, 1)))
+            {
+                Debug.LogWarning($"[GridInventory] 사용할 의료 아이템이 인벤토리에 없습니다. itemId={itemData.itemID}", this);
+                return false;
+            }
+
+            bool consumed = ConsumeItem(itemId, 1);
+            if (!consumed &&
+                !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
+            {
+                consumed = ConsumeItem(itemData.itemID, 1);
+            }
+
+            if (!consumed)
+            {
+                Debug.LogWarning($"[GridInventory] 의료 아이템을 소모하지 못했습니다. itemId={itemData.itemID}", this);
+                return false;
+            }
+
+            isUsingMedicalItem = true;
             StartCoroutine(ApplyMedicalEffectRoutine(effect));
             return true;
         }
 
         private IEnumerator ApplyMedicalEffectRoutine(MedicalUseEffect effect)
         {
-            if (effect.useSeconds > 0f)
-                yield return new WaitForSeconds(effect.useSeconds);
+            if (!IsServer)
+            {
+                FinishMedicalUse();
+                yield break;
+            }
+
+            // 아이템은 사용 입력 직후 소모하고, 효과도 즉시 시작한다.
+            // useSeconds는 추후 사용 모션/캐스팅 UI가 생길 때 별도 진행 시간으로 연결할 수 있다.
+            if (!CanApplyMedicalEffectNow(effect))
+            {
+                FinishMedicalUse();
+                yield break;
+            }
 
             PlayerHealthSystem health = GetComponent<PlayerHealthSystem>();
 
@@ -909,6 +947,7 @@ namespace DeadZone.Actors
                 }
             }
 
+            // 임시 효과도 사용 입력 직후 서버에서만 적용한다.
             if (effect.weightCapacityMultiplierBonus > 0f)
             {
                 GetComponent<PlayerCarryWeightSystem>()?.ApplyTemporaryCapacityMultiplier(
@@ -922,55 +961,59 @@ namespace DeadZone.Actors
                     effect.staminaCostMultiplierBonus,
                     effect.durationSeconds);
             }
+
+            FinishMedicalUse();
         }
 
-        private static bool TryGetMedicalEffect(string itemId, out MedicalUseEffect effect)
+        private void FinishMedicalUse()
+        {
+            isUsingMedicalItem = false;
+        }
+
+        private bool CanApplyMedicalEffectNow(MedicalUseEffect effect)
+        {
+            PlayerHealthSystem health = GetComponent<PlayerHealthSystem>();
+            bool canHeal =
+                (effect.instantHeal > 0f || effect.healDurationSeconds > 0f && effect.healPerSecond > 0f) &&
+                health != null &&
+                health.IsAlive &&
+                health.CurrentHP.Value < health.MaxHP;
+
+            bool canApplyCarryWeightBuff =
+                effect.durationSeconds > 0f &&
+                effect.weightCapacityMultiplierBonus > 0f &&
+                GetComponent<PlayerCarryWeightSystem>() != null;
+
+            bool canApplyStaminaBuff =
+                effect.durationSeconds > 0f &&
+                effect.staminaCostMultiplierBonus > 0f &&
+                GetComponent<PlayerStaminaSystem>() != null;
+
+            return canHeal || canApplyCarryWeightBuff || canApplyStaminaBuff;
+        }
+
+        private static bool TryGetMedicalEffect(ItemDataSO itemData, out MedicalUseEffect effect)
         {
             effect = default;
-            string id = NormalizeMedicalItemId(itemId);
 
-            switch (id)
+            if (itemData is not MedicalItemDataSO medicalItem)
+                return false;
+
+            if (!medicalItem.HasAnyEffect)
+                return false;
+
+            effect = new MedicalUseEffect
             {
-                case "bandage":
-                    effect = new MedicalUseEffect { useSeconds = 2f, healDurationSeconds = 5f, healPerSecond = 5f };
-                    return true;
-                case "firstaidkit":
-                    effect = new MedicalUseEffect { useSeconds = 3f, healDurationSeconds = 5f, healPerSecond = 10f };
-                    return true;
-                case "advancedfirstaidkit":
-                    effect = new MedicalUseEffect { useSeconds = 4f, healDurationSeconds = 5f, healPerSecond = 15f };
-                    return true;
-                case "slowhealsyringe":
-                case "regensyringe":
-                    effect = new MedicalUseEffect { useSeconds = 1f, healDurationSeconds = 20f, healPerSecond = 2.5f };
-                    return true;
-                case "fasthealsyringe":
-                    effect = new MedicalUseEffect { useSeconds = 1f, instantHeal = 30f };
-                    return true;
-                case "weightcapacitysyringe":
-                    effect = new MedicalUseEffect
-                    {
-                        useSeconds = 1f,
-                        durationSeconds = 600f,
-                        weightCapacityMultiplierBonus = 0.5f,
-                        staminaCostMultiplierBonus = 0.3f
-                    };
-                    return true;
-                default:
-                    return false;
-            }
-        }
+                useSeconds = medicalItem.useSeconds,
+                healDurationSeconds = medicalItem.healDurationSeconds,
+                healPerSecond = medicalItem.healPerSecond,
+                instantHeal = medicalItem.instantHeal,
+                durationSeconds = medicalItem.buffDurationSeconds,
+                weightCapacityMultiplierBonus = medicalItem.weightCapacityMultiplierBonus,
+                staminaCostMultiplierBonus = medicalItem.staminaCostMultiplierBonus
+            };
 
-        private static string NormalizeMedicalItemId(string itemId)
-        {
-            if (string.IsNullOrWhiteSpace(itemId))
-                return string.Empty;
-
-            string normalized = itemId.Trim().ToLowerInvariant();
-            if (normalized.StartsWith("itm_"))
-                normalized = normalized.Substring(4);
-
-            return normalized.Replace("_", string.Empty).Replace("-", string.Empty).Replace(" ", string.Empty);
+            return true;
         }
 
         private struct MedicalUseEffect

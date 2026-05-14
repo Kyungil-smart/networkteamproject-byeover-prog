@@ -9,13 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
+  m_Script: {fileID: 11500000, guid: c539c0f8f4614e84bb126ef54bd7892a, type: 3}
   m_Name: ITM_FirstAidKit
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: ITM_FirstAidKit
-  displayName: "\uAD6C\uAE09\uC0C1\uC790"
-  description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC751\uAE09\uCC98\uCE58
-    \uC6A9 \uAD6C\uAE09\uC0C1\uC790"
+  displayName: "구급상자"
+  description: "- 등급: 희귀\n- 용도: 응급처치용 구급상자\n\n- 효과\n1. 사용 시간: 3초\n2. 지속 회복: 5초 동안 초당 10 회복\n3. 총 회복량: 50"
   icon: {fileID: 21300000, guid: cc60e9ba6933ec5468dfab201142a048, type: 3}
   category: 5
   rarity: 1
@@ -25,3 +24,10 @@ MonoBehaviour:
   weightKg: 0.6
   baseSellPrice: 2500
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
+  useSeconds: 3
+  instantHeal: 0
+  healDurationSeconds: 5
+  healPerSecond: 10
+  buffDurationSeconds: 0
+  weightCapacityMultiplierBonus: 0
+  staminaCostMultiplierBonus: 0

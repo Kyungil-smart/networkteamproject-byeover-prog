@@ -293,8 +293,32 @@ namespace DeadZone.Actors.UI
                 return false;
             }
 
+            // 퀵슬롯은 아이템 바로가기만 들고 있으므로, 실제 인벤토리에 아이템이 남아 있는지 먼저 확인한다.
+            if (!inventory.HasItem(CurrentItemData.itemID, 1))
+            {
+                Debug.LogWarning($"[InventorySlotUI] Medical item use failed. Item is not in the local inventory. itemId={CurrentItemData.itemID}", this);
+                return false;
+            }
+
             inventory.RequestUseMedicalItem(CurrentItemData.itemID);
+            ApplyQuickSlotUsePreview();
             return true;
+        }
+
+        private void ApplyQuickSlotUsePreview()
+        {
+            if (slotKind != InventorySlotKind.QuickSlot)
+                return;
+
+            // 서버 인벤토리 변경 이벤트가 도착하기 전에도 사용한 퀵슬롯이 즉시 줄어든 것처럼 보이게 한다.
+            // 최종 수량은 GridInventory 동기화가 다시 맞춘다.
+            if (currentStackCount <= 1)
+            {
+                ClearItem();
+                return;
+            }
+
+            SetItem(CurrentItemData, currentStackCount - 1);
         }
 
         private static GridInventory ResolveLocalPlayerInventory()
