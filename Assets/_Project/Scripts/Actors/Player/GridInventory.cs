@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -547,6 +548,150 @@ namespace DeadZone.Actors
 
             EnsureItemDatabase();
             return itemDb?.GetById(itemId);
+        public void RequestUseMedicalItem(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            if (IsSpawned)
+            {
+                UseMedicalItemRpc(new FixedString64Bytes(itemId));
+                return;
+            }
+
+            if (IsServer)
+                TryUseMedicalItem(itemId);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void UseMedicalItemRpc(FixedString64Bytes itemId, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            TryUseMedicalItem(itemId.ToString());
+        }
+
+        private bool TryUseMedicalItem(string itemId)
+        {
+            if (!IsServer || string.IsNullOrWhiteSpace(itemId))
+                return false;
+
+            EnsureItemDatabase();
+
+            ItemDataSO itemData = itemDb?.GetById(itemId);
+            if (itemData == null || itemData.category != ItemCategory.Med)
+                return false;
+
+            if (!TryGetMedicalEffect(itemData.itemID, out MedicalUseEffect effect))
+                return false;
+
+            if (!ConsumeItem(itemId, 1) &&
+                !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
+                !ConsumeItem(itemData.itemID, 1))
+            {
+                return false;
+            }
+
+            StartCoroutine(ApplyMedicalEffectRoutine(effect));
+            return true;
+        }
+
+        private IEnumerator ApplyMedicalEffectRoutine(MedicalUseEffect effect)
+        {
+            if (effect.useSeconds > 0f)
+                yield return new WaitForSeconds(effect.useSeconds);
+
+            PlayerHealthSystem health = GetComponent<PlayerHealthSystem>();
+
+            if (effect.instantHeal > 0f && health != null)
+                health.Heal(effect.instantHeal);
+
+            if (effect.healDurationSeconds > 0f && effect.healPerSecond > 0f && health != null)
+            {
+                float elapsed = 0f;
+                while (elapsed < effect.healDurationSeconds)
+                {
+                    float delta = Mathf.Min(Time.deltaTime, effect.healDurationSeconds - elapsed);
+                    health.Heal(effect.healPerSecond * delta);
+                    elapsed += delta;
+                    yield return null;
+                }
+            }
+
+            if (effect.weightCapacityMultiplierBonus > 0f)
+            {
+                GetComponent<PlayerCarryWeightSystem>()?.ApplyTemporaryCapacityMultiplier(
+                    effect.weightCapacityMultiplierBonus,
+                    effect.durationSeconds);
+            }
+
+            if (effect.staminaCostMultiplierBonus > 0f)
+            {
+                GetComponent<PlayerStaminaSystem>()?.ApplyTemporaryConsumptionMultiplier(
+                    effect.staminaCostMultiplierBonus,
+                    effect.durationSeconds);
+            }
+        }
+
+        private static bool TryGetMedicalEffect(string itemId, out MedicalUseEffect effect)
+        {
+            effect = default;
+            string id = NormalizeMedicalItemId(itemId);
+
+            switch (id)
+            {
+                case "bandage":
+                    effect = new MedicalUseEffect { useSeconds = 2f, healDurationSeconds = 5f, healPerSecond = 5f };
+                    return true;
+                case "firstaidkit":
+                    effect = new MedicalUseEffect { useSeconds = 3f, healDurationSeconds = 5f, healPerSecond = 10f };
+                    return true;
+                case "advancedfirstaidkit":
+                    effect = new MedicalUseEffect { useSeconds = 4f, healDurationSeconds = 5f, healPerSecond = 15f };
+                    return true;
+                case "slowhealsyringe":
+                case "regensyringe":
+                    effect = new MedicalUseEffect { useSeconds = 1f, healDurationSeconds = 20f, healPerSecond = 2.5f };
+                    return true;
+                case "fasthealsyringe":
+                    effect = new MedicalUseEffect { useSeconds = 1f, instantHeal = 30f };
+                    return true;
+                case "weightcapacitysyringe":
+                    effect = new MedicalUseEffect
+                    {
+                        useSeconds = 1f,
+                        durationSeconds = 600f,
+                        weightCapacityMultiplierBonus = 0.5f,
+                        staminaCostMultiplierBonus = 0.3f
+                    };
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static string NormalizeMedicalItemId(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return string.Empty;
+
+            string normalized = itemId.Trim().ToLowerInvariant();
+            if (normalized.StartsWith("itm_"))
+                normalized = normalized.Substring(4);
+
+            return normalized.Replace("_", string.Empty).Replace("-", string.Empty).Replace(" ", string.Empty);
+        }
+
+        private struct MedicalUseEffect
+        {
+            public float useSeconds;
+            public float healDurationSeconds;
+            public float healPerSecond;
+            public float instantHeal;
+            public float durationSeconds;
+            public float weightCapacityMultiplierBonus;
+            public float staminaCostMultiplierBonus;
         }
 
         private bool CanPlaceAt(byte x, byte y, Vector2Int size, bool rotated)

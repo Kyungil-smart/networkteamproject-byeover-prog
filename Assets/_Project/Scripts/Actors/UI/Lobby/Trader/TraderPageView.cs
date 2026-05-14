@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -57,12 +58,13 @@ namespace DeadZone.Actors.UI
         [SerializeField] private Sprite shadePortrait;
 
 #if ODIN_INSPECTOR
-        [Sirenix.OdinInspector.Title("통신장비")]
+        [Sirenix.OdinInspector.Title("총기 작업대")]
 #else
-        [Header("통신장비")]
+        [Header("총기 작업대")]
 #endif
-        [Tooltip("테스트용 통신장비 레벨입니다. TraderEntry.requiredCommLevel보다 낮으면 Lock을 켭니다.")]
+        [Tooltip("테스트용 총기 작업대 레벨입니다. TraderEntry.requiredCommLevel보다 낮으면 Lock을 켭니다.")]
         [SerializeField] private int currentCommLevel;
+        [SerializeField] private LobbyFacilityState facilityState;
 
 #if ODIN_INSPECTOR
         [Sirenix.OdinInspector.Title("연동 대상")]
@@ -194,6 +196,11 @@ namespace DeadZone.Actors.UI
             SelectTrader(currentTraderId);
         }
 
+        public void SetCurrentWorkbenchLevel(int workbenchLevel)
+        {
+            SetCurrentCommLevel(workbenchLevel);
+        }
+
         private void RebuildBuyList(TraderDataSO traderData)
         {
             AutoBindReferences();
@@ -222,11 +229,12 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
+            int currentWorkbenchLevel = ResolveCurrentWorkbenchLevel();
             for (int i = 0; i < traderData.stock.Count; i++)
             {
                 TraderItemEntryUI entryUI = Instantiate(entryTemplate, buyContent);
                 ConfigureEntryLayout(entryUI, entryTemplate);
-                entryUI.SetupBuyEntry(traderData.stock[i], currentCommLevel, HandleBuyClicked);
+                entryUI.SetupBuyEntry(traderData.stock[i], currentWorkbenchLevel, HandleBuyClicked);
             }
 
             if (entryTemplate.transform.IsChildOf(buyContent))
@@ -322,10 +330,11 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            if (entry.requiredCommLevel > currentCommLevel)
+            int currentWorkbenchLevel = ResolveCurrentWorkbenchLevel();
+            if (entry.requiredCommLevel > currentWorkbenchLevel)
             {
                 Debug.LogWarning(
-                    $"[TraderPageView] 구매 요청 차단: 통신장비 레벨 부족. 현재 Lv.{currentCommLevel}, 필요 Lv.{entry.requiredCommLevel}, Item={entry.item.itemID}",
+                    $"[TraderPageView] 구매 요청 차단: 총기 작업대 레벨 부족. 현재 Lv.{currentWorkbenchLevel}, 필요 Lv.{entry.requiredCommLevel}, Item={entry.item.itemID}",
                     this);
                 return;
             }
@@ -500,6 +509,47 @@ namespace DeadZone.Actors.UI
             };
         }
 
+        private int ResolveCurrentWorkbenchLevel()
+        {
+            AutoBindReferences();
+
+            if (TryGetFacilityLevel("Workbench", out int workbenchLevel))
+                return workbenchLevel;
+
+            return Mathf.Max(0, currentCommLevel);
+        }
+
+        private bool TryGetFacilityLevel(string facilityId, out int level)
+        {
+            level = 0;
+
+            if (facilityState == null || facilityState.Facilities == null || string.IsNullOrWhiteSpace(facilityId))
+                return false;
+
+            string normalizedFacilityId = NormalizeFacilityId(facilityId);
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = facilityState.Facilities[i];
+                if (facility == null)
+                    continue;
+
+                if (!string.Equals(NormalizeFacilityId(facility.facilityId), normalizedFacilityId, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                level = Mathf.Max(1, facility.level);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string NormalizeFacilityId(string facilityId)
+        {
+            return string.IsNullOrWhiteSpace(facilityId)
+                ? string.Empty
+                : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
+        }
+
         private void AutoBindReferences()
         {
             if (traderManager == null)
@@ -510,6 +560,9 @@ namespace DeadZone.Actors.UI
 
             if (lobbySaveService == null)
                 lobbySaveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+
+            if (facilityState == null)
+                facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
 
             if (selectedTraderPortraitImage == null)
                 selectedTraderPortraitImage = FindImage("Img_SelectedTrader", "SelectedTrader", "Img_Igor", "Igor", "Portrait");
@@ -1107,7 +1160,7 @@ namespace DeadZone.Actors.UI
             }
         }
 
-        private static string GetObjectName(Object target)
+        private static string GetObjectName(UnityEngine.Object target)
         {
             return target != null ? target.name : "None";
         }
