@@ -27,6 +27,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private Transform inventorySlotsRoot;
         [SerializeField] private Transform stashSlotsRoot;
         [SerializeField] private Transform equipmentSlotsRoot;
+        [SerializeField] private ItemTooltipUI tooltipUI;
 
         [Header("동기화")]
         [SerializeField] private bool captureOnStart = true;
@@ -252,8 +253,28 @@ namespace DeadZone.Systems.Save
                 walletSystem.SetCreditsLocalTest(inventoryState.Credits);
 
             ApplyItemSlots(inventorySlotsRoot, inventoryState.InventoryItems, database);
-            ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database);
+            if (!ApplyStashGridSlots(stashSlotsRoot, inventoryState.StashItems, database))
+                ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database);
             ApplyEquipmentSlots(equipmentSlotsRoot, inventoryState.EquipmentItems, database);
+        }
+
+        private static bool ApplyStashGridSlots(
+            Transform root,
+            IReadOnlyList<ItemSaveDTO> stashItems,
+            IItemDatabase database)
+        {
+            if (root == null)
+                return false;
+
+            StashGridUI stashGridUI = root.GetComponentInParent<StashGridUI>(true);
+            if (stashGridUI == null)
+                stashGridUI = root.GetComponentInChildren<StashGridUI>(true);
+
+            if (stashGridUI == null)
+                return false;
+
+            stashGridUI.ApplySavedStashItems(stashItems, database);
+            return true;
         }
 
         private static List<ItemSaveDTO> CollectItemSlots(Transform root, string containerId)
@@ -485,6 +506,7 @@ namespace DeadZone.Systems.Save
         private void ApplyEquipmentSlots(Transform root, IReadOnlyList<EquipmentSaveDTO> equipmentItems, IItemDatabase database)
         {
             InventorySlotUI[] slots = GetSlots(root);
+            PrepareEquipmentSlotsForTooltip(slots);
             ClearSlots(slots);
 
             if (slots.Length == 0 || equipmentItems == null)
@@ -662,8 +684,21 @@ namespace DeadZone.Systems.Save
                 }
             }
 
+            if (equipmentSlotsRoot == null)
+            {
+                Transform equipmentPanel = FindSceneTransformByName("EquipmentPanel");
+                if (equipmentPanel != null)
+                {
+                    equipmentSlotsRoot = equipmentPanel;
+                    Debug.Log($"[LobbyInventoryStateUiBridge] Auto-bound equipment root={BuildTransformPath(equipmentSlotsRoot)}", this);
+                }
+            }
+
             if (itemDatabase == null)
                 itemDatabase = FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
+
+            if (tooltipUI == null)
+                tooltipUI = FindFirstObjectByType<ItemTooltipUI>(FindObjectsInactive.Include);
         }
 
         private void RefreshSlotViews()
@@ -697,6 +732,63 @@ namespace DeadZone.Systems.Save
 
             if (stashGridUI != null)
                 stashGridUI.RefreshSlots();
+        }
+
+        private void PrepareEquipmentSlotsForTooltip(InventorySlotUI[] slots)
+        {
+            if (slots == null || slots.Length == 0)
+                return;
+
+            ItemTooltipUI resolvedTooltip = tooltipUI;
+            if (resolvedTooltip == null)
+                resolvedTooltip = FindFirstObjectByType<ItemTooltipUI>(FindObjectsInactive.Include);
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null)
+                    continue;
+
+                slot.PrepareForSaveSnapshot();
+                slot.SetTooltip(resolvedTooltip);
+            }
+
+            EnsureEquipmentRaycastCanvasGroups();
+        }
+
+        private void EnsureEquipmentRaycastCanvasGroups()
+        {
+            if (equipmentSlotsRoot == null)
+                return;
+
+            CanvasGroup[] canvasGroups = equipmentSlotsRoot.GetComponentsInParent<CanvasGroup>(true);
+            for (int i = 0; i < canvasGroups.Length; i++)
+            {
+                CanvasGroup canvasGroup = canvasGroups[i];
+                if (canvasGroup == null)
+                    continue;
+
+                canvasGroup.interactable = true;
+                canvasGroup.blocksRaycasts = true;
+            }
+        }
+
+        private static Transform FindSceneTransformByName(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+                return null;
+
+            Transform[] transforms = FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (transforms[i] != null && transforms[i].name == objectName)
+                    return transforms[i];
+            }
+
+            return null;
         }
 
 #if UNITY_EDITOR

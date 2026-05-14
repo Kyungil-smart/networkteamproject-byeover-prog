@@ -41,6 +41,7 @@ namespace DeadZone.Systems.Save
         private bool isCloudSaveRunning;
         private Coroutine pendingCloudLoadCoroutine;
         private bool isInitialLoadCompleted;
+        private bool forceApplyIncomingInventoryItemsOnce;
 
         public bool IsInitialLoadCompleted => isInitialLoadCompleted;
 
@@ -185,6 +186,23 @@ namespace DeadZone.Systems.Save
         [Button("Load Lobby From Firebase")]
         public void LoadLobbyDataFromCloud()
         {
+            LoadLobbyDataFromCloud(mergeLocalJsonSections: true);
+        }
+
+        public void LoadLobbyDataFromCloudAuthoritative()
+        {
+            if (pendingCloudLoadCoroutine != null)
+            {
+                StopCoroutine(pendingCloudLoadCoroutine);
+                pendingCloudLoadCoroutine = null;
+            }
+
+            forceApplyIncomingInventoryItemsOnce = true;
+            LoadLobbyDataFromCloud(mergeLocalJsonSections: false);
+        }
+
+        private void LoadLobbyDataFromCloud(bool mergeLocalJsonSections)
+        {
             CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
             if (saveSystem == null)
             {
@@ -209,7 +227,8 @@ namespace DeadZone.Systems.Save
                 return;
             }
 
-            MergeLocalJsonSectionsInto(dto, "Server DTO missing lobby inventory sections");
+            if (mergeLocalJsonSections)
+                MergeLocalJsonSectionsInto(dto, "Server DTO missing lobby inventory sections");
 
             string json = JsonUtility.ToJson(dto, true);
             lastJson = json;
@@ -251,12 +270,15 @@ namespace DeadZone.Systems.Save
 
         private void ApplyLobbySaveDTO(LobbySaveDTO dto)
         {
+            bool forceApplyIncomingInventoryItems = forceApplyIncomingInventoryItemsOnce;
+            forceApplyIncomingInventoryItemsOnce = false;
+
             if (inventoryState != null)
             {
                 if (dto.hasCredits)
                     inventoryState.SetCredits(dto.credits);
 
-                if (ShouldKeepExistingInventoryItems(dto))
+                if (!forceApplyIncomingInventoryItems && ShouldKeepExistingInventoryItems(dto))
                 {
                     Debug.LogWarning("[LobbySaveService] Incoming inventoryItems is empty while runtime inventory has items. Keeping runtime player inventory to avoid scene-transition wipe.", this);
                 }

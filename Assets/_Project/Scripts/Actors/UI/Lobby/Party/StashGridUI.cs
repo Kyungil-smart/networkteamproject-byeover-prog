@@ -20,6 +20,9 @@ namespace DeadZone.Actors.UI
         private const int AdditionalSlotsPerLevel = 20;
         private const int MaxStashLevel = 4;
         private const int FixedColumnCount = 10;
+        private const int UpgradeLevel2Cost = 30000;
+        private const int UpgradeLevel3Cost = 50000;
+        private const int UpgradeLevel4Cost = 100000;
 
         [Title("참조")]
         [Required]
@@ -33,6 +36,21 @@ namespace DeadZone.Actors.UI
         [SerializeField] private TMP_Text levelText;
 
         [SerializeField] private TMP_Text slotCountText;
+
+        [Title("보관함 업그레이드")]
+        [SerializeField] private Button openUpgradePopupButton;
+        [SerializeField] private GameObject upgradePopupRoot;
+        [SerializeField] private Button closeUpgradePopupButton;
+        [SerializeField] private Button upgradeLevel2Button;
+        [SerializeField] private Button upgradeLevel3Button;
+        [SerializeField] private Button upgradeLevel4Button;
+        [SerializeField] private TMP_Text upgradeLevel2Text;
+        [SerializeField] private TMP_Text upgradeLevel3Text;
+        [SerializeField] private TMP_Text upgradeLevel4Text;
+        [SerializeField] private WalletSystem walletSystem;
+        [SerializeField] private LobbyInventoryState inventoryState;
+        [SerializeField] private LobbyFacilityState facilityState;
+        [SerializeField] private LobbySaveService lobbySaveService;
 
         [Title("스크롤 설정")]
         [SerializeField] private ScrollRect scrollRect;
@@ -108,6 +126,9 @@ namespace DeadZone.Actors.UI
         private void Awake()
         {
             AutoBindReferences();
+            AutoBindUpgradeReferences();
+            BindUpgradeButtons();
+            ApplySavedStashLevel();
 
             if (refreshOnAwake)
                 RefreshSlots();
@@ -116,16 +137,24 @@ namespace DeadZone.Actors.UI
         private void OnEnable()
         {
             EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+            EventBus.Subscribe<CreditsChangedEvent>(HandleCreditsChanged);
+            BindUpgradeButtons();
+            RefreshUpgradePopup();
         }
 
         private void OnDisable()
         {
             EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
+            EventBus.Unsubscribe<CreditsChangedEvent>(HandleCreditsChanged);
+            UnbindUpgradeButtons();
         }
 
         private void Start()
         {
+            AutoBindUpgradeReferences();
+            ApplySavedStashLevel();
             RefreshSlots();
+            RefreshUpgradePopup();
 
             if (TryApplyLobbyInventoryState())
                 return;
@@ -144,6 +173,7 @@ namespace DeadZone.Actors.UI
         {
             stashLevel = Mathf.Clamp(level, 1, MaxStashLevel);
             RefreshSlots();
+            RefreshUpgradePopup();
         }
 
         public void RefreshSlots()
@@ -489,10 +519,338 @@ namespace DeadZone.Actors.UI
             scrollRect.scrollSensitivity = scrollSensitivity;
         }
 
+        private void AutoBindUpgradeReferences()
+        {
+            openUpgradePopupButton ??= FindSceneButton("Btn_UpgradeInventory");
+
+            if (upgradePopupRoot == null)
+            {
+                Transform popupTransform = FindSceneTransform("Popup_UpgradeInventory");
+                if (popupTransform != null)
+                    upgradePopupRoot = popupTransform.gameObject;
+            }
+
+            upgradeLevel2Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.2");
+            upgradeLevel3Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.3");
+            upgradeLevel4Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.4");
+            closeUpgradePopupButton ??= FindButtonInUpgradePopup("Btn_Close");
+
+            upgradeLevel2Text ??= FindUpgradeButtonText(upgradeLevel2Button, "Text_UpgradeInventoryLv.2");
+            upgradeLevel3Text ??= FindUpgradeButtonText(upgradeLevel3Button, "Text_UpgradeInventoryLv.3");
+            upgradeLevel4Text ??= FindUpgradeButtonText(upgradeLevel4Button, "Text_UpgradeInventoryLv.4");
+
+            walletSystem ??= FindFirstObjectByType<WalletSystem>(FindObjectsInactive.Include);
+            inventoryState ??= FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            facilityState ??= FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+            lobbySaveService ??= FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+        }
+
+        private void BindUpgradeButtons()
+        {
+            AutoBindUpgradeReferences();
+
+            if (openUpgradePopupButton != null)
+            {
+                openUpgradePopupButton.onClick.RemoveListener(OpenUpgradePopup);
+                openUpgradePopupButton.onClick.AddListener(OpenUpgradePopup);
+            }
+
+            if (closeUpgradePopupButton != null)
+            {
+                closeUpgradePopupButton.onClick.RemoveListener(CloseUpgradePopup);
+                closeUpgradePopupButton.onClick.AddListener(CloseUpgradePopup);
+            }
+
+            BindUpgradeLevelButton(upgradeLevel2Button, 2);
+            BindUpgradeLevelButton(upgradeLevel3Button, 3);
+            BindUpgradeLevelButton(upgradeLevel4Button, 4);
+        }
+
+        private void UnbindUpgradeButtons()
+        {
+            if (openUpgradePopupButton != null)
+                openUpgradePopupButton.onClick.RemoveListener(OpenUpgradePopup);
+
+            if (closeUpgradePopupButton != null)
+                closeUpgradePopupButton.onClick.RemoveListener(CloseUpgradePopup);
+
+            if (upgradeLevel2Button != null)
+                upgradeLevel2Button.onClick.RemoveListener(TryUpgradeStashToLevel2);
+
+            if (upgradeLevel3Button != null)
+                upgradeLevel3Button.onClick.RemoveListener(TryUpgradeStashToLevel3);
+
+            if (upgradeLevel4Button != null)
+                upgradeLevel4Button.onClick.RemoveListener(TryUpgradeStashToLevel4);
+        }
+
+        private void BindUpgradeLevelButton(Button button, int targetLevel)
+        {
+            if (button == null)
+                return;
+
+            if (targetLevel == 2)
+            {
+                button.onClick.RemoveListener(TryUpgradeStashToLevel2);
+                button.onClick.AddListener(TryUpgradeStashToLevel2);
+            }
+            else if (targetLevel == 3)
+            {
+                button.onClick.RemoveListener(TryUpgradeStashToLevel3);
+                button.onClick.AddListener(TryUpgradeStashToLevel3);
+            }
+            else if (targetLevel == 4)
+            {
+                button.onClick.RemoveListener(TryUpgradeStashToLevel4);
+                button.onClick.AddListener(TryUpgradeStashToLevel4);
+            }
+        }
+
+        private void TryUpgradeStashToLevel2() => TryUpgradeStash(2);
+
+        private void TryUpgradeStashToLevel3() => TryUpgradeStash(3);
+
+        private void TryUpgradeStashToLevel4() => TryUpgradeStash(4);
+
+        private void OpenUpgradePopup()
+        {
+            AutoBindUpgradeReferences();
+
+            if (upgradePopupRoot != null)
+                upgradePopupRoot.SetActive(true);
+
+            RefreshUpgradePopup();
+        }
+
+        private void CloseUpgradePopup()
+        {
+            if (upgradePopupRoot != null)
+                upgradePopupRoot.SetActive(false);
+        }
+
+        private void RefreshUpgradePopup()
+        {
+            AutoBindUpgradeReferences();
+
+            SetUpgradeSlotVisible(2, true);
+            SetUpgradeSlotVisible(3, true);
+            SetUpgradeSlotVisible(4, true);
+
+            RefreshUpgradeLevelButton(2, upgradeLevel2Button, upgradeLevel2Text);
+            RefreshUpgradeLevelButton(3, upgradeLevel3Button, upgradeLevel3Text);
+            RefreshUpgradeLevelButton(4, upgradeLevel4Button, upgradeLevel4Text);
+        }
+
+        private void RefreshUpgradeLevelButton(int targetLevel, Button button, TMP_Text label)
+        {
+            if (button == null)
+                return;
+
+            string text;
+            bool interactable = false;
+
+            if (targetLevel <= stashLevel)
+            {
+                text = "완료";
+            }
+            else if (targetLevel > stashLevel + 1)
+            {
+                text = "이전 레벨 필요";
+            }
+            else if (GetCurrentCredits() < GetUpgradeCost(targetLevel))
+            {
+                text = "잔액부족";
+            }
+            else
+            {
+                text = "업그레이드";
+                interactable = true;
+            }
+
+            button.interactable = interactable;
+            SetUpgradeButtonText(button, label, text);
+        }
+
+        private void TryUpgradeStash(int targetLevel)
+        {
+            AutoBindUpgradeReferences();
+
+            if (targetLevel != stashLevel + 1 || targetLevel > MaxStashLevel)
+            {
+                RefreshUpgradePopup();
+                return;
+            }
+
+            int cost = GetUpgradeCost(targetLevel);
+            if (GetCurrentCredits() < cost || walletSystem == null || !walletSystem.TryPayLocalTest(cost))
+            {
+                SetUpgradeButtonText(GetUpgradeButton(targetLevel), GetUpgradeText(targetLevel), "잔액부족");
+                RefreshUpgradePopup();
+                return;
+            }
+
+            int nextLevel = Mathf.Clamp(targetLevel, 1, MaxStashLevel);
+            stashLevel = nextLevel;
+            facilityState?.SetFacilityLevel("Stash", nextLevel);
+            inventoryState?.SetCredits(walletSystem.CurrentCredits);
+
+            RefreshSlots();
+            RefreshUpgradePopup();
+
+            lobbySaveService?.SaveCurrentStateToLocalJson("Stash upgrade");
+            lobbySaveService?.SaveLobbyDataToCloud();
+        }
+
+        private void ApplySavedStashLevel()
+        {
+            AutoBindUpgradeReferences();
+
+            if (TryGetSavedStashLevel(out int savedLevel))
+                stashLevel = Mathf.Clamp(savedLevel, 1, MaxStashLevel);
+        }
+
+        private bool TryGetSavedStashLevel(out int level)
+        {
+            level = 1;
+
+            if (facilityState == null || facilityState.Facilities == null)
+                return false;
+
+            for (int i = 0; i < facilityState.Facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = facilityState.Facilities[i];
+                if (facility == null || !string.Equals(facility.facilityId, "Stash", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                level = Mathf.Clamp(facility.level, 1, MaxStashLevel);
+                return true;
+            }
+
+            return false;
+        }
+
+        private int GetCurrentCredits()
+        {
+            if (walletSystem != null)
+                return walletSystem.CurrentCredits;
+
+            return inventoryState != null && inventoryState.HasCredits
+                ? inventoryState.Credits
+                : 0;
+        }
+
+        private static int GetUpgradeCost(int targetLevel)
+        {
+            return targetLevel switch
+            {
+                2 => UpgradeLevel2Cost,
+                3 => UpgradeLevel3Cost,
+                4 => UpgradeLevel4Cost,
+                _ => int.MaxValue
+            };
+        }
+
+        private Button GetUpgradeButton(int targetLevel)
+        {
+            return targetLevel switch
+            {
+                2 => upgradeLevel2Button,
+                3 => upgradeLevel3Button,
+                4 => upgradeLevel4Button,
+                _ => null
+            };
+        }
+
+        private TMP_Text GetUpgradeText(int targetLevel)
+        {
+            return targetLevel switch
+            {
+                2 => upgradeLevel2Text,
+                3 => upgradeLevel3Text,
+                4 => upgradeLevel4Text,
+                _ => null
+            };
+        }
+
+        private void HandleCreditsChanged(CreditsChangedEvent e)
+        {
+            RefreshUpgradePopup();
+        }
+
+        private void SetUpgradeSlotVisible(int targetLevel, bool visible)
+        {
+            string slotName = $"Slot_UpgradeInventoryLv.{targetLevel}";
+            Transform slotTransform = upgradePopupRoot != null
+                ? FindNamedRectTransform(upgradePopupRoot.transform, slotName)
+                : FindSceneTransform(slotName) as RectTransform;
+
+            if (slotTransform != null)
+                slotTransform.gameObject.SetActive(visible);
+        }
+
+        private static void SetUpgradeButtonText(Button button, TMP_Text fallbackLabel, string text)
+        {
+            TMP_Text targetText = button != null ? button.GetComponentInChildren<TMP_Text>(true) : null;
+            if (targetText == null)
+                targetText = fallbackLabel;
+
+            if (targetText != null)
+                targetText.text = text;
+        }
+
+        private Button FindButtonInUpgradePopup(string objectName)
+        {
+            Transform root = upgradePopupRoot != null ? upgradePopupRoot.transform : null;
+            Transform target = root != null ? FindNamedRectTransform(root, objectName) : FindSceneTransform(objectName);
+            return target != null ? target.GetComponent<Button>() : null;
+        }
+
+        private TMP_Text FindUpgradeButtonText(Button button, string fallbackName)
+        {
+            if (button != null)
+            {
+                TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>(true);
+                if (buttonText != null)
+                    return buttonText;
+            }
+
+            Transform root = upgradePopupRoot != null ? upgradePopupRoot.transform : null;
+            Transform target = root != null ? FindNamedRectTransform(root, fallbackName) : FindSceneTransform(fallbackName);
+            return target != null ? target.GetComponent<TMP_Text>() : null;
+        }
+
+        private static Button FindSceneButton(string objectName)
+        {
+            Transform target = FindSceneTransform(objectName);
+            return target != null ? target.GetComponent<Button>() : null;
+        }
+
+        private static Transform FindSceneTransform(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+                return null;
+
+            Transform[] transforms = FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (transforms[i] != null && transforms[i].name == objectName)
+                    return transforms[i];
+            }
+
+            return null;
+        }
+
         private void HandleCloudSaveLoaded(CloudSaveLoadedEvent e)
         {
             if (!loadCloudStashOnLoadedEvent)
                 return;
+
+            ApplySavedStashLevel();
+            RefreshSlots();
+            RefreshUpgradePopup();
 
             if (TryApplyLobbyInventoryState())
                 return;
@@ -520,11 +878,11 @@ namespace DeadZone.Actors.UI
             }
 
             Debug.Log($"[StashGridUI] Applying LobbyInventoryState stash items. Count={inventoryState.StashItems.Count}", this);
-            ApplyLobbyStashItems(inventoryState.StashItems, itemDatabase);
+            ApplySavedStashItems(inventoryState.StashItems, itemDatabase);
             return true;
         }
 
-        private void ApplyLobbyStashItems(IReadOnlyList<ItemSaveDTO> stashItems, IItemDatabase itemDatabase)
+        public void ApplySavedStashItems(IReadOnlyList<ItemSaveDTO> stashItems, IItemDatabase itemDatabase)
         {
             RefreshSlots();
             ClearActiveSlots();
@@ -692,6 +1050,46 @@ namespace DeadZone.Actors.UI
                 if (!slots.Contains(slot))
                     slots.Add(slot);
             }
+
+            slots.Sort(CompareStashSlotOrder);
+        }
+
+        private static int CompareStashSlotOrder(InventorySlotUI left, InventorySlotUI right)
+        {
+            if (left == right)
+                return 0;
+
+            if (left == null)
+                return 1;
+
+            if (right == null)
+                return -1;
+
+            bool leftHasNumber = TryGetTrailingNumber(left.name, out int leftNumber);
+            bool rightHasNumber = TryGetTrailingNumber(right.name, out int rightNumber);
+
+            if (leftHasNumber && rightHasNumber && leftNumber != rightNumber)
+                return leftNumber.CompareTo(rightNumber);
+
+            return left.transform.GetSiblingIndex().CompareTo(right.transform.GetSiblingIndex());
+        }
+
+        private static bool TryGetTrailingNumber(string value, out int number)
+        {
+            number = 0;
+
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            int end = value.Length - 1;
+            while (end >= 0 && char.IsDigit(value[end]))
+                end--;
+
+            int start = end + 1;
+            if (start >= value.Length)
+                return false;
+
+            return int.TryParse(value.Substring(start), out number);
         }
 
         private void EnsureSlotCount(int targetCount)
