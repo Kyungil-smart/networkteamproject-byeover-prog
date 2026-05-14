@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -6,17 +6,16 @@ namespace DeadZone.Systems.Save
 {
     public class LobbyInventoryState : MonoBehaviour
     {
-        [Header("씬 유지")]
+        [Header("???좎?")]
         [SerializeField] private bool dontDestroyOnLoad = true;
 
-        [Header("저장 상태")]
+        [Header("????곹깭")]
         [SerializeField] private bool hasCredits;
         [SerializeField] private int credits;
         [SerializeField] private List<ItemSaveDTO> inventoryItems = new();
         [SerializeField] private List<ItemSaveDTO> stashItems = new();
         [SerializeField] private List<ItemSaveDTO> quickSlotItems = new();
         [SerializeField] private List<EquipmentSaveDTO> equipmentItems = new();
-        [SerializeField] private List<ItemSaveDTO> quickSlotItems = new();
 
         public bool HasCredits => hasCredits;
         public int Credits => credits;
@@ -24,7 +23,6 @@ namespace DeadZone.Systems.Save
         public IReadOnlyList<ItemSaveDTO> StashItems => stashItems;
         public IReadOnlyList<ItemSaveDTO> QuickSlotItems => quickSlotItems;
         public IReadOnlyList<EquipmentSaveDTO> EquipmentItems => equipmentItems;
-        public IReadOnlyList<ItemSaveDTO> QuickSlotItems => quickSlotItems;
 
         private void Awake()
         {
@@ -62,12 +60,8 @@ namespace DeadZone.Systems.Save
             ReplaceList(equipmentItems, items);
         }
 
-        public void SetQuickSlotItems(IEnumerable<ItemSaveDTO> items)
-        {
-            ReplaceList(quickSlotItems, items);
-        }
 
-        [Button("인벤토리 상태 비우기")]
+        [Button("Clear Inventory State")]
         public void Clear()
         {
             hasCredits = false;
@@ -76,7 +70,6 @@ namespace DeadZone.Systems.Save
             stashItems.Clear();
             quickSlotItems.Clear();
             equipmentItems.Clear();
-            quickSlotItems.Clear();
         }
 
         private static void ReplaceList<T>(List<T> target, IEnumerable<T> source)
