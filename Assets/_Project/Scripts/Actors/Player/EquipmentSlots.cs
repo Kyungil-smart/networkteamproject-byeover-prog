@@ -9,6 +9,18 @@ using DeadZone.Systems.Raid;
 
 namespace DeadZone.Actors
 {
+    public enum EquipmentTargetSlot : byte
+    {
+        None,
+        Head,
+        Backpack,
+        Armor,
+        Primary1,
+        Primary2,
+        Secondary,
+        Melee
+    }
+
     public enum WeaponAmmoChangeReason : byte
     {
         // 변경 사유가 지정되지 않았을 때 사용한다.
@@ -651,6 +663,169 @@ namespace DeadZone.Actors
                 oldBackpackId = previousBackpackId,
                 newBackpackId = backpackId
             });
+        }
+
+        public bool CanEquipItemToSlot(ItemDataSO item, EquipmentTargetSlot targetSlot)
+        {
+            if (item == null)
+                return false;
+
+            return targetSlot switch
+            {
+                EquipmentTargetSlot.Head => item is HelmetDataSO || item.category == ItemCategory.Helmet,
+                EquipmentTargetSlot.Backpack => item is BackpackDataSO || item.category == ItemCategory.Backpack,
+                EquipmentTargetSlot.Armor => item is ArmorDataSO || item.category == ItemCategory.Armor,
+                EquipmentTargetSlot.Primary1 => IsPrimaryWeapon(item),
+                EquipmentTargetSlot.Primary2 => IsPrimaryWeapon(item),
+                EquipmentTargetSlot.Secondary => IsSecondaryWeapon(item),
+                EquipmentTargetSlot.Melee => IsMeleeWeapon(item),
+                _ => false
+            };
+        }
+
+        public bool TryEquipItemToEmptySlot(ItemDataSO item, EquipmentTargetSlot targetSlot)
+        {
+            if (!IsServer || !CanEquipItemToSlot(item, targetSlot) || !IsEquipmentSlotEmpty(targetSlot))
+                return false;
+
+            FixedString64Bytes itemId = new(item.itemID);
+
+            switch (targetSlot)
+            {
+                case EquipmentTargetSlot.Head:
+                    HeadSlotId.Value = itemId;
+                    HelmetDurability.Value = item is HelmetDataSO helmet ? helmet.maxDurability : 0f;
+                    return true;
+
+                case EquipmentTargetSlot.Backpack:
+                    EquipBackpack(itemId);
+                    return true;
+
+                case EquipmentTargetSlot.Armor:
+                    TorsoSlotId.Value = itemId;
+                    ArmorDurability.Value = item is ArmorDataSO armor ? armor.maxDurability : 0f;
+                    return true;
+
+                case EquipmentTargetSlot.Primary1:
+                    UpdateSlot(WeaponSlot.Primary1, item.itemID, CreateInitialWeaponState(item));
+                    return true;
+
+                case EquipmentTargetSlot.Primary2:
+                    UpdateSlot(WeaponSlot.Primary2, item.itemID, CreateInitialWeaponState(item));
+                    return true;
+
+                case EquipmentTargetSlot.Secondary:
+                    UpdateSlot(WeaponSlot.Secondary, item.itemID, CreateInitialWeaponState(item));
+                    return true;
+
+                case EquipmentTargetSlot.Melee:
+                    UpdateSlot(WeaponSlot.Melee, item.itemID, default);
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        public bool TryRemoveEquipmentSlotForDrop(EquipmentTargetSlot targetSlot, out string itemId)
+        {
+            itemId = string.Empty;
+
+            if (!IsServer)
+                return false;
+
+            switch (targetSlot)
+            {
+                case EquipmentTargetSlot.Head:
+                    itemId = HeadSlotId.Value.ToString();
+                    if (string.IsNullOrWhiteSpace(itemId))
+                        return false;
+
+                    HeadSlotId.Value = "";
+                    HelmetDurability.Value = 0f;
+                    return true;
+
+                case EquipmentTargetSlot.Backpack:
+                    itemId = BackpackSlotId.Value.ToString();
+                    if (string.IsNullOrWhiteSpace(itemId))
+                        return false;
+
+                    EquipBackpack(new FixedString64Bytes(""));
+                    return true;
+
+                case EquipmentTargetSlot.Armor:
+                    itemId = TorsoSlotId.Value.ToString();
+                    if (string.IsNullOrWhiteSpace(itemId))
+                        return false;
+
+                    TorsoSlotId.Value = "";
+                    ArmorDurability.Value = 0f;
+                    return true;
+
+                case EquipmentTargetSlot.Primary1:
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Primary1, out itemId);
+
+                case EquipmentTargetSlot.Primary2:
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Primary2, out itemId);
+
+                case EquipmentTargetSlot.Secondary:
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Secondary, out itemId);
+
+                case EquipmentTargetSlot.Melee:
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Melee, out itemId);
+
+                default:
+                    return false;
+            }
+        }
+
+        public bool IsEquipmentSlotEmpty(EquipmentTargetSlot targetSlot)
+        {
+            return targetSlot switch
+            {
+                EquipmentTargetSlot.Head => HeadSlotId.Value.Length == 0,
+                EquipmentTargetSlot.Backpack => BackpackSlotId.Value.Length == 0,
+                EquipmentTargetSlot.Armor => TorsoSlotId.Value.Length == 0,
+                EquipmentTargetSlot.Primary1 => Primary1Id.Value.Length == 0,
+                EquipmentTargetSlot.Primary2 => Primary2Id.Value.Length == 0,
+                EquipmentTargetSlot.Secondary => SecondaryId.Value.Length == 0,
+                EquipmentTargetSlot.Melee => MeleeId.Value.Length == 0,
+                _ => false
+            };
+        }
+
+        private static bool IsPrimaryWeapon(ItemDataSO item)
+        {
+            return item is WeaponDataSO weapon &&
+                   weapon.weaponCategory != WeaponCategory.Handgun &&
+                   weapon.weaponCategory != WeaponCategory.Melee;
+        }
+
+        private static bool IsSecondaryWeapon(ItemDataSO item)
+        {
+            return item is WeaponDataSO weapon && weapon.weaponCategory == WeaponCategory.Handgun;
+        }
+
+        private static bool IsMeleeWeapon(ItemDataSO item)
+        {
+            return item is WeaponDataSO weapon && weapon.weaponCategory == WeaponCategory.Melee;
+        }
+
+        private static WeaponState CreateInitialWeaponState(ItemDataSO item)
+        {
+            return item is WeaponDataSO weapon
+                ? new WeaponState { loadedAmmoId = "", currentAmmo = 0 }
+                : default;
+        }
+
+        private bool TryClearWeaponSlotForDrop(WeaponSlot weaponSlot, out string itemId)
+        {
+            itemId = GetWeaponSlotId(weaponSlot).ToString();
+            if (string.IsNullOrWhiteSpace(itemId))
+                return false;
+
+            UpdateSlot(weaponSlot, string.Empty, default);
+            return true;
         }
 
         [ServerRpc]
