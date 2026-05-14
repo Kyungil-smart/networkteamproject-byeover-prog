@@ -500,6 +500,7 @@ GameObject:
   - component: {fileID: 5946135611297530169}
   - component: {fileID: 3970032432765172834}
   - component: {fileID: 1506123448504329859}
+  - component: {fileID: 3836504801580505362}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -587,7 +588,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2875219163
+  GlobalObjectIdHash: 146189795
   InScenePlacedSourceGlobalObjectIdHash: 146189795
   DeferredDespawnTick: 0
   Ownership: 1
@@ -762,6 +763,12 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 1
+  playFootstepSound: 1
+  walkFootstepInterval: 0.45
+  sprintFootstepInterval: 0.32
+  crawlFootstepInterval: 0.75
+  footstepMinSpeed: 0.2
+  footstepVolumeMultiplier: 1
 --- !u!114 &7542559861876712806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -877,6 +884,7 @@ MonoBehaviour:
   fillStaminaWhenMaxStaminaIncreased: 1
   regenPerSecond: 8
   regenDelaySeconds: 1.5
+  temporaryConsumptionMultiplierBonus: 0
 --- !u!114 &-4358573395740997876
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -951,6 +959,10 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+  droppedLootItemPrefab: {fileID: 0}
+  dropForwardDistance: 1.25
+  dropGroundRayHeight: 1.5
+  dropGroundRayDistance: 4
 --- !u!114 &-7812494434515924552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1756,6 +1768,7 @@ MonoBehaviour:
   baseMaxCarryWeightKg: 60
   housingCarryWeightBonusKg: 0
   currentCarryWeightKg: 0
+  temporaryCapacityMultiplierBonus: 0
   logBonusChanged: 1
 --- !u!114 &5946135611297530169
 MonoBehaviour:
@@ -1820,6 +1833,19 @@ MonoBehaviour:
   layerBlendSpeed: 12
   autoBindReferences: 1
   showDebugLogs: 0
+--- !u!114 &3836504801580505362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22037d45e1524b72b3d872d70753f801, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ADSSystem
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0
