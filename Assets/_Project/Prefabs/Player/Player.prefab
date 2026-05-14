@@ -951,6 +951,11 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+  droppedLootItemPrefab: {fileID: 6915811656534715392, guid: 3c89fef0925474747b05544b6277b8f2, type: 3}
+  dropForwardDistance: 1.25
+  dropGroundRayHeight: 1.5
+  dropGroundRayDistance: 4
+  dropGroundOffset: 0.25
 --- !u!114 &-7812494434515924552
 MonoBehaviour:
   m_ObjectHideFlags: 0

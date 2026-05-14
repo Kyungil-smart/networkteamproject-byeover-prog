@@ -175,6 +175,14 @@ PrefabInstance:
       propertyPath: bankruptcyStarterPack
       value: 
       objectReference: {fileID: 11400000, guid: 2dc562d0d6426b346805646b94200313, type: 2}
+    - target: {fileID: 9039696499241898258, guid: b04ee3aba1426704e97a4b2e44d14bc2, type: 3}
+      propertyPath: NetworkConfig.Prefabs.NetworkPrefabsLists.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9039696499241898258, guid: b04ee3aba1426704e97a4b2e44d14bc2, type: 3}
+      propertyPath: 'NetworkConfig.Prefabs.NetworkPrefabsLists.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: bd4dd42c1c2468749b8a99235c4d2d40, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

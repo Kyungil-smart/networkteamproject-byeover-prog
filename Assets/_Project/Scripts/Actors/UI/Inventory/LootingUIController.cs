@@ -40,6 +40,7 @@ namespace DeadZone.Actors.UI
         private readonly List<RectTransform> activeMoveTargets = new();
         private readonly List<Vector2> originalMoveTargetPositions = new();
         private LootContainer currentContainer;
+        private LootInteractable currentDroppedItem;
         private CorpseInventory currentCorpseInventory;
         private bool hasOriginalPositionCache;
 
@@ -88,6 +89,7 @@ namespace DeadZone.Actors.UI
             }
 
             currentContainer = container;
+            currentDroppedItem = null;
             currentCorpseInventory = null;
 
             if (inventoryUI != null)
@@ -100,6 +102,41 @@ namespace DeadZone.Actors.UI
 
             if (containerGridView != null)
                 containerGridView.Bind(container);
+        }
+
+        public void Open(LootInteractable droppedItem)
+        {
+            ResolveReferences();
+            CacheOriginalPositions();
+
+            if (droppedItem == null)
+            {
+                Debug.LogWarning("[LootingUIController] Open target LootInteractable is null.", this);
+                return;
+            }
+
+            if (IsOpen && currentDroppedItem == droppedItem)
+            {
+                if (containerGridView != null)
+                    containerGridView.Bind(droppedItem);
+
+                return;
+            }
+
+            currentContainer = null;
+            currentDroppedItem = droppedItem;
+            currentCorpseInventory = null;
+
+            if (inventoryUI != null)
+                inventoryUI.Open();
+
+            if (lootingPanel != null)
+                lootingPanel.SetActive(true);
+
+            ApplyLootingPosition();
+
+            if (containerGridView != null)
+                containerGridView.Bind(droppedItem);
         }
 
         public void Open(CorpseInventory corpseInventory)
@@ -120,6 +157,7 @@ namespace DeadZone.Actors.UI
             }
 
             currentContainer = null;
+            currentDroppedItem = null;
             currentCorpseInventory = corpseInventory;
 
             if (inventoryUI != null)
@@ -145,6 +183,7 @@ namespace DeadZone.Actors.UI
                 containerGridView.Clear();
 
             currentContainer = null;
+            currentDroppedItem = null;
             currentCorpseInventory = null;
             RestoreInventoryPosition();
             CloseLootingPanelOnly();
@@ -182,6 +221,7 @@ namespace DeadZone.Actors.UI
             CacheOriginalPositions();
 
             currentContainer = null;
+            currentDroppedItem = null;
             currentCorpseInventory = null;
 
             if (inventoryUI != null)
