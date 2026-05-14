@@ -249,7 +249,7 @@ namespace DeadZone.Actors
 
             AudioCueId fireCueId = GetFireCueId(weapon.weaponCategory);
             if (fireCueId != AudioCueId.None)
-                PlayFireAudioClientRpc(fireCueId, muzzleTransform.position);
+                PlayFireAudioClientRpc(fireCueId, muzzleTransform.position, rpc.Receive.SenderClientId);
         }
         
         /// <summary>
@@ -385,13 +385,16 @@ namespace DeadZone.Actors
         }
 
         [ClientRpc]
-        private void PlayFireAudioClientRpc(AudioCueId cueId, Vector3 position)
+        private void PlayFireAudioClientRpc(AudioCueId cueId, Vector3 position, ulong shooterClientId)
         {
+            bool isLocalShooter = NetworkManager.Singleton != null
+                                  && shooterClientId == NetworkManager.Singleton.LocalClientId;
+
             EventBus.Publish(new AudioPlayRequestedEvent
             {
                 cueId = cueId,
                 position = position,
-                use3D = true,
+                use3D = !isLocalShooter,
                 volumeMultiplier = 1f
             });
         }
@@ -404,6 +407,7 @@ namespace DeadZone.Actors
                 WeaponCategory.SMG => AudioCueId.SMGFire,
                 WeaponCategory.Handgun => AudioCueId.HGFire,
                 WeaponCategory.Sniper => AudioCueId.SRDragFire,
+                WeaponCategory.Shotgun => AudioCueId.ShotgunFire,
                 _ => AudioCueId.None,
             };
         }
