@@ -109,7 +109,30 @@ namespace DeadZone.Actors
             SpawnCorpse();
 
             // 3. 원본 적 오브젝트 제거
-            NetworkObject?.Despawn(destroy: true);
+            DespawnEnemyObject();
+        }
+
+        private void DespawnEnemyObject()
+        {
+            if (NetworkObject == null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (!NetworkObject.IsSpawned)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            bool isSceneObject = NetworkObject.IsSceneObject.HasValue && NetworkObject.IsSceneObject.Value;
+            NetworkObject.Despawn(destroy: !isSceneObject);
+
+            if (isSceneObject)
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         private void SpawnCorpse()
@@ -120,6 +143,20 @@ namespace DeadZone.Actors
             GameObject prefab = statsSO.corpsePrefab != null
                 ? statsSO.corpsePrefab
                 : fallbackCorpsePrefab;
+
+            if (prefab != null && prefab.GetComponent<NetworkObject>() == null)
+            {
+                if (fallbackCorpsePrefab != null && fallbackCorpsePrefab.GetComponent<NetworkObject>() != null)
+                {
+                    Debug.LogWarning($"[EnemyStats] Corpse prefab '{prefab.name}' is missing NetworkObject. Using fallback corpse prefab '{fallbackCorpsePrefab.name}'.", this);
+                    prefab = fallbackCorpsePrefab;
+                }
+                else
+                {
+                    Debug.LogWarning($"[EnemyStats] Corpse prefab '{prefab.name}' is missing NetworkObject. Corpse spawn skipped.", this);
+                    return;
+                }
+            }
 
             if (prefab == null)
             {
@@ -132,7 +169,7 @@ namespace DeadZone.Actors
             var netObj = corpseObj.GetComponent<NetworkObject>();
             if (netObj == null)
             {
-                Debug.LogError($"[EnemyStats] 시체 프리팹에 NetworkObject가 없음: {prefab.name}");
+                Debug.LogWarning($"[EnemyStats] Corpse prefab is missing NetworkObject after instantiate: {prefab.name}", this);
                 Destroy(corpseObj);
                 return;
             }

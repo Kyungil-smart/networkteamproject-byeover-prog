@@ -51,7 +51,7 @@ namespace DeadZone.Actors
 
         [Tooltip("Console에 표시할 상자 이름입니다. 비어 있으면 GameObject 이름을 사용합니다.")]
         [SerializeField] private string debugContainerName = "";
-        [SerializeField] private bool warnWhenChildCollidersShareContainer = true;
+        [SerializeField] private bool warnWhenChildCollidersShareContainer = false;
 
         [Header("상호작용 문구")]
         [Tooltip("닫힌 상자에 표시할 상호작용 문구입니다.")]
@@ -140,9 +140,9 @@ namespace DeadZone.Actors
             if (childColliderCount <= 0)
                 return;
 
-            Debug.LogWarning(
-                "[LootContainer] Multiple child colliders are using one LootContainer state. " +
-                "If these are separate boxes, each box needs its own NetworkObject + LootContainer.",
+            Debug.Log(
+                "[LootContainer] Multiple child colliders are attached to this container. " +
+                "This is allowed for a single physical box; use one LootContainer per separate box.",
                 this);
         }
 
