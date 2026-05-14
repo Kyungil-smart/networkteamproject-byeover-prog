@@ -96,6 +96,7 @@ namespace DeadZone.Actors
         // 레거시 
         public void TryFire()
         {
+            if (GameplayInputBlocker.IsBlocked) return;
             if (!IsOwner) return;
             if (IsReloading()) return;
             if (Time.time < nextFireAllowed) return;
@@ -113,6 +114,7 @@ namespace DeadZone.Actors
         // 요청이 들어올 때 
         public void TryFire(Vector2 mousePos)
         {
+            if (GameplayInputBlocker.IsBlocked) return;
             if (!IsOwner) return;
             if (IsReloading()) return;
             if (Time.time < nextFireAllowed) return;
@@ -141,6 +143,7 @@ namespace DeadZone.Actors
         /// </summary>
         public void TryFullAutoFire(Vector2 mousePos)
         {
+            if (GameplayInputBlocker.IsBlocked) return;
             if (IsReloading()) return;
             if (!CurrentWeaponSupportsFull()) return;
 

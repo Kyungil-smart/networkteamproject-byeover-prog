@@ -123,6 +123,12 @@ namespace DeadZone.Actors
             if (!CanProcessInput || !inputEnabled || currentContext == null)
                 return;
 
+            if (GameplayInputBlocker.IsBlocked)
+            {
+                ClearGameplayInputState();
+                return;
+            }
+
             ReadContinuousInput();
             UpdateLookDirectionFromMousePosition();
 
@@ -195,6 +201,13 @@ namespace DeadZone.Actors
             firePressedThisFrame = false;
         }
 
+        private void ClearGameplayInputState()
+        {
+            ResetInputState();
+            currentContext?.OnAim(false);
+            currentContext?.OnSprint(false);
+        }
+
         private void ReadContinuousInput()
         {
             moveInput = inputActions.Player.Move.ReadValue<Vector2>();
@@ -249,8 +262,12 @@ namespace DeadZone.Actors
 
         public void OnFire(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked)
+            {
+                fireHeld = false;
+                firePressedThisFrame = false;
                 return;
+            }
 
             if (context.performed)
             {
@@ -268,6 +285,12 @@ namespace DeadZone.Actors
             if (!CanProcessInput)
                 return;
 
+            if (GameplayInputBlocker.IsBlocked)
+            {
+                currentContext?.OnAim(false);
+                return;
+            }
+
             if (context.performed)
             {
                 currentContext?.OnAim(true);
@@ -280,7 +303,7 @@ namespace DeadZone.Actors
 
         public void OnReload(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnReload();
@@ -288,7 +311,7 @@ namespace DeadZone.Actors
 
         public void OnInteract(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || (!context.started && !context.performed))
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || (!context.started && !context.performed))
                 return;
 
             if (Time.unscaledTime - lastInteractInputTime < InteractInputGuardSeconds)
@@ -300,7 +323,7 @@ namespace DeadZone.Actors
 
         public void OnRoll(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnRoll();
@@ -310,6 +333,12 @@ namespace DeadZone.Actors
         {
             if (!CanProcessInput)
                 return;
+
+            if (GameplayInputBlocker.IsBlocked)
+            {
+                currentContext?.OnSprint(false);
+                return;
+            }
 
             if (context.performed)
             {
@@ -323,7 +352,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Secondary(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Secondary);
@@ -331,7 +360,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Primary1(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Primary1);
@@ -339,7 +368,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Primary2(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Primary2);
@@ -347,7 +376,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Melee(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Melee);
@@ -355,7 +384,7 @@ namespace DeadZone.Actors
 
         public void OnQuickslot_1(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             TryUseQuickslot(0);
@@ -363,7 +392,7 @@ namespace DeadZone.Actors
 
         public void OnQuickslot_2(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             TryUseQuickslot(1);
@@ -371,7 +400,7 @@ namespace DeadZone.Actors
 
         public void OnQuickslot_3(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             TryUseQuickslot(2);
@@ -379,7 +408,7 @@ namespace DeadZone.Actors
 
         public void OnQuickslot_4(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             TryUseQuickslot(3);
@@ -387,7 +416,7 @@ namespace DeadZone.Actors
 
         public void OnQuickslot_5(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             TryUseQuickslot(4);
@@ -395,7 +424,7 @@ namespace DeadZone.Actors
 
         public void OnQuickslot_6(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             TryUseQuickslot(5);

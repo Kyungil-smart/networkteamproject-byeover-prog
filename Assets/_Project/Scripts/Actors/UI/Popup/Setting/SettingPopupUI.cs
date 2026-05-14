@@ -106,6 +106,7 @@ namespace DeadZone.Actors.UI
 
         private void OnDisable()
         {
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Setting, false);
             UnbindButtons();
             UnbindVolumeSliders();
         }
@@ -116,6 +117,7 @@ namespace DeadZone.Actors.UI
         public void Open()
         {
             gameObject.SetActive(true);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Setting, true);
             EnsurePopupScale();
             ResolveReferences();
             RefreshVolumeSlidersFromSavedValues();
@@ -129,6 +131,7 @@ namespace DeadZone.Actors.UI
         public void Close()
         {
             HideBankruptcyConfirmation();
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Setting, false);
             gameObject.SetActive(false);
         }
 

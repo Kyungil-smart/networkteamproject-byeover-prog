@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems.Raid;
+using DeadZone.Actors.Player;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -281,6 +282,15 @@ namespace DeadZone.Network
             }
 
             networkObject.SpawnAsPlayerObject(clientId, true);
+
+            PlayerTeamIdentity teamIdentity = instance.GetComponent<PlayerTeamIdentity>();
+            if (teamIdentity == null)
+                teamIdentity = instance.GetComponentInChildren<PlayerTeamIdentity>(true);
+
+            if (teamIdentity != null)
+                teamIdentity.ApplyLobbyColorServer();
+
+            LobbyPlayerCustomizeCache.TryApplyCustomize(clientId, instance);
             RaidLoadoutTransferService.TryApplyLoadout(clientId, instance);
 
             // Owner 권위 NetworkTransform 보정: 서버가 정한 SpawnPoint를 Owner Client에 전달.

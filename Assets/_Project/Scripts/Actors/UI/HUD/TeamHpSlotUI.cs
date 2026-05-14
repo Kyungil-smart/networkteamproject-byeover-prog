@@ -56,6 +56,12 @@ namespace DeadZone.Actors.UI
             RefreshHpText(clampedHp, denom);
         }
 
+        public void SetTeamColor(Color teamColor)
+        {
+            if (teamIcon != null)
+                teamIcon.color = teamColor;
+        }
+
         private void RefreshHpText(float hp, float maxHp)
         {
             if (hpValueText == null)

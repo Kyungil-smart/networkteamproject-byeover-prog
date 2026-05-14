@@ -197,6 +197,8 @@ namespace DeadZone.Network
         {
             RaidLoadoutTransferService.Clear();
             RaidLoadoutTransferService.StoreLocalLobbyLoadoutForLocalClient();
+            LobbyPlayerCustomizeCache.Clear();
+            LobbyPlayerCustomizeCache.StoreLocalCustomizeForLocalClient();
 
             if (!IsServer || NetworkManager.Singleton == null || NetworkManager.Singleton.ConnectedClientsIds.Count <= 1)
                 return;
@@ -293,6 +295,8 @@ namespace DeadZone.Network
                 return;
             }
 
+            CacheLobbyTeamColorsForRaid();
+            LobbyPlayerCustomizeCache.SaveCustomizesForClients(expectedClientIdsBuffer);
             RaidLoadoutTransferService.SaveLoadoutsForClients(expectedClientIdsBuffer);
 
             if (!TryBeginLoadTracking(sceneName, expectedClientIdsBuffer, out reason))
@@ -315,10 +319,12 @@ namespace DeadZone.Network
         private void RequestRaidLoadoutSubmissionClientRpc()
         {
             string loadoutJson = RaidLoadoutTransferService.CreateLocalLobbyLoadoutJson();
-            if (string.IsNullOrWhiteSpace(loadoutJson))
-                return;
+            if (!string.IsNullOrWhiteSpace(loadoutJson))
+                SubmitRaidLoadoutServerRpc(loadoutJson);
 
-            SubmitRaidLoadoutServerRpc(loadoutJson);
+            string customizeJson = LobbyPlayerCustomizeCache.CreateLocalCustomizeJson();
+            if (!string.IsNullOrWhiteSpace(customizeJson))
+                SubmitRaidCustomizeServerRpc(customizeJson);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -328,6 +334,15 @@ namespace DeadZone.Network
                 return;
 
             RaidLoadoutTransferService.StoreSubmittedLobbyLoadout(rpcParams.Receive.SenderClientId, loadoutJson);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SubmitRaidCustomizeServerRpc(string customizeJson, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            LobbyPlayerCustomizeCache.StoreSubmittedCustomize(rpcParams.Receive.SenderClientId, customizeJson);
         }
 
         public bool CanStartRaid()
@@ -570,6 +585,19 @@ namespace DeadZone.Network
 
             reason = $"출격 대상 clientId 목록 확인 완료. Count={clientIds.Count}";
             return true;
+        }
+
+        private void CacheLobbyTeamColorsForRaid()
+        {
+            if (!IsServer || lobbyState == null || lobbyState.Players == null)
+                return;
+
+            for (int i = 0; i < lobbyState.Players.Count; i++)
+            {
+                LobbyPlayerState player = lobbyState.Players[i];
+                Color32 iconColor = PartyPlayerColorCache.ToColor32(player.IconColorRgba);
+                LobbyTeamColorCache.SetColor(player.ClientId, iconColor);
+            }
         }
 
         private bool TryBeginLoadTracking(string sceneName, IReadOnlyList<ulong> clientIds, out string reason)

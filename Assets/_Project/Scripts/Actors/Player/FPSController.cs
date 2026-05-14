@@ -96,6 +96,15 @@ namespace DeadZone.Actors
         private void Update()
         {
             if (IsSpawned && !IsOwner) return;
+
+            if (GameplayInputBlocker.IsBlocked)
+            {
+                moveInput = Vector2.zero;
+                lookInput = Vector2.zero;
+                isSprinting = false;
+                ApplyGravityOnly();
+                return;
+            }
             
             if (isMoveLocked)
             {
@@ -275,9 +284,9 @@ namespace DeadZone.Actors
             });
         }
         
-        public void SetMove(Vector2 v) => moveInput = v;
-        public void SetLook(Vector2 v) => lookInput = v;
-        public void SetSprint(bool b) => isSprinting = b;
+        public void SetMove(Vector2 v) => moveInput = GameplayInputBlocker.IsBlocked ? Vector2.zero : v;
+        public void SetLook(Vector2 v) => lookInput = GameplayInputBlocker.IsBlocked ? Vector2.zero : v;
+        public void SetSprint(bool b) => isSprinting = !GameplayInputBlocker.IsBlocked && b;
         public void SetCrawlMode(bool b) => isCrawling = b;
     }
 }

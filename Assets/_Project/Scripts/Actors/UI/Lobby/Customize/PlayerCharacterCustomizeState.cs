@@ -12,6 +12,7 @@ namespace DeadZone.Actors.Player
         private const string HeadPrefsKey = "DZ_Custom_Head";
         private const string BeardPrefsKey = "DZ_Custom_Beard";
         private const string HatPrefsKey = "DZ_Custom_Hat";
+        private const string ClientScopedPrefsPrefix = "DZ_ClientCustom";
 
         [Header("외형 적용 대상")]
         [SerializeField] private PlayerCharacterCustomizeView customizeView;
@@ -77,7 +78,7 @@ namespace DeadZone.Actors.Player
             if (!IsOwner)
                 return;
 
-            CharacterCustomizeNetworkData data = LoadFromPlayerPrefs();
+            CharacterCustomizeNetworkData data = LoadLocalSavedCustomizeData();
 
             if (showDebugLogs)
             {
@@ -89,7 +90,7 @@ namespace DeadZone.Actors.Player
 
             if (IsServer)
             {
-                ApplyCustomizeDataOnServer(data);
+                ApplyCustomizeDataServer(data);
                 return;
             }
 
@@ -113,13 +114,13 @@ namespace DeadZone.Actors.Player
                 return;
             }
 
-            ApplyCustomizeDataOnServer(data);
+            ApplyCustomizeDataServer(data);
         }
 
-        private void ApplyCustomizeDataOnServer(CharacterCustomizeNetworkData data)
+        public bool ApplyCustomizeDataServer(CharacterCustomizeNetworkData data)
         {
             if (!IsServer)
-                return;
+                return false;
 
             CustomizeData.Value = data.Normalize();
 
@@ -130,16 +131,77 @@ namespace DeadZone.Actors.Player
                     $"Owner={OwnerClientId}, Body={data.BodyIndex}, Head={data.HeadIndex}, Beard={data.BeardIndex}, Hat={data.HatIndex}",
                     this);
             }
+
+            return true;
         }
 
-        private static CharacterCustomizeNetworkData LoadFromPlayerPrefs()
+        public static CharacterCustomizeNetworkData LoadLocalSavedCustomizeData()
         {
+            if (TryGetLocalClientScopedKey(BodyPrefsKey, out string scopedBodyKey) &&
+                PlayerPrefs.HasKey(scopedBodyKey))
+            {
+                return new CharacterCustomizeNetworkData(
+                    PlayerPrefs.GetInt(scopedBodyKey, 0),
+                    PlayerPrefs.GetInt(GetLocalClientScopedKey(HeadPrefsKey), 0),
+                    PlayerPrefs.GetInt(GetLocalClientScopedKey(BeardPrefsKey), 0),
+                    PlayerPrefs.GetInt(GetLocalClientScopedKey(HatPrefsKey), 0)
+                ).Normalize();
+            }
+
             return new CharacterCustomizeNetworkData(
                 PlayerPrefs.GetInt(BodyPrefsKey, 0),
                 PlayerPrefs.GetInt(HeadPrefsKey, 0),
                 PlayerPrefs.GetInt(BeardPrefsKey, 0),
                 PlayerPrefs.GetInt(HatPrefsKey, 0)
             ).Normalize();
+        }
+
+        public static void SaveLocalCustomizeData(CharacterCustomizeNetworkData data)
+        {
+            data = data.Normalize();
+
+            if (TryGetLocalClientScopedKey(BodyPrefsKey, out string scopedBodyKey))
+            {
+                PlayerPrefs.SetInt(scopedBodyKey, data.BodyIndex);
+                PlayerPrefs.SetInt(GetLocalClientScopedKey(HeadPrefsKey), data.HeadIndex);
+                PlayerPrefs.SetInt(GetLocalClientScopedKey(BeardPrefsKey), data.BeardIndex);
+                PlayerPrefs.SetInt(GetLocalClientScopedKey(HatPrefsKey), data.HatIndex);
+            }
+            else
+            {
+                PlayerPrefs.SetInt(BodyPrefsKey, data.BodyIndex);
+                PlayerPrefs.SetInt(HeadPrefsKey, data.HeadIndex);
+                PlayerPrefs.SetInt(BeardPrefsKey, data.BeardIndex);
+                PlayerPrefs.SetInt(HatPrefsKey, data.HatIndex);
+            }
+
+            PlayerPrefs.Save();
+        }
+
+        private static bool TryGetLocalClientScopedKey(string prefsKey, out string scopedKey)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || !networkManager.IsListening)
+            {
+                scopedKey = string.Empty;
+                return false;
+            }
+
+            scopedKey = GetClientScopedKey(networkManager.LocalClientId, prefsKey);
+            return true;
+        }
+
+        private static string GetLocalClientScopedKey(string prefsKey)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            return networkManager != null
+                ? GetClientScopedKey(networkManager.LocalClientId, prefsKey)
+                : prefsKey;
+        }
+
+        private static string GetClientScopedKey(ulong clientId, string prefsKey)
+        {
+            return $"{ClientScopedPrefsPrefix}_{clientId}_{prefsKey}";
         }
     }
 

@@ -215,7 +215,6 @@ namespace DeadZone.Actors.UI
             ResetLobbyPlayerStateSubmission();
 
             PartyPlayerColorCache.Clear();
-            LobbyTeamColorCache.Clear();
 
             if (partyView != null)
                 partyView.RenderEmpty();

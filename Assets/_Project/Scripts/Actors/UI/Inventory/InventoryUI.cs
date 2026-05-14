@@ -106,6 +106,7 @@ namespace DeadZone.Actors.UI
 
         private void OnDisable()
         {
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Inventory, false);
             EventBus.Unsubscribe<BackpackChangedEvent>(HandleBackpackChanged);
             UnsubscribeGridInventory();
             UnsubscribeEquipmentSlots();
@@ -149,6 +150,7 @@ namespace DeadZone.Actors.UI
             }
 
             inventoryRoot.SetActive(true);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Inventory, true);
             CursorStateController.PushUiOwner(this);
             ResolveTooltipUI();
             EnsureDropSlots();
@@ -174,6 +176,7 @@ namespace DeadZone.Actors.UI
                 itemTooltipUI.Hide();
 
             inventoryRoot.SetActive(false);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Inventory, false);
             CursorStateController.PopUiOwner(this);
         }
 

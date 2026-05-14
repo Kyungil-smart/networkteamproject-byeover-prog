@@ -40,6 +40,8 @@ namespace DeadZone.Actors.UI
 
         private readonly List<Action> maxHpUnsubscribers = new();
 
+        private readonly List<Action> teamColorUnsubscribers = new();
+
         private NetworkManager registeredNetworkManager;
 
         private bool loggedMissingSlots;
@@ -71,6 +73,7 @@ namespace DeadZone.Actors.UI
             EventBus.Unsubscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
             UnregisterNetworkCallbacks();
             ClearMaxHpSubscriptions();
+            ClearTeamColorSubscriptions();
             ClearAllSlots();
         }
 
@@ -154,6 +157,7 @@ namespace DeadZone.Actors.UI
         {
             EnsureTeamSlotsPopulatedFromHierarchy();
             ClearMaxHpSubscriptions();
+            ClearTeamColorSubscriptions();
             ClearAllSlots();
             clientIdToSlot.Clear();
             clientIdToHealth.Clear();
@@ -422,6 +426,7 @@ namespace DeadZone.Actors.UI
 
             slot.Bind(teammate.ClientId, color, hp, maxForClient);
             RegisterMaxHpSubscription(health, slot);
+            RegisterTeamColorSubscription(teammate, slot);
         }
 
         private float ResolveMaxHpForClient(ulong clientId)
@@ -473,7 +478,47 @@ namespace DeadZone.Actors.UI
             maxHpUnsubscribers.Clear();
         }
 
+        private void RegisterTeamColorSubscription(TeamPlayerEntry teammate, TeamHpSlotUI slot)
+        {
+            PlayerTeamIdentity identity = FindTeamIdentity(teammate);
+            if (identity == null || slot == null)
+                return;
+
+            void OnTeamColorChanged(Color32 color)
+            {
+                if (slot != null)
+                    slot.SetTeamColor(color);
+            }
+
+            identity.TeamColorChanged += OnTeamColorChanged;
+            teamColorUnsubscribers.Add(() =>
+            {
+                if (identity != null)
+                    identity.TeamColorChanged -= OnTeamColorChanged;
+            });
+        }
+
+        private void ClearTeamColorSubscriptions()
+        {
+            for (int i = 0; i < teamColorUnsubscribers.Count; i++)
+                teamColorUnsubscribers[i]?.Invoke();
+
+            teamColorUnsubscribers.Clear();
+        }
+
         private static Color ResolveTeamColor(TeamPlayerEntry teammate, NetworkManager nm)
+        {
+            PlayerTeamIdentity identity = FindTeamIdentity(teammate);
+            if (identity != null)
+                return identity.CurrentColor;
+
+            if (LobbyTeamColorCache.TryGetColor(teammate.ClientId, out Color32 cached))
+                return cached;
+
+            return Color.white;
+        }
+
+        private static PlayerTeamIdentity FindTeamIdentity(TeamPlayerEntry teammate)
         {
             NetworkObject netObj = teammate.NetworkObject != null
                 ? teammate.NetworkObject
@@ -484,13 +529,10 @@ namespace DeadZone.Actors.UI
                 PlayerTeamIdentity identity = netObj.GetComponent<PlayerTeamIdentity>()
                     ?? netObj.GetComponentInChildren<PlayerTeamIdentity>(true);
                 if (identity != null)
-                    return identity.CurrentColor;
+                    return identity;
             }
 
-            if (LobbyTeamColorCache.TryGetColor(teammate.ClientId, out Color32 cached))
-                return cached;
-
-            return Color.white;
+            return null;
         }
 
         private void ClearAllSlots()
