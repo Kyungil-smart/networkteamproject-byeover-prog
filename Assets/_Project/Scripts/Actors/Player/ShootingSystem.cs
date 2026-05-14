@@ -49,6 +49,7 @@ namespace DeadZone.Actors
 
         private EquipmentSlots equipment;
         private PlayerAnimatorDriver animatorDriver;
+        private ReloadSystem reloadSystem;
         private Camera aimCamera;
         private float nextFireAllowed;
         private float currentSpreadAngle;
@@ -69,6 +70,7 @@ namespace DeadZone.Actors
         {
             equipment = GetComponent<EquipmentSlots>();
             animatorDriver = GetComponent<PlayerAnimatorDriver>();
+            reloadSystem = GetComponent<ReloadSystem>();
             fallbackMuzzleTransform = muzzleTransform;
         }
 
@@ -88,6 +90,7 @@ namespace DeadZone.Actors
         public void TryFire()
         {
             if (!IsOwner) return;
+            if (IsReloading()) return;
             if (Time.time < nextFireAllowed) return;
 
             var weapon = equipment != null ? equipment.GetCurrentWeapon() : null;
@@ -104,6 +107,7 @@ namespace DeadZone.Actors
         public void TryFire(Vector2 mousePos)
         {
             if (!IsOwner) return;
+            if (IsReloading()) return;
             if (Time.time < nextFireAllowed) return;
 
             var weapon = equipment?.GetCurrentWeapon();
@@ -130,9 +134,18 @@ namespace DeadZone.Actors
         /// </summary>
         public void TryFullAutoFire(Vector2 mousePos)
         {
+            if (IsReloading()) return;
             if (!CurrentWeaponSupportsFull()) return;
 
             TryFire(mousePos);
+        }
+
+        private bool IsReloading()
+        {
+            if (reloadSystem == null)
+                reloadSystem = GetComponent<ReloadSystem>();
+
+            return reloadSystem != null && reloadSystem.IsReloading;
         }
 
         private bool CurrentWeaponSupportsFull()
@@ -224,6 +237,8 @@ namespace DeadZone.Actors
         private void FireServerRpc(Vector3 target, ulong tId, bool head, 
             FixedString64Bytes weaponId, ServerRpcParams rpc = default)
         {
+            if (IsReloading()) return;
+
             var weapon = equipment?.Lookup(weaponId.ToString()) as WeaponDataSO;
             var state = equipment?.CurrentWeaponState ?? default;
             var ammo = equipment?.CurrentAmmoData;

@@ -259,6 +259,8 @@ namespace DeadZone.Actors
         [ClientRpc]
         private void SetReloadingAnimationClientRpc(bool value)
         {
+            isReloading = value;
+
             if (animatorDriver == null)
                 animatorDriver = GetComponent<PlayerAnimatorDriver>();
 
