@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
@@ -50,6 +51,7 @@ namespace DeadZone.Actors
 
         [Tooltip("Console에 표시할 상자 이름입니다. 비어 있으면 GameObject 이름을 사용합니다.")]
         [SerializeField] private string debugContainerName = "";
+        [SerializeField] private bool warnWhenChildCollidersShareContainer = false;
 
         [Header("상호작용 문구")]
         [Tooltip("닫힌 상자에 표시할 상호작용 문구입니다.")]
@@ -57,6 +59,10 @@ namespace DeadZone.Actors
 
         [Tooltip("열린 상자에 표시할 상호작용 문구입니다.")]
         [SerializeField] private string openedPrompt = "[F] 파밍 상자 확인";
+        [SerializeField] private string searchingPrompt = "Searching...";
+
+        [Header("Search")]
+        [SerializeField, Min(0f)] private float searchDurationSeconds = 2f;
 
         [Header("파밍 오디오")]
         [Tooltip("켜면 F키로 상자 열기/확인에 성공했을 때 파밍 사운드를 재생합니다.")]
@@ -71,11 +77,18 @@ namespace DeadZone.Actors
         public NetworkVariable<bool> IsOpened =
             new NetworkVariable<bool>(false);
 
+        public NetworkVariable<bool> IsSearching =
+            new NetworkVariable<bool>(false);
+
+        public NetworkVariable<double> SearchEndsAt =
+            new NetworkVariable<double>(0d);
+
         public NetworkList<global::ContainerSlotNetData> Slots;
 
         private bool localOpened;
         private List<global::ContainerSlotNetData> localSlots;
         private int lastGeneratedItemCount;
+        private Coroutine searchRoutine;
 
         public LootTableSO LootTable => lootTable;
         public int SlotCount => slotCount;
@@ -100,16 +113,46 @@ namespace DeadZone.Actors
 
         public override void OnNetworkSpawn()
         {
+            WarnIfChildCollidersShareContainer();
+
             if (IsServer)
             {
                 EnsureEmptySlots();
             }
         }
 
+        private void WarnIfChildCollidersShareContainer()
+        {
+            if (!warnWhenChildCollidersShareContainer)
+                return;
+
+            Collider[] colliders = GetComponentsInChildren<Collider>(true);
+            if (colliders == null || colliders.Length <= 1)
+                return;
+
+            int childColliderCount = 0;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null && colliders[i].transform != transform)
+                    childColliderCount++;
+            }
+
+            if (childColliderCount <= 0)
+                return;
+
+            Debug.Log(
+                "[LootContainer] Multiple child colliders are attached to this container. " +
+                "This is allowed for a single physical box; use one LootContainer per separate box.",
+                this);
+        }
+
         public string GetPromptText()
         {
             if (IsNetworkActive())
             {
+                if (IsSearching.Value)
+                    return searchingPrompt;
+
                 return IsOpened.Value ? openedPrompt : closedPrompt;
             }
 
@@ -120,8 +163,13 @@ namespace DeadZone.Actors
         {
             if (IsNetworkActive())
             {
+                if (IsOpened.Value)
+                {
+                    OpenLootingUI();
+                    return;
+                }
+
                 TryOpenRpc();
-                OpenLootingUI();
                 return;
             }
 
@@ -178,28 +226,71 @@ namespace DeadZone.Actors
             Debug.LogWarning("[LootContainer] 네트워크가 실행 중이 아니어서 상자 내부 이동은 서버 검증 없이 처리하지 않습니다.", this);
         }
 
+        public void RequestEquipSlotToPlayer(int sourceSlotIndex, EquipmentTargetSlot targetSlot)
+        {
+            if (IsNetworkActive())
+            {
+                TryEquipSlotToPlayerRpc(sourceSlotIndex, targetSlot);
+                return;
+            }
+
+            Debug.LogWarning("[LootContainer] Network is not active. Container to equipment move skipped.", this);
+        }
+
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void TryOpenRpc(RpcParams rpcParams = default)
         {
             ulong senderClientId = rpcParams.Receive.SenderClientId;
 
+            if (IsOpened.Value)
+            {
+                OpenLootingUiRpc(RpcTarget.Single(senderClientId, RpcTargetUse.Temp));
+                return;
+            }
+
+            if (IsSearching.Value)
+                return;
+
+            if (!CanRollByProbabilityRule())
+                return;
+
+            if (searchRoutine != null)
+                StopCoroutine(searchRoutine);
+
+            searchRoutine = StartCoroutine(SearchAndOpenRoutine(senderClientId));
+        }
+
+        private IEnumerator SearchAndOpenRoutine(ulong requesterClientId)
+        {
+            IsSearching.Value = true;
+            SearchEndsAt.Value = NetworkManager.Singleton != null
+                ? NetworkManager.Singleton.ServerTime.Time + searchDurationSeconds
+                : Time.timeAsDouble + searchDurationSeconds;
+
+            if (searchDurationSeconds > 0f)
+                yield return new WaitForSeconds(searchDurationSeconds);
+
             if (!IsOpened.Value)
             {
-                if (!CanRollByProbabilityRule())
-                    return;
-
                 List<global::ContainerSlotNetData> generated = GenerateSlotList();
                 ApplyGeneratedSlotsToNetworkList(generated);
                 IsOpened.Value = true;
             }
 
-            if (printDebugLogOnOpen)
-            {
-                PrintNetworkSlotsDebug(senderClientId);
-            }
+            IsSearching.Value = false;
+            SearchEndsAt.Value = 0d;
+            searchRoutine = null;
 
-            if (playLootSoundOnOpen)
-                PlayLootSoundForClient(senderClientId);
+            if (printDebugLogOnOpen)
+                PrintNetworkSlotsDebug(requesterClientId);
+
+            OpenLootingUiRpc(RpcTarget.Single(requesterClientId, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void OpenLootingUiRpc(RpcParams rpcParams = default)
+        {
+            OpenLootingUI();
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -292,6 +383,39 @@ namespace DeadZone.Actors
 
             Slots[sourceSlotIndex] = targetSlot;
             Slots[targetSlotIndex] = sourceSlot;
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void TryEquipSlotToPlayerRpc(
+            int sourceSlotIndex,
+            EquipmentTargetSlot targetSlot,
+            RpcParams rpcParams = default)
+        {
+            if (targetSlot == EquipmentTargetSlot.None)
+                return;
+
+            if (!TryGetServerSlot(sourceSlotIndex, out global::ContainerSlotNetData sourceSlot) || sourceSlot.IsEmpty)
+                return;
+
+            EquipmentSlots equipmentSlots = ResolvePlayerEquipment(rpcParams.Receive.SenderClientId);
+            if (equipmentSlots == null)
+                return;
+
+            ItemDataSO itemData = ResolveItemData(sourceSlot.itemId.ToString());
+            if (itemData == null || !equipmentSlots.CanEquipItemToSlot(itemData, targetSlot))
+                return;
+
+            if (!equipmentSlots.TryEquipItemToEmptySlot(itemData, targetSlot))
+                return;
+
+            if (sourceSlot.amount <= 1)
+            {
+                Slots[sourceSlotIndex] = new global::ContainerSlotNetData();
+                return;
+            }
+
+            sourceSlot.amount--;
+            Slots[sourceSlotIndex] = sourceSlot;
         }
 
         private void OpenLocalForEditorDebug(ulong clientId)
@@ -535,6 +659,20 @@ namespace DeadZone.Actors
                 return null;
 
             return client.PlayerObject.GetComponent<GridInventory>();
+        }
+
+        private EquipmentSlots ResolvePlayerEquipment(ulong clientId)
+        {
+            if (!IsServer || NetworkManager.Singleton == null)
+                return null;
+
+            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out NetworkClient client))
+                return null;
+
+            if (client.PlayerObject == null)
+                return null;
+
+            return client.PlayerObject.GetComponent<EquipmentSlots>();
         }
 
         private ItemDataSO ResolveItemData(string itemId)

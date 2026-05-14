@@ -321,14 +321,18 @@ namespace DeadZone.Actors
 
         private void ResolveSpawnPositionOnNavMesh()
         {
-            WarnIfInsideNavMeshObstacle();
-
             if (agent == null)
             {
+                WarnIfInsideNavMeshObstacle();
                 spawnPosition = transform.position;
                 lastDestination = transform.position;
                 return;
             }
+
+            if (TryWarpOutOfNavMeshObstacle())
+                return;
+
+            WarnIfInsideNavMeshObstacle();
 
             if (agent.isOnNavMesh)
             {
@@ -365,6 +369,51 @@ namespace DeadZone.Actors
             lastDestination = transform.position;
         }
 
+        private bool TryWarpOutOfNavMeshObstacle()
+        {
+            if (agent == null)
+                return false;
+
+            NavMeshObstacle obstacle = FindContainingNavMeshObstacle();
+            if (obstacle == null)
+                return false;
+
+            Vector3 obstacleCenter = obstacle.transform.TransformPoint(obstacle.center);
+            float searchDistance = GetObstacleHorizontalExtent(obstacle) + Mathf.Max(agent.radius, 0.5f) + 0.75f;
+            float sampleRadius = Mathf.Max(spawnNavMeshSampleRadius, searchDistance);
+            Vector3 away = transform.position - obstacleCenter;
+            away.y = 0f;
+
+            if (away.sqrMagnitude < 0.01f)
+                away = transform.forward.sqrMagnitude > 0.01f ? transform.forward : Vector3.forward;
+
+            away.Normalize();
+
+            for (int i = 0; i < 12; i++)
+            {
+                float angle = i == 0 ? 0f : (360f / 12f) * i;
+                Vector3 direction = Quaternion.Euler(0f, angle, 0f) * away;
+                Vector3 probe = obstacleCenter + direction * searchDistance;
+                probe.y = transform.position.y;
+
+                if (!NavMesh.SamplePosition(probe, out NavMeshHit hit, sampleRadius, NavMesh.AllAreas))
+                    continue;
+
+                if (IsPointInsideObstacleBounds(obstacle, hit.position))
+                    continue;
+
+                if (!agent.Warp(hit.position))
+                    continue;
+
+                warnedInsideNavMeshObstacle = true;
+                spawnPosition = hit.position;
+                lastDestination = hit.position;
+                return true;
+            }
+
+            return false;
+        }
+
         private void WarnIfInsideNavMeshObstacle()
         {
             if (!warnWhenInsideNavMeshObstacle || warnedInsideNavMeshObstacle)
@@ -384,7 +433,7 @@ namespace DeadZone.Actors
                     continue;
                 }
 
-                if (!IsInsideObstacleBounds(obstacle))
+                if (!IsPointInsideObstacleBounds(obstacle, transform.position))
                 {
                     continue;
                 }
@@ -397,9 +446,44 @@ namespace DeadZone.Actors
             }
         }
 
-        private bool IsInsideObstacleBounds(NavMeshObstacle obstacle)
+        private NavMeshObstacle FindContainingNavMeshObstacle()
         {
-            Vector3 localPoint = obstacle.transform.InverseTransformPoint(transform.position) - obstacle.center;
+            NavMeshObstacle[] obstacles = Object.FindObjectsByType<NavMeshObstacle>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < obstacles.Length; i++)
+            {
+                NavMeshObstacle obstacle = obstacles[i];
+                if (obstacle == null || !obstacle.enabled || obstacle.transform == transform || obstacle.transform.IsChildOf(transform))
+                    continue;
+
+                if (IsPointInsideObstacleBounds(obstacle, transform.position))
+                    return obstacle;
+            }
+
+            return null;
+        }
+
+        private float GetObstacleHorizontalExtent(NavMeshObstacle obstacle)
+        {
+            if (obstacle == null)
+                return spawnNavMeshSampleRadius;
+
+            Vector3 scale = obstacle.transform.lossyScale;
+
+            if (obstacle.shape == NavMeshObstacleShape.Box)
+            {
+                Vector3 size = Vector3.Scale(obstacle.size, new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+                return Mathf.Max(size.x, size.z) * 0.5f;
+            }
+
+            return obstacle.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+        }
+
+        private bool IsPointInsideObstacleBounds(NavMeshObstacle obstacle, Vector3 worldPoint)
+        {
+            Vector3 localPoint = obstacle.transform.InverseTransformPoint(worldPoint) - obstacle.center;
 
             if (obstacle.shape == NavMeshObstacleShape.Box)
             {

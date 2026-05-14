@@ -47,7 +47,9 @@ namespace DeadZone.Systems.Raid
 
                 if (!TryResolveLoadoutSource(networkManager, clientId, out GameObject playerObject))
                 {
-                    Debug.LogWarning($"[RaidLoadout] Cannot save loadout. Missing GridInventory/EquipmentSlots source clientId={clientId}");
+                    RaidLoadoutSaveData emptyLoadout = CreateEmptyLoadout(clientId);
+                    loadoutsByClientId[clientId] = emptyLoadout;
+                    Debug.Log($"[RaidLoadout] Saved empty loadout clientId={clientId}. No lobby inventory/equipment was selected.");
                     continue;
                 }
 
@@ -78,8 +80,8 @@ namespace DeadZone.Systems.Raid
             {
                 if (!TryBuildSavedLobbyLoadout(clientId, out loadout))
                 {
-                    Debug.LogWarning($"[RaidLoadout] Missing loadout for clientId={clientId}");
-                    return false;
+                    loadout = CreateEmptyLoadout(clientId);
+                    Debug.Log($"[RaidLoadout] Applying empty loadout clientId={clientId}. No lobby inventory/equipment was selected.");
                 }
 
                 loadoutsByClientId[clientId] = loadout;
@@ -111,6 +113,15 @@ namespace DeadZone.Systems.Raid
                 playerObject);
 
             return true;
+        }
+
+        private static RaidLoadoutSaveData CreateEmptyLoadout(ulong clientId)
+        {
+            return new RaidLoadoutSaveData
+            {
+                clientId = clientId,
+                currentEquippedItemId = string.Empty
+            };
         }
 
         private static RaidLoadoutSaveData CreateLoadout(ulong clientId, GameObject playerObject)
@@ -204,10 +215,8 @@ namespace DeadZone.Systems.Raid
                 clientId = clientId
             };
 
-            IReadOnlyList<ItemSaveDTO> inventoryItems = HasItems(dto.inventoryItems)
-                ? dto.inventoryItems
-                : dto.stashItems;
-            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems, dto.stashItems);
+            IReadOnlyList<ItemSaveDTO> inventoryItems = dto.inventoryItems;
+            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems);
 
             if (inventoryItems != null)
             {
@@ -279,13 +288,10 @@ namespace DeadZone.Systems.Raid
             return loadout;
         }
 
-        private static List<ItemSaveDTO> CreateAmmoLookupItems(
-            IReadOnlyList<ItemSaveDTO> inventoryItems,
-            IReadOnlyList<ItemSaveDTO> stashItems)
+        private static List<ItemSaveDTO> CreateAmmoLookupItems(IReadOnlyList<ItemSaveDTO> inventoryItems)
         {
             List<ItemSaveDTO> items = new();
             AddRange(items, inventoryItems);
-            AddRange(items, stashItems);
             return items;
         }
 
@@ -392,7 +398,6 @@ namespace DeadZone.Systems.Raid
         {
             return dto != null &&
                    (HasItems(dto.inventoryItems) ||
-                    HasItems(dto.stashItems) ||
                     HasItems(dto.equipmentItems));
         }
 

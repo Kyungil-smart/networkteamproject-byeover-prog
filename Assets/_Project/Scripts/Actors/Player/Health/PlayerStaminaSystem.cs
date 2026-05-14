@@ -1,5 +1,6 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
+using System.Collections;
 
 using DeadZone.Core;
 
@@ -31,11 +32,15 @@ namespace DeadZone.Actors
 
         public readonly NetworkVariable<float> CurrentStamina = new(100f);
 
+        [Header("소모품 보정")]
+        [SerializeField, Min(0f)] private float temporaryConsumptionMultiplierBonus;
+
         public float BaseMaxStamina => maxStamina;
         public float HousingMaxStaminaBonus => housingMaxStaminaBonus;
         public float MaxStamina => Mathf.Max(0f, maxStamina + housingMaxStaminaBonus);
 
         private float lastConsumeTime;
+        private Coroutine temporaryConsumptionRoutine;
 
         private void OnValidate()
         {
@@ -86,10 +91,12 @@ namespace DeadZone.Actors
             if (amount <= 0f)
                 return true;
 
-            if (CurrentStamina.Value < amount)
+            float adjustedAmount = amount * (1f + temporaryConsumptionMultiplierBonus);
+
+            if (CurrentStamina.Value < adjustedAmount)
                 return false;
 
-            CurrentStamina.Value -= amount;
+            CurrentStamina.Value -= adjustedAmount;
             lastConsumeTime = Time.time;
             return true;
         }
@@ -102,12 +109,36 @@ namespace DeadZone.Actors
             if (amount <= 0f)
                 return true;
 
-            if (CurrentStamina.Value < amount)
+            float adjustedAmount = amount * (1f + temporaryConsumptionMultiplierBonus);
+
+            if (CurrentStamina.Value < adjustedAmount)
                 return false;
 
-            CurrentStamina.Value -= amount;
+            CurrentStamina.Value -= adjustedAmount;
             lastConsumeTime = Time.time;
             return true;
+        }
+
+        public void ApplyTemporaryConsumptionMultiplier(float multiplierBonus, float durationSeconds)
+        {
+            if (IsSpawned && !IsServer)
+                return;
+
+            if (temporaryConsumptionRoutine != null)
+                StopCoroutine(temporaryConsumptionRoutine);
+
+            temporaryConsumptionRoutine = StartCoroutine(TemporaryConsumptionRoutine(multiplierBonus, durationSeconds));
+        }
+
+        private IEnumerator TemporaryConsumptionRoutine(float multiplierBonus, float durationSeconds)
+        {
+            temporaryConsumptionMultiplierBonus = Mathf.Max(0f, multiplierBonus);
+
+            if (durationSeconds > 0f)
+                yield return new WaitForSeconds(durationSeconds);
+
+            temporaryConsumptionMultiplierBonus = 0f;
+            temporaryConsumptionRoutine = null;
         }
 
         /// <summary>

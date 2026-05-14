@@ -43,6 +43,6 @@ MonoBehaviour:
   dropEquippedGear: 1
   extraLootTable: {fileID: 0}
   extraLootCount: 1
-  corpsePrefab: {fileID: 2706845702117162606, guid: 2efaac275fd310543ae7ff00f59b1d5e, type: 3}
+  corpsePrefab: {fileID: 1211502971452943759, guid: b146c5bd42e078b4f88c32ad8974a4c7, type: 3}
   corpseDespawnTime: 120
   corpseDespawnWhenEmpty: 30

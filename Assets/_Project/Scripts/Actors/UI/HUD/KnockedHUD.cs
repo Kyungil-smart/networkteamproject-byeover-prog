@@ -511,8 +511,6 @@ namespace DeadZone.Actors
         private void EnsureRootScale()
         {
             if (transform.localScale == Vector3.one) return;
-
-            Debug.LogWarning($"[KnockedHUD] KnockedHUD 루트 scale이 {transform.localScale} 상태라 Vector3.one으로 보정합니다. 표시/숨김은 contentRoot와 bloodVignetteRoot로 처리해주세요.", this);
             transform.localScale = Vector3.one;
         }
 
