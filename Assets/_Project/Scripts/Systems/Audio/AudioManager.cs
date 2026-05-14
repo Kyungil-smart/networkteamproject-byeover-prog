@@ -81,10 +81,10 @@ namespace DeadZone.Systems.Audio
         private readonly Dictionary<AudioCueId, float> runtimeCueVolumeOverrides = new();
         private AudioSource bgmSource;
         private AudioSource sfx2DSource;
+        private AudioSource knockedLoopSource;
         private Coroutine bgmFadeRoutine;
         private AudioCueId currentBgmCueId = AudioCueId.None;
-        private ulong lastKnockedSoundClientId = ulong.MaxValue;
-        private float lastKnockedSoundTime = -999f;
+        private ulong currentKnockedLoopClientId = ulong.MaxValue;
 
         public float MasterVolume => masterVolume;
         public float BgmVolume => bgmVolume;
@@ -136,6 +136,7 @@ namespace DeadZone.Systems.Audio
             EventBus.Unsubscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
 
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            StopPlayerKnockedLoop();
         }
 
         private void OnDestroy()
@@ -239,6 +240,7 @@ namespace DeadZone.Systems.Audio
         {
             masterVolume = Mathf.Clamp01(value);
             RefreshBgmVolume();
+            RefreshKnockedLoopVolume();
         }
 
         public void SetBgmVolume(float value)
@@ -250,6 +252,7 @@ namespace DeadZone.Systems.Audio
         public void SetSfxVolume(float value)
         {
             sfxVolume = Mathf.Clamp01(value);
+            RefreshKnockedLoopVolume();
         }
 
         public void SetUiVolume(float value)
@@ -264,6 +267,7 @@ namespace DeadZone.Systems.Audio
 
             runtimeCueVolumeOverrides[cueId] = Mathf.Clamp01(value);
             RefreshBgmVolume();
+            RefreshKnockedLoopVolume();
         }
 
         private void OnAudioPlayRequested(AudioPlayRequestedEvent e)
@@ -312,10 +316,21 @@ namespace DeadZone.Systems.Audio
         private void OnPlayerStateChanged(PlayerStateChangedEvent e)
         {
             if (e.newState == PlayerState.Knocked)
-                TryPlayPlayerKnockedSound(e.clientId);
+            {
+                TryStartPlayerKnockedLoop(e.clientId);
+            }
+            else if (e.oldState == PlayerState.Knocked)
+            {
+                TryStopPlayerKnockedLoop(e.clientId);
+            }
         }
 
         private void TryPlayPlayerKnockedSound(ulong clientId)
+        {
+            TryStartPlayerKnockedLoop(clientId);
+        }
+
+        private void TryStartPlayerKnockedLoop(ulong clientId)
         {
             if (!playPlayerKnockedFromEvent)
                 return;
@@ -326,12 +341,48 @@ namespace DeadZone.Systems.Audio
                     return;
             }
 
-            if (lastKnockedSoundClientId == clientId && Time.unscaledTime - lastKnockedSoundTime < 0.2f)
+            if (knockedLoopSource != null &&
+                knockedLoopSource.isPlaying &&
+                currentKnockedLoopClientId == clientId)
+            {
+                return;
+            }
+
+            if (!TryGetCueClip(AudioCueId.PlayerKnocked, out AudioCueData cue, out AudioClip clip))
                 return;
 
-            lastKnockedSoundClientId = clientId;
-            lastKnockedSoundTime = Time.unscaledTime;
-            Play(AudioCueId.PlayerKnocked);
+            currentKnockedLoopClientId = clientId;
+            knockedLoopSource.clip = clip;
+            knockedLoopSource.loop = true;
+            knockedLoopSource.spatialBlend = 0f;
+            knockedLoopSource.pitch = cue.GetPitch();
+            knockedLoopSource.volume = CalculateFinalVolume(cue, 1f);
+            knockedLoopSource.Play();
+        }
+
+        private void TryStopPlayerKnockedLoop(ulong clientId)
+        {
+            if (onlyLocalPlayerInjurySound && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                if (clientId != NetworkManager.Singleton.LocalClientId)
+                    return;
+            }
+
+            if (currentKnockedLoopClientId != clientId)
+                return;
+
+            StopPlayerKnockedLoop();
+        }
+
+        private void StopPlayerKnockedLoop()
+        {
+            if (knockedLoopSource != null)
+            {
+                knockedLoopSource.Stop();
+                knockedLoopSource.clip = null;
+            }
+
+            currentKnockedLoopClientId = ulong.MaxValue;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -373,9 +424,35 @@ namespace DeadZone.Systems.Audio
             sfx2DSource.loop = false;
             sfx2DSource.spatialBlend = 0f;
 
+            knockedLoopSource = gameObject.AddComponent<AudioSource>();
+            knockedLoopSource.playOnAwake = false;
+            knockedLoopSource.loop = true;
+            knockedLoopSource.spatialBlend = 0f;
+
             int count = Mathf.Max(1, pooledSourceCount);
             for (int i = 0; i < count; i++)
                 pooledSources.Add(CreatePooledSource());
+        }
+
+        private bool TryGetCueClip(AudioCueId cueId, out AudioCueData cue, out AudioClip clip)
+        {
+            cue = null;
+            clip = null;
+
+            if (audioLibrary == null || !audioLibrary.TryGetCue(cueId, out cue))
+            {
+                LogMissing($"Cue를 찾을 수 없습니다. cueId={cueId}");
+                return false;
+            }
+
+            clip = cue.GetRandomClip();
+            if (clip == null)
+            {
+                LogMissing($"AudioClip이 연결되지 않았습니다. cueId={cueId}");
+                return false;
+            }
+
+            return true;
         }
 
         private AudioSource CreatePooledSource()
@@ -504,6 +581,15 @@ namespace DeadZone.Systems.Audio
 
             if (audioLibrary.TryGetCue(currentBgmCueId, out AudioCueData cue))
                 bgmSource.volume = CalculateFinalVolume(cue, 1f);
+        }
+
+        private void RefreshKnockedLoopVolume()
+        {
+            if (knockedLoopSource == null || !knockedLoopSource.isPlaying || audioLibrary == null)
+                return;
+
+            if (audioLibrary.TryGetCue(AudioCueId.PlayerKnocked, out AudioCueData cue))
+                knockedLoopSource.volume = CalculateFinalVolume(cue, 1f);
         }
 
         private void LogMissing(string message)
