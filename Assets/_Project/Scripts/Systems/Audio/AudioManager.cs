@@ -15,6 +15,10 @@ namespace DeadZone.Systems.Audio
     [DisallowMultipleComponent]
     public sealed class AudioManager : MonoBehaviour
     {
+        public const string MasterVolumePrefsKey = "Audio.MasterVolume";
+        public const string BgmVolumePrefsKey = "Audio.BgmVolume";
+        public const string SfxVolumePrefsKey = "Audio.SfxVolume";
+
         public static AudioManager Instance { get; private set; }
 
         [Header("====사운드 라이브러리====")]
@@ -104,6 +108,7 @@ namespace DeadZone.Systems.Audio
             ServiceLocator.Register(this);
 
             CreateAudioSources();
+            LoadSavedVolumeSettings();
         }
 
         private void OnEnable()
@@ -260,6 +265,13 @@ namespace DeadZone.Systems.Audio
             uiVolume = Mathf.Clamp01(value);
         }
 
+        public void SetEffectVolume(float value)
+        {
+            float clampedValue = Mathf.Clamp01(value);
+            SetSfxVolume(clampedValue);
+            SetUiVolume(clampedValue);
+        }
+
         public void SetCueVolume(AudioCueId cueId, float value)
         {
             if (cueId == AudioCueId.None)
@@ -387,6 +399,8 @@ namespace DeadZone.Systems.Audio
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            StopPlayerKnockedLoop();
+
             if (playBgmByScene)
                 TryPlayBgmForScene(scene.name);
         }
@@ -432,6 +446,13 @@ namespace DeadZone.Systems.Audio
             int count = Mathf.Max(1, pooledSourceCount);
             for (int i = 0; i < count; i++)
                 pooledSources.Add(CreatePooledSource());
+        }
+
+        private void LoadSavedVolumeSettings()
+        {
+            SetMasterVolume(PlayerPrefs.GetFloat(MasterVolumePrefsKey, masterVolume));
+            SetBgmVolume(PlayerPrefs.GetFloat(BgmVolumePrefsKey, bgmVolume));
+            SetEffectVolume(PlayerPrefs.GetFloat(SfxVolumePrefsKey, sfxVolume));
         }
 
         private bool TryGetCueClip(AudioCueId cueId, out AudioCueData cue, out AudioClip clip)
