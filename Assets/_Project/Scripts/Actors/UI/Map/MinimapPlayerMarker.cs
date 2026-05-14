@@ -1,5 +1,7 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
+
+using DeadZone.Actors.Player;
 
 namespace DeadZone.Actors.UI
 {
@@ -9,14 +11,15 @@ namespace DeadZone.Actors.UI
         [SerializeField] private SpriteRenderer markerRenderer;
 
         [Header("색상")]
-        [SerializeField] private Color localPlayerColor = Color.green;
-        [SerializeField] private Color teammateColor = Color.cyan;
+        [SerializeField] private Color fallbackColor = Color.white;
 
         [Header("회전")]
         [SerializeField] private bool rotateWithPlayer = true;
 
         [Header("레이어")]
         [SerializeField] private string markerLayerName = "Minimap";
+
+        private PlayerTeamIdentity teamIdentity;
 
         private void Awake()
         {
@@ -38,7 +41,14 @@ namespace DeadZone.Actors.UI
         {
             base.OnNetworkSpawn();
             ApplyMarkerLayer();
+            BindTeamIdentity();
             ApplyColor();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            UnbindTeamIdentity();
+            base.OnNetworkDespawn();
         }
 
         private void LateUpdate()
@@ -112,12 +122,37 @@ namespace DeadZone.Actors.UI
             if (!EnsureMarkerRenderer())
                 return;
 
-            markerRenderer.color = IsOwner ? localPlayerColor : teammateColor;
+            markerRenderer.color = teamIdentity != null ? teamIdentity.CurrentColor : fallbackColor;
         }
 
-        private void RefreshColor()
+        private void BindTeamIdentity()
         {
-            ApplyColor();
+            UnbindTeamIdentity();
+
+            teamIdentity = GetComponent<PlayerTeamIdentity>();
+            if (teamIdentity == null)
+                teamIdentity = GetComponentInParent<PlayerTeamIdentity>();
+            if (teamIdentity == null)
+                teamIdentity = GetComponentInChildren<PlayerTeamIdentity>(true);
+
+            if (teamIdentity != null)
+                teamIdentity.TeamColorChanged += HandleTeamColorChanged;
+        }
+
+        private void UnbindTeamIdentity()
+        {
+            if (teamIdentity != null)
+                teamIdentity.TeamColorChanged -= HandleTeamColorChanged;
+
+            teamIdentity = null;
+        }
+
+        private void HandleTeamColorChanged(Color32 color)
+        {
+            if (!EnsureMarkerRenderer())
+                return;
+
+            markerRenderer.color = color;
         }
     }
 }

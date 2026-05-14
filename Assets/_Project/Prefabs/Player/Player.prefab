@@ -360,6 +360,7 @@ GameObject:
   - component: {fileID: 2960883677210419207}
   - component: {fileID: 8742465977128026345}
   - component: {fileID: 5946135611297530169}
+  - component: {fileID: 5068946127396251841}
   - component: {fileID: 3970032432765172834}
   - component: {fileID: 1506123448504329859}
   - component: {fileID: 3836504801580505362}
@@ -1730,6 +1731,23 @@ MonoBehaviour:
   triggerInteraction: 2
   enableDebugLogs: 1
   drawDebugGizmos: 0
+--- !u!114 &5068946127396251841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e0100c8b1a0a664e88c7ba9baf6253e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.MinimapPlayerMarker
+  ShowTopMostFoldoutHeaderGroup: 1
+  markerRenderer: {fileID: 3228820992475911639}
+  fallbackColor: {r: 1, g: 1, b: 1, a: 1}
+  rotateWithPlayer: 1
+  markerLayerName: Minimap
 --- !u!114 &3970032432765172834
 MonoBehaviour:
   m_ObjectHideFlags: 0

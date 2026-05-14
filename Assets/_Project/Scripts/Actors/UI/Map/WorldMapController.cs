@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
@@ -28,6 +30,15 @@ namespace DeadZone.Actors
         [BoxGroup("참조")]
         [Tooltip("잠금 구역 오브젝트들이 들어있는 부모")]
         [SerializeField] private Transform areaRoot;
+
+        [BoxGroup("참조")]
+        [SerializeField] private RectTransform playerMarkerRoot;
+
+        [BoxGroup("참조")]
+        [SerializeField] private RectTransform playerMarkerMapRect;
+
+        [BoxGroup("참조")]
+        [SerializeField] private MonoBehaviour playerMarkerPrefab;
 
         [BoxGroup("입력")]
         [Tooltip("전체 맵을 열고 닫는 입력 시스템 액션")]
@@ -73,6 +84,7 @@ namespace DeadZone.Actors
         private DeadZoneInputActions fallbackInputActions;
         private InputAction activeToggleMapAction;
         private InputAction activeCloseMapAction;
+        private readonly Dictionary<ulong, MonoBehaviour> playerMarkersByClientId = new();
 
         private void Awake()
         {
@@ -116,6 +128,7 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
             GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, false);
             CursorStateController.PopUiOwner(this);
+            ClearPlayerMarkers();
 
             if (activeToggleMapAction != null)
             {
@@ -136,6 +149,12 @@ namespace DeadZone.Actors
                 fallbackInputActions.Dispose();
                 fallbackInputActions = null;
             }
+        }
+
+        private void Update()
+        {
+            if (isOpen)
+                RefreshPlayerMarkers();
         }
 
         private void OnToggleMapInput(InputAction.CallbackContext context)
@@ -182,6 +201,7 @@ namespace DeadZone.Actors
             GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, true);
             CursorStateController.PushUiOwner(this);
             RefreshAllAreaLocks();
+            RefreshPlayerMarkers();
             UIFeedbackTester.Play(onOpenFeedback, this, "전체 맵 열기");
         }
         
@@ -194,6 +214,7 @@ namespace DeadZone.Actors
             if (worldMapUI != null)
                 worldMapUI.SetActive(false);
 
+            ClearPlayerMarkers();
             GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, false);
             CursorStateController.PopUiOwner(this);
             UIFeedbackTester.Play(onCloseFeedback, this, "전체 맵 닫기");
@@ -249,6 +270,150 @@ namespace DeadZone.Actors
             {
                 areaLock.Refresh();
             }
+        }
+
+        private void RefreshPlayerMarkers()
+        {
+            RectTransform markerRoot = ResolvePlayerMarkerRoot();
+            RectTransform mapRect = ResolvePlayerMarkerMapRect(markerRoot);
+            if (markerRoot == null || mapRect == null)
+                return;
+
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || nm.SpawnManager == null)
+            {
+                ClearPlayerMarkers();
+                return;
+            }
+
+            HashSet<ulong> activeClientIds = new();
+            foreach (NetworkObject netObj in nm.SpawnManager.SpawnedObjectsList)
+            {
+                if (netObj == null || !netObj.IsPlayerObject)
+                    continue;
+
+                activeClientIds.Add(netObj.OwnerClientId);
+
+                if (!playerMarkersByClientId.TryGetValue(netObj.OwnerClientId, out MonoBehaviour marker) || marker == null)
+                {
+                    marker = CreatePlayerMarker(markerRoot);
+                    playerMarkersByClientId[netObj.OwnerClientId] = marker;
+                }
+
+                BindPlayerMarker(marker, netObj.transform, mapRect);
+            }
+
+            RemoveInactivePlayerMarkers(activeClientIds);
+        }
+
+        private RectTransform ResolvePlayerMarkerRoot()
+        {
+            if (playerMarkerRoot != null)
+                return playerMarkerRoot;
+
+            RectTransform mapRect = ResolveNamedRectTransform("Png_WorldMap_01");
+            if (mapRect != null)
+                return mapRect;
+
+            return worldMapUI != null ? worldMapUI.GetComponent<RectTransform>() : null;
+        }
+
+        private RectTransform ResolvePlayerMarkerMapRect(RectTransform fallback)
+        {
+            if (playerMarkerMapRect != null)
+                return playerMarkerMapRect;
+
+            RectTransform mapRect = ResolveNamedRectTransform("Png_WorldMap_01");
+            return mapRect != null ? mapRect : fallback;
+        }
+
+        private RectTransform ResolveNamedRectTransform(string targetName)
+        {
+            if (worldMapUI == null || string.IsNullOrWhiteSpace(targetName))
+                return null;
+
+            RectTransform[] rects = worldMapUI.GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < rects.Length; i++)
+            {
+                if (rects[i] != null && rects[i].name == targetName)
+                    return rects[i];
+            }
+
+            return null;
+        }
+
+        private MonoBehaviour CreatePlayerMarker(RectTransform markerRoot)
+        {
+            MonoBehaviour marker;
+            if (playerMarkerPrefab != null)
+            {
+                marker = Instantiate(playerMarkerPrefab, markerRoot);
+            }
+            else
+            {
+                GameObject markerObject = new GameObject(
+                    "PlayerMarker_WorldMap_Runtime",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Image));
+
+                markerObject.transform.SetParent(markerRoot, false);
+                RectTransform markerRect = markerObject.GetComponent<RectTransform>();
+                markerRect.sizeDelta = new Vector2(24f, 24f);
+
+                Image image = markerObject.GetComponent<Image>();
+                image.raycastTarget = false;
+
+                Type markerType = Type.GetType("DeadZone.Actors.MapMarkerFollower, Assembly-CSharp");
+                marker = markerType != null ? markerObject.AddComponent(markerType) as MonoBehaviour : null;
+            }
+
+            return marker;
+        }
+
+        private void BindPlayerMarker(MonoBehaviour marker, Transform target, RectTransform mapRect)
+        {
+            if (marker == null)
+                return;
+
+            MethodInfo bindMethod = marker.GetType().GetMethod(
+                "Bind",
+                BindingFlags.Instance | BindingFlags.Public,
+                binder: null,
+                types: new[] { typeof(Transform), typeof(RectTransform) },
+                modifiers: null);
+
+            bindMethod?.Invoke(marker, new object[] { target, mapRect });
+        }
+
+        private void RemoveInactivePlayerMarkers(HashSet<ulong> activeClientIds)
+        {
+            List<ulong> removeBuffer = new();
+            foreach (KeyValuePair<ulong, MonoBehaviour> pair in playerMarkersByClientId)
+            {
+                if (!activeClientIds.Contains(pair.Key))
+                    removeBuffer.Add(pair.Key);
+            }
+
+            for (int i = 0; i < removeBuffer.Count; i++)
+            {
+                ulong clientId = removeBuffer[i];
+                if (playerMarkersByClientId.TryGetValue(clientId, out MonoBehaviour marker) && marker != null)
+                    Destroy(marker.gameObject);
+
+                playerMarkersByClientId.Remove(clientId);
+            }
+        }
+
+        private void ClearPlayerMarkers()
+        {
+            foreach (MonoBehaviour marker in playerMarkersByClientId.Values)
+            {
+                if (marker != null)
+                    Destroy(marker.gameObject);
+            }
+
+            playerMarkersByClientId.Clear();
         }
         
         // 특정 구역 ID를 직접 해금하는 함수

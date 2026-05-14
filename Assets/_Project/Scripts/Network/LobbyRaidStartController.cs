@@ -293,6 +293,7 @@ namespace DeadZone.Network
                 return;
             }
 
+            CacheLobbyTeamColorsForRaid();
             RaidLoadoutTransferService.SaveLoadoutsForClients(expectedClientIdsBuffer);
 
             if (!TryBeginLoadTracking(sceneName, expectedClientIdsBuffer, out reason))
@@ -570,6 +571,19 @@ namespace DeadZone.Network
 
             reason = $"출격 대상 clientId 목록 확인 완료. Count={clientIds.Count}";
             return true;
+        }
+
+        private void CacheLobbyTeamColorsForRaid()
+        {
+            if (!IsServer || lobbyState == null || lobbyState.Players == null)
+                return;
+
+            for (int i = 0; i < lobbyState.Players.Count; i++)
+            {
+                LobbyPlayerState player = lobbyState.Players[i];
+                Color32 iconColor = PartyPlayerColorCache.ToColor32(player.IconColorRgba);
+                LobbyTeamColorCache.SetColor(player.ClientId, iconColor);
+            }
         }
 
         private bool TryBeginLoadTracking(string sceneName, IReadOnlyList<ulong> clientIds, out string reason)
