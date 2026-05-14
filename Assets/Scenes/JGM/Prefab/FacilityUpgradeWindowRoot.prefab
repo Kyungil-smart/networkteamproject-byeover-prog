@@ -18,7 +18,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7437155448410785300
 RectTransform:
   m_ObjectHideFlags: 0
@@ -108,10 +108,11 @@ MonoBehaviour:
   facilityNameText: {fileID: 2752289233886538777}
   currentLevelText: {fileID: 8881294955393827476}
   currentEffectText: {fileID: 5927445242642737558}
+  messageText: {fileID: 0}
   level2Row: {fileID: 8579311913673535541}
   level3Row: {fileID: 7684130777810873146}
   level4Row: {fileID: 537570586755437391}
-  showDebugLog: 1
+  showDebugLog: 0
 --- !u!1 &331017592874723230
 GameObject:
   m_ObjectHideFlags: 0
@@ -1228,7 +1229,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 379cd3b8818504bb598af7bc1ca79dc7, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2267,7 +2268,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 379cd3b8818504bb598af7bc1ca79dc7, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2447,7 +2448,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 1.5078125, y: -8.999908}
+  m_AnchoredPosition: {x: 1.5078125, y: -8.999878}
   m_SizeDelta: {x: 1087, y: 78.9471}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &6446173197934927356
@@ -2786,9 +2787,9 @@ RectTransform:
   - {fileID: 5167915616922204975}
   m_Father: {fileID: 9031901213836432488}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 0, y: -373.97668}
   m_SizeDelta: {x: 1090, y: 200}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &996723738234888276
@@ -2848,6 +2849,8 @@ MonoBehaviour:
   upgradeButtonText: {fileID: 8012171965400602439}
   reachedMarkRoot: {fileID: 1655615040180281678}
   lockedMarkRoot: {fileID: 1309156501512932482}
+  activeLevelTextColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveLevelTextColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!1 &4425178589000984730
 GameObject:
   m_ObjectHideFlags: 0
@@ -3500,9 +3503,9 @@ RectTransform:
   - {fileID: 8076083541764805100}
   m_Father: {fileID: 9031901213836432488}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 0, y: -100}
   m_SizeDelta: {x: 1090, y: 200}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &1853663973765033536
@@ -3562,6 +3565,8 @@ MonoBehaviour:
   upgradeButtonText: {fileID: 1996095322839556690}
   reachedMarkRoot: {fileID: 588520493705773798}
   lockedMarkRoot: {fileID: 6702014599365712025}
+  activeLevelTextColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveLevelTextColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!1 &6702014599365712025
 GameObject:
   m_ObjectHideFlags: 0
@@ -3766,7 +3771,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 379cd3b8818504bb598af7bc1ca79dc7, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4352,9 +4357,9 @@ RectTransform:
   - {fileID: 5039815055764006352}
   m_Father: {fileID: 9031901213836432488}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 0, y: -647.95337}
   m_SizeDelta: {x: 1090, y: 200}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &2957386182740769892
@@ -4414,3 +4419,5 @@ MonoBehaviour:
   upgradeButtonText: {fileID: 6351054966778141830}
   reachedMarkRoot: {fileID: 7159362550003300301}
   lockedMarkRoot: {fileID: 2247724620317617521}
+  activeLevelTextColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveLevelTextColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
