@@ -26,6 +26,10 @@ namespace DeadZone.Actors.Player
         [Header("옵션")]
         [SerializeField] private bool autoResolveOnAwake = true;
         [SerializeField] private bool showDebugLogs = false;
+        
+        [Header("애니메이션")]
+        [SerializeField] private Animator targetAnimator;
+        [SerializeField] private bool rebindAnimatorAfterApply = true;
 
         private bool resolved;
 
@@ -33,6 +37,9 @@ namespace DeadZone.Actors.Player
         {
             if (modelRoot == null)
                 modelRoot = transform;
+
+            if (targetAnimator == null)
+                targetAnimator = GetComponentInParent<Animator>();
 
             if (autoResolveOnAwake)
                 ResolveOptions();
@@ -54,6 +61,12 @@ namespace DeadZone.Actors.Player
                     $"[PlayerCharacterCustomizeView] Applied. " +
                     $"Body={data.BodyIndex}, Head={data.HeadIndex}, Beard={data.BeardIndex}, Hat={data.HatIndex}",
                     this);
+            }
+            
+            if (rebindAnimatorAfterApply && targetAnimator != null)
+            {
+                targetAnimator.Rebind();
+                targetAnimator.Update(0f);
             }
         }
 
