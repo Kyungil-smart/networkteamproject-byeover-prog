@@ -99,6 +99,7 @@ namespace DeadZone.Actors
             {
                 attackerClientId = attackerClientId,
                 tier = statsSO != null ? statsSO.tier : EnemyTier.T1,
+                isBoss = statsSO != null && statsSO.isBoss,
                 position = transform.position,
                 enemyId = statsSO != null && !string.IsNullOrEmpty(statsSO.enemyId)
                     ? new FixedString64Bytes(statsSO.enemyId)

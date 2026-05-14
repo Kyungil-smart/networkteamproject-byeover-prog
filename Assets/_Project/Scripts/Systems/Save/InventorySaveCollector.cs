@@ -78,13 +78,11 @@ namespace DeadZone.Systems.Save
             dto.quickSlotItems ??= new List<ItemSaveDTO>();
             dto.quickSlotItems.Clear();
             dto.equipmentItems.Clear();
-            dto.quickSlotItems.Clear();
 
             dto.inventoryItems.AddRange(inventoryState.InventoryItems);
             dto.stashItems.AddRange(inventoryState.StashItems);
             dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
             dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
-            dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
 
             if (logCollectResult)
             {
@@ -94,8 +92,6 @@ namespace DeadZone.Systems.Save
                     $"StashItems: {dto.stashItems.Count}\n" +
                     $"QuickSlotItems: {dto.quickSlotItems.Count}\n" +
                     $"EquipmentItems: {dto.equipmentItems.Count}",
-                    $"EquipmentItems: {dto.equipmentItems.Count}\n" +
-                    $"QuickSlotItems: {dto.quickSlotItems.Count}",
                     this
                 );
             }

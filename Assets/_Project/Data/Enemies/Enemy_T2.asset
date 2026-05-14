@@ -16,7 +16,7 @@ MonoBehaviour:
   tier: 2
   faction: 1
   isBoss: 0
-  enemyId: 
+  enemyId: Enemy_Zone1_Any
   maxHP: 100
   defaultArmor: {fileID: 11400000, guid: 3865c40cd8e70664a9e58d16a0d96a69, type: 2}
   defaultWeapon: {fileID: 11400000, guid: 4e7f75c1d36e7004aa003eee4af8517c, type: 2}

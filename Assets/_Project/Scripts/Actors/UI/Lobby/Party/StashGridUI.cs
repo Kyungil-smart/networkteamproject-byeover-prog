@@ -922,6 +922,24 @@ namespace DeadZone.Actors.UI
         }
 
         private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem, bool shiftOneBasedLinearIndex)
+        {
+            if (savedItem == null)
+                return null;
+
+            int requestedIndex = ToLinearSlotIndex(savedItem.x, savedItem.y);
+            if (shiftOneBasedLinearIndex)
+                requestedIndex = Mathf.Max(0, requestedIndex - 1);
+
+            if (requestedIndex >= 0 && requestedIndex < activeSlotCount && requestedIndex < slots.Count)
+            {
+                InventorySlotUI requestedSlot = slots[requestedIndex];
+                if (requestedSlot != null && requestedSlot != slotPrefab && !requestedSlot.HasItem)
+                    return requestedSlot;
+            }
+
+            return FindFirstEmptySlot();
+        }
+
         public List<ItemSaveDTO> CaptureSavedStashItems()
         {
             RefreshSlots();
@@ -959,21 +977,7 @@ namespace DeadZone.Actors.UI
 
         private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem)
         {
-            if (savedItem == null)
-                return null;
-
-            int requestedIndex = ToLinearSlotIndex(savedItem.x, savedItem.y);
-            if (shiftOneBasedLinearIndex)
-                requestedIndex = Mathf.Max(0, requestedIndex - 1);
-
-            if (requestedIndex >= 0 && requestedIndex < activeSlotCount && requestedIndex < slots.Count)
-            {
-                InventorySlotUI requestedSlot = slots[requestedIndex];
-                if (requestedSlot != null && requestedSlot != slotPrefab && !requestedSlot.HasItem)
-                    return requestedSlot;
-            }
-
-            return FindFirstEmptySlot();
+            return FindSlotForLobbyItem(savedItem, false);
         }
 
         private static bool ShouldShiftOneBasedLinearIndex(IReadOnlyList<ItemSaveDTO> stashItems)

@@ -16,7 +16,7 @@ MonoBehaviour:
   tier: 5
   faction: 1
   isBoss: 1
-  enemyId: 
+  enemyId: Boss_Forest_Sniper
   maxHP: 300
   defaultArmor: {fileID: 0}
   defaultWeapon: {fileID: 11400000, guid: 8aeaa47fb847b284c94f2a413a3699a3, type: 2}

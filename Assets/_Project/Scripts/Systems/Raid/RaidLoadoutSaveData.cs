@@ -10,7 +10,6 @@ namespace DeadZone.Systems.Raid
         public List<InventoryItemSaveData> inventoryItems = new();
         public List<QuickSlotSaveData> quickSlotItems = new();
         public List<EquipmentSaveData> equipmentItems = new();
-        public List<InventoryItemSaveData> quickSlotItems = new();
         public string currentEquippedItemId;
     }
 

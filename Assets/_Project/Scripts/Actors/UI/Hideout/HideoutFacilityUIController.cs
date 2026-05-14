@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
 namespace DeadZone.Actors.UI.Hideout
@@ -191,6 +192,18 @@ namespace DeadZone.Actors.UI.Hideout
             }
 
             DebugLog($"로비 씬으로 이동합니다. Scene={lobbySceneName}");
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                if (!NetworkManager.Singleton.IsServer)
+                {
+                    Debug.LogWarning("[HideoutFacilityUIController] Party session is active. Lobby return is blocked on non-host clients to avoid leaving the party session.", this);
+                    return;
+                }
+
+                NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+                return;
+            }
+
             SceneManager.LoadScene(lobbySceneName);
         }
 
