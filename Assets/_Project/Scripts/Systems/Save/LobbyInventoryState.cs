@@ -16,6 +16,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private List<ItemSaveDTO> stashItems = new();
         [SerializeField] private List<ItemSaveDTO> quickSlotItems = new();
         [SerializeField] private List<EquipmentSaveDTO> equipmentItems = new();
+        [SerializeField] private List<ItemSaveDTO> quickSlotItems = new();
 
         public bool HasCredits => hasCredits;
         public int Credits => credits;
@@ -23,6 +24,7 @@ namespace DeadZone.Systems.Save
         public IReadOnlyList<ItemSaveDTO> StashItems => stashItems;
         public IReadOnlyList<ItemSaveDTO> QuickSlotItems => quickSlotItems;
         public IReadOnlyList<EquipmentSaveDTO> EquipmentItems => equipmentItems;
+        public IReadOnlyList<ItemSaveDTO> QuickSlotItems => quickSlotItems;
 
         private void Awake()
         {
@@ -60,6 +62,11 @@ namespace DeadZone.Systems.Save
             ReplaceList(equipmentItems, items);
         }
 
+        public void SetQuickSlotItems(IEnumerable<ItemSaveDTO> items)
+        {
+            ReplaceList(quickSlotItems, items);
+        }
+
         [Button("인벤토리 상태 비우기")]
         public void Clear()
         {
@@ -69,6 +76,7 @@ namespace DeadZone.Systems.Save
             stashItems.Clear();
             quickSlotItems.Clear();
             equipmentItems.Clear();
+            quickSlotItems.Clear();
         }
 
         private static void ReplaceList<T>(List<T> target, IEnumerable<T> source)

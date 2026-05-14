@@ -266,10 +266,15 @@ namespace DeadZone.Actors.UI
             if (eventData == null || eventData.button != PointerEventData.InputButton.Right)
                 return;
 
-            if (!TryUseMedicalItem())
+            if (!TryUseCurrentItem())
                 return;
 
             eventData.Use();
+        }
+
+        public bool TryUseCurrentItem()
+        {
+            return TryUseMedicalItem();
         }
 
         private bool TryUseMedicalItem()
@@ -581,6 +586,9 @@ namespace DeadZone.Actors.UI
             ItemDataSO sourceItem = source.CurrentItemData;
             int sourceCount = source.CurrentStackCount;
 
+            if (slotKind == InventorySlotKind.QuickSlot)
+                return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
+
             if (!CanAccept(sourceItem))
             {
                 Debug.LogWarning($"[InventorySlotUI] {name} 슬롯에는 {sourceItem.displayName} 아이템을 넣을 수 없습니다. slotKind={slotKind}, itemType={sourceItem.GetType().Name}", this);
@@ -589,6 +597,13 @@ namespace DeadZone.Actors.UI
 
             if (!HasItem)
             {
+                if (slotKind == InventorySlotKind.Bag &&
+                    source.TryGetEquipmentTargetSlot(out EquipmentTargetSlot sourceEquipmentSlot) &&
+                    TryRequestEquipmentMoveToInventory(sourceEquipmentSlot, slotIndex))
+                {
+                    return true;
+                }
+
                 if (!TrySyncEquipmentSlotAfterDrop(this, sourceItem) ||
                     !TrySyncEquipmentSlotAfterDrop(source, null))
                 {
@@ -641,6 +656,67 @@ namespace DeadZone.Actors.UI
             source.SetItem(targetItem, targetCount);
             CaptureLobbyInventoryStateIfPresent(this, source);
             return true;
+        }
+
+        private static bool TryRequestEquipmentMoveToInventory(EquipmentTargetSlot sourceEquipmentSlot, int targetSlotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, targetSlotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, targetSlotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestMoveEquipmentSlotToInventory(sourceEquipmentSlot, gridX, gridY);
+            return true;
+        }
+
+        private bool TryAssignQuickSlotShortcut(InventorySlotUI source, ItemDataSO sourceItem, int sourceCount)
+        {
+            if (source == null || sourceItem == null || sourceCount <= 0)
+                return false;
+
+            if (!CanAccept(sourceItem))
+                return false;
+
+            if (source.slotKind == InventorySlotKind.QuickSlot)
+            {
+                if (!HasItem)
+                {
+                    SetItem(sourceItem, sourceCount);
+                    source.ClearItem();
+                    CaptureLobbyInventoryStateIfPresent(this, source);
+                    return true;
+                }
+
+                ItemDataSO targetItem = CurrentItemData;
+                int targetCount = CurrentStackCount;
+                SetItem(sourceItem, sourceCount);
+                source.SetItem(targetItem, targetCount);
+                CaptureLobbyInventoryStateIfPresent(this, source);
+                return true;
+            }
+
+            if (source.IsStashLikeSlot())
+            {
+                Debug.LogWarning(
+                    $"[InventorySlotUI] Quickslot assignment blocked from stash. Move item to player inventory first. itemID={sourceItem.itemID}",
+                    this);
+                return false;
+            }
+
+            SetItem(sourceItem, sourceCount);
+            CaptureLobbyInventoryStateIfPresent(this);
+            return true;
+        }
+
+        private bool IsStashLikeSlot()
+        {
+            string path = GetHierarchyPath(transform).ToLowerInvariant();
+            string objectName = name.ToLowerInvariant();
+
+            return path.Contains("stashpanel") ||
+                   path.Contains("stashslot") ||
+                   objectName.Contains("stashslot");
         }
 
         private static void CaptureLobbyInventoryStateIfPresent(params InventorySlotUI[] changedSlots)

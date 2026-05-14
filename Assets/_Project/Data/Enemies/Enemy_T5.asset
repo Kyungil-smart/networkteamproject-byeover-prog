@@ -38,10 +38,8 @@ MonoBehaviour:
   preferredRangeMin: 30
   preferredRangeMax: 90
   canCallReinforcements: 0
-  canThrowGrenades: 0
-  grenadeCooldown: 15
   dropEquippedGear: 1
-  extraLootTable: {fileID: 0}
+  extraLootTable: {fileID: 11400000, guid: 60c3e02632616ef4fbb7ffa52c705ecd, type: 2}
   extraLootCount: 1
   corpsePrefab: {fileID: 2706845702117162606, guid: 2229262e873706a4d929d6bfc82f6d74, type: 3}
   corpseDespawnTime: 120

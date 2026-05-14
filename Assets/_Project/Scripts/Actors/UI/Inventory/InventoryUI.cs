@@ -162,6 +162,7 @@ namespace DeadZone.Actors.UI
             SubscribeEquipmentSlots();
             RefreshGridInventorySlots();
             RefreshEquipmentSlotViews();
+            DeadZone.Systems.Raid.RaidLoadoutTransferService.ApplyLocalQuickSlotsToUi();
         }
 
         public void Close()

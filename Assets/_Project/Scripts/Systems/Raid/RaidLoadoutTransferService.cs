@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
 using DeadZone.Actors;
+using DeadZone.Actors.UI;
 using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems.Save;
@@ -42,6 +43,7 @@ namespace DeadZone.Systems.Raid
                     loadoutsByClientId[clientId] = savedLobbyLoadout;
                     Debug.Log(
                         $"[RaidLoadout] Saved loadout from lobby save snapshot clientId={clientId}, inventory={savedLobbyLoadout.inventoryItems.Count}, quickSlots={savedLobbyLoadout.quickSlotItems.Count}, equipment={CountEquippedItems(savedLobbyLoadout.equipmentItems)}, current={savedLobbyLoadout.currentEquippedItemId}");
+                        $"[RaidLoadout] Saved loadout from lobby save snapshot clientId={clientId}, inventory={savedLobbyLoadout.inventoryItems.Count}, equipment={CountEquippedItems(savedLobbyLoadout.equipmentItems)}, quickslots={savedLobbyLoadout.quickSlotItems.Count}, current={savedLobbyLoadout.currentEquippedItemId}");
                     continue;
                 }
 
@@ -60,7 +62,7 @@ namespace DeadZone.Systems.Raid
                 loadoutsByClientId[clientId] = liveLoadout;
 
                 Debug.Log(
-                    $"[RaidLoadout] Saved loadout clientId={clientId}, inventory={liveLoadout.inventoryItems.Count}, equipment={CountEquippedItems(liveLoadout.equipmentItems)}",
+                    $"[RaidLoadout] Saved loadout clientId={clientId}, inventory={liveLoadout.inventoryItems.Count}, equipment={CountEquippedItems(liveLoadout.equipmentItems)}, quickslots={liveLoadout.quickSlotItems.Count}",
                     playerObject);
             }
         }
@@ -87,6 +89,7 @@ namespace DeadZone.Systems.Raid
                 loadoutsByClientId[clientId] = loadout;
                 Debug.Log(
                     $"[RaidLoadout] Recovered loadout during apply clientId={clientId}, inventory={loadout.inventoryItems.Count}, quickSlots={loadout.quickSlotItems.Count}, equipment={CountEquippedItems(loadout.equipmentItems)}, current={loadout.currentEquippedItemId}",
+                    $"[RaidLoadout] Recovered loadout during apply clientId={clientId}, inventory={loadout.inventoryItems.Count}, equipment={CountEquippedItems(loadout.equipmentItems)}, quickslots={loadout.quickSlotItems.Count}, current={loadout.currentEquippedItemId}",
                     playerObject);
             }
 
@@ -107,9 +110,10 @@ namespace DeadZone.Systems.Raid
 
             int equipmentCount = equipment.ImportSnapshot(loadout.equipmentItems, loadout.currentEquippedItemId);
             int inventoryCount = inventory.ImportSnapshot(loadout.inventoryItems);
+            int quickSlotCount = ApplyQuickSlotsToUi(loadout.quickSlotItems);
 
             Debug.Log(
-                $"[RaidLoadout] Applied inventory items={inventoryCount}, equipment={equipmentCount}, clientId={clientId}",
+                $"[RaidLoadout] Applied inventory items={inventoryCount}, equipment={equipmentCount}, quickslots={quickSlotCount}, clientId={clientId}",
                 playerObject);
 
             return true;
@@ -132,6 +136,15 @@ namespace DeadZone.Systems.Raid
 
             quickSlotItems = loadout.quickSlotItems;
             return true;
+        public static int ApplyLocalQuickSlotsToUi()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return 0;
+
+            return loadoutsByClientId.TryGetValue(networkManager.LocalClientId, out RaidLoadoutSaveData loadout)
+                ? ApplyQuickSlotsToUi(loadout.quickSlotItems)
+                : 0;
         }
 
         private static RaidLoadoutSaveData CreateEmptyLoadout(ulong clientId)
@@ -165,6 +178,7 @@ namespace DeadZone.Systems.Raid
                 clientId = clientId,
                 inventoryItems = inventory.ExportSnapshot(),
                 equipmentItems = equipment.ExportSnapshot(),
+                quickSlotItems = CaptureCurrentQuickSlotSnapshot(),
                 currentEquippedItemId = equipment.CurrentEquipped.Value.ToString()
             };
         }
@@ -178,9 +192,12 @@ namespace DeadZone.Systems.Raid
                 return false;
 
             LobbySaveDTO dto = CreateLobbySaveDTOFromSceneState();
+            LobbySaveDTO fallbackDto = CreateLobbySaveDTOFromCloud();
+
+            MergeMissingLobbyLoadoutSections(dto, fallbackDto);
 
             if (!HasMeaningfulLobbyInventory(dto))
-                dto = CreateLobbySaveDTOFromCloud();
+                dto = fallbackDto;
 
             if (!HasMeaningfulLobbyInventory(dto))
                 return false;
@@ -204,15 +221,47 @@ namespace DeadZone.Systems.Raid
             LobbySaveDTO dto = new LobbySaveDTO
             {
                 hasCredits = inventoryState.HasCredits,
-                credits = inventoryState.Credits
+                credits = inventoryState.Credits,
+                hasInventorySection = true,
+                hasStashSection = true,
+                hasEquipmentSection = true,
+                hasQuickSlotSection = true
             };
 
             AddRange(dto.inventoryItems, inventoryState.InventoryItems);
             AddRange(dto.stashItems, inventoryState.StashItems);
             AddRange(dto.quickSlotItems, inventoryState.QuickSlotItems);
             AddRange(dto.equipmentItems, inventoryState.EquipmentItems);
+            AddRange(dto.quickSlotItems, inventoryState.QuickSlotItems);
 
             return dto;
+        }
+
+        private static void MergeMissingLobbyLoadoutSections(LobbySaveDTO target, LobbySaveDTO fallback)
+        {
+            if (target == null || fallback == null)
+                return;
+
+            if (!HasItems(target.inventoryItems) && HasItems(fallback.inventoryItems))
+            {
+                target.inventoryItems.Clear();
+                AddRange(target.inventoryItems, fallback.inventoryItems);
+                target.hasInventorySection = fallback.hasInventorySection;
+            }
+
+            if (!HasItems(target.equipmentItems) && HasItems(fallback.equipmentItems))
+            {
+                target.equipmentItems.Clear();
+                AddRange(target.equipmentItems, fallback.equipmentItems);
+                target.hasEquipmentSection = fallback.hasEquipmentSection;
+            }
+
+            if (!HasItems(target.quickSlotItems) && HasItems(fallback.quickSlotItems))
+            {
+                target.quickSlotItems.Clear();
+                AddRange(target.quickSlotItems, fallback.quickSlotItems);
+                target.hasQuickSlotSection = fallback.hasQuickSlotSection;
+            }
         }
 
         private static LobbySaveDTO CreateLobbySaveDTOFromCloud()
@@ -236,7 +285,8 @@ namespace DeadZone.Systems.Raid
             };
 
             IReadOnlyList<ItemSaveDTO> inventoryItems = dto.inventoryItems;
-            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems);
+            IReadOnlyList<ItemSaveDTO> quickSlotItems = dto.quickSlotItems;
+            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems, dto.quickSlotItems);
 
             if (inventoryItems != null)
             {
@@ -273,6 +323,21 @@ namespace DeadZone.Systems.Raid
                         itemId = item.itemId,
                         instanceId = item.instanceId,
                         slotIndex = Mathf.Max(0, item.x),
+            if (quickSlotItems != null)
+            {
+                for (int i = 0; i < quickSlotItems.Count; i++)
+                {
+                    ItemSaveDTO item = quickSlotItems[i];
+                    if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                        continue;
+
+                    loadout.quickSlotItems.Add(new InventoryItemSaveData
+                    {
+                        itemId = item.itemId,
+                        instanceId = item.instanceId,
+                        gridX = Mathf.Clamp(item.x, 0, 5),
+                        gridY = 0,
+                        rotated = false,
                         stackCount = Mathf.Max(1, item.stackCount),
                         currentDurability = Mathf.Max(0f, item.currentDurability),
                         currentAmmo = Mathf.Max(0, item.currentAmmo)
@@ -330,10 +395,167 @@ namespace DeadZone.Systems.Raid
             return loadout;
         }
 
-        private static List<ItemSaveDTO> CreateAmmoLookupItems(IReadOnlyList<ItemSaveDTO> inventoryItems)
+        private static List<InventoryItemSaveData> CaptureCurrentQuickSlotSnapshot()
+        {
+            List<InventoryItemSaveData> snapshot = new();
+            InventorySlotUI[] quickSlots = ResolveQuickSlotSlots();
+
+            for (int i = 0; i < quickSlots.Length; i++)
+            {
+                InventorySlotUI slot = quickSlots[i];
+                if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
+                    continue;
+
+                snapshot.Add(new InventoryItemSaveData
+                {
+                    itemId = slot.CurrentItemData.itemID,
+                    instanceId = $"{slot.CurrentItemData.itemID}_quickslot_{slot.SlotIndex}",
+                    gridX = Mathf.Clamp(slot.SlotIndex, 0, 5),
+                    gridY = 0,
+                    rotated = false,
+                    stackCount = Mathf.Max(1, slot.CurrentStackCount),
+                    currentDurability = 0f,
+                    currentAmmo = 0
+                });
+            }
+
+            return snapshot;
+        }
+
+        private static int ApplyQuickSlotsToUi(IReadOnlyList<InventoryItemSaveData> quickSlotItems)
+        {
+            InventorySlotUI[] quickSlots = ResolveQuickSlotSlots();
+            if (quickSlots.Length == 0)
+                return 0;
+
+            for (int i = 0; i < quickSlots.Length; i++)
+                quickSlots[i]?.ClearItem();
+
+            if (quickSlotItems == null || quickSlotItems.Count == 0)
+                return 0;
+
+            IItemDatabase itemDatabase = ResolveItemDatabase();
+            if (itemDatabase == null)
+            {
+                Debug.LogWarning("[RaidLoadout] Cannot apply quickslots. ItemDatabase was not found.");
+                return 0;
+            }
+
+            int applied = 0;
+
+            for (int i = 0; i < quickSlotItems.Count; i++)
+            {
+                InventoryItemSaveData savedItem = quickSlotItems[i];
+                if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
+                    continue;
+
+                int slotIndex = Mathf.Clamp(savedItem.gridY * 6 + savedItem.gridX, 0, 5);
+                InventorySlotUI slot = FindQuickSlotByIndex(quickSlots, slotIndex);
+                ItemDataSO itemData = itemDatabase.GetById(savedItem.itemId);
+
+                if (slot == null || itemData == null)
+                    continue;
+
+                slot.SetItem(itemData, Mathf.Max(1, savedItem.stackCount));
+                applied++;
+            }
+
+            return applied;
+        }
+
+        private static InventorySlotUI[] ResolveQuickSlotSlots()
+        {
+            Transform quickSlotPanel = FindQuickSlotPanel();
+            if (quickSlotPanel == null)
+                return System.Array.Empty<InventorySlotUI>();
+
+            ItemTooltipUI tooltip = Object.FindFirstObjectByType<ItemTooltipUI>(FindObjectsInactive.Include);
+            List<InventorySlotUI> slots = new();
+            int index = 0;
+
+            foreach (Transform child in quickSlotPanel)
+            {
+                if (child == null || child.GetComponent<RectTransform>() == null)
+                    continue;
+
+                InventorySlotUI slot = child.GetComponent<InventorySlotUI>();
+                if (slot == null && child.GetComponent<UnityEngine.UI.Image>() != null)
+                    slot = child.gameObject.AddComponent<InventorySlotUI>();
+
+                if (slot == null)
+                    continue;
+
+                slot.PrepareDropSlotAsKind(tooltip, InventorySlotKind.QuickSlot, index);
+                slots.Add(slot);
+                index++;
+            }
+
+            foreach (InventorySlotUI slot in quickSlotPanel.GetComponentsInChildren<InventorySlotUI>(true))
+            {
+                if (slot == null || slots.Contains(slot))
+                    continue;
+
+                slot.PrepareDropSlotAsKind(tooltip, InventorySlotKind.QuickSlot);
+                slots.Add(slot);
+            }
+
+            slots.Sort((left, right) => left.SlotIndex.CompareTo(right.SlotIndex));
+            return slots.ToArray();
+        }
+
+        private static Transform FindQuickSlotPanel()
+        {
+            Transform fallback = null;
+            Transform[] transforms = Object.FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform candidate = transforms[i];
+                if (candidate == null || candidate.name != "QuickSlotPanel")
+                    continue;
+
+                if (candidate.gameObject.activeInHierarchy)
+                    return candidate;
+
+                fallback ??= candidate;
+            }
+
+            return fallback;
+        }
+
+        private static InventorySlotUI FindQuickSlotByIndex(IReadOnlyList<InventorySlotUI> slots, int slotIndex)
+        {
+            if (slots == null)
+                return null;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot != null && slot.SlotIndex == slotIndex)
+                    return slot;
+            }
+
+            return slotIndex >= 0 && slotIndex < slots.Count ? slots[slotIndex] : null;
+        }
+
+        private static IItemDatabase ResolveItemDatabase()
+        {
+            IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+                itemDatabase = Object.FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
+
+            return itemDatabase;
+        }
+
+        private static List<ItemSaveDTO> CreateAmmoLookupItems(
+            IReadOnlyList<ItemSaveDTO> inventoryItems,
+            IReadOnlyList<ItemSaveDTO> quickSlotItems)
         {
             List<ItemSaveDTO> items = new();
             AddRange(items, inventoryItems);
+            AddRange(items, quickSlotItems);
             return items;
         }
 
@@ -577,6 +799,8 @@ namespace DeadZone.Systems.Raid
                    (HasItems(dto.inventoryItems) ||
                     HasItems(dto.quickSlotItems) ||
                     HasItems(dto.equipmentItems));
+                    HasItems(dto.equipmentItems) ||
+                    HasItems(dto.quickSlotItems));
         }
 
         private static bool HasMeaningfulLoadout(RaidLoadoutSaveData loadout)
@@ -585,6 +809,8 @@ namespace DeadZone.Systems.Raid
                    (HasItems(loadout.inventoryItems) ||
                     HasItems(loadout.quickSlotItems) ||
                     CountEquippedItems(loadout.equipmentItems) > 0);
+                    CountEquippedItems(loadout.equipmentItems) > 0 ||
+                    HasItems(loadout.quickSlotItems));
         }
 
         private static bool TryResolveLoadoutSource(
@@ -602,7 +828,7 @@ namespace DeadZone.Systems.Raid
                 HasLoadoutComponents(client.PlayerObject.gameObject))
             {
                 source = client.PlayerObject.gameObject;
-                return true;
+                return true;https://github.com/Kyungil-smart/networkteamproject-byeover-prog/pull/144/conflict?name=Assets%252F_Project%252FScripts%252FSystems%252FSave%252FLobbyInventoryStateUiBridge.cs&ancestor_oid=12c88411c797146655fe00d57719944300011633&base_oid=f6df680fb6d879e213374362b55778066154c44a&head_oid=f76d109c25be996eae0f84e3cceab350b82de5eb
             }
 
             foreach (NetworkObject networkObject in networkManager.SpawnManager.SpawnedObjectsList)

@@ -69,10 +69,25 @@ namespace DeadZone.Actors
             });
         }
 
-        /// <summary>루팅하는 플레이어 쪽에서 시체 UI를 연다 — 현재는 이벤트 발행만 한다.</summary>
+        /// <summary>루팅을 요청한 플레이어 쪽에서만 시체 UI를 연다.</summary>
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-        public void RequestOpenServerRpc(ulong looterClientId)
+        public void RequestOpenServerRpc(ulong looterClientId, RpcParams rpcParams = default)
         {
+            ulong targetClientId = rpcParams.Receive.SenderClientId;
+            if (NetworkManager.Singleton != null &&
+                !NetworkManager.Singleton.ConnectedClients.ContainsKey(targetClientId) &&
+                NetworkManager.Singleton.ConnectedClients.ContainsKey(looterClientId))
+            {
+                targetClientId = looterClientId;
+            }
+
+            OpenLootingUiRpc(RpcTarget.Single(targetClientId, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void OpenLootingUiRpc(RpcParams rpcParams = default)
+        {
+            OpenLootingUI();
         }
 
         /// <summary>

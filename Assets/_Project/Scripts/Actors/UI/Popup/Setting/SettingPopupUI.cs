@@ -504,6 +504,7 @@ namespace DeadZone.Actors.UI
             inventoryState.SetInventoryItems(dto.inventoryItems);
             inventoryState.SetStashItems(dto.stashItems);
             inventoryState.SetEquipmentItems(dto.equipmentItems);
+            inventoryState.SetQuickSlotItems(dto.quickSlotItems);
 
             LobbyInventoryStateUiBridge bridge =
                 Object.FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);

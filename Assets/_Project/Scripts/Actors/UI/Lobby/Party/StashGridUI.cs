@@ -922,6 +922,42 @@ namespace DeadZone.Actors.UI
         }
 
         private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem, bool shiftOneBasedLinearIndex)
+        public List<ItemSaveDTO> CaptureSavedStashItems()
+        {
+            RefreshSlots();
+
+            List<ItemSaveDTO> items = new();
+            int count = Mathf.Min(activeSlotCount, slots.Count);
+
+            for (int i = 0; i < count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null || slot == slotPrefab)
+                    continue;
+
+                slot.PrepareForSaveSnapshot();
+
+                if (!slot.HasItem || slot.CurrentItemData == null)
+                    continue;
+
+                items.Add(new ItemSaveDTO
+                {
+                    itemId = slot.CurrentItemData.itemID,
+                    instanceId = $"stash_{i}_{slot.CurrentItemData.itemID}",
+                    containerId = "stash",
+                    x = i,
+                    y = 0,
+                    rotated = false,
+                    stackCount = Mathf.Max(1, slot.CurrentStackCount),
+                    currentDurability = GetDefaultDurability(slot.CurrentItemData),
+                    currentAmmo = GetDefaultAmmo(slot.CurrentItemData)
+                });
+            }
+
+            return items;
+        }
+
+        private InventorySlotUI FindSlotForLobbyItem(ItemSaveDTO savedItem)
         {
             if (savedItem == null)
                 return null;
@@ -968,6 +1004,24 @@ namespace DeadZone.Actors.UI
                 return x;
 
             return Mathf.Max(0, y) * FixedColumnCount + Mathf.Max(0, x);
+        }
+
+        private static int GetDefaultAmmo(ItemDataSO itemData)
+        {
+            return itemData is WeaponDataSO weaponData
+                ? Mathf.Max(0, weaponData.magSize)
+                : 0;
+        }
+
+        private static float GetDefaultDurability(ItemDataSO itemData)
+        {
+            return itemData switch
+            {
+                WeaponDataSO weaponData => Mathf.Max(0f, weaponData.maxDurability),
+                ArmorDataSO armorData => Mathf.Max(0f, armorData.maxDurability),
+                HelmetDataSO helmetData => Mathf.Max(0f, helmetData.maxDurability),
+                _ => 0f
+            };
         }
 
         private void ApplyCloudStashIfAvailable()

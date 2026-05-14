@@ -62,17 +62,29 @@ namespace DeadZone.Systems.Save
 
             dto.hasCredits = inventoryState.HasCredits;
             dto.credits = inventoryState.Credits;
+            bool uiCanAuthorInventory = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorInventorySection;
+            bool uiCanAuthorStash = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorStashSection;
+            bool uiCanAuthorEquipment = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorEquipmentSection;
+            bool uiCanAuthorQuickSlot = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorQuickSlotSection;
+
+            dto.hasInventorySection = uiCanAuthorInventory || HasUiInventoryState();
+            dto.hasStashSection = uiCanAuthorStash ||
+                                  (inventoryState.StashItems != null && inventoryState.StashItems.Count > 0);
+            dto.hasEquipmentSection = uiCanAuthorEquipment || HasUiEquipmentState();
+            dto.hasQuickSlotSection = uiCanAuthorQuickSlot || HasUiQuickSlotState();
 
             dto.inventoryItems.Clear();
             dto.stashItems.Clear();
             dto.quickSlotItems ??= new List<ItemSaveDTO>();
             dto.quickSlotItems.Clear();
             dto.equipmentItems.Clear();
+            dto.quickSlotItems.Clear();
 
             dto.inventoryItems.AddRange(inventoryState.InventoryItems);
             dto.stashItems.AddRange(inventoryState.StashItems);
             dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
             dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
+            dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
 
             if (logCollectResult)
             {
@@ -82,6 +94,8 @@ namespace DeadZone.Systems.Save
                     $"StashItems: {dto.stashItems.Count}\n" +
                     $"QuickSlotItems: {dto.quickSlotItems.Count}\n" +
                     $"EquipmentItems: {dto.equipmentItems.Count}",
+                    $"EquipmentItems: {dto.equipmentItems.Count}\n" +
+                    $"QuickSlotItems: {dto.quickSlotItems.Count}",
                     this
                 );
             }
@@ -194,6 +208,13 @@ namespace DeadZone.Systems.Save
             return inventoryState != null &&
                    inventoryState.EquipmentItems != null &&
                    inventoryState.EquipmentItems.Count > 0;
+        }
+
+        private bool HasUiQuickSlotState()
+        {
+            return inventoryState != null &&
+                   inventoryState.QuickSlotItems != null &&
+                   inventoryState.QuickSlotItems.Count > 0;
         }
 
         private void MergeUiEquipmentState(List<EquipmentSaveDTO> serverItems)
