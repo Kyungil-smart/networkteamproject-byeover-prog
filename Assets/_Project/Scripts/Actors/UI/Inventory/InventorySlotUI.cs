@@ -283,7 +283,7 @@ namespace DeadZone.Actors.UI
                 return false;
 
             LootContainerSlotUI containerSlot = GetComponent<LootContainerSlotUI>();
-            if (containerSlot != null && (containerSlot.Container != null || containerSlot.CorpseInventory != null))
+            if (containerSlot != null && (containerSlot.Container != null || containerSlot.DroppedItem != null || containerSlot.CorpseInventory != null))
                 return false;
 
             GridInventory inventory = ResolveLocalPlayerInventory();

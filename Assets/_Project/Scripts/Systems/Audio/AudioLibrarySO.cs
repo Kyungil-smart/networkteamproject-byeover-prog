@@ -30,6 +30,12 @@ namespace DeadZone.Systems.Audio
         [Tooltip("SMG 장전 사운드 설정")]
         [SerializeField] private AudioCueData smgReload = new();
 
+        [Tooltip("샷건 발사 사운드 설정")]
+        [SerializeField] private AudioCueData shotgunFire = new();
+
+        [Tooltip("샷건 장전 사운드 설정")]
+        [SerializeField] private AudioCueData shotgunReload = new();
+
         [Header("====캐릭터 사운드====")]
         [Tooltip("플레이어 발걸음 사운드 설정")]
         [SerializeField] private AudioCueData playerFootstep = new();
@@ -80,6 +86,8 @@ namespace DeadZone.Systems.Audio
             srDragReload,
             smgFire,
             smgReload,
+            shotgunFire,
+            shotgunReload,
             playerFootstep,
             enemyFootstep,
             enemyAlert,
@@ -112,6 +120,8 @@ namespace DeadZone.Systems.Audio
                 AudioCueId.SRDragReload => srDragReload,
                 AudioCueId.SMGFire => smgFire,
                 AudioCueId.SMGReload => smgReload,
+                AudioCueId.ShotgunFire => shotgunFire,
+                AudioCueId.ShotgunReload => shotgunReload,
                 AudioCueId.PlayerFootstep => playerFootstep,
                 AudioCueId.EnemyFootstep => enemyFootstep,
                 AudioCueId.EnemyAlert => enemyAlert,
@@ -144,6 +154,8 @@ namespace DeadZone.Systems.Audio
             ValidateCue(srDragReload);
             ValidateCue(smgFire);
             ValidateCue(smgReload);
+            ValidateCue(shotgunFire);
+            ValidateCue(shotgunReload);
             ValidateCue(playerFootstep);
             ValidateCue(enemyFootstep);
             ValidateCue(enemyAlert);
@@ -168,6 +180,8 @@ namespace DeadZone.Systems.Audio
             if (srDragReload == null) srDragReload = new AudioCueData();
             if (smgFire == null) smgFire = new AudioCueData();
             if (smgReload == null) smgReload = new AudioCueData();
+            if (shotgunFire == null) shotgunFire = new AudioCueData();
+            if (shotgunReload == null) shotgunReload = new AudioCueData();
             if (playerFootstep == null) playerFootstep = new AudioCueData();
             if (enemyFootstep == null) enemyFootstep = new AudioCueData();
             if (enemyAlert == null) enemyAlert = new AudioCueData();
@@ -189,6 +203,8 @@ namespace DeadZone.Systems.Audio
             srDragReload.SetFixedInfo(AudioCueId.SRDragReload, "SR 드라그소총 장전", AudioGroup.SFX);
             smgFire.SetFixedInfo(AudioCueId.SMGFire, "SMG 발사", AudioGroup.SFX);
             smgReload.SetFixedInfo(AudioCueId.SMGReload, "SMG 장전", AudioGroup.SFX);
+            shotgunFire.SetFixedInfo(AudioCueId.ShotgunFire, "샷건 발사", AudioGroup.SFX);
+            shotgunReload.SetFixedInfo(AudioCueId.ShotgunReload, "샷건 장전", AudioGroup.SFX);
             playerFootstep.SetFixedInfo(AudioCueId.PlayerFootstep, "플레이어 발걸음", AudioGroup.SFX);
             enemyFootstep.SetFixedInfo(AudioCueId.EnemyFootstep, "적 발걸음", AudioGroup.SFX);
             enemyAlert.SetFixedInfo(AudioCueId.EnemyAlert, "적 발각음", AudioGroup.SFX);

@@ -18,12 +18,12 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: fc4c1ca26a3264a259dfa43a61a2f70e, type: 3}
-    baseVolume: 1
-    individualVolume: 1
-    use3D: 1
+    baseVolume: 1.6
+    individualVolume: 1.6
+    use3D: 0
     loop: 0
-    minPitch: 0.96
-    maxPitch: 1.04
+    minPitch: 1
+    maxPitch: 1
     minDistance: 2
     maxDistance: 45
     fadeSeconds: 0
@@ -35,10 +35,10 @@ MonoBehaviour:
     - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
     baseVolume: 1
     individualVolume: 1
-    use3D: 1
+    use3D: 0
     loop: 0
-    minPitch: 0.98
-    maxPitch: 1.02
+    minPitch: 1
+    maxPitch: 1
     minDistance: 1
     maxDistance: 22
     fadeSeconds: 0
@@ -48,12 +48,12 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: bc8c3727d81b340f685d13c544c0662c, type: 3}
-    baseVolume: 1
+    baseVolume: 1.3
     individualVolume: 1
-    use3D: 1
+    use3D: 0
     loop: 0
-    minPitch: 0.96
-    maxPitch: 1.04
+    minPitch: 1
+    maxPitch: 1
     minDistance: 2
     maxDistance: 35
     fadeSeconds: 0
@@ -65,10 +65,10 @@ MonoBehaviour:
     - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
     baseVolume: 1
     individualVolume: 1
-    use3D: 1
+    use3D: 0
     loop: 0
-    minPitch: 0.98
-    maxPitch: 1.02
+    minPitch: 1
+    maxPitch: 1
     minDistance: 1
     maxDistance: 18
     fadeSeconds: 0
@@ -80,10 +80,10 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 78174f5aab0e44190ad3ba5cd6047dc0, type: 3}
     baseVolume: 1
     individualVolume: 1
-    use3D: 1
+    use3D: 0
     loop: 0
-    minPitch: 0.96
-    maxPitch: 1.04
+    minPitch: 1
+    maxPitch: 1
     minDistance: 3
     maxDistance: 60
     fadeSeconds: 0
@@ -95,10 +95,10 @@ MonoBehaviour:
     - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
     baseVolume: 1
     individualVolume: 1
-    use3D: 1
+    use3D: 0
     loop: 0
-    minPitch: 0.98
-    maxPitch: 1.02
+    minPitch: 1
+    maxPitch: 1
     minDistance: 1
     maxDistance: 25
     fadeSeconds: 0
@@ -110,10 +110,10 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 400bfadff74d1423c93ffffb0666fa04, type: 3}
     baseVolume: 1
     individualVolume: 1
-    use3D: 1
+    use3D: 0
     loop: 0
-    minPitch: 0.96
-    maxPitch: 1.04
+    minPitch: 1
+    maxPitch: 1
     minDistance: 2
     maxDistance: 38
     fadeSeconds: 0
@@ -125,10 +125,42 @@ MonoBehaviour:
     - {fileID: 8300000, guid: d58a6efe3c9ea4cbc930c9fc149ecade, type: 3}
     baseVolume: 1
     individualVolume: 1
-    use3D: 1
+    use3D: 0
     loop: 0
-    minPitch: 0.98
-    maxPitch: 1.02
+    minPitch: 1
+    maxPitch: 1
+    minDistance: 1
+    maxDistance: 20
+    fadeSeconds: 0
+  shotgunFire:
+    cueId: 50
+    displayName: "\uC0F7\uAC74 \uBC1C\uC0AC"
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: db43be1b3b3c343a9b59ce8cd6e05177, type: 3}
+    baseVolume: 1
+    individualVolume: 1
+    use3D: 0
+    loop: 0
+    minPitch: 1
+    maxPitch: 1
+    minDistance: 2
+    maxDistance: 45
+    fadeSeconds: 0
+  shotgunReload:
+    cueId: 51
+    displayName: "\uC0F7\uAC74 \uC7A5\uC804"
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: ebdde62f5ecec4656aedd528b468e011, type: 3}
+    - {fileID: 8300000, guid: 641a8481d5d754ddfbde20f3641215d1, type: 3}
+    - {fileID: 8300000, guid: acd880415f4d54b419027943a57b8a7a, type: 3}
+    baseVolume: 1
+    individualVolume: 1
+    use3D: 0
+    loop: 0
+    minPitch: 1
+    maxPitch: 1
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0
@@ -154,9 +186,8 @@ MonoBehaviour:
     displayName: "\uC801 \uBC1C\uAC78\uC74C"
     group: 0
     clips:
-    - {fileID: 8300000, guid: 3376c0b6a8c5f4b539dbbf44b0698d59, type: 3}
-    - {fileID: 8300000, guid: d1d3cb96244b84eb8bb9acd2272505ce, type: 3}
-    - {fileID: 8300000, guid: c8ad05c7ac4804d67a9aba9617b6abcc, type: 3}
+    - {fileID: 8300000, guid: 60953bced690f4547915eb0fd4d17594, type: 3}
+    - {fileID: 8300000, guid: 5fd86be7bb6f6d247b15ea19b13caa43, type: 3}
     baseVolume: 0.4
     individualVolume: 0.5
     use3D: 1
@@ -270,7 +301,7 @@ MonoBehaviour:
     maxPitch: 1
     minDistance: 1
     maxDistance: 20
-    fadeSeconds: 0.75
+    fadeSeconds: 0
   stage1Bgm:
     cueId: 401
     displayName: Stage1 BGM
@@ -285,7 +316,7 @@ MonoBehaviour:
     maxPitch: 1
     minDistance: 1
     maxDistance: 20
-    fadeSeconds: 0.75
+    fadeSeconds: 0
   stage2Bgm:
     cueId: 402
     displayName: Stage2 BGM
@@ -300,7 +331,7 @@ MonoBehaviour:
     maxPitch: 1
     minDistance: 1
     maxDistance: 20
-    fadeSeconds: 0.75
+    fadeSeconds: 0
   endingBgm:
     cueId: 403
     displayName: Ending BGM
@@ -315,4 +346,4 @@ MonoBehaviour:
     maxPitch: 1
     minDistance: 1
     maxDistance: 20
-    fadeSeconds: 0.75
+    fadeSeconds: 0

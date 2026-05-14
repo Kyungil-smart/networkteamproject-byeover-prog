@@ -15,6 +15,7 @@ namespace DeadZone.Actors.UI
         [SerializeField] private bool autoCollectSlots = true;
 
         private LootContainer currentContainer;
+        private LootInteractable currentDroppedItem;
         private CorpseInventory currentCorpseInventory;
         private IItemDatabase itemDb;
 
@@ -43,6 +44,23 @@ namespace DeadZone.Actors.UI
 
             Unsubscribe();
             currentContainer = container;
+            currentDroppedItem = null;
+            currentCorpseInventory = null;
+            Subscribe();
+            Refresh();
+        }
+
+        public void Bind(LootInteractable droppedItem)
+        {
+            if (currentDroppedItem == droppedItem)
+            {
+                Refresh();
+                return;
+            }
+
+            Unsubscribe();
+            currentContainer = null;
+            currentDroppedItem = droppedItem;
             currentCorpseInventory = null;
             Subscribe();
             Refresh();
@@ -58,6 +76,7 @@ namespace DeadZone.Actors.UI
 
             Unsubscribe();
             currentContainer = null;
+            currentDroppedItem = null;
             currentCorpseInventory = corpseInventory;
             Subscribe();
             Refresh();
@@ -67,6 +86,7 @@ namespace DeadZone.Actors.UI
         {
             Unsubscribe();
             currentContainer = null;
+            currentDroppedItem = null;
             currentCorpseInventory = null;
             Refresh();
         }
@@ -102,7 +122,9 @@ namespace DeadZone.Actors.UI
                 if (marker == null)
                     marker = slot.gameObject.AddComponent<LootContainerSlotUI>();
 
-                if (currentCorpseInventory != null)
+                if (currentDroppedItem != null)
+                    marker.Bind(this, currentDroppedItem, i);
+                else if (currentCorpseInventory != null)
                     marker.Bind(this, currentCorpseInventory, i);
                 else
                     marker.Bind(this, currentContainer, i);
@@ -129,6 +151,12 @@ namespace DeadZone.Actors.UI
             if (currentContainer != null && currentContainer.Slots != null)
                 currentContainer.Slots.OnListChanged += HandleSlotsChanged;
 
+            if (currentDroppedItem != null)
+            {
+                currentDroppedItem.ItemId.OnValueChanged += HandleDroppedItemChanged;
+                currentDroppedItem.Amount.OnValueChanged += HandleDroppedItemAmountChanged;
+            }
+
             if (currentCorpseInventory != null && currentCorpseInventory.Slots != null)
                 currentCorpseInventory.Slots.OnListChanged += HandleCorpseSlotsChanged;
         }
@@ -137,6 +165,12 @@ namespace DeadZone.Actors.UI
         {
             if (currentContainer != null && currentContainer.Slots != null)
                 currentContainer.Slots.OnListChanged -= HandleSlotsChanged;
+
+            if (currentDroppedItem != null)
+            {
+                currentDroppedItem.ItemId.OnValueChanged -= HandleDroppedItemChanged;
+                currentDroppedItem.Amount.OnValueChanged -= HandleDroppedItemAmountChanged;
+            }
 
             if (currentCorpseInventory != null && currentCorpseInventory.Slots != null)
                 currentCorpseInventory.Slots.OnListChanged -= HandleCorpseSlotsChanged;
@@ -152,6 +186,16 @@ namespace DeadZone.Actors.UI
             Refresh();
         }
 
+        private void HandleDroppedItemChanged(Unity.Collections.FixedString64Bytes previousValue, Unity.Collections.FixedString64Bytes newValue)
+        {
+            Refresh();
+        }
+
+        private void HandleDroppedItemAmountChanged(ushort previousValue, ushort newValue)
+        {
+            Refresh();
+        }
+
         private bool TryGetSlotViewData(int index, out string itemId, out int amount)
         {
             itemId = string.Empty;
@@ -159,6 +203,9 @@ namespace DeadZone.Actors.UI
 
             if (currentContainer == null || index < 0)
             {
+                if (TryGetDroppedItemSlotViewData(index, out itemId, out amount))
+                    return true;
+
                 return TryGetCorpseSlotViewData(index, out itemId, out amount);
             }
 
@@ -179,6 +226,19 @@ namespace DeadZone.Actors.UI
             itemId = localSlotData.itemId.ToString();
             amount = localSlotData.amount;
             return amount > 0;
+        }
+
+        private bool TryGetDroppedItemSlotViewData(int index, out string itemId, out int amount)
+        {
+            itemId = string.Empty;
+            amount = 0;
+
+            if (currentDroppedItem == null || !currentDroppedItem.TryGetSlot(index, out ContainerSlotNetData slotData) || slotData.IsEmpty)
+                return false;
+
+            itemId = slotData.itemId.ToString();
+            amount = slotData.amount;
+            return !string.IsNullOrEmpty(itemId) && amount > 0;
         }
 
         private bool TryGetCorpseSlotViewData(int index, out string itemId, out int amount)

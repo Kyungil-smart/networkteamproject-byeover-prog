@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -27,6 +28,7 @@ namespace DeadZone.Actors
         [SerializeField] private float dropForwardDistance = 1.25f;
         [SerializeField] private float dropGroundRayHeight = 1.5f;
         [SerializeField] private float dropGroundRayDistance = 4f;
+        [SerializeField] private float dropGroundOffset = 0.25f;
 
         public byte Width => BASE_WIDTH;
         public byte Height => (byte)Mathf.CeilToInt(activeSlotCount / (float)BASE_WIDTH);
@@ -317,10 +319,18 @@ namespace DeadZone.Actors
                 return;
             }
 
-            if (!TryRemoveSlotAt(gridX, gridY, out ItemSlotData removedSlot))
+            GameObject instance = CreateDroppedLootItem(item, Mathf.Max(1, slotToDrop.stackCount), prefab);
+            if (instance == null)
                 return;
 
-            SpawnDroppedLootItem(item, Mathf.Max(1, removedSlot.stackCount), prefab);
+            if (!TrySpawnDroppedLootItem(instance))
+                return;
+
+            if (!TryRemoveSlotAt(gridX, gridY, out _))
+            {
+                DestroyDroppedLootInstance(instance);
+                return;
+            }
         }
 
         [ServerRpc]
@@ -347,10 +357,18 @@ namespace DeadZone.Actors
                 return;
             }
 
-            if (!equipment.TryRemoveEquipmentSlotForDrop(targetSlot, out _))
+            GameObject instance = CreateDroppedLootItem(item, 1, prefab);
+            if (instance == null)
                 return;
 
-            SpawnDroppedLootItem(item, 1, prefab);
+            if (!TrySpawnDroppedLootItem(instance))
+                return;
+
+            if (!equipment.TryRemoveEquipmentSlotForDrop(targetSlot, out _))
+            {
+                DestroyDroppedLootInstance(instance);
+                return;
+            }
         }
 
         private bool TryRemoveSlotAt(byte gridX, byte gridY, out ItemSlotData removedSlot)
@@ -401,32 +419,85 @@ namespace DeadZone.Actors
             return false;
         }
 
-        private void SpawnDroppedLootItem(ItemDataSO item, int amount, GameObject prefab)
+        private GameObject CreateDroppedLootItem(ItemDataSO item, int amount, GameObject prefab)
         {
             if (!IsServer || item == null)
-                return;
+                return null;
+
+            if (!IsValidDroppedLootItemPrefab(prefab))
+            {
+                Debug.LogError(
+                    $"[GridInventory] 드롭 아이템 프리팹이 잘못되었습니다. " +
+                    $"NetworkObject + LootInteractable이 있어야 하고 LootContainer는 없어야 합니다. prefab={(prefab != null ? prefab.name : "null")}",
+                    this);
+                return null;
+            }
 
             Vector3 spawnPosition = ResolveDropPosition();
             GameObject instance = Instantiate(prefab, spawnPosition, Quaternion.identity);
 
-            if (instance.TryGetComponent(out LootInteractable lootInteractable))
+            if (instance.GetComponent<LootContainer>() != null)
             {
-                lootInteractable.Initialize(item, amount);
-            }
-            else
-            {
-                ILootCarrier carrier = instance.GetComponent<ILootCarrier>();
-                carrier?.Initialize(item);
+                Debug.LogError(
+                    $"[GridInventory] 드롭 아이템으로 LootContainer 프리팹이 생성되었습니다. prefab={prefab.name}. 즉시 제거합니다.",
+                    instance);
+
+                Destroy(instance);
+                return null;
             }
 
+            if (!instance.TryGetComponent(out LootInteractable lootInteractable))
+            {
+                Debug.LogError($"[GridInventory] 드롭 아이템 프리팹에 LootInteractable이 없습니다. prefab={prefab.name}", instance);
+                Destroy(instance);
+                return null;
+            }
+
+            lootInteractable.Initialize(item, amount);
+            return instance;
+        }
+
+        private bool TrySpawnDroppedLootItem(GameObject instance)
+        {
+            if (!IsServer || instance == null)
+                return false;
+
             NetworkObject networkObject = instance.GetComponent<NetworkObject>();
-            if (networkObject != null)
+            if (networkObject == null)
+            {
+                Debug.LogError("[GridInventory] Dropped loot prefab missing NetworkObject.", instance);
+                Destroy(instance);
+                return false;
+            }
+
+            try
             {
                 networkObject.Spawn(destroyWithScene: true);
+                if (instance.TryGetComponent(out LootInteractable lootInteractable))
+                    lootInteractable.ForceRefreshWorldVisual();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GridInventory] Failed to spawn dropped loot. item will remain in inventory. reason={ex.Message}", instance);
+                Destroy(instance);
+                return false;
+            }
+        }
+
+        private void DestroyDroppedLootInstance(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            NetworkObject networkObject = instance.GetComponent<NetworkObject>();
+            if (networkObject != null && networkObject.IsSpawned)
+            {
+                networkObject.Despawn(destroy: true);
                 return;
             }
 
-            Debug.LogError("[GridInventory] Dropped loot prefab missing NetworkObject.", instance);
             Destroy(instance);
         }
 
@@ -441,37 +512,81 @@ namespace DeadZone.Actors
             Vector3 rayOrigin = fallback + Vector3.up * dropGroundRayHeight;
 
             if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, dropGroundRayDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-                return hit.point + Vector3.up * 0.05f;
+                return hit.point + Vector3.up * dropGroundOffset;
 
-            return fallback;
+            return fallback + Vector3.up * dropGroundOffset;
         }
 
         private GameObject ResolveDroppedLootItemPrefab(ItemDataSO item)
         {
-            if (droppedLootItemPrefab != null)
-                return droppedLootItemPrefab;
-
-            GameObject networkPrefab = FindLootInteractableNetworkPrefab();
-            if (networkPrefab != null)
-                return networkPrefab;
-
-            LootSpawner spawner = FindFirstObjectByType<LootSpawner>(FindObjectsInactive.Include);
-            if (spawner != null)
+            if (droppedLootItemPrefab == null)
             {
-                FieldInfo field = typeof(LootSpawner).GetField("lootItemPrefab", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (field?.GetValue(spawner) is GameObject spawnerPrefab)
-                    return spawnerPrefab;
+                Debug.LogError(
+                    $"[GridInventory] droppedLootItemPrefab is not assigned. Drop cancelled. itemId={(item != null ? item.itemID : "null")}",
+                    this);
+                return null;
             }
 
-            if (item != null &&
-                item.worldPrefab != null &&
-                item.worldPrefab.GetComponent<NetworkObject>() != null &&
-                item.worldPrefab.GetComponent<ILootCarrier>() != null)
+            if (!IsValidDroppedLootItemPrefab(droppedLootItemPrefab))
             {
-                return item.worldPrefab;
+                Debug.LogError(
+                    $"[GridInventory] droppedLootItemPrefab is invalid. It must have NetworkObject + LootInteractable and must not have LootContainer. prefab={droppedLootItemPrefab.name}",
+                    this);
+                return null;
             }
 
-            return null;
+            if (!IsNetworkPrefabRegistered(droppedLootItemPrefab))
+            {
+                Debug.LogError(
+                    $"[GridInventory] droppedLootItemPrefab is not registered in NetworkPrefabsList. Drop cancelled. prefab={droppedLootItemPrefab.name}",
+                    this);
+                return null;
+            }
+
+            return droppedLootItemPrefab;
+        }
+
+        private static bool IsNetworkPrefabRegistered(GameObject prefab)
+        {
+            if (prefab == null)
+                return false;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.NetworkConfig == null)
+                return false;
+
+            IReadOnlyList<NetworkPrefab> prefabs = networkManager.NetworkConfig.Prefabs?.Prefabs;
+            if (prefabs != null)
+            {
+                for (int i = 0; i < prefabs.Count; i++)
+                {
+                    if (prefabs[i]?.Prefab == prefab)
+                        return true;
+                }
+            }
+
+            List<NetworkPrefabsList> prefabLists = networkManager.NetworkConfig.Prefabs?.NetworkPrefabsLists;
+            if (prefabLists == null)
+                return false;
+
+            for (int listIndex = 0; listIndex < prefabLists.Count; listIndex++)
+            {
+                NetworkPrefabsList prefabList = prefabLists[listIndex];
+                if (prefabList == null)
+                    continue;
+
+                IReadOnlyList<NetworkPrefab> listPrefabs = prefabList.PrefabList;
+                if (listPrefabs == null)
+                    continue;
+
+                for (int prefabIndex = 0; prefabIndex < listPrefabs.Count; prefabIndex++)
+                {
+                    if (listPrefabs[prefabIndex]?.Prefab == prefab)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private static GameObject FindLootInteractableNetworkPrefab()
@@ -514,9 +629,17 @@ namespace DeadZone.Actors
 
         private static bool IsLootInteractablePrefab(GameObject prefab)
         {
-            return prefab != null &&
-                   prefab.GetComponent<NetworkObject>() != null &&
-                   prefab.GetComponent<LootInteractable>() != null;
+            return IsValidDroppedLootItemPrefab(prefab);
+        }
+
+        private static bool IsValidDroppedLootItemPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+                return false;
+
+            return prefab.GetComponent<NetworkObject>() != null &&
+                   prefab.GetComponent<LootInteractable>() != null &&
+                   prefab.GetComponent<LootContainer>() == null;
         }
 
         private bool TryGetEquipmentItemId(EquipmentTargetSlot targetSlot, out string itemId)
