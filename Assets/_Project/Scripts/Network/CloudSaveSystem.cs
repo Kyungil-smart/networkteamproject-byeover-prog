@@ -1109,35 +1109,46 @@ namespace DeadZone.Network
         private static List<StashSlot> BuildStarterPackStashSlots(StarterPackConfigSO starterPack)
         {
             List<StashSlot> result = new List<StashSlot>();
-            int nextSlotIndex = 0;
+            List<RectInt> occupiedRects = new List<RectInt>();
 
             IReadOnlyList<StarterPackEntry> entries = starterPack.Entries;
             for (int i = 0; i < entries.Count; i++)
             {
-                AppendStarterPackEntry(result, entries[i], ref nextSlotIndex);
+                AppendStarterPackEntry(result, occupiedRects, entries[i]);
             }
 
             return result;
         }
 
-        private static void AppendStarterPackEntry(List<StashSlot> result, StarterPackEntry entry, ref int nextSlotIndex)
+        private static void AppendStarterPackEntry(
+            List<StashSlot> result,
+            List<RectInt> occupiedRects,
+            StarterPackEntry entry)
         {
             if (entry == null || entry.Item == null)
                 return;
 
             int remaining = entry.Amount;
             int maxStack = Mathf.Max(1, entry.Item.maxStackSize);
+            Vector2Int itemSize = GetSafeGridSize(entry.Item);
 
             while (remaining > 0)
             {
                 int stackCount = Mathf.Min(maxStack, remaining);
-                result.Add(CreateStarterPackSlot(entry, stackCount, nextSlotIndex));
-                nextSlotIndex++;
+
+                if (!TryFindStarterPackPlacement(occupiedRects, itemSize, out int gridX, out int gridY))
+                {
+                    Debug.LogWarning($"[CloudSaveSystem] Starter pack item placement failed. itemId={entry.Item.itemID}");
+                    return;
+                }
+
+                result.Add(CreateStarterPackSlot(entry, stackCount, gridX, gridY));
+                occupiedRects.Add(new RectInt(gridX, gridY, itemSize.x, itemSize.y));
                 remaining -= stackCount;
             }
         }
 
-        private static StashSlot CreateStarterPackSlot(StarterPackEntry entry, int stackCount, int slotIndex)
+        private static StashSlot CreateStarterPackSlot(StarterPackEntry entry, int stackCount, int gridX, int gridY)
         {
             ItemDataSO item = entry.Item;
 
@@ -1145,12 +1156,66 @@ namespace DeadZone.Network
             {
                 itemId = item.itemID,
                 stackCount = stackCount,
-                gridX = slotIndex % DefaultStashColumnCount,
-                gridY = slotIndex / DefaultStashColumnCount,
+                gridX = gridX,
+                gridY = gridY,
                 rotated = false,
                 currentDurability = GetDurabilityValue(item, entry.DurabilityRatio),
                 currentAmmo = GetCurrentAmmoValue(item, entry.CurrentAmmo),
             };
+        }
+
+        private static bool TryFindStarterPackPlacement(
+            List<RectInt> occupiedRects,
+            Vector2Int itemSize,
+            out int gridX,
+            out int gridY)
+        {
+            gridX = 0;
+            gridY = 0;
+
+            const int maxStarterPackRows = 100;
+
+            for (int y = 0; y < maxStarterPackRows; y++)
+            {
+                for (int x = 0; x <= DefaultStashColumnCount - itemSize.x; x++)
+                {
+                    if (!OverlapsAnyStarterPackSlot(occupiedRects, x, y, itemSize))
+                    {
+                        gridX = x;
+                        gridY = y;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool OverlapsAnyStarterPackSlot(
+            List<RectInt> occupiedRects,
+            int x,
+            int y,
+            Vector2Int size)
+        {
+            RectInt candidate = new RectInt(x, y, size.x, size.y);
+
+            for (int i = 0; i < occupiedRects.Count; i++)
+            {
+                if (candidate.Overlaps(occupiedRects[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static Vector2Int GetSafeGridSize(ItemDataSO item)
+        {
+            if (item == null)
+                return Vector2Int.one;
+
+            return new Vector2Int(
+                Mathf.Clamp(item.gridSize.x, 1, DefaultStashColumnCount),
+                Mathf.Max(1, item.gridSize.y));
         }
 
         private static int GetDurabilityValue(ItemDataSO item, float durabilityRatio)

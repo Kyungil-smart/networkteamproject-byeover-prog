@@ -12,7 +12,8 @@ namespace DeadZone.Systems.Save
     {
         private const string InventoryContainerId = "inventory";
         private const string StashContainerId = "stash";
-        private const int InventoryGridWidth = 4;
+        private const int PlayerInventoryGridWidth = 4;
+        private const int StashGridWidth = 10;
 
         [Header("저장 상태")]
         [SerializeField] private LobbyInventoryState inventoryState;
@@ -96,16 +97,11 @@ namespace DeadZone.Systems.Save
             else
                 Debug.LogWarning("[LobbyInventoryStateUiBridge] Stash slots root missing. Keeping existing stash state.", this);
 
-            if (equipmentSlotsRoot != null)
-            {
-                List<EquipmentSaveDTO> capturedEquipmentItems = CollectEquipmentSlots(equipmentSlotsRoot);
-                if (capturedEquipmentItems.Count > 0 || inventoryState.EquipmentItems == null || inventoryState.EquipmentItems.Count == 0)
-                    inventoryState.SetEquipmentItems(capturedEquipmentItems);
-                else
-                    Debug.Log("[LobbyInventoryStateUiBridge] Equipment UI scan returned 0 items. Keeping existing equipment state to avoid wiping equipped lobby items.", this);
-            }
+            List<EquipmentSaveDTO> capturedEquipmentItems = CollectEquipmentSlots(equipmentSlotsRoot);
+            if (capturedEquipmentItems.Count > 0 || inventoryState.EquipmentItems == null || inventoryState.EquipmentItems.Count == 0)
+                inventoryState.SetEquipmentItems(capturedEquipmentItems);
             else
-                Debug.LogWarning("[LobbyInventoryStateUiBridge] Equipment slots root missing. Keeping existing equipment state.", this);
+                Debug.Log("[LobbyInventoryStateUiBridge] Equipment UI scan returned 0 items. Keeping existing equipment state to avoid wiping equipped lobby items.", this);
         }
 
         public void CaptureChangedEquipmentSlots(params InventorySlotUI[] changedSlots)
@@ -189,8 +185,9 @@ namespace DeadZone.Systems.Save
                     : inventoryItems;
 
                 int slotIndex = Mathf.Max(0, slot.SlotIndex);
+                int gridWidth = GetGridWidth(containerId);
 
-                RemoveItemAtSlot(targetItems, slotIndex);
+                RemoveItemAtSlot(targetItems, slotIndex, gridWidth);
 
                 if (slot.HasItem && slot.CurrentItemData != null)
                 {
@@ -199,8 +196,8 @@ namespace DeadZone.Systems.Save
                         itemId = slot.CurrentItemData.itemID,
                         instanceId = $"{containerId}_{slotIndex}_{slot.CurrentItemData.itemID}",
                         containerId = containerId,
-                        x = ToGridX(slotIndex),
-                        y = ToGridY(slotIndex),
+                        x = ToGridX(slotIndex, gridWidth),
+                        y = ToGridY(slotIndex, gridWidth),
                         rotated = false,
                         stackCount = Mathf.Max(1, slot.CurrentStackCount),
                         currentDurability = GetDefaultDurability(slot.CurrentItemData),
@@ -251,14 +248,15 @@ namespace DeadZone.Systems.Save
             if (walletSystem != null && inventoryState.HasCredits)
                 walletSystem.SetCreditsLocalTest(inventoryState.Credits);
 
-            ApplyItemSlots(inventorySlotsRoot, inventoryState.InventoryItems, database);
-            ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database);
+            ApplyItemSlots(inventorySlotsRoot, inventoryState.InventoryItems, database, InventoryContainerId);
+            ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database, StashContainerId);
             ApplyEquipmentSlots(equipmentSlotsRoot, inventoryState.EquipmentItems, database);
         }
 
         private static List<ItemSaveDTO> CollectItemSlots(Transform root, string containerId)
         {
             List<ItemSaveDTO> items = new();
+            int gridWidth = GetGridWidth(containerId);
 
             if (root == null)
                 return items;
@@ -286,8 +284,8 @@ namespace DeadZone.Systems.Save
                     itemId = slot.CurrentItemData.itemID,
                     instanceId = string.Empty,
                     containerId = containerId,
-                    x = ToGridX(slot.SlotIndex),
-                    y = ToGridY(slot.SlotIndex),
+                    x = ToGridX(slot.SlotIndex, gridWidth),
+                    y = ToGridY(slot.SlotIndex, gridWidth),
                     rotated = false,
                     stackCount = slot.CurrentStackCount
                 });
@@ -423,7 +421,7 @@ namespace DeadZone.Systems.Save
                 : InventoryContainerId;
         }
 
-        private static void RemoveItemAtSlot(List<ItemSaveDTO> items, int slotIndex)
+        private static void RemoveItemAtSlot(List<ItemSaveDTO> items, int slotIndex, int gridWidth)
         {
             if (items == null)
                 return;
@@ -431,7 +429,7 @@ namespace DeadZone.Systems.Save
             for (int i = items.Count - 1; i >= 0; i--)
             {
                 ItemSaveDTO item = items[i];
-                if (item != null && ToLinearSlotIndex(item.x, item.y) == slotIndex)
+                if (item != null && ToLinearSlotIndex(item.x, item.y, gridWidth) == slotIndex)
                     items.RemoveAt(i);
             }
         }
@@ -449,10 +447,11 @@ namespace DeadZone.Systems.Save
             }
         }
 
-        private void ApplyItemSlots(Transform root, IReadOnlyList<ItemSaveDTO> items, IItemDatabase database)
+        private void ApplyItemSlots(Transform root, IReadOnlyList<ItemSaveDTO> items, IItemDatabase database, string containerId)
         {
             InventorySlotUI[] slots = GetSlots(root);
             ClearSlots(slots);
+            int gridWidth = GetGridWidth(containerId);
 
             if (slots.Length == 0 || items == null)
                 return;
@@ -463,7 +462,7 @@ namespace DeadZone.Systems.Save
                 if (item == null || string.IsNullOrWhiteSpace(item.itemId))
                     continue;
 
-                int slotIndex = ToLinearSlotIndex(item.x, item.y);
+                int slotIndex = ToLinearSlotIndex(item.x, item.y, gridWidth);
                 InventorySlotUI slot = FindSlotByIndex(slots, slotIndex);
                 if (slot == null)
                 {
@@ -484,7 +483,7 @@ namespace DeadZone.Systems.Save
 
         private void ApplyEquipmentSlots(Transform root, IReadOnlyList<EquipmentSaveDTO> equipmentItems, IItemDatabase database)
         {
-            InventorySlotUI[] slots = GetSlots(root);
+            InventorySlotUI[] slots = GetEquipmentSlotsForApply(root);
             ClearSlots(slots);
 
             if (slots.Length == 0 || equipmentItems == null)
@@ -521,6 +520,28 @@ namespace DeadZone.Systems.Save
                 : System.Array.Empty<InventorySlotUI>();
         }
 
+        private static InventorySlotUI[] GetEquipmentSlotsForApply(Transform root)
+        {
+            InventorySlotUI[] rootSlots = GetSlots(root);
+            if (rootSlots.Length > 0)
+                return rootSlots;
+
+            InventorySlotUI[] allSlots =
+                FindObjectsByType<InventorySlotUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            List<InventorySlotUI> equipmentSlots = new();
+
+            for (int i = 0; i < allSlots.Length; i++)
+            {
+                InventorySlotUI slot = allSlots[i];
+                if (slot == null || string.IsNullOrWhiteSpace(slot.GetEquipmentSaveSlotId()))
+                    continue;
+
+                equipmentSlots.Add(slot);
+            }
+
+            return equipmentSlots.ToArray();
+        }
+
         private static void ClearSlots(InventorySlotUI[] slots)
         {
             for (int i = 0; i < slots.Length; i++)
@@ -542,22 +563,32 @@ namespace DeadZone.Systems.Save
             return null;
         }
 
-        private static int ToGridX(int slotIndex)
+        private static int GetGridWidth(string containerId)
         {
-            return Mathf.Max(0, slotIndex) % InventoryGridWidth;
+            return string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase)
+                ? StashGridWidth
+                : PlayerInventoryGridWidth;
         }
 
-        private static int ToGridY(int slotIndex)
+        private static int ToGridX(int slotIndex, int gridWidth)
         {
-            return Mathf.Max(0, slotIndex) / InventoryGridWidth;
+            int width = Mathf.Max(1, gridWidth);
+            return Mathf.Max(0, slotIndex) % width;
         }
 
-        private static int ToLinearSlotIndex(int x, int y)
+        private static int ToGridY(int slotIndex, int gridWidth)
         {
-            if (y <= 0 && x >= InventoryGridWidth)
+            int width = Mathf.Max(1, gridWidth);
+            return Mathf.Max(0, slotIndex) / width;
+        }
+
+        private static int ToLinearSlotIndex(int x, int y, int gridWidth)
+        {
+            int width = Mathf.Max(1, gridWidth);
+            if (y <= 0 && x >= width)
                 return x;
 
-            return Mathf.Max(0, y) * InventoryGridWidth + Mathf.Max(0, x);
+            return Mathf.Max(0, y) * width + Mathf.Max(0, x);
         }
 
         private static InventorySlotUI FindEquipmentSlot(InventorySlotUI[] slots, string slotId)

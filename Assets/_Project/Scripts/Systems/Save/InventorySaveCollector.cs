@@ -43,6 +43,8 @@ namespace DeadZone.Systems.Save
             if (dto == null)
                 return;
 
+            ResolveMissingReferences();
+
             if (inventoryState == null)
             {
                 Debug.LogWarning("[InventorySaveCollector] LobbyInventoryState가 연결되지 않았습니다. 저장용 인벤토리 상태 오브젝트를 연결해야 합니다.", this);
@@ -398,6 +400,15 @@ namespace DeadZone.Systems.Save
                 return equipmentSlotsList[0];
 
             return null;
+        }
+
+        private void ResolveMissingReferences()
+        {
+            if (inventoryState == null)
+                inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+
+            if (uiBridge == null)
+                uiBridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
         }
 
 #if UNITY_EDITOR

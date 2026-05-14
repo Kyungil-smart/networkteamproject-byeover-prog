@@ -567,7 +567,7 @@ namespace DeadZone.Actors.UI
             if (savedItem == null)
                 return null;
 
-            int requestedIndex = savedItem.x;
+            int requestedIndex = ToLinearSlotIndex(savedItem.x, savedItem.y);
 
             if (requestedIndex >= 0 && requestedIndex < activeSlotCount && requestedIndex < slots.Count)
             {
@@ -577,6 +577,14 @@ namespace DeadZone.Actors.UI
             }
 
             return FindFirstEmptySlot();
+        }
+
+        private static int ToLinearSlotIndex(int x, int y)
+        {
+            if (y <= 0 && x >= FixedColumnCount)
+                return x;
+
+            return Mathf.Max(0, y) * FixedColumnCount + Mathf.Max(0, x);
         }
 
         private void ApplyCloudStashIfAvailable()

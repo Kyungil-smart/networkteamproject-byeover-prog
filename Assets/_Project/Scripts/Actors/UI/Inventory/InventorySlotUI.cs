@@ -4,6 +4,7 @@ using DeadZone.Systems.Save;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -36,7 +37,7 @@ namespace DeadZone.Actors.UI
         bool TryHandleDrop(InventorySlotUI source, InventorySlotUI target);
     }
 
-    public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         [BoxGroup("슬롯 상태")]
         [Tooltip("인벤토리 그리드의 슬롯 인덱스입니다.")]
@@ -256,6 +257,53 @@ namespace DeadZone.Actors.UI
                 return;
 
             tooltipUI.Hide();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData == null || eventData.button != PointerEventData.InputButton.Right)
+                return;
+
+            if (!TryUseMedicalItem())
+                return;
+
+            eventData.Use();
+        }
+
+        private bool TryUseMedicalItem()
+        {
+            if (!HasItem || CurrentItemData.category != ItemCategory.Med)
+                return false;
+
+            LootContainerSlotUI containerSlot = GetComponent<LootContainerSlotUI>();
+            if (containerSlot != null && (containerSlot.Container != null || containerSlot.CorpseInventory != null))
+                return false;
+
+            GridInventory inventory = ResolveLocalPlayerInventory();
+            if (inventory == null)
+            {
+                Debug.LogWarning("[InventorySlotUI] Medical item use failed. Local player GridInventory was not found.", this);
+                return false;
+            }
+
+            inventory.RequestUseMedicalItem(CurrentItemData.itemID);
+            return true;
+        }
+
+        private static GridInventory ResolveLocalPlayerInventory()
+        {
+            NetworkObject playerObject = NetworkManager.Singleton != null
+                ? NetworkManager.Singleton.LocalClient?.PlayerObject
+                : null;
+
+            if (playerObject != null)
+            {
+                GridInventory inventory = playerObject.GetComponent<GridInventory>();
+                if (inventory != null)
+                    return inventory;
+            }
+
+            return FindFirstObjectByType<GridInventory>(FindObjectsInactive.Include);
         }
 
         public void OnBeginDrag(PointerEventData eventData)

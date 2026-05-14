@@ -185,6 +185,20 @@ namespace DeadZone.Systems.Save
         [Button("Load Lobby From Firebase")]
         public void LoadLobbyDataFromCloud()
         {
+            LoadLobbyDataFromCloud(allowLocalJsonMerge: true, localSyncReason: "Server load success sync");
+        }
+
+        public void LoadLobbyDataFromCloudIgnoringLocalJson(string localSyncReason)
+        {
+            LoadLobbyDataFromCloud(
+                allowLocalJsonMerge: false,
+                localSyncReason: string.IsNullOrWhiteSpace(localSyncReason)
+                    ? "Server load success sync"
+                    : localSyncReason);
+        }
+
+        private void LoadLobbyDataFromCloud(bool allowLocalJsonMerge, string localSyncReason)
+        {
             CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
             if (saveSystem == null)
             {
@@ -209,13 +223,19 @@ namespace DeadZone.Systems.Save
                 return;
             }
 
-            MergeLocalJsonSectionsInto(dto, "Server DTO missing lobby inventory sections");
+            if (allowLocalJsonMerge)
+                MergeLocalJsonSectionsInto(dto, "Server DTO missing lobby inventory sections");
+            else
+                Debug.Log("[LobbySaveService] Local JSON merge skipped. Applying server lobby save as authoritative.", this);
 
             string json = JsonUtility.ToJson(dto, true);
             lastJson = json;
 
-            LoadLobbyDataFromJson(json);
-            SaveLobbyDataToLocalJson(dto, "Server load success sync");
+            ApplyLobbySaveDTO(dto, preserveRuntimeInventoryOnEmptyInput: allowLocalJsonMerge);
+            Debug.Log("[LobbySaveService] Lobby save JSON loaded.", this);
+            SaveLobbyDataToLocalJson(
+                dto,
+                string.IsNullOrWhiteSpace(localSyncReason) ? "Server load success sync" : localSyncReason);
             isInitialLoadCompleted = true;
         }
 
@@ -245,18 +265,18 @@ namespace DeadZone.Systems.Save
                 return;
             }
 
-            ApplyLobbySaveDTO(dto);
+            ApplyLobbySaveDTO(dto, preserveRuntimeInventoryOnEmptyInput: true);
             Debug.Log("[LobbySaveService] Lobby save JSON loaded.", this);
         }
 
-        private void ApplyLobbySaveDTO(LobbySaveDTO dto)
+        private void ApplyLobbySaveDTO(LobbySaveDTO dto, bool preserveRuntimeInventoryOnEmptyInput)
         {
             if (inventoryState != null)
             {
                 if (dto.hasCredits)
                     inventoryState.SetCredits(dto.credits);
 
-                if (ShouldKeepExistingInventoryItems(dto))
+                if (preserveRuntimeInventoryOnEmptyInput && ShouldKeepExistingInventoryItems(dto))
                 {
                     Debug.LogWarning("[LobbySaveService] Incoming inventoryItems is empty while runtime inventory has items. Keeping runtime player inventory to avoid scene-transition wipe.", this);
                 }
@@ -497,7 +517,7 @@ namespace DeadZone.Systems.Save
             Debug.Log($"[LobbySaveService] Applying local JSON fallback. Reason={reason}, Path={path}", this);
             Debug.LogWarning("[HideoutLoad] Applying facility levels from=LocalJson", this);
             lastJson = json;
-            ApplyLobbySaveDTO(dto);
+            ApplyLobbySaveDTO(dto, preserveRuntimeInventoryOnEmptyInput: true);
             Debug.Log("[LobbySaveService] Lobby save JSON loaded.", this);
             isInitialLoadCompleted = true;
             return true;
@@ -520,19 +540,23 @@ namespace DeadZone.Systems.Save
                 changed = true;
             }
 
-            if ((preferLocalJsonInventorySections || !HasAny(dto.inventoryItems)) && HasAny(localDto.inventoryItems))
+            bool serverInventorySectionsMissing = !HasAnyLobbyInventorySection(dto);
+            if (!preferLocalJsonInventorySections || !serverInventorySectionsMissing)
+                return;
+
+            if (HasAny(localDto.inventoryItems))
             {
                 dto.inventoryItems = new List<ItemSaveDTO>(localDto.inventoryItems);
                 changed = true;
             }
 
-            if ((preferLocalJsonInventorySections || !HasAny(dto.stashItems)) && HasAny(localDto.stashItems))
+            if (HasAny(localDto.stashItems))
             {
                 dto.stashItems = new List<ItemSaveDTO>(localDto.stashItems);
                 changed = true;
             }
 
-            if ((preferLocalJsonInventorySections || !HasAny(dto.equipmentItems)) && HasAny(localDto.equipmentItems))
+            if (HasAny(localDto.equipmentItems))
             {
                 dto.equipmentItems = new List<EquipmentSaveDTO>(localDto.equipmentItems);
                 changed = true;
@@ -803,6 +827,16 @@ namespace DeadZone.Systems.Save
                    HasAny(dto.stashItems) ||
                    HasAny(dto.equipmentItems) ||
                    HasAny(dto.facilities);
+        }
+
+        private static bool HasAnyLobbyInventorySection(LobbySaveDTO dto)
+        {
+            if (dto == null)
+                return false;
+
+            return HasAny(dto.inventoryItems) ||
+                   HasAny(dto.stashItems) ||
+                   HasAny(dto.equipmentItems);
         }
 
         private static bool HasAny<T>(System.Collections.Generic.ICollection<T> items)

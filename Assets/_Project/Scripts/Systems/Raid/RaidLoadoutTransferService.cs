@@ -204,10 +204,8 @@ namespace DeadZone.Systems.Raid
                 clientId = clientId
             };
 
-            IReadOnlyList<ItemSaveDTO> inventoryItems = HasItems(dto.inventoryItems)
-                ? dto.inventoryItems
-                : dto.stashItems;
-            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems, dto.stashItems);
+            IReadOnlyList<ItemSaveDTO> inventoryItems = dto.inventoryItems;
+            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems);
 
             if (inventoryItems != null)
             {
@@ -279,13 +277,10 @@ namespace DeadZone.Systems.Raid
             return loadout;
         }
 
-        private static List<ItemSaveDTO> CreateAmmoLookupItems(
-            IReadOnlyList<ItemSaveDTO> inventoryItems,
-            IReadOnlyList<ItemSaveDTO> stashItems)
+        private static List<ItemSaveDTO> CreateAmmoLookupItems(IReadOnlyList<ItemSaveDTO> inventoryItems)
         {
             List<ItemSaveDTO> items = new();
             AddRange(items, inventoryItems);
-            AddRange(items, stashItems);
             return items;
         }
 
@@ -392,7 +387,6 @@ namespace DeadZone.Systems.Raid
         {
             return dto != null &&
                    (HasItems(dto.inventoryItems) ||
-                    HasItems(dto.stashItems) ||
                     HasItems(dto.equipmentItems));
         }
 

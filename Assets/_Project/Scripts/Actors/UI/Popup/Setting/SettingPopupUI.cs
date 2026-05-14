@@ -264,7 +264,7 @@ namespace DeadZone.Actors.UI
             HideBankruptcyConfirmation();
             LobbySaveService lobbySaveService = ResolveLobbySaveService();
             if (lobbySaveService != null)
-                lobbySaveService.LoadLobbyDataFromCloud();
+                lobbySaveService.LoadLobbyDataFromCloudIgnoringLocalJson("Bankruptcy starter pack applied");
             else
                 Debug.LogWarning("[SettingPopupUI] 파산신청은 완료됐지만 LobbySaveService를 찾지 못해 현재 로비 UI를 즉시 갱신하지 못했습니다.", this);
 
