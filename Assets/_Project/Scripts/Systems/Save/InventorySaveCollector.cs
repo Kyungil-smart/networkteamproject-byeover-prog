@@ -43,6 +43,8 @@ namespace DeadZone.Systems.Save
             if (dto == null)
                 return;
 
+            ResolveMissingReferences();
+
             if (inventoryState == null)
             {
                 Debug.LogWarning("[InventorySaveCollector] LobbyInventoryState가 연결되지 않았습니다. 저장용 인벤토리 상태 오브젝트를 연결해야 합니다.", this);
@@ -60,13 +62,27 @@ namespace DeadZone.Systems.Save
 
             dto.hasCredits = inventoryState.HasCredits;
             dto.credits = inventoryState.Credits;
+            bool uiCanAuthorInventory = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorInventorySection;
+            bool uiCanAuthorStash = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorStashSection;
+            bool uiCanAuthorEquipment = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorEquipmentSection;
+            bool uiCanAuthorQuickSlot = captureUiBeforeCollect && uiBridge != null && uiBridge.CanAuthorQuickSlotSection;
+
+            dto.hasInventorySection = uiCanAuthorInventory || HasUiInventoryState();
+            dto.hasStashSection = uiCanAuthorStash ||
+                                  (inventoryState.StashItems != null && inventoryState.StashItems.Count > 0);
+            dto.hasEquipmentSection = uiCanAuthorEquipment || HasUiEquipmentState();
+            dto.hasQuickSlotSection = uiCanAuthorQuickSlot || HasUiQuickSlotState();
 
             dto.inventoryItems.Clear();
             dto.stashItems.Clear();
+            dto.quickSlotItems ??= new List<ItemSaveDTO>();
+            dto.quickSlotItems.Clear();
             dto.equipmentItems.Clear();
+            dto.quickSlotItems.Clear();
 
             dto.inventoryItems.AddRange(inventoryState.InventoryItems);
             dto.stashItems.AddRange(inventoryState.StashItems);
+            dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
             dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
 
             if (logCollectResult)
@@ -75,6 +91,7 @@ namespace DeadZone.Systems.Save
                     $"[InventorySaveCollector] 저장 데이터 수집 완료\n" +
                     $"InventoryItems: {dto.inventoryItems.Count}\n" +
                     $"StashItems: {dto.stashItems.Count}\n" +
+                    $"QuickSlotItems: {dto.quickSlotItems.Count}\n" +
                     $"EquipmentItems: {dto.equipmentItems.Count}",
                     this
                 );
@@ -188,6 +205,13 @@ namespace DeadZone.Systems.Save
             return inventoryState != null &&
                    inventoryState.EquipmentItems != null &&
                    inventoryState.EquipmentItems.Count > 0;
+        }
+
+        private bool HasUiQuickSlotState()
+        {
+            return inventoryState != null &&
+                   inventoryState.QuickSlotItems != null &&
+                   inventoryState.QuickSlotItems.Count > 0;
         }
 
         private void MergeUiEquipmentState(List<EquipmentSaveDTO> serverItems)
@@ -398,6 +422,15 @@ namespace DeadZone.Systems.Save
                 return equipmentSlotsList[0];
 
             return null;
+        }
+
+        private void ResolveMissingReferences()
+        {
+            if (inventoryState == null)
+                inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+
+            if (uiBridge == null)
+                uiBridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
         }
 
 #if UNITY_EDITOR

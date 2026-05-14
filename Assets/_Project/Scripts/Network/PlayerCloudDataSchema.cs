@@ -80,9 +80,14 @@ namespace DeadZone.Network
     {
         [FirestoreProperty] public bool hasCredits { get; set; }
         [FirestoreProperty] public int credits { get; set; }
+        [FirestoreProperty] public bool hasInventorySection { get; set; }
+        [FirestoreProperty] public bool hasStashSection { get; set; }
+        [FirestoreProperty] public bool hasEquipmentSection { get; set; }
+        [FirestoreProperty] public bool hasQuickSlotSection { get; set; }
         [FirestoreProperty] public List<LobbyItemCloudData> inventoryItems { get; set; } = new List<LobbyItemCloudData>();
         [FirestoreProperty] public List<LobbyItemCloudData> stashItems { get; set; } = new List<LobbyItemCloudData>();
         [FirestoreProperty] public List<LobbyEquipmentCloudData> equipmentItems { get; set; } = new List<LobbyEquipmentCloudData>();
+        [FirestoreProperty] public List<LobbyItemCloudData> quickSlotItems { get; set; } = new List<LobbyItemCloudData>();
         [FirestoreProperty] public List<LobbyFacilityCloudData> facilities { get; set; } = new List<LobbyFacilityCloudData>();
     }
 

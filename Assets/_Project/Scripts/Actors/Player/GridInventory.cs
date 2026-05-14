@@ -1,7 +1,10 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -19,6 +22,13 @@ namespace DeadZone.Actors
         private EquipmentSlots equipment;
         private IItemDatabase itemDb;
         private int activeSlotCount = BASE_WIDTH * BASE_HEIGHT;
+
+        [Header("월드 드롭")]
+        [SerializeField] private GameObject droppedLootItemPrefab;
+        [SerializeField] private float dropForwardDistance = 1.25f;
+        [SerializeField] private float dropGroundRayHeight = 1.5f;
+        [SerializeField] private float dropGroundRayDistance = 4f;
+        [SerializeField] private float dropGroundOffset = 0.25f;
 
         public byte Width => BASE_WIDTH;
         public byte Height => (byte)Mathf.CeilToInt(activeSlotCount / (float)BASE_WIDTH);
@@ -287,6 +297,691 @@ namespace DeadZone.Actors
             }
 
             return true;
+        }
+
+        [ServerRpc]
+        public void DropInventorySlotServerRpc(byte gridX, byte gridY)
+        {
+            if (!IsServer)
+                return;
+
+            if (!TryGetSlotAt(gridX, gridY, out ItemSlotData slotToDrop))
+                return;
+
+            ItemDataSO item = ResolveItem(slotToDrop.itemId.ToString());
+            if (item == null)
+                return;
+
+            GameObject prefab = ResolveDroppedLootItemPrefab(item);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[GridInventory] Dropped loot prefab is missing. itemId={item.itemID}", this);
+                return;
+            }
+
+            GameObject instance = CreateDroppedLootItem(item, Mathf.Max(1, slotToDrop.stackCount), prefab);
+            if (instance == null)
+                return;
+
+            if (!TrySpawnDroppedLootItem(instance))
+                return;
+
+            if (!TryRemoveSlotAt(gridX, gridY, out _))
+            {
+                DestroyDroppedLootInstance(instance);
+                return;
+            }
+        }
+
+        [ServerRpc]
+        public void DropEquipmentSlotServerRpc(EquipmentTargetSlot targetSlot)
+        {
+            if (!IsServer)
+                return;
+
+            equipment ??= GetComponent<EquipmentSlots>();
+            if (equipment == null)
+                return;
+
+            if (!TryGetEquipmentItemId(targetSlot, out string itemId))
+                return;
+
+            ItemDataSO item = ResolveItem(itemId);
+            if (item == null)
+                return;
+
+            GameObject prefab = ResolveDroppedLootItemPrefab(item);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[GridInventory] Dropped loot prefab is missing. itemId={item.itemID}", this);
+                return;
+            }
+
+            GameObject instance = CreateDroppedLootItem(item, 1, prefab);
+            if (instance == null)
+                return;
+
+            if (!TrySpawnDroppedLootItem(instance))
+                return;
+
+            if (!equipment.TryRemoveEquipmentSlotForDrop(targetSlot, out _))
+            {
+                DestroyDroppedLootInstance(instance);
+                return;
+            }
+        }
+
+        public void RequestMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot)
+        {
+            RequestMoveEquipmentSlotToInventory(targetSlot, byte.MaxValue, byte.MaxValue);
+        }
+
+        public void RequestMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
+        {
+            if (targetSlot == EquipmentTargetSlot.None)
+                return;
+
+            if (IsSpawned)
+            {
+                MoveEquipmentSlotToInventoryRpc(targetSlot, preferredGridX, preferredGridY);
+                return;
+            }
+
+            if (IsServer)
+                TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void MoveEquipmentSlotToInventoryRpc(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
+        }
+
+        private bool TryMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
+        {
+            if (!IsServer)
+                return false;
+
+            equipment ??= GetComponent<EquipmentSlots>();
+            if (equipment == null)
+                return false;
+
+            if (!TryGetEquipmentItemId(targetSlot, out string itemId))
+                return false;
+
+            ItemDataSO item = ResolveItem(itemId);
+            if (item == null)
+                return false;
+
+            if (!TryBuildEquipmentInventorySlot(targetSlot, item, out ItemSlotData slot))
+                return false;
+
+            bool hasPreferredPosition = preferredGridX != byte.MaxValue && preferredGridY != byte.MaxValue;
+            bool canAdd = hasPreferredPosition
+                ? CanAddItemSlotAt(item, slot, preferredGridX, preferredGridY)
+                : CanAddItemSlot(item, slot);
+
+            if (!canAdd)
+            {
+                Debug.LogWarning($"[GridInventory] Cannot move equipment to inventory because no valid grid space exists. slot={targetSlot}, itemId={item.itemID}", this);
+                return false;
+            }
+
+            if (!equipment.TryRemoveEquipmentSlotForDrop(targetSlot, out _))
+                return false;
+
+            bool added = hasPreferredPosition
+                ? TryAddItemSlotAt(item, slot, preferredGridX, preferredGridY)
+                : TryAddItemSlot(item, slot);
+
+            if (added)
+                return true;
+
+            Debug.LogError($"[GridInventory] Failed to add equipment item after clearing equipment slot. itemId={item.itemID}, slot={targetSlot}", this);
+            return false;
+        }
+
+        private bool TryBuildEquipmentInventorySlot(EquipmentTargetSlot targetSlot, ItemDataSO item, out ItemSlotData slot)
+        {
+            slot = default;
+
+            if (item == null)
+                return false;
+
+            slot = new ItemSlotData
+            {
+                itemId = item.itemID,
+                stackCount = 1,
+                gridX = 0,
+                gridY = 0,
+                rotated = false,
+                currentDurability = 0f,
+                currentAmmo = 0
+            };
+
+            switch (targetSlot)
+            {
+                case EquipmentTargetSlot.Head:
+                    slot.currentDurability = equipment.HelmetDurability.Value;
+                    break;
+
+                case EquipmentTargetSlot.Armor:
+                    slot.currentDurability = equipment.ArmorDurability.Value;
+                    break;
+
+                case EquipmentTargetSlot.Primary1:
+                    ApplyWeaponSlotState(item, equipment.Primary1State.Value, ref slot);
+                    break;
+
+                case EquipmentTargetSlot.Primary2:
+                    ApplyWeaponSlotState(item, equipment.Primary2State.Value, ref slot);
+                    break;
+
+                case EquipmentTargetSlot.Secondary:
+                    ApplyWeaponSlotState(item, equipment.SecondaryState.Value, ref slot);
+                    break;
+
+                case EquipmentTargetSlot.Backpack:
+                case EquipmentTargetSlot.Melee:
+                    break;
+
+                default:
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static void ApplyWeaponSlotState(ItemDataSO item, WeaponState weaponState, ref ItemSlotData slot)
+        {
+            if (item is WeaponDataSO weapon)
+                slot.currentDurability = Mathf.Max(0f, weapon.maxDurability);
+
+            slot.currentAmmo = (ushort)Mathf.Clamp(weaponState.currentAmmo, 0, ushort.MaxValue);
+        }
+
+        private bool CanAddItemSlotAt(ItemDataSO item, ItemSlotData sourceSlot, byte gridX, byte gridY)
+        {
+            if (!IsServer || item == null || sourceSlot.stackCount <= 0)
+                return false;
+
+            List<ItemSlotData> simulatedSlots = new(ServerGrid.Count);
+            for (int i = 0; i < ServerGrid.Count; i++)
+                simulatedSlots.Add(ServerGrid[i]);
+
+            return CanPlaceAt(simulatedSlots, gridX, gridY, item.gridSize, false);
+        }
+
+        private bool TryAddItemSlotAt(ItemDataSO item, ItemSlotData sourceSlot, byte gridX, byte gridY)
+        {
+            if (!CanAddItemSlotAt(item, sourceSlot, gridX, gridY))
+                return false;
+
+            sourceSlot.gridX = gridX;
+            sourceSlot.gridY = gridY;
+            sourceSlot.rotated = false;
+            sourceSlot.stackCount = (ushort)Mathf.Clamp(sourceSlot.stackCount, 1, Mathf.Max(1, item.maxStackSize));
+
+            ServerGrid.Add(sourceSlot);
+
+            EventBus.Publish(new ItemAddedEvent
+            {
+                clientId = OwnerClientId,
+                itemId = item.itemID
+            });
+
+            return true;
+        }
+
+        private bool TryRemoveSlotAt(byte gridX, byte gridY, out ItemSlotData removedSlot)
+        {
+            removedSlot = default;
+
+            if (!IsServer || ServerGrid == null)
+                return false;
+
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                ItemSlotData slot = ServerGrid[i];
+                if (slot.gridX != gridX || slot.gridY != gridY)
+                    continue;
+
+                removedSlot = slot;
+                ServerGrid.RemoveAt(i);
+
+                EventBus.Publish(new ItemRemovedEvent
+                {
+                    clientId = OwnerClientId,
+                    itemId = slot.itemId
+                });
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetSlotAt(byte gridX, byte gridY, out ItemSlotData foundSlot)
+        {
+            foundSlot = default;
+
+            if (ServerGrid == null)
+                return false;
+
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                ItemSlotData slot = ServerGrid[i];
+                if (slot.gridX != gridX || slot.gridY != gridY)
+                    continue;
+
+                foundSlot = slot;
+                return true;
+            }
+
+            return false;
+        }
+
+        private GameObject CreateDroppedLootItem(ItemDataSO item, int amount, GameObject prefab)
+        {
+            if (!IsServer || item == null)
+                return null;
+
+            if (!IsValidDroppedLootItemPrefab(prefab))
+            {
+                Debug.LogError(
+                    $"[GridInventory] 드롭 아이템 프리팹이 잘못되었습니다. " +
+                    $"NetworkObject + LootInteractable이 있어야 하고 LootContainer는 없어야 합니다. prefab={(prefab != null ? prefab.name : "null")}",
+                    this);
+                return null;
+            }
+
+            Vector3 spawnPosition = ResolveDropPosition();
+            GameObject instance = Instantiate(prefab, spawnPosition, Quaternion.identity);
+
+            if (instance.GetComponent<LootContainer>() != null)
+            {
+                Debug.LogError(
+                    $"[GridInventory] 드롭 아이템으로 LootContainer 프리팹이 생성되었습니다. prefab={prefab.name}. 즉시 제거합니다.",
+                    instance);
+
+                Destroy(instance);
+                return null;
+            }
+
+            if (!instance.TryGetComponent(out LootInteractable lootInteractable))
+            {
+                Debug.LogError($"[GridInventory] 드롭 아이템 프리팹에 LootInteractable이 없습니다. prefab={prefab.name}", instance);
+                Destroy(instance);
+                return null;
+            }
+
+            lootInteractable.Initialize(item, amount);
+            return instance;
+        }
+
+        private bool TrySpawnDroppedLootItem(GameObject instance)
+        {
+            if (!IsServer || instance == null)
+                return false;
+
+            NetworkObject networkObject = instance.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                Debug.LogError("[GridInventory] Dropped loot prefab missing NetworkObject.", instance);
+                Destroy(instance);
+                return false;
+            }
+
+            try
+            {
+                networkObject.Spawn(destroyWithScene: true);
+                if (instance.TryGetComponent(out LootInteractable lootInteractable))
+                    lootInteractable.ForceRefreshWorldVisual();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GridInventory] Failed to spawn dropped loot. item will remain in inventory. reason={ex.Message}", instance);
+                Destroy(instance);
+                return false;
+            }
+        }
+
+        private void DestroyDroppedLootInstance(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            NetworkObject networkObject = instance.GetComponent<NetworkObject>();
+            if (networkObject != null && networkObject.IsSpawned)
+            {
+                networkObject.Despawn(destroy: true);
+                return;
+            }
+
+            Destroy(instance);
+        }
+
+        private Vector3 ResolveDropPosition()
+        {
+            Transform playerTransform = transform;
+            Vector3 forward = playerTransform.forward;
+            if (forward.sqrMagnitude < 0.01f)
+                forward = Vector3.forward;
+
+            Vector3 fallback = playerTransform.position + forward.normalized * dropForwardDistance;
+            Vector3 rayOrigin = fallback + Vector3.up * dropGroundRayHeight;
+
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, dropGroundRayDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                return hit.point + Vector3.up * dropGroundOffset;
+
+            return fallback + Vector3.up * dropGroundOffset;
+        }
+
+        private GameObject ResolveDroppedLootItemPrefab(ItemDataSO item)
+        {
+            if (droppedLootItemPrefab == null)
+            {
+                Debug.LogError(
+                    $"[GridInventory] droppedLootItemPrefab is not assigned. Drop cancelled. itemId={(item != null ? item.itemID : "null")}",
+                    this);
+                return null;
+            }
+
+            if (!IsValidDroppedLootItemPrefab(droppedLootItemPrefab))
+            {
+                Debug.LogError(
+                    $"[GridInventory] droppedLootItemPrefab is invalid. It must have NetworkObject + LootInteractable and must not have LootContainer. prefab={droppedLootItemPrefab.name}",
+                    this);
+                return null;
+            }
+
+            if (!IsNetworkPrefabRegistered(droppedLootItemPrefab))
+            {
+                Debug.LogError(
+                    $"[GridInventory] droppedLootItemPrefab is not registered in NetworkPrefabsList. Drop cancelled. prefab={droppedLootItemPrefab.name}",
+                    this);
+                return null;
+            }
+
+            return droppedLootItemPrefab;
+        }
+
+        private static bool IsNetworkPrefabRegistered(GameObject prefab)
+        {
+            if (prefab == null)
+                return false;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.NetworkConfig == null)
+                return false;
+
+            IReadOnlyList<NetworkPrefab> prefabs = networkManager.NetworkConfig.Prefabs?.Prefabs;
+            if (prefabs != null)
+            {
+                for (int i = 0; i < prefabs.Count; i++)
+                {
+                    if (prefabs[i]?.Prefab == prefab)
+                        return true;
+                }
+            }
+
+            List<NetworkPrefabsList> prefabLists = networkManager.NetworkConfig.Prefabs?.NetworkPrefabsLists;
+            if (prefabLists == null)
+                return false;
+
+            for (int listIndex = 0; listIndex < prefabLists.Count; listIndex++)
+            {
+                NetworkPrefabsList prefabList = prefabLists[listIndex];
+                if (prefabList == null)
+                    continue;
+
+                IReadOnlyList<NetworkPrefab> listPrefabs = prefabList.PrefabList;
+                if (listPrefabs == null)
+                    continue;
+
+                for (int prefabIndex = 0; prefabIndex < listPrefabs.Count; prefabIndex++)
+                {
+                    if (listPrefabs[prefabIndex]?.Prefab == prefab)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static GameObject FindLootInteractableNetworkPrefab()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.NetworkConfig == null)
+                return null;
+
+            IReadOnlyList<NetworkPrefab> prefabs = networkManager.NetworkConfig.Prefabs?.Prefabs;
+            if (prefabs != null)
+            {
+                for (int i = 0; i < prefabs.Count; i++)
+                {
+                    GameObject prefab = prefabs[i]?.Prefab;
+                    if (IsLootInteractablePrefab(prefab))
+                        return prefab;
+                }
+            }
+
+            List<NetworkPrefabsList> prefabLists = networkManager.NetworkConfig.Prefabs?.NetworkPrefabsLists;
+            if (prefabLists == null)
+                return null;
+
+            for (int listIndex = 0; listIndex < prefabLists.Count; listIndex++)
+            {
+                NetworkPrefabsList prefabList = prefabLists[listIndex];
+                if (prefabList == null || prefabList.PrefabList == null)
+                    continue;
+
+                for (int prefabIndex = 0; prefabIndex < prefabList.PrefabList.Count; prefabIndex++)
+                {
+                    GameObject prefab = prefabList.PrefabList[prefabIndex]?.Prefab;
+                    if (IsLootInteractablePrefab(prefab))
+                        return prefab;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsLootInteractablePrefab(GameObject prefab)
+        {
+            return IsValidDroppedLootItemPrefab(prefab);
+        }
+
+        private static bool IsValidDroppedLootItemPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+                return false;
+
+            return prefab.GetComponent<NetworkObject>() != null &&
+                   prefab.GetComponent<LootInteractable>() != null &&
+                   prefab.GetComponent<LootContainer>() == null;
+        }
+
+        private bool TryGetEquipmentItemId(EquipmentTargetSlot targetSlot, out string itemId)
+        {
+            itemId = string.Empty;
+
+            if (equipment == null)
+                return false;
+
+            itemId = targetSlot switch
+            {
+                EquipmentTargetSlot.Head => equipment.HeadSlotId.Value.ToString(),
+                EquipmentTargetSlot.Backpack => equipment.BackpackSlotId.Value.ToString(),
+                EquipmentTargetSlot.Armor => equipment.TorsoSlotId.Value.ToString(),
+                EquipmentTargetSlot.Primary1 => equipment.Primary1Id.Value.ToString(),
+                EquipmentTargetSlot.Primary2 => equipment.Primary2Id.Value.ToString(),
+                EquipmentTargetSlot.Secondary => equipment.SecondaryId.Value.ToString(),
+                EquipmentTargetSlot.Melee => equipment.MeleeId.Value.ToString(),
+                _ => string.Empty
+            };
+
+            return !string.IsNullOrWhiteSpace(itemId);
+        }
+
+        private ItemDataSO ResolveItem(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return null;
+
+            EnsureItemDatabase();
+            return itemDb?.GetById(itemId);
+        }
+
+        public void RequestUseMedicalItem(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            if (IsSpawned)
+            {
+                UseMedicalItemRpc(new FixedString64Bytes(itemId));
+                return;
+            }
+
+            if (IsServer)
+                TryUseMedicalItem(itemId);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void UseMedicalItemRpc(FixedString64Bytes itemId, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            TryUseMedicalItem(itemId.ToString());
+        }
+
+        private bool TryUseMedicalItem(string itemId)
+        {
+            if (!IsServer || string.IsNullOrWhiteSpace(itemId))
+                return false;
+
+            EnsureItemDatabase();
+
+            ItemDataSO itemData = itemDb?.GetById(itemId);
+            if (itemData == null || itemData.category != ItemCategory.Med)
+                return false;
+
+            if (!TryGetMedicalEffect(itemData.itemID, out MedicalUseEffect effect))
+                return false;
+
+            if (!ConsumeItem(itemId, 1) &&
+                !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
+                !ConsumeItem(itemData.itemID, 1))
+            {
+                return false;
+            }
+
+            StartCoroutine(ApplyMedicalEffectRoutine(effect));
+            return true;
+        }
+
+        private IEnumerator ApplyMedicalEffectRoutine(MedicalUseEffect effect)
+        {
+            if (effect.useSeconds > 0f)
+                yield return new WaitForSeconds(effect.useSeconds);
+
+            PlayerHealthSystem health = GetComponent<PlayerHealthSystem>();
+
+            if (effect.instantHeal > 0f && health != null)
+                health.Heal(effect.instantHeal);
+
+            if (effect.healDurationSeconds > 0f && effect.healPerSecond > 0f && health != null)
+            {
+                float elapsed = 0f;
+                while (elapsed < effect.healDurationSeconds)
+                {
+                    float delta = Mathf.Min(Time.deltaTime, effect.healDurationSeconds - elapsed);
+                    health.Heal(effect.healPerSecond * delta);
+                    elapsed += delta;
+                    yield return null;
+                }
+            }
+
+            if (effect.weightCapacityMultiplierBonus > 0f)
+            {
+                GetComponent<PlayerCarryWeightSystem>()?.ApplyTemporaryCapacityMultiplier(
+                    effect.weightCapacityMultiplierBonus,
+                    effect.durationSeconds);
+            }
+
+            if (effect.staminaCostMultiplierBonus > 0f)
+            {
+                GetComponent<PlayerStaminaSystem>()?.ApplyTemporaryConsumptionMultiplier(
+                    effect.staminaCostMultiplierBonus,
+                    effect.durationSeconds);
+            }
+        }
+
+        private static bool TryGetMedicalEffect(string itemId, out MedicalUseEffect effect)
+        {
+            effect = default;
+            string id = NormalizeMedicalItemId(itemId);
+
+            switch (id)
+            {
+                case "bandage":
+                    effect = new MedicalUseEffect { useSeconds = 2f, healDurationSeconds = 5f, healPerSecond = 5f };
+                    return true;
+                case "firstaidkit":
+                    effect = new MedicalUseEffect { useSeconds = 3f, healDurationSeconds = 5f, healPerSecond = 10f };
+                    return true;
+                case "advancedfirstaidkit":
+                    effect = new MedicalUseEffect { useSeconds = 4f, healDurationSeconds = 5f, healPerSecond = 15f };
+                    return true;
+                case "slowhealsyringe":
+                case "regensyringe":
+                    effect = new MedicalUseEffect { useSeconds = 1f, healDurationSeconds = 20f, healPerSecond = 2.5f };
+                    return true;
+                case "fasthealsyringe":
+                    effect = new MedicalUseEffect { useSeconds = 1f, instantHeal = 30f };
+                    return true;
+                case "weightcapacitysyringe":
+                    effect = new MedicalUseEffect
+                    {
+                        useSeconds = 1f,
+                        durationSeconds = 600f,
+                        weightCapacityMultiplierBonus = 0.5f,
+                        staminaCostMultiplierBonus = 0.3f
+                    };
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static string NormalizeMedicalItemId(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return string.Empty;
+
+            string normalized = itemId.Trim().ToLowerInvariant();
+            if (normalized.StartsWith("itm_"))
+                normalized = normalized.Substring(4);
+
+            return normalized.Replace("_", string.Empty).Replace("-", string.Empty).Replace(" ", string.Empty);
+        }
+
+        private struct MedicalUseEffect
+        {
+            public float useSeconds;
+            public float healDurationSeconds;
+            public float healPerSecond;
+            public float instantHeal;
+            public float durationSeconds;
+            public float weightCapacityMultiplierBonus;
+            public float staminaCostMultiplierBonus;
         }
 
         private bool CanPlaceAt(byte x, byte y, Vector2Int size, bool rotated)

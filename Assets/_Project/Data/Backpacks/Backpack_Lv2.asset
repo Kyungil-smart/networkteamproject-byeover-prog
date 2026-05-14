@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5
     \n1. \uC778\uBCA4\uD1A0\uB9AC \uCE78: 10\uD655\uC7A5\n2. \uCD5C\uB300 \uBB34\uAC8C:
     15kg"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ec847dcf7898afe408079478da2b79f5, type: 3}
   category: 2
   rarity: 1
   isValuable: 0
@@ -25,7 +25,7 @@ MonoBehaviour:
   maxStackSize: 1
   weightKg: 0.1
   baseSellPrice: 8000
-  worldPrefab: {fileID: 4337095019474041704, guid: c001e1f70c4a18242bf86813e3f32dd9, type: 3}
+  worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
   backpackLevel: 2
   extraSlots: 10
   extraWeightCapacity: 15

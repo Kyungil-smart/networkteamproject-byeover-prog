@@ -155,6 +155,40 @@ namespace DeadZone.Systems.Quests
 
             if (state.ActiveQuestIds.Count == 0 && state.CompletedQuestIds.Count == 0)
                 AcceptQuest(clientId, "Q1");
+
+            PublishQuestTrackerSnapshot(clientId);
+        }
+
+        /// <summary>
+        /// 복원된 퀘스트 상태를 바탕으로 HUD가 즉시 표시할 수 있는 현재 진행도 이벤트를 발행합니다.
+        /// 수락/진행/완료 이벤트와 달리 실제 상태 변화가 아니라, UI 초기 표시를 위한 스냅샷입니다.
+        /// </summary>
+        private void PublishQuestTrackerSnapshot(ulong clientId)
+        {
+            PlayerQuestState state = GetPlayerState(clientId);
+
+            foreach (string questId in state.ActiveQuestIds)
+            {
+                if (!TryGetQuestData(questId, out QuestDataSO questData))
+                    continue;
+
+                if (questData.objectives == null || questData.objectives.Length == 0)
+                    continue;
+
+                QuestObjectiveData objective = questData.objectives[0];
+                EventBus.Publish(new QuestTrackerSnapshotEvent
+                {
+                    questId = new FixedString64Bytes(questId),
+                    objectiveType = objective.type,
+                    currentCount = state.GetProgress(questId, objective.targetID),
+                    requiredCount = objective.requiredCount,
+                    clientId = clientId,
+                    targetId = new FixedString64Bytes(objective.targetID),
+                    isPendingCompletion = state.PendingCompletionIds.Contains(questId)
+                });
+
+                return;
+            }
         }
 
 
@@ -277,6 +311,21 @@ namespace DeadZone.Systems.Quests
 
         public int GetObjectiveProgress(ulong clientId, string questId, string targetId)
             => GetPlayerState(clientId).GetProgress(questId, targetId);
+
+        /// <summary>
+        /// questId를 기준으로 QuestManager가 보유한 QuestDataSO를 조회합니다.
+        /// EventBus로 전달된 questId를 UI나 다른 수신부가 표시용 데이터로 해석할 때 사용합니다.
+        /// </summary>
+        public bool TryGetQuestData(string questId, out QuestDataSO questData)
+        {
+            if (string.IsNullOrWhiteSpace(questId))
+            {
+                questData = null;
+                return false;
+            }
+
+            return _questLookup.TryGetValue(questId, out questData);
+        }
 
         public bool IsQuestCompleted(ulong clientId, string questId)
             => GetPlayerState(clientId).CompletedQuestIds.Contains(questId);

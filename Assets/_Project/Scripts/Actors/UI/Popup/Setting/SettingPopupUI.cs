@@ -441,9 +441,14 @@ namespace DeadZone.Actors.UI
             HideBankruptcyConfirmation();
             LobbySaveService lobbySaveService = ResolveLobbySaveService();
             if (lobbySaveService != null)
-                lobbySaveService.LoadLobbyDataFromCloudAuthoritative();
+            {
+                lobbySaveService.LoadLobbyDataFromCloudIgnoringLocalJson("Bankruptcy starter pack applied");
+            }
             else
-                Debug.LogWarning("[SettingPopupUI] 파산신청은 완료됐지만 LobbySaveService를 찾지 못해 현재 로비 UI를 즉시 갱신하지 못했습니다.", this);
+            {
+                Debug.LogWarning("[SettingPopupUI] Bankruptcy completed, but LobbySaveService was not found. Applying the loaded starter pack directly to the current lobby UI.", this);
+                ApplyBankruptcyDtoDirectlyToLobbyUi(cloudSaveSystem);
+            }
 
             Close();
         }
@@ -463,7 +468,47 @@ namespace DeadZone.Actors.UI
             if (lobbySaveService != null)
                 return lobbySaveService;
 
-            return Object.FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            lobbySaveService = Object.FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            if (lobbySaveService != null)
+                return lobbySaveService;
+
+            LobbySaveService[] services = Resources.FindObjectsOfTypeAll<LobbySaveService>();
+            for (int i = 0; i < services.Length; i++)
+            {
+                LobbySaveService service = services[i];
+                if (service == null || !service.gameObject.scene.IsValid())
+                    continue;
+
+                return service;
+            }
+
+            return null;
+        }
+
+        private static void ApplyBankruptcyDtoDirectlyToLobbyUi(CloudSaveSystem cloudSaveSystem)
+        {
+            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData)
+                return;
+
+            LobbySaveDTO dto = cloudSaveSystem.CreateLobbySaveDTOFromCurrentData();
+            if (dto == null)
+                return;
+
+            LobbyInventoryState inventoryState = Object.FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            if (inventoryState == null)
+                return;
+
+            if (dto.hasCredits)
+                inventoryState.SetCredits(dto.credits);
+
+            inventoryState.SetInventoryItems(dto.inventoryItems);
+            inventoryState.SetStashItems(dto.stashItems);
+            inventoryState.SetEquipmentItems(dto.equipmentItems);
+            inventoryState.SetQuickSlotItems(dto.quickSlotItems);
+
+            LobbyInventoryStateUiBridge bridge =
+                Object.FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            bridge?.ApplyStateToUi();
         }
 
         private void SetBankruptcyButtonsInteractable(bool interactable)

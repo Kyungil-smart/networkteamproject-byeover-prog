@@ -1,9 +1,11 @@
 using DeadZone.Core;
 using DeadZone.Actors;
 using DeadZone.Systems.Save;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -36,7 +38,7 @@ namespace DeadZone.Actors.UI
         bool TryHandleDrop(InventorySlotUI source, InventorySlotUI target);
     }
 
-    public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         [BoxGroup("슬롯 상태")]
         [Tooltip("인벤토리 그리드의 슬롯 인덱스입니다.")]
@@ -259,6 +261,58 @@ namespace DeadZone.Actors.UI
             tooltipUI.Hide();
         }
 
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData == null || eventData.button != PointerEventData.InputButton.Right)
+                return;
+
+            if (!TryUseCurrentItem())
+                return;
+
+            eventData.Use();
+        }
+
+        public bool TryUseCurrentItem()
+        {
+            return TryUseMedicalItem();
+        }
+
+        private bool TryUseMedicalItem()
+        {
+            if (!HasItem || CurrentItemData.category != ItemCategory.Med)
+                return false;
+
+            LootContainerSlotUI containerSlot = GetComponent<LootContainerSlotUI>();
+            if (containerSlot != null && (containerSlot.Container != null || containerSlot.DroppedItem != null || containerSlot.CorpseInventory != null))
+                return false;
+
+            GridInventory inventory = ResolveLocalPlayerInventory();
+            if (inventory == null)
+            {
+                Debug.LogWarning("[InventorySlotUI] Medical item use failed. Local player GridInventory was not found.", this);
+                return false;
+            }
+
+            inventory.RequestUseMedicalItem(CurrentItemData.itemID);
+            return true;
+        }
+
+        private static GridInventory ResolveLocalPlayerInventory()
+        {
+            NetworkObject playerObject = NetworkManager.Singleton != null
+                ? NetworkManager.Singleton.LocalClient?.PlayerObject
+                : null;
+
+            if (playerObject != null)
+            {
+                GridInventory inventory = playerObject.GetComponent<GridInventory>();
+                if (inventory != null)
+                    return inventory;
+            }
+
+            return FindFirstObjectByType<GridInventory>(FindObjectsInactive.Include);
+        }
+
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (isLocked)
@@ -294,6 +348,9 @@ namespace DeadZone.Actors.UI
         {
             if (draggingSlot == this)
             {
+                if (HasItem && !IsPointerOverValidDropTarget(eventData))
+                    TryRequestWorldDrop();
+
                 draggingSlot = null;
                 DestroyDragIcon();
             }
@@ -333,6 +390,142 @@ namespace DeadZone.Actors.UI
             }
 
             return false;
+        }
+
+        private bool IsPointerOverValidDropTarget(PointerEventData eventData)
+        {
+            if (eventData == null)
+                return false;
+
+            if (IsPointerOverThisSlot(eventData))
+                return true;
+
+            if (IsValidDropTargetObject(eventData.pointerCurrentRaycast.gameObject))
+                return true;
+
+            if (IsValidDropTargetObject(eventData.pointerEnter))
+                return true;
+
+            if (EventSystem.current != null)
+            {
+                List<RaycastResult> raycastResults = new();
+                EventSystem.current.RaycastAll(eventData, raycastResults);
+                for (int i = 0; i < raycastResults.Count; i++)
+                {
+                    if (IsValidDropTargetObject(raycastResults[i].gameObject))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsValidDropTargetObject(GameObject targetObject)
+        {
+            if (targetObject == null)
+                return false;
+
+            InventorySlotUI targetSlot = targetObject.GetComponentInParent<InventorySlotUI>();
+            if (targetSlot != null)
+                return targetSlot != this;
+
+            return targetObject.GetComponentInParent<IInventorySlotDropHandler>() != null;
+        }
+
+        private bool IsPointerOverThisSlot(PointerEventData eventData)
+        {
+            RectTransform rectTransform = transform as RectTransform;
+            return rectTransform != null &&
+                   RectTransformUtility.RectangleContainsScreenPoint(
+                       rectTransform,
+                       eventData.position,
+                       eventData.pressEventCamera);
+        }
+
+        private void TryRequestWorldDrop()
+        {
+            if (!HasItem || IsContainerSourceSlot() || IsLobbyInventorySlot())
+                return;
+
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return;
+
+            if (slotKind == InventorySlotKind.Bag)
+            {
+                int x = Mathf.Max(0, slotIndex) % GridInventory.BASE_WIDTH;
+                int y = Mathf.Max(0, slotIndex) / GridInventory.BASE_WIDTH;
+                inventory.DropInventorySlotServerRpc((byte)x, (byte)y);
+                return;
+            }
+
+            if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot equipmentTargetSlot))
+                inventory.DropEquipmentSlotServerRpc(equipmentTargetSlot);
+        }
+
+        private bool IsContainerSourceSlot()
+        {
+            return GetComponent<LootContainerSlotUI>() != null;
+        }
+
+        private bool IsLobbyInventorySlot()
+        {
+            return GetComponentInParent<LobbyPlayerInventoryUI>(true) != null ||
+                   GetComponentInParent<StashGridUI>(true) != null ||
+                   GetComponentInParent<LobbyInventoryStateUiBridge>(true) != null;
+        }
+
+        private bool TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetSlot)
+        {
+            targetSlot = EquipmentTargetSlot.None;
+
+            switch (slotKind)
+            {
+                case InventorySlotKind.EquipmentHead:
+                    targetSlot = EquipmentTargetSlot.Head;
+                    return true;
+
+                case InventorySlotKind.EquipmentBackpack:
+                    targetSlot = EquipmentTargetSlot.Backpack;
+                    return true;
+
+                case InventorySlotKind.EquipmentArmor:
+                    targetSlot = EquipmentTargetSlot.Armor;
+                    return true;
+
+                case InventorySlotKind.EquipmentPrimaryWeapon:
+                    targetSlot = IsPrimary2Slot() ? EquipmentTargetSlot.Primary2 : EquipmentTargetSlot.Primary1;
+                    return true;
+
+                case InventorySlotKind.EquipmentSecondaryWeapon:
+                    targetSlot = EquipmentTargetSlot.Secondary;
+                    return true;
+
+                case InventorySlotKind.EquipmentMeleeWeapon:
+                    targetSlot = EquipmentTargetSlot.Melee;
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static GridInventory ResolveOwnerGridInventory()
+        {
+            GridInventory[] candidates = FindObjectsByType<GridInventory>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (GridInventory candidate in candidates)
+            {
+                if (candidate != null && candidate.IsSpawned && candidate.IsOwner)
+                    return candidate;
+            }
+
+            foreach (GridInventory candidate in candidates)
+            {
+                if (candidate != null && candidate.IsOwner)
+                    return candidate;
+            }
+
+            return null;
         }
 
         public void ClearItem()
@@ -393,6 +586,9 @@ namespace DeadZone.Actors.UI
             ItemDataSO sourceItem = source.CurrentItemData;
             int sourceCount = source.CurrentStackCount;
 
+            if (slotKind == InventorySlotKind.QuickSlot)
+                return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
+
             if (!CanAccept(sourceItem))
             {
                 Debug.LogWarning($"[InventorySlotUI] {name} 슬롯에는 {sourceItem.displayName} 아이템을 넣을 수 없습니다. slotKind={slotKind}, itemType={sourceItem.GetType().Name}", this);
@@ -401,6 +597,13 @@ namespace DeadZone.Actors.UI
 
             if (!HasItem)
             {
+                if (slotKind == InventorySlotKind.Bag &&
+                    source.TryGetEquipmentTargetSlot(out EquipmentTargetSlot sourceEquipmentSlot) &&
+                    TryRequestEquipmentMoveToInventory(sourceEquipmentSlot, slotIndex))
+                {
+                    return true;
+                }
+
                 if (!TrySyncEquipmentSlotAfterDrop(this, sourceItem) ||
                     !TrySyncEquipmentSlotAfterDrop(source, null))
                 {
@@ -453,6 +656,67 @@ namespace DeadZone.Actors.UI
             source.SetItem(targetItem, targetCount);
             CaptureLobbyInventoryStateIfPresent(this, source);
             return true;
+        }
+
+        private static bool TryRequestEquipmentMoveToInventory(EquipmentTargetSlot sourceEquipmentSlot, int targetSlotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, targetSlotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, targetSlotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestMoveEquipmentSlotToInventory(sourceEquipmentSlot, gridX, gridY);
+            return true;
+        }
+
+        private bool TryAssignQuickSlotShortcut(InventorySlotUI source, ItemDataSO sourceItem, int sourceCount)
+        {
+            if (source == null || sourceItem == null || sourceCount <= 0)
+                return false;
+
+            if (!CanAccept(sourceItem))
+                return false;
+
+            if (source.slotKind == InventorySlotKind.QuickSlot)
+            {
+                if (!HasItem)
+                {
+                    SetItem(sourceItem, sourceCount);
+                    source.ClearItem();
+                    CaptureLobbyInventoryStateIfPresent(this, source);
+                    return true;
+                }
+
+                ItemDataSO targetItem = CurrentItemData;
+                int targetCount = CurrentStackCount;
+                SetItem(sourceItem, sourceCount);
+                source.SetItem(targetItem, targetCount);
+                CaptureLobbyInventoryStateIfPresent(this, source);
+                return true;
+            }
+
+            if (source.IsStashLikeSlot())
+            {
+                Debug.LogWarning(
+                    $"[InventorySlotUI] Quickslot assignment blocked from stash. Move item to player inventory first. itemID={sourceItem.itemID}",
+                    this);
+                return false;
+            }
+
+            SetItem(sourceItem, sourceCount);
+            CaptureLobbyInventoryStateIfPresent(this);
+            return true;
+        }
+
+        private bool IsStashLikeSlot()
+        {
+            string path = GetHierarchyPath(transform).ToLowerInvariant();
+            string objectName = name.ToLowerInvariant();
+
+            return path.Contains("stashpanel") ||
+                   path.Contains("stashslot") ||
+                   objectName.Contains("stashslot");
         }
 
         private static void CaptureLobbyInventoryStateIfPresent(params InventorySlotUI[] changedSlots)

@@ -139,7 +139,6 @@ namespace DeadZone.Editor
             {
                 Entry(WEAPONS + "/Weapon_Glock17.asset",       3000,  1),
                 Entry(WEAPONS + "/Weapon_SelfDefense.asset",   2400,  1),
-                Entry(ITEMS   + "/Materials/ITM_Grenade.asset", 6000,  1),
                 Entry(WEAPONS + "/Weapon_Revolver.asset",      10000, 2),
                 Entry(WEAPONS + "/Weapon_PumpSG.asset",        13000, 2),
                 Entry(WEAPONS + "/Weapon_SK74.asset",          24000, 3),

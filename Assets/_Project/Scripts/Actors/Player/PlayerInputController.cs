@@ -357,36 +357,83 @@ namespace DeadZone.Actors
         {
             if (!CanProcessInput || !context.performed)
                 return;
+
+            TryUseQuickslot(0);
         }
 
         public void OnQuickslot_2(InputAction.CallbackContext context)
         {
             if (!CanProcessInput || !context.performed)
                 return;
+
+            TryUseQuickslot(1);
         }
 
         public void OnQuickslot_3(InputAction.CallbackContext context)
         {
             if (!CanProcessInput || !context.performed)
                 return;
+
+            TryUseQuickslot(2);
         }
 
         public void OnQuickslot_4(InputAction.CallbackContext context)
         {
             if (!CanProcessInput || !context.performed)
                 return;
+
+            TryUseQuickslot(3);
         }
 
         public void OnQuickslot_5(InputAction.CallbackContext context)
         {
             if (!CanProcessInput || !context.performed)
                 return;
+
+            TryUseQuickslot(4);
         }
 
         public void OnQuickslot_6(InputAction.CallbackContext context)
         {
             if (!CanProcessInput || !context.performed)
                 return;
+
+            TryUseQuickslot(5);
+        }
+
+        private static void TryUseQuickslot(int slotIndex)
+        {
+            InventorySlotUI slot = ResolveQuickSlot(slotIndex);
+            if (slot == null || !slot.HasItem)
+                return;
+
+            slot.TryUseCurrentItem();
+        }
+
+        private static InventorySlotUI ResolveQuickSlot(int slotIndex)
+        {
+            InventorySlotUI fallback = null;
+            InventorySlotUI[] slots = FindObjectsByType<InventorySlotUI>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null ||
+                    slot.SlotKind != InventorySlotKind.QuickSlot ||
+                    slot.SlotIndex != slotIndex)
+                {
+                    continue;
+                }
+
+                if (slot.gameObject.activeInHierarchy)
+                    return slot;
+
+                fallback ??= slot;
+            }
+
+            return fallback;
         }
 
         public void OnInventory(InputAction.CallbackContext context)
