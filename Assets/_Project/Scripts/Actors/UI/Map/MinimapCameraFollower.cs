@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -138,7 +138,9 @@ namespace DeadZone.Actors.UI
 
         private RawImage FindMinimapRawImage()
         {
-            RawImage[] rawImages = FindObjectsOfType<RawImage>(true);
+            RawImage[] rawImages = FindObjectsByType<RawImage>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < rawImages.Length; i++)
             {
                 RawImage rawImage = rawImages[i];

@@ -342,6 +342,8 @@ namespace DeadZone.Actors.UI
         private bool TryGetSessionManager(out SessionManager sessionManager)
         {
             sessionManager = ServiceLocator.Get<SessionManager>();
+            if (sessionManager == null)
+                sessionManager = FindFirstObjectByType<SessionManager>(FindObjectsInactive.Include);
             
             if (sessionManager != null) return true;
             

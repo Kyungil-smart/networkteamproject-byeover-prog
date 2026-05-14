@@ -43,7 +43,7 @@ namespace DeadZone.Network
             {
                 auth.StateChanged -= OnAuthStateChanged;
             }
-            ServiceLocator.Unregister<FirebaseAuthManager>();
+            ServiceLocator.Unregister(this);
         }
 
         private void TryAttachAuth()

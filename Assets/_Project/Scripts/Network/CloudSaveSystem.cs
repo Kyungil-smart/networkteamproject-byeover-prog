@@ -98,7 +98,7 @@ namespace DeadZone.Network
             EventBus.Unsubscribe<QuestProgressEvent>(OnQuestProgress);
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
 
-            ServiceLocator.Unregister<CloudSaveSystem>();
+            ServiceLocator.Unregister(this);
             isRegistered = false;
         }
 

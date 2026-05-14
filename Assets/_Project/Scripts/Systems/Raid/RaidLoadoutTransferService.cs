@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 using System;
 using System.Collections.Generic;
-=======
-﻿using System.Collections.Generic;
->>>>>>> origin/Develop3
 
 using DeadZone.Actors;
 using DeadZone.Actors.UI;
@@ -388,7 +384,6 @@ namespace DeadZone.Systems.Raid
                     {
                         itemId = item.itemId,
                         instanceId = item.instanceId,
-                        slotIndex = Mathf.Max(0, item.x),
                         slotIndex = Mathf.Clamp(item.x, 0, 5),
                         stackCount = Mathf.Max(1, item.stackCount),
                         currentDurability = Mathf.Max(0f, item.currentDurability),

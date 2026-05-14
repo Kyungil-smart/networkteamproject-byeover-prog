@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -39,7 +39,7 @@ namespace DeadZone.Network
 
         private void OnDestroy()
         {
-            ServiceLocator.Unregister<RelayManager>();
+            ServiceLocator.Unregister(this);
         }
 
         /// <summary>

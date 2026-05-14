@@ -214,6 +214,9 @@ namespace DeadZone.Network
 
             SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
             if (sessionManager == null)
+                sessionManager = FindFirstObjectByType<SessionManager>(FindObjectsInactive.Include);
+
+            if (sessionManager == null)
             {
                 Debug.LogWarning("[LobbyRaidStartController] 1인 출격을 시작할 SessionManager를 찾지 못했습니다.", this);
                 return false;
