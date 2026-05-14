@@ -31,6 +31,11 @@ namespace DeadZone.Actors
         [SerializeField, Min(0f)] private float regenDelaySeconds = 1.5f;
 
         public readonly NetworkVariable<float> CurrentStamina = new(100f);
+        // 하우징 보너스로 증가한 최대 스태미너를 오너 클라이언트 HUD까지 전달하기 위한 복제 값입니다.
+        public readonly NetworkVariable<float> ReplicatedMaxStamina = new(
+            100f,
+            NetworkVariableReadPermission.Owner,
+            NetworkVariableWritePermission.Server);
 
         [Header("소모품 보정")]
         [SerializeField, Min(0f)] private float temporaryConsumptionMultiplierBonus;
@@ -60,14 +65,19 @@ namespace DeadZone.Actors
         public override void OnNetworkSpawn()
         {
             if (IsServer)
+            {
+                ReplicatedMaxStamina.Value = MaxStamina;
                 CurrentStamina.Value = MaxStamina;
+            }
 
             CurrentStamina.OnValueChanged += BroadcastStaminaChanged;
+            ReplicatedMaxStamina.OnValueChanged += BroadcastMaxStaminaChanged;
         }
 
         public override void OnNetworkDespawn()
         {
             CurrentStamina.OnValueChanged -= BroadcastStaminaChanged;
+            ReplicatedMaxStamina.OnValueChanged -= BroadcastMaxStaminaChanged;
         }
 
         private void Update()
@@ -169,6 +179,10 @@ namespace DeadZone.Actors
 
             housingMaxStaminaBonus = nextBonus;
 
+            // 서버에서 계산된 최대 스태미너를 복제해 클라이언트 UI가 기본값 100으로 표시되지 않게 합니다.
+            if (IsSpawned && IsServer)
+                ReplicatedMaxStamina.Value = MaxStamina;
+
             float increasedAmount = Mathf.Max(0f, MaxStamina - previousMaxStamina);
 
             if (fillIncreasedAmount && increasedAmount > 0f)
@@ -206,7 +220,23 @@ namespace DeadZone.Actors
                 clientId = OwnerClientId,
                 oldValue = oldValue,
                 newValue = newValue,
+                maxValue = ResolveVisibleMaxStamina(),
             });
+        }
+
+        private void BroadcastMaxStaminaChanged(float oldValue, float newValue)
+        {
+            // 최대치만 바뀌어도 HUD 비율이 갱신되어야 하므로 현재 스태미너 값으로 변경 이벤트를 다시 보냅니다.
+            BroadcastStaminaChanged(CurrentStamina.Value, CurrentStamina.Value);
+        }
+
+        private float ResolveVisibleMaxStamina()
+        {
+            // 복제 값이 준비되어 있으면 HUD에는 서버 기준 최대 스태미너를 우선 사용합니다.
+            if (IsSpawned && ReplicatedMaxStamina.Value > 0f)
+                return ReplicatedMaxStamina.Value;
+
+            return MaxStamina;
         }
 
 #if UNITY_EDITOR

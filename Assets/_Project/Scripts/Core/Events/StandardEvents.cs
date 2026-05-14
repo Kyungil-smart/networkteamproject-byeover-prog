@@ -25,6 +25,8 @@ namespace DeadZone.Core
         public ulong clientId;
         public float oldValue;
         public float newValue;
+        // 하우징 보너스가 반영된 최대 스태미너를 HUD까지 함께 전달하기 위한 값입니다.
+        public float maxValue;
     }
 
     public struct PlayerDiedEvent : IGameEvent
