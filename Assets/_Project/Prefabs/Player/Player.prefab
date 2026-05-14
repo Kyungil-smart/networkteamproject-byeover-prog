@@ -991,10 +991,11 @@ MonoBehaviour:
   shotgunProjectileCount: 12
   shotgunSpreadAngle: 24
   shotgunPelletAngleJitter: 2
-  shotgunEffectiveRange: 8
-  shotgunMaxRange: 18
-  shotgunMinDamageMultiplier: 0.3
-  shotgunTotalDamageMultiplier: 1.2
+  shotgunEffectiveRange: 6
+  shotgunMaxRange: 12
+  shotgunMinDamageMultiplier: 0.15
+  shotgunTotalDamageMultiplier: 0.55
+  projectileVisualMaxLifetime: 0.35
   autoEquipWeaponVisual: 1
   weaponHolder: {fileID: 0}
   weaponHolderName: WeaponHolder
@@ -1809,6 +1810,8 @@ MonoBehaviour:
   equipmentSlots: {fileID: 3096256922150323826}
   shootingSystem: {fileID: -7812494434515924552}
   weaponHolder: {fileID: 5664201741075324417}
+  rifleLikeMount: {fileID: 1828945665493880841}
+  handgunMount: {fileID: 1274814248057830927}
   fallbackMuzzle: {fileID: 7489591256997111823}
   muzzlePointName: MuzzlePoint
   resetLocalTransform: 1
@@ -1829,7 +1832,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   animator: {fileID: 95481129507444498}
   equipmentSlots: {fileID: 3096256922150323826}
-  playerHealthSystem: {fileID: 0}
+  playerHealthSystem: {fileID: 8354546832462354360}
   weaponTypeParameterName: WeaponType
   rollingParameterName: IsRolling
   combatLayerName: Combat Upper Body
@@ -4346,6 +4349,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1828945665493880841}
+  - {fileID: 1274814248057830927}
   - {fileID: 7489591256997111823}
   m_Father: {fileID: 4077195986647316}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -4393,7 +4398,7 @@ GameObject:
   m_Layer: 10
   m_Name: MuzzlePoint
   m_TagString: Untagged
-  m_Icon: {fileID: 7250588514170254948, guid: 0000000000000000d000000000000000, type: 0}
+  m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -4580,6 +4585,68 @@ ParentConstraint:
   m_Sources:
   - sourceTransform: {fileID: 4066577191665366}
     weight: 1
+--- !u!1 &5810278015590950285
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1828945665493880841}
+  m_Layer: 10
+  m_Name: RifleLikeMount
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1828945665493880841
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5810278015590950285}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.208, y: 0.177, z: 0.028}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5664201741075324417}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7412744176593340229
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1274814248057830927}
+  m_Layer: 10
+  m_Name: HandgunMount
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1274814248057830927
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7412744176593340229}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.328, y: 0.25, z: 0.101}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5664201741075324417}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7694351138277081296
 GameObject:
   m_ObjectHideFlags: 0

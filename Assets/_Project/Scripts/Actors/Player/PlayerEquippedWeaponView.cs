@@ -20,21 +20,27 @@ namespace DeadZone.Actors
         [SerializeField] private ShootingSystem shootingSystem;
 
         [Header("무기 표시 위치")]
-        [Tooltip("장착 무기 worldPrefab이 생성될 부모 Transform입니다. Player/WeaponHolder를 연결합니다.")]
+        [Tooltip("장착 무기 worldPrefab이 생성될 기본 부모 Transform입니다. 기존 Player/WeaponHolder를 연결합니다. 타입별 Mount가 없거나 사용할 수 없을 때 fallback parent로 사용됩니다.")]
         [SerializeField] private Transform weaponHolder;
 
-        [Tooltip("장착 무기에서 MuzzlePoint를 찾지 못했거나 무기를 해제했을 때 사용할 기본 총구 Transform입니다.")]
+        [Tooltip("AR, SMG, Sniper, Shotgun 계열 무기가 생성될 부모 Transform입니다. Player/WeaponHolder/RifleLikeMount를 연결합니다. 비어 있으면 Weapon Holder를 사용합니다.")]
+        [SerializeField] private Transform rifleLikeMount;
+
+        [Tooltip("Handgun 계열 무기가 생성될 부모 Transform입니다. Player/WeaponHolder/HandgunMount를 연결합니다. 비어 있으면 Weapon Holder를 사용합니다.")]
+        [SerializeField] private Transform handgunMount;
+
+        [Tooltip("장착 무기에서 MuzzlePoint를 찾지 못했거나 무기를 해제했을 때 사용할 기본 총구 Transform입니다. 기존 Player/WeaponHolder/MuzzlePoint를 연결합니다.")]
         [SerializeField] private Transform fallbackMuzzle;
 
         [Header("무기 프리팹 탐색")]
         [Tooltip("장착 무기 프리팹 내부에서 총구로 사용할 자식 Transform 이름입니다.")]
         [SerializeField] private string muzzlePointName = "MuzzlePoint";
 
-        [Tooltip("생성한 무기 모델의 localPosition/localRotation/localScale을 WeaponHolder 기준 기본값으로 맞춥니다.")]
+        [Tooltip("생성한 무기 모델의 localPosition/localRotation/localScale을 선택된 Mount 기준 기본값으로 맞춥니다.")]
         [SerializeField] private bool resetLocalTransform = true;
 
         [Header("동작 옵션")]
-        [Tooltip("필수 참조가 비어 있으면 같은 Player 하위에서 자동으로 찾습니다.")]
+        [Tooltip("필수 참조가 비어 있으면 같은 Player 하위에서 자동으로 찾습니다. RifleLikeMount와 HandgunMount도 WeaponHolder 하위에서 자동 탐색합니다.")]
         [SerializeField] private bool autoBindReferences = true;
 
         [Tooltip("장착 무기 표시와 MuzzlePoint 연결 과정을 Console에 출력합니다.")]
@@ -118,9 +124,10 @@ namespace DeadZone.Actors
             ClearCurrentWeaponView();
             displayedWeaponId = weaponId;
 
-            if (weaponHolder == null)
+            Transform selectedMount = ResolveWeaponMount(weaponData);
+            if (selectedMount == null)
             {
-                LogDebug("WeaponHolder가 연결되어 있지 않아 무기 모델을 표시할 수 없습니다.");
+                LogDebug("장착 무기 Mount가 연결되어 있지 않아 무기 모델을 표시할 수 없습니다.");
                 ApplyFallbackMuzzle();
                 return;
             }
@@ -132,7 +139,7 @@ namespace DeadZone.Actors
                 return;
             }
 
-            currentWeaponInstance = Instantiate(weaponData.worldPrefab, weaponHolder, false);
+            currentWeaponInstance = Instantiate(weaponData.worldPrefab, selectedMount, false);
             currentWeaponInstance.name = $"{weaponData.worldPrefab.name}_EquippedView";
 
             if (resetLocalTransform)
@@ -155,12 +162,37 @@ namespace DeadZone.Actors
             if (muzzle != null)
             {
                 shootingSystem?.SetMuzzleTransform(muzzle);
-                LogDebug($"장착 무기 표시 완료: {weaponId}, muzzle={muzzle.name}");
+                LogDebug($"장착 무기 표시 완료: {weaponId}, mount={selectedMount.name}, muzzle={muzzle.name}");
                 return;
             }
 
             LogDebug($"장착 무기에서 {muzzlePointName}을 찾지 못해 fallback muzzle을 사용합니다. weaponId={weaponId}");
             ApplyFallbackMuzzle();
+        }
+
+        /// <summary>
+        /// WeaponDataSO의 무기 카테고리를 기준으로 장착 모델이 생성될 Mount를 선택한다.
+        /// 타입별 Mount가 연결되어 있지 않으면 기존 WeaponHolder를 fallback parent로 사용한다.
+        /// </summary>
+        private Transform ResolveWeaponMount(WeaponDataSO weaponData)
+        {
+            if (weaponData == null)
+                return weaponHolder;
+
+            switch (weaponData.weaponCategory)
+            {
+                case WeaponCategory.AR:
+                case WeaponCategory.SMG:
+                case WeaponCategory.Sniper:
+                case WeaponCategory.Shotgun:
+                    return rifleLikeMount != null ? rifleLikeMount : weaponHolder;
+
+                case WeaponCategory.Handgun:
+                    return handgunMount != null ? handgunMount : weaponHolder;
+
+                default:
+                    return weaponHolder;
+            }
         }
 
         private void ClearCurrentWeaponView()
@@ -203,8 +235,17 @@ namespace DeadZone.Actors
             if (weaponHolder == null)
                 weaponHolder = transform.Find("WeaponHolder");
 
-            if (fallbackMuzzle == null && weaponHolder != null)
-                fallbackMuzzle = weaponHolder.Find("MuzzlePoint");
+            if (weaponHolder != null)
+            {
+                if (rifleLikeMount == null)
+                    rifleLikeMount = weaponHolder.Find("RifleLikeMount");
+
+                if (handgunMount == null)
+                    handgunMount = weaponHolder.Find("HandgunMount");
+
+                if (fallbackMuzzle == null)
+                    fallbackMuzzle = weaponHolder.Find("MuzzlePoint");
+            }
         }
 
         private bool HasRequiredReferences()
@@ -218,7 +259,7 @@ namespace DeadZone.Actors
         {
             if (equipmentSlots == null || subscribedToEquipment)
                 return;
-            
+
             equipmentSlots.CurrentEquipped.OnValueChanged += OnCurrentEquippedChanged;
             equipmentSlots.Primary1Id.OnValueChanged += OnWeaponSlotIdChanged;
             equipmentSlots.Primary2Id.OnValueChanged += OnWeaponSlotIdChanged;

@@ -39,6 +39,10 @@ namespace DeadZone.Actors
         [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.3f;
         [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.2f;
 
+        [Header("Projectile Visual")]
+        [Tooltip("클라이언트에서 로컬로 재생하는 탄도 시각 효과의 최대 유지 시간입니다. 서버 판정 projectile 수명과는 별개입니다.")]
+        [SerializeField, Min(0.01f)] private float projectileVisualMaxLifetime = 0.35f;
+
         [Header("Weapon Visual")]
         [SerializeField] private bool autoEquipWeaponVisual = true;
         [SerializeField] private Transform weaponHolder;
@@ -49,6 +53,8 @@ namespace DeadZone.Actors
         [SerializeField] private Vector3 weaponVisualScale = Vector3.one;
 
         private EquipmentSlots equipment;
+        private PlayerAnimatorDriver animatorDriver;
+        private ReloadSystem reloadSystem;
         private Camera aimCamera;
         private float nextFireAllowed;
         private float currentSpreadAngle;
@@ -68,6 +74,8 @@ namespace DeadZone.Actors
         private void Awake()
         {
             equipment = GetComponent<EquipmentSlots>();
+            animatorDriver = GetComponent<PlayerAnimatorDriver>();
+            reloadSystem = GetComponent<ReloadSystem>();
             fallbackMuzzleTransform = muzzleTransform;
         }
 
@@ -87,6 +95,7 @@ namespace DeadZone.Actors
         public void TryFire()
         {
             if (!IsOwner) return;
+            if (IsReloading()) return;
             if (Time.time < nextFireAllowed) return;
 
             var weapon = equipment != null ? equipment.GetCurrentWeapon() : null;
@@ -103,6 +112,7 @@ namespace DeadZone.Actors
         public void TryFire(Vector2 mousePos)
         {
             if (!IsOwner) return;
+            if (IsReloading()) return;
             if (Time.time < nextFireAllowed) return;
 
             var weapon = equipment?.GetCurrentWeapon();
@@ -129,9 +139,18 @@ namespace DeadZone.Actors
         /// </summary>
         public void TryFullAutoFire(Vector2 mousePos)
         {
+            if (IsReloading()) return;
             if (!CurrentWeaponSupportsFull()) return;
 
             TryFire(mousePos);
+        }
+
+        private bool IsReloading()
+        {
+            if (reloadSystem == null)
+                reloadSystem = GetComponent<ReloadSystem>();
+
+            return reloadSystem != null && reloadSystem.IsReloading;
         }
 
         private bool CurrentWeaponSupportsFull()
@@ -223,6 +242,8 @@ namespace DeadZone.Actors
         private void FireServerRpc(Vector3 target, ulong tId, bool head, 
             FixedString64Bytes weaponId, ServerRpcParams rpc = default)
         {
+            if (IsReloading()) return;
+
             var weapon = equipment?.Lookup(weaponId.ToString()) as WeaponDataSO;
             var state = equipment?.CurrentWeaponState ?? default;
             var ammo = equipment?.CurrentAmmoData;
@@ -251,6 +272,9 @@ namespace DeadZone.Actors
             {
                 SpawnProjectile(pData, target, weapon, finalVelocity);
             }
+
+            // 서버에서 발사가 확정된 경우에만 모든 클라이언트에서 발사 애니메이션을 재생한다.
+            PlayWeaponFireAnimationClientRpc();
 
             // 5. 이벤트 발행
             PublishFireEvent(rpc.Receive.SenderClientId, weaponId, weapon);
@@ -330,26 +354,43 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// 계산된 발사 방향을 기준으로 실제 투사체 오브젝트를 생성하고 네트워크에 등록한다.
-        /// 일반 발사와 산탄 발사가 같은 생성 절차를 공유하기 위해 사용한다.
+        /// 계산된 발사 방향을 기준으로 서버 판정 투사체를 생성하고, 클라이언트에는 로컬 visual 재생을 요청한다.
         /// </summary>
         private void SpawnProjectileWithDirection(ProjectileData pData,
             WeaponDataSO w, Vector3 fireDir, float velocity)
         {
-            Vector3 spawnPos = muzzleTransform.position;
+            if (w == null || w.projectilePrefab == null)
+                return;
 
-            // 탄환 프리팹 생성 및 방향 설정
+            Vector3 spawnPos = muzzleTransform.position;
+            Vector3 normalizedFireDir = fireDir.sqrMagnitude > 0.0001f
+                ? fireDir.normalized
+                : transform.forward;
+
+            // 서버 권위 투사체: 충돌, 데미지, 사거리 판정은 기존 ProjectileController 흐름을 유지한다.
             GameObject bullet = Instantiate(w.projectilePrefab, spawnPos,
-                Quaternion.LookRotation(fireDir));
+                Quaternion.LookRotation(normalizedFireDir));
 
             var netObj = bullet.GetComponent<NetworkObject>();
-            netObj.Spawn(true);
+            if (netObj != null)
+            {
+                netObj.Spawn(true);
+            }
 
             // ProjectileController에 최종 계산된 velocity 주입
             if (bullet.TryGetComponent<ProjectileController>(out var pc))
             {
-                pc.Initialize(pData, fireDir, velocity);
+                pc.Initialize(pData, normalizedFireDir, velocity);
             }
+
+            // 원격 클라이언트용 시각 효과: 빠른 탄도 Trail은 Transform 동기화 대신 각 클라이언트에서 로컬 재생한다.
+            PlayProjectileVisualClientRpc(
+                w.itemID,
+                spawnPos,
+                normalizedFireDir,
+                velocity,
+                pData.Range,
+                projectileVisualMaxLifetime);
         }
 
         private Vector3 ApplySpread(Vector3 baseDir, WeaponDataSO weapon)
@@ -378,6 +419,90 @@ namespace DeadZone.Actors
 
             lastServerFireTime = Time.time;
             return spreadDir.normalized;
+        }
+
+        /// <summary>
+        /// 서버가 확정한 탄도 정보를 받아 각 클라이언트에서 로컬 bullet trail을 재생한다.
+        /// Host는 서버 투사체를 직접 보므로 중복 visual 생성을 생략한다.
+        /// </summary>
+        [ClientRpc]
+        private void PlayProjectileVisualClientRpc(
+            FixedString64Bytes weaponId,
+            Vector3 spawnPos,
+            Vector3 fireDir,
+            float velocity,
+            float range,
+            float maxLifetime)
+        {
+            if (IsServer)
+                return;
+
+            GameObject visualPrefab = ResolveProjectileVisualPrefab(weaponId);
+            if (visualPrefab == null)
+                return;
+
+            Vector3 normalizedFireDir = fireDir.sqrMagnitude > 0.0001f
+                ? fireDir.normalized
+                : transform.forward;
+
+            GameObject visual = Instantiate(
+                visualPrefab,
+                spawnPos,
+                Quaternion.LookRotation(normalizedFireDir));
+
+            PrepareLocalProjectileVisual(visual);
+
+            BulletTrailVisual trailVisual = visual.GetComponent<BulletTrailVisual>();
+            if (trailVisual == null)
+                trailVisual = visual.AddComponent<BulletTrailVisual>();
+
+            trailVisual.Initialize(
+                spawnPos,
+                normalizedFireDir,
+                velocity,
+                range,
+                maxLifetime);
+        }
+
+        /// <summary>
+        /// 서버에서 확정된 발사 액션을 모든 클라이언트의 해당 Player Animator에 반영한다.
+        /// Host도 발사 애니메이션을 봐야 하므로 서버 클라이언트에서 생략하지 않는다.
+        /// </summary>
+        [ClientRpc]
+        private void PlayWeaponFireAnimationClientRpc()
+        {
+            if (animatorDriver == null)
+                animatorDriver = GetComponent<PlayerAnimatorDriver>();
+
+            animatorDriver?.TriggerFireAnimation();
+        }
+
+        private GameObject ResolveProjectileVisualPrefab(FixedString64Bytes weaponId)
+        {
+            if (equipment == null)
+                equipment = GetComponent<EquipmentSlots>();
+
+            WeaponDataSO weapon = equipment?.Lookup(weaponId.ToString()) as WeaponDataSO;
+            return weapon != null ? weapon.projectilePrefab : null;
+        }
+
+        /// <summary>
+        /// 네트워크 판정용 prefab을 로컬 visual로 재사용할 때 판정/네트워크 컴포넌트가 동작하지 않도록 비활성화한다.
+        /// </summary>
+        private static void PrepareLocalProjectileVisual(GameObject visualRoot)
+        {
+            if (visualRoot == null)
+                return;
+
+            if (visualRoot.TryGetComponent<ProjectileController>(out var projectileController))
+                projectileController.enabled = false;
+
+            if (visualRoot.TryGetComponent<NetworkObject>(out var networkObject))
+                networkObject.enabled = false;
+
+            Collider[] colliders = visualRoot.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+                colliders[i].enabled = false;
         }
         
         private void PublishFireEvent(ulong clientId, FixedString64Bytes wId, WeaponDataSO weapon)

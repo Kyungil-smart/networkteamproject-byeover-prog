@@ -49,12 +49,14 @@ namespace DeadZone.Actors
         private bool pendingChangeGrade; // 이번 장전이 탄종 등급 변경 장전인지 나타낸다.
         private AmmoGrade pendingTargetGrade; // 탄종 등급 변경 장전일 때 목표 탄약 등급이다.
         private EquipmentSlots equipment;
+        private PlayerAnimatorDriver animatorDriver;
 
         public bool IsReloading => isReloading;
 
         private void Awake()
         {
             equipment = GetComponent<EquipmentSlots>();
+            animatorDriver = GetComponent<PlayerAnimatorDriver>();
         }
 
         public override void OnNetworkSpawn()
@@ -71,6 +73,8 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<AmmoGradeChangeRequestedEvent>(OnAmmoGradeChangeRequested);
 
             StopReloadRoutineIfNeeded();
+            animatorDriver?.SetReloadingAnimation(false);
+
             base.OnNetworkDespawn();
         }
 
@@ -106,7 +110,8 @@ namespace DeadZone.Actors
 
         /// <summary>
         /// 서버에서 장전 시작을 확정하고 장전 시간을 진행한다.
-        /// 중복 장전이면 취소 이벤트를 발행하고, 정상 요청이면 장전 상태를 켠 뒤 코루틴을 시작한다.
+        /// 중복 장전, 무기 없음, 탄창 가득 참은 시작 전에 차단하고,
+        /// 인벤토리 탄약 탐색과 탄창 반영은 기존처럼 GridInventory가 처리한다.
         /// </summary>
         [ServerRpc]
         private void RequestReloadServerRpc(
@@ -117,6 +122,12 @@ namespace DeadZone.Actors
             if (isReloading)
             {
                 PublishReloadCancelled(ReloadCancelReason.AlreadyReloading);
+                return;
+            }
+
+            if (!CanStartReloadRequest(changeGrade, out ReloadCancelReason failureReason))
+            {
+                PublishReloadCancelled(failureReason);
                 return;
             }
 
@@ -182,8 +193,45 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// isReloading 값을 변경하고 ReloadStateChangedEvent를 발행한다.
-        /// 장전 상태 변경 이벤트의 단일 출구로 사용해 UI, 입력 차단, 발사 차단이 같은 신호를 받게 한다.
+        /// 서버에서 장전을 시작해도 되는 최소 조건을 확인한다.
+        /// 탄약 보유 여부는 현재 GridInventory의 장전 실행 단계가 담당하므로 여기서 중복 탐색하지 않는다.
+        /// </summary>
+        private bool CanStartReloadRequest(bool changeGrade, out ReloadCancelReason failureReason)
+        {
+            failureReason = ReloadCancelReason.None;
+
+            if (equipment == null)
+                equipment = GetComponent<EquipmentSlots>();
+
+            if (equipment == null)
+            {
+                failureReason = ReloadCancelReason.Interrupted;
+                return false;
+            }
+
+            WeaponDataSO weapon = equipment.GetCurrentWeapon();
+            if (weapon == null)
+            {
+                failureReason = ReloadCancelReason.NoWeapon;
+                return false;
+            }
+
+            if (!changeGrade)
+            {
+                WeaponState weaponState = equipment.CurrentWeaponState;
+                if (weaponState.currentAmmo >= weapon.magSize)
+                {
+                    failureReason = ReloadCancelReason.FullMagazine;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// isReloading 값을 변경하고 ReloadStateChangedEvent와 Animator 동기화 ClientRpc를 발행한다.
+        /// 장전 상태 변경 이벤트의 단일 출구로 사용해 UI, 입력 차단, 발사 차단, 표시 애니메이션이 같은 신호를 받게 한다.
         /// </summary>
         private void SetReloading(bool value)
         {
@@ -199,6 +247,24 @@ namespace DeadZone.Actors
                 isReloading = value,
                 duration = value ? defaultReloadTime : 0f
             });
+
+            if (IsServer && IsSpawned)
+                SetReloadingAnimationClientRpc(value);
+        }
+
+        /// <summary>
+        /// 서버에서 확정한 재장전 표시 상태를 모든 클라이언트의 해당 Player Animator에 반영한다.
+        /// Host도 자신의 화면에서 애니메이션을 봐야 하므로 서버 클라이언트를 제외하지 않는다.
+        /// </summary>
+        [ClientRpc]
+        private void SetReloadingAnimationClientRpc(bool value)
+        {
+            isReloading = value;
+
+            if (animatorDriver == null)
+                animatorDriver = GetComponent<PlayerAnimatorDriver>();
+
+            animatorDriver?.SetReloadingAnimation(value);
         }
 
         /// <summary>
