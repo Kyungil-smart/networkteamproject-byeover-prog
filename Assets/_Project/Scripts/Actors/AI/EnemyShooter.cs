@@ -21,6 +21,10 @@ namespace DeadZone.Actors
         [Tooltip("적이 발사하는 탄환 프리팹입니다. 플레이어 탄환과 색상 및 이펙트를 분리합니다.")]
         [SerializeField] private GameObject enemyBulletPrefab;
 
+        [Header("적 탄도 시각 효과")]
+        [Tooltip("원격 클라이언트에서 로컬로 재생하는 적 탄도 시각 효과의 최대 유지 시간입니다. 서버 판정 투사체 수명과는 별개입니다.")]
+        [SerializeField, Min(0.01f)] private float projectileVisualMaxLifetime = 0.35f;
+
         [Header("적 전용 밸런스")]
         [Tooltip("플레이어를 감지한 뒤 첫 발을 쏘기 전 최소 대기 시간입니다.")]
         [SerializeField] private float minimumReactionTime = 1.5f;
@@ -178,7 +182,22 @@ namespace DeadZone.Actors
 
         private void FireProjectile(Vector3 direction, EnemyStatsSO so)
         {
-            GameObject bullet = Instantiate(enemyBulletPrefab, muzzle.position, Quaternion.LookRotation(direction));
+            if (enemyBulletPrefab == null || muzzle == null || so == null)
+            {
+                return;
+            }
+
+            Vector3 normalizedDirection = direction.sqrMagnitude > 0.0001f
+                ? direction.normalized
+                : transform.forward;
+
+            float effectiveRange = GetEffectiveRange(so);
+            Vector3 spawnPosition = muzzle.position;
+
+            GameObject bullet = Instantiate(
+                enemyBulletPrefab,
+                spawnPosition,
+                Quaternion.LookRotation(normalizedDirection));
 
             ProjectileData projectileData = new ProjectileData
             {
@@ -191,7 +210,7 @@ namespace DeadZone.Actors
                     : 0,
                 TargetNetId = 0,
                 WasHeadAim = false,
-                Range = GetEffectiveRange(so),
+                Range = effectiveRange,
             };
 
             NetworkObject netObj = bullet.GetComponent<NetworkObject>();
@@ -203,7 +222,95 @@ namespace DeadZone.Actors
             ProjectileController controller = bullet.GetComponent<ProjectileController>();
             if (controller != null)
             {
-                controller.Initialize(projectileData, direction, muzzleVelocity);
+                controller.Initialize(projectileData, normalizedDirection, muzzleVelocity);
+            }
+
+            if (IsSpawned)
+            {
+                PlayEnemyProjectileVisualClientRpc(
+                    spawnPosition,
+                    normalizedDirection,
+                    muzzleVelocity,
+                    effectiveRange,
+                    projectileVisualMaxLifetime);
+            }
+        }
+
+        /// <summary>
+        /// 서버가 확정한 적 탄도 정보를 받아 각 클라이언트에서 로컬 bullet trail을 재생합니다.
+        /// Host는 서버 투사체를 직접 보므로 중복 visual 생성을 생략합니다.
+        /// </summary>
+        [ClientRpc]
+        private void PlayEnemyProjectileVisualClientRpc(
+            Vector3 spawnPosition,
+            Vector3 fireDirection,
+            float visualVelocity,
+            float visualRange,
+            float visualLifetime)
+        {
+            if (IsServer)
+            {
+                return;
+            }
+
+            if (enemyBulletPrefab == null)
+            {
+                return;
+            }
+
+            Vector3 normalizedDirection = fireDirection.sqrMagnitude > 0.0001f
+                ? fireDirection.normalized
+                : transform.forward;
+
+            GameObject visual = Instantiate(
+                enemyBulletPrefab,
+                spawnPosition,
+                Quaternion.LookRotation(normalizedDirection));
+
+            PrepareLocalProjectileVisual(visual);
+
+            BulletTrailVisual trailVisual = visual.GetComponent<BulletTrailVisual>();
+            if (trailVisual == null)
+            {
+                trailVisual = visual.AddComponent<BulletTrailVisual>();
+            }
+
+            trailVisual.Initialize(
+                spawnPosition,
+                normalizedDirection,
+                visualVelocity,
+                visualRange,
+                visualLifetime);
+        }
+
+        /// <summary>
+        /// 네트워크 판정용 projectile prefab을 로컬 visual로 재사용할 때 판정/네트워크 컴포넌트가 동작하지 않도록 비활성화합니다.
+        /// </summary>
+        private static void PrepareLocalProjectileVisual(GameObject visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            ProjectileController[] projectileControllers =
+                visualRoot.GetComponentsInChildren<ProjectileController>(true);
+            for (int i = 0; i < projectileControllers.Length; i++)
+            {
+                projectileControllers[i].enabled = false;
+            }
+
+            NetworkObject[] networkObjects =
+                visualRoot.GetComponentsInChildren<NetworkObject>(true);
+            for (int i = 0; i < networkObjects.Length; i++)
+            {
+                networkObjects[i].enabled = false;
+            }
+
+            Collider[] colliders = visualRoot.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                colliders[i].enabled = false;
             }
         }
 
