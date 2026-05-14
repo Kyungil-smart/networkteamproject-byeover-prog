@@ -13,8 +13,5 @@ MonoBehaviour:
   m_Name: Trader_Doc
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.TraderDataSO
   traderName: Doc
-  stock:
-  - item: {fileID: 0}
-    basePrice: 0
-    requiredCommLevel: 0
+  stock: []
   sellMultiplier: 0.5
