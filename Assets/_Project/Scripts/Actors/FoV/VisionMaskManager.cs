@@ -6,14 +6,17 @@ using DeadZone.Core;
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// 공유 시야 마스크 렌더링에 필요한 FOVMesh 생명주기와 VisionMaskCamera 위치를 관리한다.
+    /// 공유 시야 마스크 렌더링과 시야 마스크를 사용하는 Renderer 등록 정보를 관리한다.
     /// 플레이어 루트는 이벤트로 수신하고, 각 플레이어 루트 하위에 FOVMesh 프리팹을 생성해 VisionMaskCamera의 RenderTexture에 찍히도록 한다.
     /// </summary>
-    public class VisionMaskController : MonoBehaviour
+    public class VisionMaskManager : MonoBehaviour
     {
         private static readonly int VisionMaskTextureId = Shader.PropertyToID("_VisionMaskTexture");
         private static readonly int VisionMaskWorldCenterId = Shader.PropertyToID("_VisionMaskWorldCenter");
         private static readonly int VisionMaskWorldSizeId = Shader.PropertyToID("_VisionMaskWorldSize");
+        private static readonly int UseVisionMaskVisibilityId = Shader.PropertyToID("_UseVisionMaskVisibility");
+        private static readonly int VisionMaskClipThresholdId = Shader.PropertyToID("_VisionMaskClipThreshold");
+        private static readonly int VisionMaskHiddenAlphaId = Shader.PropertyToID("_VisionMaskHiddenAlpha");
         private static readonly int DarknessAlphaId = Shader.PropertyToID("_DarknessAlpha");
 
         [Header("참조")]
@@ -58,6 +61,16 @@ namespace DeadZone.Actors
         [Tooltip("어둠 Plane이 적용할 최대 어둠 알파")]
         [SerializeField, Range(0f, 1f)] private float darknessAlpha = 0.75f;
 
+        [Header("VisionMask 대상 Renderer")]
+        [Tooltip("등록된 Renderer가 VisionMaskTexture를 기준으로 표시 여부를 판정하도록 활성화한다")]
+        [SerializeField] private bool enableVisionMaskVisibility = true;
+
+        [Tooltip("VisionMaskTexture 샘플 값이 이 값 이상일 때 시야 안으로 판정한다")]
+        [SerializeField, Range(0f, 1f)] private float visionMaskClipThreshold = 0.5f;
+
+        [Tooltip("시야 밖 Renderer를 완전히 숨기지 않고 남길 알파\n현재 Generic_Basic 그래프에서 연결되어 있을 때만 적용된다")]
+        [SerializeField, Range(0f, 1f)] private float visionMaskHiddenAlpha = 0f;
+
         [Header("렌더링")]
         [Tooltip("활성화 시 VisionMaskCamera의 RenderTexture, Clear, Orthographic 설정을 코드에서 맞춘다")]
         [SerializeField] private bool configureCameraAutomatically = true;
@@ -77,7 +90,9 @@ namespace DeadZone.Actors
         private Transform ownerPlayerRoot;
         private bool lastRenderManually;
         private MaterialPropertyBlock darknessPlanePropertyBlock;
+        private MaterialPropertyBlock visionMaskRendererPropertyBlock;
         private readonly Dictionary<Transform, FOVMesh> fovMeshesByPlayerRoot = new();
+        private readonly HashSet<Renderer> visionMaskRenderers = new();
 
         private void Awake()
         {
@@ -93,6 +108,8 @@ namespace DeadZone.Actors
             EventBus.Subscribe<PlayerRootUnregisteredEvent>(OnPlayerRootUnregistered);
             EventBus.Subscribe<OwnerPlayerRootRegisteredEvent>(OnOwnerPlayerRootRegistered);
             EventBus.Subscribe<OwnerPlayerRootUnregisteredEvent>(OnOwnerPlayerRootUnregistered);
+            EventBus.Subscribe<VisionMaskRenderersRegisteredEvent>(OnVisionMaskRenderersRegistered);
+            EventBus.Subscribe<VisionMaskRenderersUnregisteredEvent>(OnVisionMaskRenderersUnregistered);
 
             ConfigureVisionMaskRenderingBounds();
         }
@@ -103,7 +120,11 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<PlayerRootUnregisteredEvent>(OnPlayerRootUnregistered);
             EventBus.Unsubscribe<OwnerPlayerRootRegisteredEvent>(OnOwnerPlayerRootRegistered);
             EventBus.Unsubscribe<OwnerPlayerRootUnregisteredEvent>(OnOwnerPlayerRootUnregistered);
+            EventBus.Unsubscribe<VisionMaskRenderersRegisteredEvent>(OnVisionMaskRenderersRegistered);
+            EventBus.Unsubscribe<VisionMaskRenderersUnregisteredEvent>(OnVisionMaskRenderersUnregistered);
 
+            ClearVisionMaskRendererProperties();
+            visionMaskRenderers.Clear();
             ClearSpawnedFovMeshes();
         }
 
@@ -115,7 +136,7 @@ namespace DeadZone.Actors
             UpdateRenderModeIfChanged();
             UpdateVisionMaskCameraTransform();
             UpdateDarknessPlanePosition();
-            ApplyDynamicDarknessPlaneProperties();
+            ApplyDynamicVisionMaskGlobals();
             RenderVisionMaskIfNeeded();
         }
 
@@ -204,6 +225,64 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
+        /// 적 CharacterVisual, EnemyWeaponVisual처럼 시야 마스크에 의해 표시 여부가 제어될 Renderer들을 등록한다.
+        /// 등록 직후 Renderer별 MaterialPropertyBlock에 VisionMask 적용 스위치와 판정 값을 전달한다.
+        /// </summary>
+        private void OnVisionMaskRenderersRegistered(VisionMaskRenderersRegisteredEvent e)
+        {
+            RegisterVisionMaskRenderers(e.renderers);
+        }
+
+        /// <summary>
+        /// 비활성화되거나 제거된 시야 마스크 대상 Renderer들을 캐시에서 해제한다.
+        /// 등록 주체가 OnDisable에서 이벤트를 발행하므로, 여기서는 참조 제거만 담당한다.
+        /// </summary>
+        private void OnVisionMaskRenderersUnregistered(VisionMaskRenderersUnregisteredEvent e)
+        {
+            UnregisterVisionMaskRenderers(e.renderers);
+        }
+
+        /// <summary>
+        /// VisionMask 대상 Renderer 배열에서 유효한 Renderer만 캐시에 추가한다.
+        /// 동일 Renderer가 여러 등록 주체를 통해 들어와도 HashSet으로 중복 등록을 방지하고, 등록된 Renderer에는 즉시 MPB 값을 적용한다.
+        /// </summary>
+        private void RegisterVisionMaskRenderers(Renderer[] renderers)
+        {
+            if (renderers == null)
+                return;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer targetRenderer = renderers[i];
+                if (targetRenderer == null)
+                    continue;
+
+                visionMaskRenderers.Add(targetRenderer);
+                ApplyVisionMaskRendererProperties(targetRenderer);
+            }
+        }
+
+        /// <summary>
+        /// VisionMask 대상 Renderer 배열에서 유효한 Renderer만 캐시에서 제거한다.
+        /// 해제 시점에는 VisionMask 적용 스위치를 0으로 되돌려 일반 렌더링 상태로 복구한다.
+        /// </summary>
+        private void UnregisterVisionMaskRenderers(Renderer[] renderers)
+        {
+            if (renderers == null)
+                return;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer targetRenderer = renderers[i];
+                if (targetRenderer == null)
+                    continue;
+
+                ClearVisionMaskRendererProperties(targetRenderer);
+                visionMaskRenderers.Remove(targetRenderer);
+            }
+        }
+
+        /// <summary>
         /// VisionMaskCamera가 RenderTexture에 마스크를 기록할 수 있도록 기본 렌더 설정을 맞춘다.
         /// 카메라는 XZ 평면을 위에서 내려다보는 Orthographic 카메라로 사용한다.
         /// 매 프레임 변하지 않는 값만 다루므로 초기화, 활성화, 인스펙터 값 변경 시점에만 호출한다.
@@ -233,7 +312,10 @@ namespace DeadZone.Actors
             }
 
             SyncDarknessPlaneRenderingBounds();
+            ApplyStaticVisionMaskGlobals();
+            ApplyDynamicVisionMaskGlobals();
             ApplyStaticDarknessPlaneProperties();
+            ApplyVisionMaskRendererProperties();
         }
 
         /// <summary>
@@ -294,8 +376,34 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// 테스트용 어둠 Plane 셰이더에 필요한 정적 프로퍼티를 MaterialPropertyBlock으로 전달한다.
-        /// Texture, 마스크 월드 크기, 어둠 알파는 매 프레임 변하지 않으므로 렌더 범위 설정이 바뀔 때만 갱신한다.
+        /// VisionMaskTexture와 마스크 월드 크기를 전역 셰이더 프로퍼티로 전달한다.
+        /// FOVDarkness와 Generic_Basic이 같은 값을 읽어야 하므로 MaterialPropertyBlock이 아니라 Shader 전역 값으로 관리한다.
+        /// </summary>
+        private void ApplyStaticVisionMaskGlobals()
+        {
+            if (visionMaskTexture != null)
+                Shader.SetGlobalTexture(VisionMaskTextureId, visionMaskTexture);
+
+            // FOVDarkness는 X/Y를, Generic_Basic의 적 표시 판정은 X/Z를 사용한다.
+            // 두 셰이더가 같은 전역 프로퍼티를 안전하게 읽을 수 있도록 깊이 값을 Y와 Z 양쪽에 넣는다.
+            Shader.SetGlobalVector(VisionMaskWorldSizeId, new Vector4(maskWorldSize.x, maskWorldSize.y, maskWorldSize.y, 0f));
+        }
+
+        /// <summary>
+        /// VisionMaskCamera가 추적 대상을 따라 움직인 뒤 현재 마스크 중심 좌표를 전역 셰이더 프로퍼티로 전달한다.
+        /// 시야 판정 대상 Renderer와 어둠 Plane이 같은 중심 좌표를 기준으로 RenderTexture를 샘플링한다.
+        /// </summary>
+        private void ApplyDynamicVisionMaskGlobals()
+        {
+            if (visionMaskCamera == null)
+                return;
+
+            Shader.SetGlobalVector(VisionMaskWorldCenterId, visionMaskCamera.transform.position);
+        }
+
+        /// <summary>
+        /// 테스트용 어둠 Plane에만 필요한 어둠 알파를 MaterialPropertyBlock으로 전달한다.
+        /// VisionMaskTexture, 마스크 중심, 마스크 크기는 여러 셰이더가 공유하므로 전역 프로퍼티에서 관리한다.
         /// </summary>
         private void ApplyStaticDarknessPlaneProperties()
         {
@@ -304,29 +412,63 @@ namespace DeadZone.Actors
 
             darknessPlanePropertyBlock ??= new MaterialPropertyBlock();
             darknessPlaneRenderer.GetPropertyBlock(darknessPlanePropertyBlock);
-
-            if (visionMaskTexture != null)
-                darknessPlanePropertyBlock.SetTexture(VisionMaskTextureId, visionMaskTexture);
-
-            darknessPlanePropertyBlock.SetVector(VisionMaskWorldSizeId, new Vector4(maskWorldSize.x, maskWorldSize.y, 0f, 0f));
             darknessPlanePropertyBlock.SetFloat(DarknessAlphaId, darknessAlpha);
-
             darknessPlaneRenderer.SetPropertyBlock(darknessPlanePropertyBlock);
         }
 
         /// <summary>
-        /// 테스트용 어둠 Plane 셰이더에 매 프레임 변하는 마스크 중심 좌표만 전달한다.
-        /// VisionMaskCamera가 추적 대상을 따라 이동하므로 _VisionMaskWorldCenter만 프레임 단위로 갱신한다.
+        /// 현재 등록된 모든 Renderer에 VisionMask 적용 여부와 판정 기준을 MaterialPropertyBlock으로 전달한다.
+        /// Texture, 중심 좌표, 월드 크기는 전역 프로퍼티를 사용하고 Renderer별 스위치만 이곳에서 제어한다.
         /// </summary>
-        private void ApplyDynamicDarknessPlaneProperties()
+        private void ApplyVisionMaskRendererProperties()
         {
-            if (darknessPlaneRenderer == null || visionMaskCamera == null)
+            foreach (Renderer targetRenderer in visionMaskRenderers)
+            {
+                ApplyVisionMaskRendererProperties(targetRenderer);
+            }
+        }
+
+        /// <summary>
+        /// 등록된 Renderer 하나에 VisionMask 적용 여부와 판정 기준을 MaterialPropertyBlock으로 전달한다.
+        /// </summary>
+        private void ApplyVisionMaskRendererProperties(Renderer targetRenderer)
+        {
+            if (targetRenderer == null)
                 return;
 
-            darknessPlanePropertyBlock ??= new MaterialPropertyBlock();
-            darknessPlaneRenderer.GetPropertyBlock(darknessPlanePropertyBlock);
-            darknessPlanePropertyBlock.SetVector(VisionMaskWorldCenterId, visionMaskCamera.transform.position);
-            darknessPlaneRenderer.SetPropertyBlock(darknessPlanePropertyBlock);
+            visionMaskRendererPropertyBlock ??= new MaterialPropertyBlock();
+            targetRenderer.GetPropertyBlock(visionMaskRendererPropertyBlock);
+            visionMaskRendererPropertyBlock.SetFloat(UseVisionMaskVisibilityId, enableVisionMaskVisibility ? 1f : 0f);
+            visionMaskRendererPropertyBlock.SetFloat(VisionMaskClipThresholdId, visionMaskClipThreshold);
+            visionMaskRendererPropertyBlock.SetFloat(VisionMaskHiddenAlphaId, visionMaskHiddenAlpha);
+            targetRenderer.SetPropertyBlock(visionMaskRendererPropertyBlock);
+        }
+
+        /// <summary>
+        /// VisionMask 대상에서 빠지는 Renderer가 일반 렌더링 상태로 돌아가도록 Renderer별 적용 스위치를 해제한다.
+        /// 다른 MPB 값은 유지하고 VisionMask 관련 값만 비활성 상태로 덮는다.
+        /// </summary>
+        private void ClearVisionMaskRendererProperties(Renderer targetRenderer)
+        {
+            if (targetRenderer == null)
+                return;
+
+            visionMaskRendererPropertyBlock ??= new MaterialPropertyBlock();
+            targetRenderer.GetPropertyBlock(visionMaskRendererPropertyBlock);
+            visionMaskRendererPropertyBlock.SetFloat(UseVisionMaskVisibilityId, 0f);
+            targetRenderer.SetPropertyBlock(visionMaskRendererPropertyBlock);
+        }
+
+        /// <summary>
+        /// 매니저가 비활성화될 때 등록된 모든 Renderer의 VisionMask 적용 스위치를 해제한다.
+        /// 씬 전환이나 테스트 중 매니저만 꺼졌을 때 Renderer가 계속 숨김 상태로 남는 것을 막는다.
+        /// </summary>
+        private void ClearVisionMaskRendererProperties()
+        {
+            foreach (Renderer targetRenderer in visionMaskRenderers)
+            {
+                ClearVisionMaskRendererProperties(targetRenderer);
+            }
         }
 
         /// <summary>

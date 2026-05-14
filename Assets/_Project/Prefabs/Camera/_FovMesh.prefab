@@ -46,9 +46,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9d214303b2480849b8902f099c902b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.FOVMesh
-  viewDistance: 18
+  viewDistance: 30
   viewAngle: 90
-  minimumRange: 5
+  minimumRange: 3
   topHeight: 7
   bottomDepth: 3
   segments: 30

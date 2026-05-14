@@ -7,6 +7,7 @@ using Unity.Netcode;
 using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems;
+using DeadZone.Systems.Audio;
 using DeadZone.Systems.Save;
 
 namespace DeadZone.Actors.UI
@@ -23,6 +24,12 @@ namespace DeadZone.Actors.UI
         private const string BankruptcyConfirmRootName = "Popup_BankruptcyConfirm";
         private const string LogoutButtonName = "Btn_Logout";
         private const string ChangeAccountButtonName = "Btn_ChangeAccount";
+        private const string MasterVolumeRootName = "Master";
+        private const string BgmVolumeRootName = "BGM";
+        private const string SfxVolumeRootName = "SFX";
+        private const string MasterVolumeSliderName = "Slider_MasterVolume";
+        private const string BgmVolumeSliderName = "Slider_BgmVolume";
+        private const string SfxVolumeSliderName = "Slider_SfxVolume";
 
         [Header("설정 팝업")]
         [Tooltip("설정 팝업을 닫는 버튼입니다.")]
@@ -63,6 +70,16 @@ namespace DeadZone.Actors.UI
         [Tooltip("로그아웃 또는 계정 변경 시 진행 중인 Netcode 세션을 종료합니다.")]
         [SerializeField] private bool shutdownNetworkOnSignOut = true;
 
+        [Header("볼륨")]
+        [Tooltip("전체 음량 슬라이더입니다. 0은 무음, 1은 최대 볼륨입니다.")]
+        [SerializeField] private Slider masterVolumeSlider;
+
+        [Tooltip("배경음 슬라이더입니다. AudioGroup이 BGM인 사운드만 조절합니다.")]
+        [SerializeField] private Slider bgmVolumeSlider;
+
+        [Tooltip("효과음 슬라이더입니다. BGM을 제외한 게임 효과음과 UI 클릭음을 함께 조절합니다.")]
+        [SerializeField] private Slider sfxVolumeSlider;
+
         private bool isApplyingBankruptcy;
         private bool isAccountActionRunning;
 
@@ -74,18 +91,23 @@ namespace DeadZone.Actors.UI
         private void Awake()
         {
             ResolveReferences();
+            ApplySavedVolumesToAudioManager();
+            RefreshVolumeSlidersFromSavedValues();
             HideBankruptcyConfirmation();
         }
 
         private void OnEnable()
         {
             ResolveReferences();
+            RefreshVolumeSlidersFromSavedValues();
             BindButtons();
+            BindVolumeSliders();
         }
 
         private void OnDisable()
         {
             UnbindButtons();
+            UnbindVolumeSliders();
         }
 
         /// <summary>
@@ -96,7 +118,9 @@ namespace DeadZone.Actors.UI
             gameObject.SetActive(true);
             EnsurePopupScale();
             ResolveReferences();
+            RefreshVolumeSlidersFromSavedValues();
             BindButtons();
+            BindVolumeSliders();
         }
 
         /// <summary>
@@ -179,6 +203,39 @@ namespace DeadZone.Actors.UI
                 changeAccountButton.onClick.RemoveListener(HandleChangeAccountRequested);
         }
 
+        private void BindVolumeSliders()
+        {
+            if (masterVolumeSlider != null)
+            {
+                masterVolumeSlider.onValueChanged.RemoveListener(HandleMasterVolumeChanged);
+                masterVolumeSlider.onValueChanged.AddListener(HandleMasterVolumeChanged);
+            }
+
+            if (bgmVolumeSlider != null)
+            {
+                bgmVolumeSlider.onValueChanged.RemoveListener(HandleBgmVolumeChanged);
+                bgmVolumeSlider.onValueChanged.AddListener(HandleBgmVolumeChanged);
+            }
+
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeSlider.onValueChanged.RemoveListener(HandleSfxVolumeChanged);
+                sfxVolumeSlider.onValueChanged.AddListener(HandleSfxVolumeChanged);
+            }
+        }
+
+        private void UnbindVolumeSliders()
+        {
+            if (masterVolumeSlider != null)
+                masterVolumeSlider.onValueChanged.RemoveListener(HandleMasterVolumeChanged);
+
+            if (bgmVolumeSlider != null)
+                bgmVolumeSlider.onValueChanged.RemoveListener(HandleBgmVolumeChanged);
+
+            if (sfxVolumeSlider != null)
+                sfxVolumeSlider.onValueChanged.RemoveListener(HandleSfxVolumeChanged);
+        }
+
         private void ResolveReferences()
         {
             closeButton ??= FindButtonByName(CloseButtonName);
@@ -187,6 +244,7 @@ namespace DeadZone.Actors.UI
             bankruptcyCancelButton ??= FindButtonByName(BankruptcyCancelButtonName);
             logoutButton ??= FindButtonByName(LogoutButtonName);
             changeAccountButton ??= FindButtonByName(ChangeAccountButtonName);
+            ResolveVolumeSliders();
 
             if (bankruptcyConfirmRoot == null)
             {
@@ -203,10 +261,129 @@ namespace DeadZone.Actors.UI
             }
         }
 
+        private void ResolveVolumeSliders()
+        {
+            masterVolumeSlider ??= FindSliderByName(MasterVolumeSliderName);
+            bgmVolumeSlider ??= FindSliderByName(BgmVolumeSliderName);
+            sfxVolumeSlider ??= FindSliderByName(SfxVolumeSliderName);
+
+            masterVolumeSlider ??= FindSliderInChildRoot(MasterVolumeRootName);
+            bgmVolumeSlider ??= FindSliderInChildRoot(BgmVolumeRootName);
+            sfxVolumeSlider ??= FindSliderInChildRoot(SfxVolumeRootName);
+
+            ConfigureVolumeSlider(masterVolumeSlider);
+            ConfigureVolumeSlider(bgmVolumeSlider);
+            ConfigureVolumeSlider(sfxVolumeSlider);
+        }
+
         private Button FindButtonByName(string objectName)
         {
             Transform buttonTransform = FindChildByName(transform, objectName);
             return buttonTransform != null ? buttonTransform.GetComponent<Button>() : null;
+        }
+
+        private Slider FindSliderByName(string objectName)
+        {
+            Transform sliderTransform = FindChildByName(transform, objectName);
+            return sliderTransform != null ? sliderTransform.GetComponent<Slider>() : null;
+        }
+
+        private Slider FindSliderInChildRoot(string rootName)
+        {
+            Transform rootTransform = FindChildByName(transform, rootName);
+            return rootTransform != null ? rootTransform.GetComponentInChildren<Slider>(true) : null;
+        }
+
+        private static void ConfigureVolumeSlider(Slider slider)
+        {
+            if (slider == null)
+                return;
+
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.wholeNumbers = false;
+        }
+
+        private void RefreshVolumeSlidersFromSavedValues()
+        {
+            AudioManager audioManager = ResolveAudioManager();
+
+            SetSliderValueWithoutNotify(
+                masterVolumeSlider,
+                PlayerPrefs.GetFloat(AudioManager.MasterVolumePrefsKey, audioManager != null ? audioManager.MasterVolume : 1f));
+
+            SetSliderValueWithoutNotify(
+                bgmVolumeSlider,
+                PlayerPrefs.GetFloat(AudioManager.BgmVolumePrefsKey, audioManager != null ? audioManager.BgmVolume : 1f));
+
+            SetSliderValueWithoutNotify(
+                sfxVolumeSlider,
+                PlayerPrefs.GetFloat(AudioManager.SfxVolumePrefsKey, audioManager != null ? audioManager.SfxVolume : 1f));
+        }
+
+        private static void SetSliderValueWithoutNotify(Slider slider, float value)
+        {
+            if (slider == null)
+                return;
+
+            slider.SetValueWithoutNotify(Mathf.Clamp01(value));
+        }
+
+        private void ApplySavedVolumesToAudioManager()
+        {
+            AudioManager audioManager = ResolveAudioManager();
+            if (audioManager == null)
+                return;
+
+            audioManager.SetMasterVolume(PlayerPrefs.GetFloat(AudioManager.MasterVolumePrefsKey, audioManager.MasterVolume));
+            audioManager.SetBgmVolume(PlayerPrefs.GetFloat(AudioManager.BgmVolumePrefsKey, audioManager.BgmVolume));
+            audioManager.SetEffectVolume(PlayerPrefs.GetFloat(AudioManager.SfxVolumePrefsKey, audioManager.SfxVolume));
+        }
+
+        private void HandleMasterVolumeChanged(float value)
+        {
+            float clampedValue = Mathf.Clamp01(value);
+            PlayerPrefs.SetFloat(AudioManager.MasterVolumePrefsKey, clampedValue);
+            PlayerPrefs.Save();
+
+            AudioManager audioManager = ResolveAudioManager();
+            if (audioManager != null)
+                audioManager.SetMasterVolume(clampedValue);
+        }
+
+        private void HandleBgmVolumeChanged(float value)
+        {
+            float clampedValue = Mathf.Clamp01(value);
+            PlayerPrefs.SetFloat(AudioManager.BgmVolumePrefsKey, clampedValue);
+            PlayerPrefs.Save();
+
+            AudioManager audioManager = ResolveAudioManager();
+            if (audioManager != null)
+                audioManager.SetBgmVolume(clampedValue);
+        }
+
+        private void HandleSfxVolumeChanged(float value)
+        {
+            float clampedValue = Mathf.Clamp01(value);
+            PlayerPrefs.SetFloat(AudioManager.SfxVolumePrefsKey, clampedValue);
+            PlayerPrefs.Save();
+
+            AudioManager audioManager = ResolveAudioManager();
+            if (audioManager != null)
+                audioManager.SetEffectVolume(clampedValue);
+        }
+
+        private static AudioManager ResolveAudioManager()
+        {
+            AudioManager audioManager = AudioManager.Instance;
+            if (audioManager != null)
+                return audioManager;
+
+            audioManager = ServiceLocator.Get<AudioManager>();
+            if (audioManager != null)
+                return audioManager;
+
+            return Object.FindFirstObjectByType<AudioManager>(FindObjectsInactive.Include);
         }
 
         private void HandleBankruptcyRequested()
@@ -264,7 +441,7 @@ namespace DeadZone.Actors.UI
             HideBankruptcyConfirmation();
             LobbySaveService lobbySaveService = ResolveLobbySaveService();
             if (lobbySaveService != null)
-                lobbySaveService.LoadLobbyDataFromCloud();
+                lobbySaveService.LoadLobbyDataFromCloudAuthoritative();
             else
                 Debug.LogWarning("[SettingPopupUI] 파산신청은 완료됐지만 LobbySaveService를 찾지 못해 현재 로비 UI를 즉시 갱신하지 못했습니다.", this);
 
