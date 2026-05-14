@@ -548,6 +548,8 @@ namespace DeadZone.Actors
 
             EnsureItemDatabase();
             return itemDb?.GetById(itemId);
+        }
+
         public void RequestUseMedicalItem(string itemId)
         {
             if (string.IsNullOrWhiteSpace(itemId))
