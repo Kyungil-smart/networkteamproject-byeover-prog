@@ -383,6 +383,7 @@ namespace DeadZone.Actors
 
             isBeingRevived = true;
             this.reviverClientId = reviverClientId;
+            SetReviveMoveLockedClientRpc(true, BuildOwnerClientRpcParams());
         }
 
         public void OnReviveCancel()
@@ -392,6 +393,7 @@ namespace DeadZone.Actors
 
             isBeingRevived = false;
             reviverClientId = 0;
+            SetReviveMoveLockedClientRpc(false, BuildOwnerClientRpcParams());
         }
 
         public void OnReviveComplete(ulong reviverClientId)
@@ -414,6 +416,22 @@ namespace DeadZone.Actors
             State.Value = PlayerState.Alive;
 
             return true;
+        }
+
+        private ClientRpcParams BuildOwnerClientRpcParams()
+        {
+            return new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { OwnerClientId } }
+            };
+        }
+
+        [ClientRpc]
+        private void SetReviveMoveLockedClientRpc(bool locked, ClientRpcParams rpcParams = default)
+        {
+            FPSController fps = GetComponent<FPSController>();
+            if (fps != null)
+                fps.SetMoveLocked(locked);
         }
 
         public Vector3 GetCorpsePosition()
