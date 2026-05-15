@@ -484,6 +484,19 @@ namespace DeadZone.Actors
                 TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
         }
 
+        public bool TryMoveEquipmentSlotToInventoryOnServer(EquipmentTargetSlot targetSlot)
+        {
+            return TryMoveEquipmentSlotToInventoryOnServer(targetSlot, byte.MaxValue, byte.MaxValue);
+        }
+
+        public bool TryMoveEquipmentSlotToInventoryOnServer(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
+        {
+            if (!IsServer || targetSlot == EquipmentTargetSlot.None)
+                return false;
+
+            return TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
+        }
+
         public void RequestMoveInventorySlotToEquipment(byte gridX, byte gridY, EquipmentTargetSlot targetSlot)
         {
             if (targetSlot == EquipmentTargetSlot.None)
