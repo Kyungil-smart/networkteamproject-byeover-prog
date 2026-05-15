@@ -711,7 +711,7 @@ namespace DeadZone.Actors
             if (!IsServer || !TryGetQuickSlot(quickSlotIndex, out QuickSlotData quickSlot))
                 return false;
 
-            return TryUseMedicalItem(quickSlot.itemId.ToString());
+            return TryUseMedicalItem(quickSlot.itemId.ToString(), true, quickSlotIndex);
         }
 
         private bool TryMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
@@ -1243,6 +1243,31 @@ namespace DeadZone.Actors
             return false;
         }
 
+        private bool TryConsumeQuickSlotItem(byte quickSlotIndex, string itemId, int count)
+        {
+            if (!IsServer || QuickSlots == null || string.IsNullOrWhiteSpace(itemId) || count <= 0)
+                return false;
+
+            for (int i = 0; i < QuickSlots.Count; i++)
+            {
+                QuickSlotData slot = QuickSlots[i];
+                if (slot.slotIndex != quickSlotIndex || slot.itemId.ToString() != itemId || slot.stackCount < count)
+                    continue;
+
+                if (slot.stackCount == count)
+                    QuickSlots.RemoveAt(i);
+                else
+                {
+                    slot.stackCount -= (ushort)count;
+                    QuickSlots[i] = slot;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
         private static ItemSlotData ToItemSlotData(QuickSlotData quickSlot)
         {
             return new ItemSlotData
@@ -1316,6 +1341,11 @@ namespace DeadZone.Actors
 
         private bool TryUseMedicalItem(string itemId)
         {
+            return TryUseMedicalItem(itemId, false, byte.MaxValue);
+        }
+
+        private bool TryUseMedicalItem(string itemId, bool consumeQuickSlotFirst, byte quickSlotIndex)
+        {
             if (!IsServer || string.IsNullOrWhiteSpace(itemId))
                 return false;
 
@@ -1343,30 +1373,55 @@ namespace DeadZone.Actors
             bool hasInventoryItem = HasItem(itemId, 1) ||
                                     (!string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
                                      HasItem(itemData.itemID, 1));
-            bool hasQuickSlotItem = HasQuickSlotItem(itemId, 1) ||
-                                    (!string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
-                                     HasQuickSlotItem(itemData.itemID, 1));
+            bool hasQuickSlotItem = consumeQuickSlotFirst
+                ? TryGetQuickSlot(quickSlotIndex, out QuickSlotData quickSlot) &&
+                  (quickSlot.itemId.ToString() == itemId ||
+                   !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
+                   quickSlot.itemId.ToString() == itemData.itemID)
+                : HasQuickSlotItem(itemId, 1) ||
+                  (!string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
+                   HasQuickSlotItem(itemData.itemID, 1));
 
-            if (!hasInventoryItem && !hasQuickSlotItem)
+            if (consumeQuickSlotFirst && !hasQuickSlotItem)
+            {
+                Debug.LogWarning($"[GridInventory] 사용할 의료 아이템이 퀵슬롯에 없습니다. itemId={itemData.itemID}, quickSlot={quickSlotIndex}", this);
+                return false;
+            }
+
+            if (!consumeQuickSlotFirst && !hasInventoryItem && !hasQuickSlotItem)
             {
                 Debug.LogWarning($"[GridInventory] 사용할 의료 아이템이 인벤토리에 없습니다. itemId={itemData.itemID}", this);
                 return false;
             }
 
-            bool consumed = ConsumeItem(itemId, 1);
-            if (!consumed &&
-                !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
+            bool consumed = false;
+            if (consumeQuickSlotFirst)
             {
-                consumed = ConsumeItem(itemData.itemID, 1);
+                consumed = TryConsumeQuickSlotItem(quickSlotIndex, itemId, 1);
+                if (!consumed &&
+                    !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
+                {
+                    consumed = TryConsumeQuickSlotItem(quickSlotIndex, itemData.itemID, 1);
+                }
             }
 
-            if (!consumed)
-                consumed = TryConsumeQuickSlotItem(itemId, 1);
-
-            if (!consumed &&
-                !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
+            if (!consumed && !consumeQuickSlotFirst)
             {
-                consumed = TryConsumeQuickSlotItem(itemData.itemID, 1);
+                consumed = ConsumeItem(itemId, 1);
+                if (!consumed &&
+                    !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
+                {
+                    consumed = ConsumeItem(itemData.itemID, 1);
+                }
+
+                if (!consumed)
+                    consumed = TryConsumeQuickSlotItem(itemId, 1);
+
+                if (!consumed &&
+                    !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
+                {
+                    consumed = TryConsumeQuickSlotItem(itemData.itemID, 1);
+                }
             }
 
             if (!consumed)
