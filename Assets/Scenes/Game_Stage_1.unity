@@ -4567,9 +4567,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 396228421
+  GlobalObjectIdHash: 2100626232
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4592,12 +4592,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d22a6d19ba5bd9a4d8f614a0e039bd61, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ExtractionZone
+  ShowTopMostFoldoutHeaderGroup: 1
   extractionId: Truck
   extractionTime: 10
   requireAllExpectedPlayersInZone: 1
-  raidClearCoordinator: {fileID: 0}
+  raidClearCoordinator: {fileID: 439961240}
+  extractionUI: {fileID: 1496990079}
 --- !u!114 &404479194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18963,6 +18965,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
+--- !u!114 &1496990079 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2012466973609075537, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
+  m_PrefabInstance: {fileID: 1496990078}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62285c3c675cb0f4eb9f56687b890316, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ExtractionUI
 --- !u!1001 &1498334101
 PrefabInstance:
   m_ObjectHideFlags: 0

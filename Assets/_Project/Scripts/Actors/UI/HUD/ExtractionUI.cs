@@ -42,11 +42,13 @@ namespace DeadZone.Actors
 
         [TitleGroup("Debug")]
         [ShowInInspector, ReadOnly] private bool promptActive;
+        [ShowInInspector, ReadOnly] private float currentElapsed;
+        [ShowInInspector, ReadOnly] private float currentDuration;
 
         private void Awake()
         {
-            EnsureConfirmationButtons();
-            SetPanelVisible(false);
+            ResetUI();
+            Hide();
         }
 
         private void OnEnable()
@@ -85,6 +87,7 @@ namespace DeadZone.Actors
                 progressFill.fillAmount = 1f;
 
             SetConfirmationButtonsVisible(true);
+            Show(e.extractionId.ToString(), e.countdownSeconds);
             UIFeedbackTester.Play(onStartFeedback, this, "탈출 확인");
         }
 
@@ -94,8 +97,7 @@ namespace DeadZone.Actors
                 return;
 
             Debug.Log($"[ExtractionUI] Extraction confirmed id={e.extractionId}", this);
-            promptActive = false;
-            SetPanelVisible(false);
+            Hide();
             UIFeedbackTester.Play(onCompletedFeedback, this, "탈출 완료");
         }
 
@@ -105,8 +107,64 @@ namespace DeadZone.Actors
                 return;
 
             Debug.Log($"[ExtractionUI] Extraction canceled id={e.extractionId}", this);
+            Hide();
+        }
+
+        public void Show(string extractionName, float duration)
+        {
+            promptActive = true;
+            currentElapsed = 0f;
+            currentDuration = Mathf.Max(0f, duration);
+            SetPanelVisible(true);
+            EnsureProgressFillMode();
+
+            if (extractionNameText != null)
+                extractionNameText.text = extractionName;
+
+            UpdateProgress(0f, currentDuration);
+        }
+
+        public void UpdateProgress(float elapsed, float duration)
+        {
+            currentElapsed = Mathf.Max(0f, elapsed);
+            currentDuration = Mathf.Max(0f, duration);
+
+            float progress = currentDuration > 0f ? Mathf.Clamp01(currentElapsed / currentDuration) : 0f;
+            float remaining = Mathf.Max(0f, currentDuration - currentElapsed);
+
+            if (countdownText != null)
+                countdownText.text = remaining.ToString("0.0");
+
+            if (progressFill != null)
+                progressFill.fillAmount = progress;
+        }
+
+        public void Hide()
+        {
             promptActive = false;
             SetPanelVisible(false);
+            ResetUI();
+        }
+
+        public void ResetUI()
+        {
+            currentElapsed = 0f;
+            currentDuration = 0f;
+
+            if (countdownText != null)
+                countdownText.text = string.Empty;
+
+            if (progressFill != null)
+                progressFill.fillAmount = 0f;
+        }
+
+        private void EnsureProgressFillMode()
+        {
+            if (progressFill == null)
+                return;
+
+            if (progressFill.type != Image.Type.Filled)
+                progressFill.type = Image.Type.Filled;
         }
 
         private static bool IsLocalClientEvent(ulong clientId)
@@ -158,11 +216,13 @@ namespace DeadZone.Actors
 
         private void SetConfirmationButtonsVisible(bool visible)
         {
+            bool hasConfirmButtons = confirmYesButton != null && confirmNoButton != null;
+
             if (confirmYesButton != null)
-                confirmYesButton.gameObject.SetActive(visible);
+                confirmYesButton.gameObject.SetActive(visible && hasConfirmButtons);
 
             if (confirmNoButton != null)
-                confirmNoButton.gameObject.SetActive(visible);
+                confirmNoButton.gameObject.SetActive(visible && hasConfirmButtons);
         }
 
         private void EnsureConfirmationButtons()

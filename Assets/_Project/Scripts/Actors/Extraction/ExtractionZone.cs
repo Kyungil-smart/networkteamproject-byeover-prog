@@ -15,15 +15,33 @@ namespace DeadZone.Actors
     [RequireComponent(typeof(NetworkObject))]
     public class ExtractionZone : NetworkBehaviour, IInteractable
     {
+        private const float FixedExtractionTime = 5f;
+
         [SerializeField] private string extractionId = "Truck";
+        [SerializeField] private float extractionTime = FixedExtractionTime;
         [SerializeField] private bool requireAllExpectedPlayersInZone = true;
         [SerializeField] private RaidClearCoordinator raidClearCoordinator;
+        [SerializeField] private ExtractionUI extractionUI;
 
         private static ExtractionZone activeLocalPromptZone;
 
         private readonly HashSet<ulong> clientsInZone = new();
         private readonly HashSet<ulong> pendingExtractionClientIds = new();
         private readonly List<ulong> expectedClientBuffer = new();
+        private float extractionElapsed;
+        private bool localExtractionUiActive;
+        private float localExtractionElapsed;
+        private float localExtractionDuration;
+
+        private void Awake()
+        {
+            extractionTime = FixedExtractionTime;
+        }
+
+        private void OnValidate()
+        {
+            extractionTime = FixedExtractionTime;
+        }
 
         private void Reset()
         {
@@ -37,7 +55,9 @@ namespace DeadZone.Actors
             var netObj = other.GetComponentInParent<NetworkObject>();
             if (netObj == null || !netObj.IsPlayerObject) return;
 
-            clientsInZone.Add(netObj.OwnerClientId);
+            ulong clientId = netObj.OwnerClientId;
+            clientsInZone.Add(clientId);
+            TryOpenExtractionPrompt(clientId);
         }
 
         private void OnTriggerExit(Collider other)
@@ -49,6 +69,24 @@ namespace DeadZone.Actors
             ulong clientId = netObj.OwnerClientId;
             clientsInZone.Remove(clientId);
             CancelExtractionForParty();
+        }
+
+        private void Update()
+        {
+            UpdateLocalExtractionUI();
+
+            if (!IsServer || pendingExtractionClientIds.Count == 0)
+                return;
+
+            if (!ArePendingClientsInZone())
+            {
+                CancelExtractionForParty();
+                return;
+            }
+
+            extractionElapsed += Time.deltaTime;
+            if (extractionElapsed >= extractionTime)
+                TryCompleteFirstPendingExtraction();
         }
 
         public void OnInteract(ulong clientId)
@@ -164,9 +202,14 @@ namespace DeadZone.Actors
             if (pendingExtractionClientIds.Contains(clientId))
                 return true;
 
+            if (pendingExtractionClientIds.Count > 0)
+                return false;
+
             if (!TryGetExtractionParticipants(clientId, expectedClientBuffer))
                 return false;
 
+            extractionElapsed = 0f;
+            Debug.Log($"[ExtractionZone] Extraction countdown started. extractionId={extractionId}, participants={expectedClientBuffer.Count}", this);
             for (int i = 0; i < expectedClientBuffer.Count; i++)
             {
                 ulong participantId = expectedClientBuffer[i];
@@ -175,12 +218,21 @@ namespace DeadZone.Actors
                 {
                     clientId = participantId,
                     extractionId = extractionId,
-                    countdownSeconds = 0f,
+                    countdownSeconds = extractionTime,
                 });
-                PublishExtractionStartedClientRpc(participantId, new FixedString64Bytes(extractionId));
-            }
+                PublishExtractionStartedClientRpc(
+                    participantId,
+                    new FixedString64Bytes(extractionId),
+                    extractionTime,
+                    BuildTargetClientRpcParams(participantId));
 
-            activeLocalPromptZone = this;
+                if (IsLocalClient(participantId))
+                {
+                    activeLocalPromptZone = this;
+                    ShowLocalExtractionUI(extractionId, extractionTime);
+                    SetLocalExtractionMoveLocked(true);
+                }
+            }
             return true;
         }
 
@@ -197,7 +249,7 @@ namespace DeadZone.Actors
             GameSessionManager gameSessionManager = Core.ServiceLocator.Get<GameSessionManager>();
             gameSessionManager?.GetExpectedClientIdOrder(participants);
 
-            if (participants.Count == 0)
+            if (participants.Count == 0 && IsClientLiving(requestingClientId))
                 participants.Add(requestingClientId);
 
             for (int i = participants.Count - 1; i >= 0; i--)
@@ -205,11 +257,20 @@ namespace DeadZone.Actors
                 ulong clientId = participants[i];
                 NetworkManager networkManager = NetworkManager.Singleton;
                 if (networkManager != null && !networkManager.ConnectedClients.ContainsKey(clientId))
+                {
+                    participants.RemoveAt(i);
+                    continue;
+                }
+
+                if (!IsClientLiving(clientId))
                     participants.RemoveAt(i);
             }
 
-            if (participants.Count == 0)
+            if (participants.Count == 0 && IsClientLiving(requestingClientId))
                 participants.Add(requestingClientId);
+
+            if (participants.Count == 0)
+                return false;
 
             for (int i = 0; i < participants.Count; i++)
             {
@@ -225,6 +286,37 @@ namespace DeadZone.Actors
             return true;
         }
 
+        private static bool IsClientLiving(ulong clientId)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null ||
+                !networkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient client) ||
+                client.PlayerObject == null)
+                return true;
+
+            PlayerHealthSystem health = client.PlayerObject.GetComponent<PlayerHealthSystem>();
+            return health == null || !health.IsDead;
+        }
+
+        private bool ArePendingClientsInZone()
+        {
+            foreach (ulong clientId in pendingExtractionClientIds)
+            {
+                if (!clientsInZone.Contains(clientId))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool TryCompleteFirstPendingExtraction()
+        {
+            foreach (ulong clientId in pendingExtractionClientIds)
+                return TryCompleteExtraction(clientId);
+
+            return false;
+        }
+
         private bool TryCompleteExtraction(ulong clientId)
         {
             if (!IsServer || !pendingExtractionClientIds.Contains(clientId))
@@ -238,6 +330,7 @@ namespace DeadZone.Actors
 
             var completedClientIds = new List<ulong>(pendingExtractionClientIds);
             pendingExtractionClientIds.Clear();
+            extractionElapsed = 0f;
 
             for (int i = 0; i < completedClientIds.Count; i++)
             {
@@ -247,7 +340,16 @@ namespace DeadZone.Actors
                     clientId = completedClientId,
                     extractionId = extractionId,
                 });
-                PublishExtractionCompletedClientRpc(completedClientId, new FixedString64Bytes(extractionId));
+                PublishExtractionCompletedClientRpc(
+                    completedClientId,
+                    new FixedString64Bytes(extractionId),
+                    BuildTargetClientRpcParams(completedClientId));
+
+                if (IsLocalClient(completedClientId))
+                {
+                    HideLocalExtractionUI();
+                    SetLocalExtractionMoveLocked(false);
+                }
             }
 
             activeLocalPromptZone = null;
@@ -266,7 +368,16 @@ namespace DeadZone.Actors
                 clientId = clientId,
                 extractionId = extractionId,
             });
-            PublishExtractionCanceledClientRpc(clientId, new FixedString64Bytes(extractionId));
+            PublishExtractionCanceledClientRpc(
+                clientId,
+                new FixedString64Bytes(extractionId),
+                BuildTargetClientRpcParams(clientId));
+
+            if (IsLocalClient(clientId))
+            {
+                HideLocalExtractionUI();
+                SetLocalExtractionMoveLocked(false);
+            }
         }
 
         private void CancelExtractionForParty()
@@ -276,6 +387,7 @@ namespace DeadZone.Actors
 
             var clientIds = new List<ulong>(pendingExtractionClientIds);
             pendingExtractionClientIds.Clear();
+            extractionElapsed = 0f;
             for (int i = 0; i < clientIds.Count; i++)
                 PublishExtractionCanceled(clientIds[i]);
 
@@ -291,49 +403,144 @@ namespace DeadZone.Actors
                    raidClearCoordinator.TryRequestPartyClear(clientId);
         }
 
+        private static bool IsLocalClient(ulong clientId)
+        {
+            return NetworkManager.Singleton != null &&
+                   clientId == NetworkManager.Singleton.LocalClientId;
+        }
+
+        private static ClientRpcParams BuildTargetClientRpcParams(ulong clientId)
+        {
+            return new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new[] { clientId }
+                }
+            };
+        }
+
+        private void ShowLocalExtractionUI(string id, float duration)
+        {
+            localExtractionUiActive = true;
+            localExtractionElapsed = 0f;
+            localExtractionDuration = Mathf.Max(0f, duration);
+
+            ExtractionUI ui = GetLocalExtractionUI();
+            if (ui == null)
+            {
+                Debug.LogWarning($"[ExtractionZone] ExtractionUI not found. extractionId={id}", this);
+                return;
+            }
+
+            if (!ui.gameObject.activeSelf)
+                ui.gameObject.SetActive(true);
+
+            Debug.Log($"[ExtractionZone] Show ExtractionUI. extractionId={id}, duration={duration}", ui);
+            ui.Show(id, localExtractionDuration);
+        }
+
+        private void UpdateLocalExtractionUI()
+        {
+            if (!localExtractionUiActive || localExtractionDuration <= 0f)
+                return;
+
+            localExtractionElapsed += Time.deltaTime;
+
+            ExtractionUI ui = GetLocalExtractionUI();
+            if (ui != null)
+                ui.UpdateProgress(localExtractionElapsed, localExtractionDuration);
+        }
+
+        private void HideLocalExtractionUI()
+        {
+            localExtractionUiActive = false;
+            localExtractionElapsed = 0f;
+            localExtractionDuration = 0f;
+
+            ExtractionUI ui = GetLocalExtractionUI();
+            if (ui != null)
+                ui.Hide();
+        }
+
+        private ExtractionUI GetLocalExtractionUI()
+        {
+            if (extractionUI == null)
+                extractionUI = FindFirstObjectByType<ExtractionUI>(FindObjectsInactive.Include);
+
+            return extractionUI;
+        }
+
+        private static void SetLocalExtractionMoveLocked(bool locked)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            NetworkObject playerObject = networkManager != null &&
+                                         networkManager.LocalClient != null
+                ? networkManager.LocalClient.PlayerObject
+                : null;
+
+            FPSController fps = playerObject != null
+                ? playerObject.GetComponent<FPSController>()
+                : null;
+
+            if (fps != null)
+                fps.SetMoveLocked(locked);
+        }
+
         [ClientRpc]
         private void PublishExtractionStartedClientRpc(
             ulong clientId,
-            FixedString64Bytes id)
+            FixedString64Bytes id,
+            float duration,
+            ClientRpcParams clientRpcParams = default)
         {
-            if (IsServer)
-                return;
-
             activeLocalPromptZone = this;
+
             EventBus.Publish(new ExtractionStartedEvent
             {
                 clientId = clientId,
                 extractionId = id.ToString(),
-                countdownSeconds = 0f,
+                countdownSeconds = duration,
             });
+
+            ShowLocalExtractionUI(id.ToString(), duration);
+            SetLocalExtractionMoveLocked(true);
         }
 
         [ClientRpc]
-        private void PublishExtractionCompletedClientRpc(ulong clientId, FixedString64Bytes id)
+        private void PublishExtractionCompletedClientRpc(
+            ulong clientId,
+            FixedString64Bytes id,
+            ClientRpcParams clientRpcParams = default)
         {
-            if (IsServer)
-                return;
-
             activeLocalPromptZone = null;
+
             EventBus.Publish(new ExtractionCompletedEvent
             {
                 clientId = clientId,
                 extractionId = id.ToString(),
             });
+
+            HideLocalExtractionUI();
+            SetLocalExtractionMoveLocked(false);
         }
 
         [ClientRpc]
-        private void PublishExtractionCanceledClientRpc(ulong clientId, FixedString64Bytes id)
+        private void PublishExtractionCanceledClientRpc(
+            ulong clientId,
+            FixedString64Bytes id,
+            ClientRpcParams clientRpcParams = default)
         {
-            if (IsServer)
-                return;
-
             activeLocalPromptZone = null;
+
             EventBus.Publish(new ExtractionCanceledEvent
             {
                 clientId = clientId,
                 extractionId = id.ToString(),
             });
+
+            HideLocalExtractionUI();
+            SetLocalExtractionMoveLocked(false);
         }
     }
 }
