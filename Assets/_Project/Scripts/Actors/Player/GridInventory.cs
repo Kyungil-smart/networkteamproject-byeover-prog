@@ -373,19 +373,23 @@ namespace DeadZone.Actors
                 if (slot.stackCount <= remaining)
                 {
                     remaining -= slot.stackCount;
+                    FixedString64Bytes removedItemId = slot.itemId;
                     ServerGrid.RemoveAt(i);
 
                     EventBus.Publish(new ItemRemovedEvent
                     {
                         clientId = OwnerClientId,
-                        itemId = slot.itemId
+                        itemId = removedItemId
                     });
+
+                    ReconcileQuickSlotsForItem(removedItemId.ToString());
                 }
                 else
                 {
                     slot.stackCount -= (ushort)remaining;
                     ServerGrid[i] = slot;
                     remaining = 0;
+                    ReconcileQuickSlotsForItem(itemId);
                 }
             }
 
@@ -644,7 +648,7 @@ namespace DeadZone.Actors
             if (equipment == null)
                 return false;
 
-            if (!TryGetSlotAt(gridX, gridY, out ItemSlotData sourceSlot))
+            if (!TryGetSlotIndexAt(gridX, gridY, out int sourceIndex, out ItemSlotData sourceSlot))
                 return false;
 
             ItemDataSO sourceItem = ResolveItem(sourceSlot.itemId.ToString());
@@ -653,6 +657,15 @@ namespace DeadZone.Actors
 
             bool hasEquippedItem = TryBuildEquipmentInventorySlot(targetSlot, ResolveItem(GetEquipmentItemIdOrEmpty(targetSlot)), out ItemSlotData equippedSlot);
             ItemDataSO equippedItem = hasEquippedItem ? ResolveItem(equippedSlot.itemId.ToString()) : null;
+
+            if (hasEquippedItem &&
+                !CanPlaceAt(BuildGridSnapshotWithout(sourceIndex), gridX, gridY, equippedItem.gridSize, false))
+            {
+                Debug.LogWarning(
+                    $"[GridInventory] Cannot equip item because the replaced equipment cannot return to the source inventory slot. source={sourceItem.itemID}, replaced={equippedItem.itemID}, slot={targetSlot}",
+                    this);
+                return false;
+            }
 
             if (!TryRemoveSlotAt(gridX, gridY, out _))
                 return false;
@@ -719,10 +732,13 @@ namespace DeadZone.Actors
             if (!CanPlaceAt(simulatedSlots, targetGridX, targetGridY, sourceItem.gridSize, false))
                 return false;
 
+            byte sourceGridX = sourceSlot.gridX;
+            byte sourceGridY = sourceSlot.gridY;
             sourceSlot.gridX = targetGridX;
             sourceSlot.gridY = targetGridY;
             sourceSlot.rotated = false;
             ServerGrid[sourceIndex] = sourceSlot;
+            PublishInventorySlotMoved(sourceSlot.itemId, sourceGridX, sourceGridY, targetGridX, targetGridY);
             return true;
         }
 
@@ -757,9 +773,16 @@ namespace DeadZone.Actors
             ServerGrid[targetIndex] = targetSlot;
 
             if (sourceSlot.stackCount <= 0)
+            {
+                FixedString64Bytes removedItemId = sourceSlot.itemId;
                 ServerGrid.RemoveAt(sourceIndex);
+                ReconcileQuickSlotsForItem(removedItemId.ToString());
+            }
             else
+            {
                 ServerGrid[sourceIndex] = sourceSlot;
+                ReconcileQuickSlotsForItem(sourceSlot.itemId.ToString());
+            }
 
             return true;
         }
@@ -794,6 +817,8 @@ namespace DeadZone.Actors
 
             ServerGrid[sourceIndex] = sourceSlot;
             ServerGrid[targetIndex] = targetSlot;
+            PublishInventorySlotMoved(sourceSlot.itemId, sourceX, sourceY, targetX, targetY);
+            PublishInventorySlotMoved(targetSlot.itemId, targetX, targetY, sourceX, sourceY);
             return true;
         }
 
@@ -1053,13 +1078,16 @@ namespace DeadZone.Actors
                     continue;
 
                 removedSlot = slot;
+                FixedString64Bytes removedItemId = slot.itemId;
                 ServerGrid.RemoveAt(i);
 
                 EventBus.Publish(new ItemRemovedEvent
                 {
                     clientId = OwnerClientId,
-                    itemId = slot.itemId
+                    itemId = removedItemId
                 });
+
+                ReconcileQuickSlotsForItem(removedItemId.ToString());
 
                 return true;
             }
@@ -1383,16 +1411,20 @@ namespace DeadZone.Actors
             if (!IsServer || QuickSlots == null || quickSlot.slotIndex >= QUICK_SLOT_COUNT)
                 return;
 
+            FixedString64Bytes previousItemId = default;
             for (int i = 0; i < QuickSlots.Count; i++)
             {
                 if (QuickSlots[i].slotIndex != quickSlot.slotIndex)
                     continue;
 
+                previousItemId = QuickSlots[i].itemId;
                 QuickSlots[i] = quickSlot;
+                PublishQuickSlotChanged(quickSlot.slotIndex, previousItemId, quickSlot.itemId, quickSlot.stackCount);
                 return;
             }
 
             QuickSlots.Add(quickSlot);
+            PublishQuickSlotChanged(quickSlot.slotIndex, previousItemId, quickSlot.itemId, quickSlot.stackCount);
         }
 
         private void ClearQuickSlot(byte quickSlotIndex)
@@ -1403,8 +1435,75 @@ namespace DeadZone.Actors
             for (int i = QuickSlots.Count - 1; i >= 0; i--)
             {
                 if (QuickSlots[i].slotIndex == quickSlotIndex)
+                {
+                    FixedString64Bytes previousItemId = QuickSlots[i].itemId;
                     QuickSlots.RemoveAt(i);
+                    PublishQuickSlotChanged(quickSlotIndex, previousItemId, default, 0);
+                }
             }
+        }
+
+        private void ReconcileQuickSlotsForItem(string itemId)
+        {
+            if (!IsServer || QuickSlots == null || string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            int availableCount = GetItemCount(itemId);
+            for (int i = QuickSlots.Count - 1; i >= 0; i--)
+            {
+                QuickSlotData quickSlot = QuickSlots[i];
+                if (quickSlot.itemId.ToString() != itemId)
+                    continue;
+
+                if (availableCount <= 0)
+                {
+                    QuickSlots.RemoveAt(i);
+                    PublishQuickSlotChanged(quickSlot.slotIndex, quickSlot.itemId, default, 0);
+                    continue;
+                }
+
+                ushort nextStackCount = (ushort)Mathf.Clamp(quickSlot.stackCount, 1, availableCount);
+                if (nextStackCount == quickSlot.stackCount)
+                    continue;
+
+                quickSlot.stackCount = nextStackCount;
+                QuickSlots[i] = quickSlot;
+                PublishQuickSlotChanged(quickSlot.slotIndex, quickSlot.itemId, quickSlot.itemId, quickSlot.stackCount);
+            }
+        }
+
+        private void PublishInventorySlotMoved(
+            FixedString64Bytes itemId,
+            byte fromGridX,
+            byte fromGridY,
+            byte toGridX,
+            byte toGridY)
+        {
+            EventBus.Publish(new InventorySlotMovedEvent
+            {
+                clientId = OwnerClientId,
+                itemId = itemId,
+                fromGridX = fromGridX,
+                fromGridY = fromGridY,
+                toGridX = toGridX,
+                toGridY = toGridY
+            });
+        }
+
+        private void PublishQuickSlotChanged(
+            byte slotIndex,
+            FixedString64Bytes previousItemId,
+            FixedString64Bytes nextItemId,
+            ushort stackCount)
+        {
+            EventBus.Publish(new QuickSlotChangedEvent
+            {
+                clientId = OwnerClientId,
+                slotIndex = slotIndex,
+                previousItemId = previousItemId,
+                nextItemId = nextItemId,
+                stackCount = stackCount
+            });
         }
 
         private bool TryConsumeQuickSlotItem(string itemId, int count)
@@ -1640,7 +1739,7 @@ namespace DeadZone.Actors
                 yield break;
             }
 
-            PlayerHealthSystem health = GetComponent<PlayerHealthSystem>();
+            PlayerHealthSystem health = ResolveHealthSystem();
 
             if (effect.instantHeal > 0f && health != null)
                 health.Heal(effect.instantHeal);
@@ -1660,14 +1759,14 @@ namespace DeadZone.Actors
             // 임시 효과도 사용 입력 직후 서버에서만 적용한다.
             if (effect.weightCapacityMultiplierBonus > 0f)
             {
-                GetComponent<PlayerCarryWeightSystem>()?.ApplyTemporaryCapacityMultiplier(
+                ResolveCarryWeightSystem()?.ApplyTemporaryCapacityMultiplier(
                     effect.weightCapacityMultiplierBonus,
                     effect.durationSeconds);
             }
 
             if (effect.staminaCostMultiplierBonus > 0f)
             {
-                GetComponent<PlayerStaminaSystem>()?.ApplyTemporaryConsumptionMultiplier(
+                ResolveStaminaSystem()?.ApplyTemporaryConsumptionMultiplier(
                     effect.staminaCostMultiplierBonus,
                     effect.durationSeconds);
             }
@@ -1682,7 +1781,7 @@ namespace DeadZone.Actors
 
         private bool CanApplyMedicalEffectNow(MedicalUseEffect effect)
         {
-            PlayerHealthSystem health = GetComponent<PlayerHealthSystem>();
+            PlayerHealthSystem health = ResolveHealthSystem();
             bool canHeal =
                 (effect.instantHeal > 0f || effect.healDurationSeconds > 0f && effect.healPerSecond > 0f) &&
                 health != null &&
@@ -1692,14 +1791,35 @@ namespace DeadZone.Actors
             bool canApplyCarryWeightBuff =
                 effect.durationSeconds > 0f &&
                 effect.weightCapacityMultiplierBonus > 0f &&
-                GetComponent<PlayerCarryWeightSystem>() != null;
+                ResolveCarryWeightSystem() != null;
 
             bool canApplyStaminaBuff =
                 effect.durationSeconds > 0f &&
                 effect.staminaCostMultiplierBonus > 0f &&
-                GetComponent<PlayerStaminaSystem>() != null;
+                ResolveStaminaSystem() != null;
 
             return canHeal || canApplyCarryWeightBuff || canApplyStaminaBuff;
+        }
+
+        private PlayerHealthSystem ResolveHealthSystem()
+        {
+            return GetComponent<PlayerHealthSystem>() ??
+                   GetComponentInParent<PlayerHealthSystem>() ??
+                   GetComponentInChildren<PlayerHealthSystem>(true);
+        }
+
+        private PlayerCarryWeightSystem ResolveCarryWeightSystem()
+        {
+            return GetComponent<PlayerCarryWeightSystem>() ??
+                   GetComponentInParent<PlayerCarryWeightSystem>() ??
+                   GetComponentInChildren<PlayerCarryWeightSystem>(true);
+        }
+
+        private PlayerStaminaSystem ResolveStaminaSystem()
+        {
+            return GetComponent<PlayerStaminaSystem>() ??
+                   GetComponentInParent<PlayerStaminaSystem>() ??
+                   GetComponentInChildren<PlayerStaminaSystem>(true);
         }
 
         private static bool TryGetMedicalEffect(ItemDataSO itemData, out MedicalUseEffect effect)

@@ -285,7 +285,7 @@ namespace DeadZone.Actors
             float visualRange,
             float visualLifetime)
         {
-            if (IsServer)
+            if (IsServer && !IsClient)
             {
                 return;
             }

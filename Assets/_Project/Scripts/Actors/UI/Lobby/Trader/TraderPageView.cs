@@ -175,7 +175,6 @@ namespace DeadZone.Actors.UI
             }
 
             RebuildBuyList(traderData);
-            RebuildSellList();
             ShowBuyList();
         }
 
@@ -263,13 +262,17 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            if (useTestCurrency && testPurchasedEntries.Count > 0)
+            List<TraderEntry> sellEntries = BuildSellableEntries();
+            if (sellEntries.Count == 0 && useTestCurrency && testPurchasedEntries.Count > 0)
+                sellEntries.AddRange(testPurchasedEntries);
+
+            if (sellEntries.Count > 0)
             {
-                for (int i = 0; i < testPurchasedEntries.Count; i++)
+                for (int i = 0; i < sellEntries.Count; i++)
                 {
                     TraderItemEntryUI entryUI = Instantiate(entryTemplate, sellContent);
                     ConfigureEntryLayout(entryUI, entryTemplate);
-                    entryUI.SetupSellEntry(testPurchasedEntries[i], HandleSellClicked);
+                    entryUI.SetupSellEntry(sellEntries[i], HandleSellClicked);
                 }
 
                 if (entryTemplate.transform.IsChildOf(sellContent))
@@ -282,9 +285,8 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            Debug.LogWarning(
-                "[TraderPageView] 판매 리스트를 생성하려면 현재 플레이어 인벤토리/보관함의 판매 가능 아이템 조회 API와 선택 아이템 판매 API가 필요합니다. 예: Stash/Inventory GetSellableItems, ConsumeItem 또는 RemoveItem, WalletSystem.Earn.",
-                this);
+            if (entryTemplate.transform.IsChildOf(sellContent))
+                entryTemplate.gameObject.SetActive(false);
         }
 
         public void ShowBuyTab()
@@ -364,6 +366,9 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
+            if (TrySellEntryFromInventory(entry))
+                return;
+
             int entryIndex = FindPurchasedEntryIndex(entry);
             if (entryIndex < 0)
             {
@@ -389,6 +394,7 @@ namespace DeadZone.Actors.UI
         private void TryBuyWithTestCurrency(TraderEntry entry)
         {
             int price = Mathf.Max(0, entry.basePrice);
+            int purchaseAmount = GetPurchaseAmount(entry.item);
             if (GetCurrentTestCurrency() < price)
             {
                 Debug.LogWarning($"[TraderPageView] 테스트 구매 실패: 테스트 재화가 부족합니다. 현재={testCurrency}, 필요={price}", this);
@@ -402,7 +408,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            if (!inventory.TryAddItem(entry.item, 1))
+            if (!inventory.TryAddItem(entry.item, purchaseAmount))
             {
                 Debug.LogWarning($"[TraderPageView] 테스트 구매 실패: 보관함 빈 슬롯 또는 스택 여유가 부족합니다. Item={entry.item.itemID}", this);
                 return;
@@ -410,7 +416,7 @@ namespace DeadZone.Actors.UI
 
             if (!TryPayTestCurrency(price))
             {
-                inventory.ConsumeItem(entry.item.itemID, 1);
+                inventory.ConsumeItem(entry.item.itemID, purchaseAmount);
                 Debug.LogWarning($"[TraderPageView] 테스트 구매 실패: 재화 차감에 실패했습니다. Item={entry.item.itemID}, Price={price}", this);
                 return;
             }
@@ -421,6 +427,11 @@ namespace DeadZone.Actors.UI
 
             if (!showingBuyTab)
                 RebuildSellList();
+        }
+
+        private static int GetPurchaseAmount(ItemDataSO item)
+        {
+            return item is AmmoDataSO ? 30 : 1;
         }
 
         private IInventory ResolveInventoryTarget()
@@ -447,6 +458,73 @@ namespace DeadZone.Actors.UI
             return null;
         }
 
+        private bool TrySellEntryFromInventory(TraderEntry entry)
+        {
+            IInventory inventory = ResolveInventoryTarget();
+            if (inventory == null)
+                return false;
+
+            if (!inventory.ConsumeItem(entry.item.itemID, 1))
+                return false;
+
+            int entryIndex = FindPurchasedEntryIndex(entry);
+            if (entryIndex >= 0)
+                testPurchasedEntries.RemoveAt(entryIndex);
+
+            int sellPrice = Mathf.Max(0, entry.basePrice);
+            EarnTestCurrency(sellPrice);
+            SaveLobbyAfterTestTrade();
+
+            Debug.Log($"[TraderPageView] 판매 완료. Item={entry.item.itemID}, Price={sellPrice}, TestCurrency={testCurrency}", this);
+            RebuildSellList();
+            return true;
+        }
+
+        private List<TraderEntry> BuildSellableEntries()
+        {
+            List<TraderEntry> entries = new();
+            StashGridUI resolvedStashGridUI = ResolveStashGridUI();
+            if (resolvedStashGridUI == null)
+                return entries;
+
+            IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+                return entries;
+
+            List<ItemSaveDTO> stashItems = resolvedStashGridUI.CaptureSavedStashItems();
+            if (stashItems == null || stashItems.Count == 0)
+                return entries;
+
+            for (int i = 0; i < stashItems.Count; i++)
+            {
+                ItemSaveDTO savedItem = stashItems[i];
+                if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
+                    continue;
+
+                ItemDataSO item = itemDatabase.GetById(savedItem.itemId);
+                if (item == null)
+                    continue;
+
+                entries.Add(new TraderEntry
+                {
+                    item = item,
+                    basePrice = CalculateSellPrice(item),
+                    requiredCommLevel = 0
+                });
+            }
+
+            return entries;
+        }
+
+        private StashGridUI ResolveStashGridUI()
+        {
+            if (stashGridUI != null)
+                return stashGridUI;
+
+            stashGridUI = FindFirstObjectByType<StashGridUI>(FindObjectsInactive.Include);
+            return stashGridUI;
+        }
+
         private int FindPurchasedEntryIndex(TraderEntry entry)
         {
             string itemId = entry.item != null ? entry.item.itemID : string.Empty;
@@ -468,6 +546,17 @@ namespace DeadZone.Actors.UI
             TraderDataSO traderData = GetTraderData(currentTraderId);
             float multiplier = traderData != null ? traderData.sellMultiplier : 0.5f;
             return Mathf.Max(0, Mathf.RoundToInt(entry.basePrice * multiplier));
+        }
+
+        private int CalculateSellPrice(ItemDataSO item)
+        {
+            if (item == null)
+                return 0;
+
+            TraderDataSO traderData = GetTraderData(currentTraderId);
+            float multiplier = traderData != null ? traderData.sellMultiplier : 0.5f;
+            int basePrice = Mathf.Max(0, item.baseSellPrice);
+            return Mathf.Max(0, Mathf.RoundToInt(basePrice * multiplier));
         }
 
         private TraderDataSO GetTraderData(TraderId traderId)

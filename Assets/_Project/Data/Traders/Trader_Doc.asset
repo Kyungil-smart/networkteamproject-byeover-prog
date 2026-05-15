@@ -13,5 +13,23 @@ MonoBehaviour:
   m_Name: Trader_Doc
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.TraderDataSO
   traderName: Doc
-  stock: []
+  stock:
+  - item: {fileID: 11400000, guid: 7433f73e64ef87341b970691c4658c4a, type: 2}
+    basePrice: 150
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 864e28078fe6c744a9dff30580d17dbf, type: 2}
+    basePrice: 2500
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: 16afedd06c1b33e46985c80e79b3e6a3, type: 2}
+    basePrice: 6000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 872594b163b7df8459d658c5ffd45d19, type: 2}
+    basePrice: 1500
+    requiredCommLevel: 4
+  - item: {fileID: 11400000, guid: 45be24a1944a40340aea41212be1be3e, type: 2}
+    basePrice: 4000
+    requiredCommLevel: 4
+  - item: {fileID: 11400000, guid: bff5e037139d0fd4495065eac0965818, type: 2}
+    basePrice: 3500
+    requiredCommLevel: 4
   sellMultiplier: 0.5
