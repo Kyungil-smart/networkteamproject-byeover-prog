@@ -293,7 +293,7 @@ namespace DeadZone.Actors
                 PrintNetworkSlotsDebug(requesterClientId);
 
             if (playLootSoundOnOpen)
-                PlayLootSoundForClient(requesterClientId);
+                PlayLootSoundForClient(requesterClientId, AudioCueId.Loot1);
 
             OpenLootingUiRpc(RpcTarget.Single(requesterClientId, RpcTargetUse.Temp));
         }
@@ -330,9 +330,9 @@ namespace DeadZone.Actors
             Slots[slotIndex] = new global::ContainerSlotNetData();
 
             if (playLootSoundOnTake)
-            {
-                PublishItemLootedForClient(rpcParams.Receive.SenderClientId, slotData.itemId, amount);
-            }
+                PlayLootSoundForClient(rpcParams.Receive.SenderClientId, AudioCueId.Loot2);
+
+            PublishItemLootedForClient(rpcParams.Receive.SenderClientId, slotData.itemId, amount);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -446,7 +446,7 @@ namespace DeadZone.Actors
             }
         }
 
-        private void PlayLootSoundForClient(ulong clientId)
+        private void PlayLootSoundForClient(ulong clientId, AudioCueId cueId)
         {
             if (!IsServer)
                 return;
@@ -456,7 +456,7 @@ namespace DeadZone.Actors
                 Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
             };
 
-            PlayLootSoundClientRpc(lootSoundVolumeMultiplier, rpcParams);
+            PlayLootSoundClientRpc(cueId, lootSoundVolumeMultiplier, rpcParams);
         }
 
         private void PublishItemLootedForClient(ulong clientId, FixedString64Bytes itemId, int amount)
@@ -469,6 +469,7 @@ namespace DeadZone.Actors
                 clientId = clientId,
                 itemId = itemId,
                 amount = amount,
+                suppressAudio = true,
             });
 
             ClientRpcParams rpcParams = new ClientRpcParams
@@ -480,11 +481,14 @@ namespace DeadZone.Actors
         }
 
         [ClientRpc]
-        private void PlayLootSoundClientRpc(float volumeMultiplier, ClientRpcParams rpcParams = default)
+        private void PlayLootSoundClientRpc(
+            AudioCueId cueId,
+            float volumeMultiplier,
+            ClientRpcParams rpcParams = default)
         {
             EventBus.Publish(new AudioPlayRequestedEvent
             {
-                cueId = Random.value < 0.5f ? AudioCueId.Loot1 : AudioCueId.Loot2,
+                cueId = cueId,
                 position = Vector3.zero,
                 use3D = false,
                 volumeMultiplier = volumeMultiplier
@@ -506,6 +510,7 @@ namespace DeadZone.Actors
                 clientId = clientId,
                 itemId = itemId,
                 amount = amount,
+                suppressAudio = true,
             });
         }
 
