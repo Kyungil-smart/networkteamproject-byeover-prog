@@ -18,8 +18,8 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: fc4c1ca26a3264a259dfa43a61a2f70e, type: 3}
-    baseVolume: 1.6
-    individualVolume: 1.6
+    baseVolume: 1
+    individualVolume: 1
     use3D: 0
     loop: 0
     minPitch: 1
@@ -48,7 +48,7 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: bc8c3727d81b340f685d13c544c0662c, type: 3}
-    baseVolume: 1.3
+    baseVolume: 1
     individualVolume: 1
     use3D: 0
     loop: 0
@@ -78,8 +78,8 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: 69c397cbd3527bf4caeac4ca798c7792, type: 3}
-    baseVolume: 1.8
-    individualVolume: 2
+    baseVolume: 1
+    individualVolume: 1
     use3D: 0
     loop: 0
     minPitch: 1.8
@@ -138,11 +138,11 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: db43be1b3b3c343a9b59ce8cd6e05177, type: 3}
-    baseVolume: 0.8
+    baseVolume: 0.7
     individualVolume: 0.8
     use3D: 0
     loop: 0
-    minPitch: 1
+    minPitch: 0.8
     maxPitch: 1
     minDistance: 2
     maxDistance: 45
