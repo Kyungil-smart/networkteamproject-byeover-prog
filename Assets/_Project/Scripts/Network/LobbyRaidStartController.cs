@@ -337,6 +337,7 @@ namespace DeadZone.Network
             }
 
             CacheLobbyTeamColorsForRaid();
+            CacheLobbyDisplayNamesForRaid();
             LobbyPlayerCustomizeCache.SaveCustomizesForClients(expectedClientIdsBuffer);
             RaidLoadoutTransferService.SaveLoadoutsForClients(expectedClientIdsBuffer);
 
@@ -640,6 +641,21 @@ namespace DeadZone.Network
                 LobbyTeamColorCache.SetColor(player.ClientId, iconColor);
             }
         }
+        
+        private void CacheLobbyDisplayNamesForRaid()
+        {
+            if (!IsServer || lobbyState == null || lobbyState.Players == null)
+                return;
+
+            LobbyPlayerDisplayNameCache.Clear();
+
+            for (int i = 0; i < lobbyState.Players.Count; i++)
+            {
+                LobbyPlayerState player = lobbyState.Players[i];
+                LobbyPlayerDisplayNameCache.SetName(player.ClientId, player.DisplayName);
+            }
+        }
+
 
         private bool TryBeginLoadTracking(string sceneName, IReadOnlyList<ulong> clientIds, out string reason)
         {
