@@ -77,13 +77,13 @@ MonoBehaviour:
     displayName: "SR \uC800\uACA9\uC18C\uCD1D \uBC1C\uC0AC"
     group: 0
     clips:
-    - {fileID: 8300000, guid: 78174f5aab0e44190ad3ba5cd6047dc0, type: 3}
-    baseVolume: 1
-    individualVolume: 1
+    - {fileID: 8300000, guid: 69c397cbd3527bf4caeac4ca798c7792, type: 3}
+    baseVolume: 1.8
+    individualVolume: 2
     use3D: 0
     loop: 0
-    minPitch: 1
-    maxPitch: 1
+    minPitch: 1.8
+    maxPitch: 2
     minDistance: 3
     maxDistance: 60
     fadeSeconds: 0
@@ -138,8 +138,8 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: db43be1b3b3c343a9b59ce8cd6e05177, type: 3}
-    baseVolume: 1
-    individualVolume: 1
+    baseVolume: 0.8
+    individualVolume: 0.8
     use3D: 0
     loop: 0
     minPitch: 1
@@ -184,7 +184,7 @@ MonoBehaviour:
     displayName: "\uBCF4\uC2A4 \uACF5\uACA9"
     group: 0
     clips:
-    - {fileID: 8300000, guid: 60c74ef6462654a18b4395702acc58bd, type: 3}
+    - {fileID: 8300000, guid: f9aa017ddb0ef4d2bb559f7687adfa6b, type: 3}
     baseVolume: 2
     individualVolume: 2
     use3D: 1

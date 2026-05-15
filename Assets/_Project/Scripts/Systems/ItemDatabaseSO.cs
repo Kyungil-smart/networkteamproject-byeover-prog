@@ -20,8 +20,19 @@ namespace DeadZone.Systems
             { "PumpShotgun", "Weapon_PumpSG" }
         };
 
+        private static readonly Dictionary<string, string> LegacyMedicalAliases = new()
+        {
+            { "ITM_Bandage", "Bandage" },
+            { "FirstAidKit", "ITM_FirstAidKit" },
+            { "SlowHealSyringe", "ITM_SlowHealSyringe" },
+            { "AdvancedFirstAidKit", "ITM_AdvancedFirstAidKit" },
+            { "ITM_FastHealSyringe", "FastHealSyringe" },
+            { "ITM_WeightCapacitySyringe", "WeightCapacitySyringe" }
+        };
+
         private Dictionary<string, ItemDataSO> _cache;
         private readonly HashSet<string> loggedLegacyWeaponAliases = new();
+        private readonly HashSet<string> loggedLegacyMedicalAliases = new();
 
         public void BuildCache()
         {
@@ -85,6 +96,9 @@ namespace DeadZone.Systems
                 return specialized != null ? specialized : result;
             }
 
+            if (TryGetLegacyMedicalAlias(itemID, out ItemDataSO medicalAlias))
+                return medicalAlias;
+
             return TryGetLegacyWeaponAlias(itemID, out ItemDataSO aliasResult)
                 ? aliasResult
                 : null;
@@ -108,6 +122,12 @@ namespace DeadZone.Systems
             if (result is WeaponDataSO)
                 return result;
 
+            if (result.category == ItemCategory.Med &&
+                TryGetLegacyMedicalAlias(requestedItemId, out ItemDataSO medicalAlias))
+            {
+                return medicalAlias;
+            }
+
             if (result.category == ItemCategory.Weapon &&
                 TryGetLegacyWeaponAlias(requestedItemId, out ItemDataSO weaponAlias))
             {
@@ -123,6 +143,34 @@ namespace DeadZone.Systems
             }
 
             return null;
+        }
+
+        private bool TryGetLegacyMedicalAlias(string itemID, out ItemDataSO result)
+        {
+            result = null;
+
+            if (_cache == null || string.IsNullOrWhiteSpace(itemID))
+                return false;
+
+            if (!LegacyMedicalAliases.TryGetValue(itemID, out string aliasItemId))
+                return false;
+
+            if (!_cache.TryGetValue(aliasItemId, out ItemDataSO candidate))
+                return false;
+
+            if (candidate is not MedicalItemDataSO)
+                return false;
+
+            if (loggedLegacyMedicalAliases.Add(itemID))
+            {
+                Debug.LogWarning(
+                    $"[ItemDB] Legacy medical itemID '{itemID}' resolved to '{candidate.itemID}'. " +
+                    "Replace old ItemDataSO references with MedicalItemDataSO assets.",
+                    candidate);
+            }
+
+            result = candidate;
+            return true;
         }
 
         private bool TryGetLegacyWeaponAlias(string itemID, out ItemDataSO result)
@@ -171,6 +219,7 @@ namespace DeadZone.Systems
                 HelmetDataSO => 90,
                 BackpackDataSO => 90,
                 AmmoDataSO => 80,
+                MedicalItemDataSO => 70,
                 _ => 0
             };
         }

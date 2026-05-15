@@ -38,7 +38,6 @@ namespace DeadZone.Network
         private static bool staleRuntimePartySessionCleared;
 
         private string currentPartyId = string.Empty;
-        private NetworkManager subscribedNetworkManager;
 
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -53,12 +52,10 @@ namespace DeadZone.Network
             ClearStaleRuntimePartySessionOnGameStart();
             ServiceLocator.Register(this);
             SceneManager.sceneLoaded += HandleSceneLoaded;
-            SubscribeNetworkCallbacks();
         }
 
         private void OnDestroy()
         {
-            UnsubscribeNetworkCallbacks();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             ServiceLocator.Unregister(this);
         }
@@ -84,7 +81,6 @@ namespace DeadZone.Network
             bool started = NetworkManager.Singleton.StartHost();
             if (started)
             {
-                SubscribeNetworkCallbacks();
                 currentPartyId = "LocalHost";
                 Debug.Log($"[PartySession] Create party. partyId={currentPartyId}, hostClientId={NetworkManager.ServerClientId}", this);
             }
@@ -97,10 +93,7 @@ namespace DeadZone.Network
             if (NetworkManager.Singleton == null) return false;
             bool started = NetworkManager.Singleton.StartClient();
             if (started)
-            {
-                SubscribeNetworkCallbacks();
                 currentPartyId = "LocalClient";
-            }
 
             return started;
         }
@@ -156,7 +149,6 @@ namespace DeadZone.Network
                 return string.Empty;
             }
 
-            SubscribeNetworkCallbacks();
             currentPartyId = joinCode;
             Debug.Log($"[PartySession] Create party. partyId={currentPartyId}, hostClientId={NetworkManager.ServerClientId}", this);
 
@@ -198,7 +190,6 @@ namespace DeadZone.Network
                 return false;
             }
 
-            SubscribeNetworkCallbacks();
             currentPartyId = joinCode;
 
             EventBus.Publish(new RelayJoinedEvent { joinCode = joinCode });
@@ -284,46 +275,6 @@ namespace DeadZone.Network
 
             currentPartyId = string.Empty;
             ClearLocalPartyCache();
-        }
-
-        private void SubscribeNetworkCallbacks()
-        {
-            NetworkManager networkManager = NetworkManager.Singleton;
-            if (networkManager == null || subscribedNetworkManager == networkManager)
-                return;
-
-            UnsubscribeNetworkCallbacks();
-            subscribedNetworkManager = networkManager;
-            subscribedNetworkManager.OnClientDisconnectCallback += HandleClientDisconnected;
-        }
-
-        private void UnsubscribeNetworkCallbacks()
-        {
-            if (subscribedNetworkManager == null)
-                return;
-
-            subscribedNetworkManager.OnClientDisconnectCallback -= HandleClientDisconnected;
-            subscribedNetworkManager = null;
-        }
-
-        private void HandleClientDisconnected(ulong clientId)
-        {
-            NetworkManager networkManager = NetworkManager.Singleton;
-            if (networkManager == null || networkManager.IsServer)
-                return;
-
-            if (clientId != NetworkManager.ServerClientId)
-                return;
-
-            Debug.LogWarning("[PartySession] Host disconnected. Returning client to Lobby to prevent orphaned network state.", this);
-            currentPartyId = string.Empty;
-            ClearLocalPartyCache();
-
-            if (networkManager.IsListening)
-                networkManager.Shutdown();
-
-            if (SceneManager.GetActiveScene().name != "Lobby")
-                SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
         }
 
         private static void ClearLocalPartyCache()

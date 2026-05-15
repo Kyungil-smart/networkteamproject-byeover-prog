@@ -68,7 +68,7 @@ namespace DeadZone.Actors
 
             ulong clientId = netObj.OwnerClientId;
             clientsInZone.Remove(clientId);
-            CancelExtractionForParty();
+            CancelExtraction(clientId);
         }
 
         private void Update()
@@ -274,13 +274,14 @@ namespace DeadZone.Actors
 
             for (int i = 0; i < participants.Count; i++)
             {
-                if (!clientsInZone.Contains(participants[i]))
-                {
-                    Debug.Log(
-                        $"[ExtractionZone] Extraction waits for all party members. requester={requestingClientId}, missing={participants[i]}, extractionId={extractionId}",
-                        this);
-                    return false;
-                }
+                ulong clientId = participants[i];
+                if (clientsInZone.Contains(clientId))
+                    continue;
+
+                Debug.LogWarning(
+                    $"[ExtractionZone] Extraction requires every expected player in zone. missingClientId={clientId}, requester={requestingClientId}, extractionId={extractionId}",
+                    this);
+                return false;
             }
 
             return true;

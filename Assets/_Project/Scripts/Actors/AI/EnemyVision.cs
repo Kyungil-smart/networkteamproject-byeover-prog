@@ -84,9 +84,6 @@ namespace DeadZone.Actors
 
             if (Time.time < nextCheckTime)
             {
-                if (!IsValidTarget(cachedTarget))
-                    cachedTarget = null;
-
                 target = cachedTarget;
                 return cachedTarget != null;
             }
@@ -106,9 +103,6 @@ namespace DeadZone.Actors
                 if (c == null) continue;
 
                 Transform candidate = ResolveTargetTransform(c);
-                if (!IsValidTarget(candidate))
-                    continue;
-
                 if (CanSee(candidate))
                 {
                     float dist = Vector3.Distance(transform.position, candidate.position);
@@ -138,7 +132,6 @@ namespace DeadZone.Actors
         public bool CanSee(Transform candidate)
         {
             if (candidate == null) return false;
-            if (!IsValidTarget(candidate)) return false;
 
             Vector3 origin = GetEyePosition();
             Vector3 dir = candidate.position - origin;
@@ -183,9 +176,6 @@ namespace DeadZone.Actors
                 if (c == null) continue;
 
                 Transform candidate = ResolveTargetTransform(c);
-                if (!IsValidTarget(candidate))
-                    continue;
-
                 float dist = Vector3.Distance(transform.position, candidate.position);
 
                 // 이미 전방 FOV에서 감지 가능한 대상은 스킵 (중복 방지)
@@ -234,15 +224,6 @@ namespace DeadZone.Actors
 
             Vector3 direction = (targetPosition - origin).normalized;
             return !Physics.Raycast(origin, direction, distance, obstacleMask);
-        }
-
-        private static bool IsValidTarget(Transform candidate)
-        {
-            if (candidate == null)
-                return false;
-
-            PlayerHealthSystem health = candidate.GetComponentInParent<PlayerHealthSystem>();
-            return health == null || health.IsAlive;
         }
 
         private Transform ResolveTargetTransform(Collider targetCollider)

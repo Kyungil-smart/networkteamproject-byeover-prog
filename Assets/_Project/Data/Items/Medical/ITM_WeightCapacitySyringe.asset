@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: WeightCapacitySyringe
   displayName: "무게 증가 주사기"
-  description: "- 등급: 레어\n- 용도: 일정 시간 동안 최대 소지 무게를 늘리는 주사기\n\n- 효과\n1. 사용 시간: 1초\n2. 지속 시간: 600초\n3. 최대 무게 증가: +50%\n4. 스태미너 소모량 증가: +30%"
+  description: "- 등급: 레어\n- 용도: 일정 시간 동안 최대 소지 무게를 올리는 주사기\n\n- 효과\n1. 지속 시간: 600초\n2. 최대 무게 증가: +50%\n3. 스태미나 소모량 효과값: +30%"
   icon: {fileID: 21300000, guid: 770bee9391b38614dbb4a54e628126d3, type: 3}
   category: 5
   rarity: 2
