@@ -15,7 +15,7 @@ namespace DeadZone.Actors
     /// 모든 클라이언트는 NetworkVariable과 EventBus를 통해 상태를 수신한다.
     /// 하우징 보너스는 기본 maxHP를 직접 덮어쓰지 않고 별도 보너스로 합산한다.
     /// </remarks>
-    public class PlayerHealthSystem : NetworkBehaviour, IDamageable, IRevivable, IRecoverable
+    public class PlayerHealthSystem : NetworkBehaviour, IDamageable, IRevivable, IRecoverable, IInteractable
     {
         [Header("====생존 상태 설정====")]
         [Tooltip("Alive 상태에서 사용하는 기본 최대 체력입니다.\n하우징 보너스는 이 값을 직접 바꾸지 않고 별도 보너스로 더합니다.")]
@@ -40,7 +40,7 @@ namespace DeadZone.Actors
 
         [Header("====부활 설정====")]
         [Tooltip("부활 완료 시 CurrentHP에 설정되는 체력\nKnocked 상태에서 Alive 상태로 복귀할 때의 시작 체력")]
-        [SerializeField] private float reviveHpAmount = 30f;
+        [SerializeField] private float reviveHpAmount = 20f;
 
         [Header("====사망 처리====")]
         [Tooltip("Dead 상태로 전환될 때 서버에서 생성할 시체 프리팹\n인벤토리 이전을 위해 NetworkObject, PlayerCorpse, CorpseInventory 구성이 필요")]
@@ -134,6 +134,52 @@ namespace DeadZone.Actors
         }
 
         public bool IsPlayer => true;
+
+        public void OnInteract(ulong clientId)
+        {
+            if (!CanBeRevived || clientId == OwnerClientId)
+                return;
+
+            if (IsServer)
+            {
+                TryBeginReviveFromClientId(clientId);
+                return;
+            }
+
+            RequestReviveFromClientRpc(clientId);
+        }
+
+        public string GetPromptText()
+        {
+            return CanBeRevived ? "[F] Revive" : string.Empty;
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void RequestReviveFromClientRpc(ulong requestedReviverClientId, RpcParams rpcParams = default)
+        {
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            if (requestedReviverClientId != senderClientId || senderClientId == OwnerClientId || !CanBeRevived)
+                return;
+
+            TryBeginReviveFromClientId(senderClientId);
+        }
+
+        private void TryBeginReviveFromClientId(ulong reviverClientId)
+        {
+            if (!IsServer || reviverClientId == OwnerClientId || !CanBeRevived)
+                return;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null ||
+                !networkManager.ConnectedClients.TryGetValue(reviverClientId, out NetworkClient reviverClient) ||
+                reviverClient.PlayerObject == null)
+            {
+                return;
+            }
+
+            ReviveSystem reviveSystem = reviverClient.PlayerObject.GetComponent<ReviveSystem>();
+            reviveSystem?.BeginReviveTargetOnServer(NetworkObject, reviverClientId);
+        }
 
         public void ApplyDamage(int damage, ulong attackerClientId, HitInfo hit)
         {
@@ -383,6 +429,7 @@ namespace DeadZone.Actors
 
             isBeingRevived = true;
             this.reviverClientId = reviverClientId;
+            SetReviveMoveLockedClientRpc(true, BuildOwnerClientRpcParams());
         }
 
         public void OnReviveCancel()
@@ -392,6 +439,7 @@ namespace DeadZone.Actors
 
             isBeingRevived = false;
             reviverClientId = 0;
+            SetReviveMoveLockedClientRpc(false, BuildOwnerClientRpcParams());
         }
 
         public void OnReviveComplete(ulong reviverClientId)
@@ -401,11 +449,28 @@ namespace DeadZone.Actors
 
             isBeingRevived = false;
             this.reviverClientId = 0;
+            SetReviveMoveLockedClientRpc(false, BuildOwnerClientRpcParams());
 
             CurrentHP.Value = Mathf.Min(MaxHP, reviveHpAmount);
             KnockedHP.Value = 0f;
             BleedoutRemaining.Value = 0f;
             State.Value = PlayerState.Alive;
+        }
+
+        private ClientRpcParams BuildOwnerClientRpcParams()
+        {
+            return new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { OwnerClientId } }
+            };
+        }
+
+        [ClientRpc]
+        private void SetReviveMoveLockedClientRpc(bool locked, ClientRpcParams rpcParams = default)
+        {
+            FPSController fps = GetComponent<FPSController>();
+            if (fps != null)
+                fps.SetMoveLocked(locked);
         }
 
         public Vector3 GetCorpsePosition()

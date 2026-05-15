@@ -503,9 +503,6 @@ namespace DeadZone.Actors
             float range,
             float maxLifetime)
         {
-            if (IsServer)
-                return;
-
             GameObject visualPrefab = ResolveProjectileVisualPrefab(weaponId);
             if (visualPrefab == null)
                 return;

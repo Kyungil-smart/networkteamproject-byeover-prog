@@ -35,7 +35,7 @@ namespace DeadZone.Actors
         {
             base.OnNetworkSpawn();
 
-            if (!IsServer)
+            if (IsSpawned)
                 SetProjectileVisualsEnabled(false);
         }
 
