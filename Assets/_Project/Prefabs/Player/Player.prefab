@@ -366,6 +366,7 @@ GameObject:
   - component: {fileID: 3836504801580505362}
   - component: {fileID: 6609114165834563910}
   - component: {fileID: 985880679172202994}
+  - component: {fileID: -418678976326312876}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -1808,6 +1809,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 65536
   triggerInteraction: 2
+  showPromptMessage: 1
+  promptRefreshInterval: 0.1
+  fallbackPromptText: "[F] \uC0C1\uD638\uC791\uC6A9"
   enableDebugLogs: 0
   drawDebugGizmos: 0
 --- !u!114 &5068946127396251841
@@ -1995,6 +1999,37 @@ MonoBehaviour:
         byte0059: 0
         byte0060: 0
         byte0061: 0
+--- !u!114 &-418678976326312876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109705922278564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1645abc1da31eaf4b948c29d5f616ecf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ReviveSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+  reviveDuration: 5
+  reviveRange: 2
+  movementCancelDistance: 0.75
+  reviveTargetMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  raycastOrigin: {fileID: 0}
+  progressEventInterval: 0.1
+  Progress:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+  CurrentTargetClientId:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 18446744073709551615
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0

@@ -385,7 +385,10 @@ namespace DeadZone.Systems.Housing
 
             PlayerHousingSaveSyncer saveSyncer = progress.GetComponent<PlayerHousingSaveSyncer>();
             if (saveSyncer != null)
+            {
                 saveSyncer.RequestSaveFromServer("Stash 시설 업그레이드");
+                saveSyncer.RequestLobbyInventorySaveFromServer("Stash 시설 업그레이드 재료 소비");
+            }
         }
 
         private bool ShouldUseOfflineLevel()
@@ -395,18 +398,7 @@ namespace DeadZone.Systems.Housing
 
         private bool TryGetRequesterInventory(ulong clientId, out IInventory inventory)
         {
-            inventory = null;
-
-            if (NetworkManager.Singleton == null)
-                return false;
-
-            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out NetworkClient client))
-                return false;
-
-            if (client.PlayerObject == null)
-                return false;
-
-            return client.PlayerObject.TryGetComponent(out inventory);
+            return HousingInventoryResolver.TryGetRequesterInventory(clientId, out inventory, out _);
         }
 
         private void PrintRequiredMaterials(FacilityLevel levelData, IInventory inventory)
