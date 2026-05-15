@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: ITM_FirstAidKit
   displayName: "구급상자"
-  description: "- 등급: 희귀\n- 용도: 응급처치용 구급상자\n\n- 효과\n1. 사용 시간: 3초\n2. 지속 회복: 5초 동안 초당 10 회복\n3. 총 회복량: 50"
+  description: "- 등급: 희귀\n- 용도: 응급처치용 구급상자\n\n- 효과\n1. 지속 회복: 5초 동안 초당 HP +10\n2. 총 회복량: HP +50"
   icon: {fileID: 21300000, guid: cc60e9ba6933ec5468dfab201142a048, type: 3}
   category: 5
   rarity: 1

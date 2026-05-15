@@ -209,17 +209,6 @@ namespace DeadZone.Actors
             Debug.LogWarning("[LootContainer] 네트워크가 실행 중이 아니어서 상자 아이템 이동은 서버 검증 없이 처리하지 않습니다.", this);
         }
 
-        public void RequestTakeSlotToPlayerQuickSlot(int slotIndex, int quickSlotIndex)
-        {
-            if (IsNetworkActive())
-            {
-                TryTakeSlotToPlayerQuickSlotRpc(slotIndex, quickSlotIndex);
-                return;
-            }
-
-            Debug.LogWarning("[LootContainer] Network is not active. Container to quick slot move skipped.", this);
-        }
-
         public void RequestDepositFromPlayer(string itemId, int amount, int targetSlotIndex)
         {
             if (IsNetworkActive())
@@ -362,44 +351,6 @@ namespace DeadZone.Actors
 
             if (!inventory.TryAddItemSlot(itemData, itemSlot))
                 return;
-
-            Slots[slotIndex] = new global::ContainerSlotNetData();
-
-            if (playLootSoundOnTake)
-                PlayLootSoundForClient(rpcParams.Receive.SenderClientId, AudioCueId.Loot2);
-
-            PublishItemLootedForClient(rpcParams.Receive.SenderClientId, slotData.itemId, amount);
-        }
-
-        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-        private void TryTakeSlotToPlayerQuickSlotRpc(
-            int slotIndex,
-            int quickSlotIndex,
-            RpcParams rpcParams = default)
-        {
-            if (!TryGetServerSlot(slotIndex, out global::ContainerSlotNetData slotData) || slotData.IsEmpty)
-                return;
-
-            GridInventory inventory = ResolvePlayerInventory(rpcParams.Receive.SenderClientId);
-            if (inventory == null)
-                return;
-
-            ItemDataSO itemData = ResolveItemData(slotData.itemId.ToString());
-            if (itemData == null)
-                return;
-
-            int amount = Mathf.Max(1, slotData.amount);
-            ItemSlotData itemSlot = CreateInventorySlotData(itemData, slotData);
-            if (!inventory.CanAddItemSlot(itemData, itemSlot))
-                return;
-
-            if (!inventory.TryAddItemSlot(itemData, itemSlot))
-                return;
-
-            inventory.TryAssignQuickSlotShortcutOnServer(
-                itemData,
-                itemSlot,
-                (byte)Mathf.Clamp(quickSlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1));
 
             Slots[slotIndex] = new global::ContainerSlotNetData();
 

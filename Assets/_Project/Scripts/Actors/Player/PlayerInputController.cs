@@ -493,17 +493,6 @@ namespace DeadZone.Actors
         {
             if (!CanProcessInput || !context.performed)
                 return;
-
-            if (InGameMenuUI.IsAnyMenuBlockingInput())
-                return;
-
-            if (InventoryUI.ActiveInstance == null)
-            {
-                Debug.LogWarning("[PlayerInputController] InventoryUI.ActiveInstance를 찾지 못했습니다.");
-                return;
-            }
-
-            InventoryUI.ActiveInstance.Toggle();
         }
 
         public void OnQuest(InputAction.CallbackContext context)

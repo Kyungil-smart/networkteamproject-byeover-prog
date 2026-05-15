@@ -6744,6 +6744,7 @@ GameObject:
   - component: {fileID: 6746865430625901347}
   - component: {fileID: 1649320740611525701}
   - component: {fileID: 8130692006164545719}
+  - component: {fileID: 3414287239706507818}
   m_Layer: 5
   m_Name: Inventory
   m_TagString: Untagged
@@ -6910,6 +6911,19 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e3f5ac4f5c4ca6e44bf805ab44c7e5ec, type: 2}
   - {fileID: 11400000, guid: aaa1156877681054582b63c7b4a9f285, type: 2}
   - {fileID: 11400000, guid: cc0ce44d84d0cc34ab4d6a88f2359507, type: 2}
+--- !u!114 &3414287239706507818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2641991303900253684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3caa23b6f24f4dd4abacbb55ab1cf603, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.InventoryInputController
+  inventoryUI: {fileID: 8130692006164545719}
 --- !u!1 &2692105669006165197
 GameObject:
   m_ObjectHideFlags: 0
@@ -7258,7 +7272,7 @@ GameObject:
   - component: {fileID: 8150066853446167028}
   - component: {fileID: 359984443544264633}
   m_Layer: 5
-  m_Name: Text_ActionMessage
+  m_Name: Text_ItemName
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7579,10 +7593,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4732064180074544785}
-  - component: {fileID: 90489425658452408}
-  - component: {fileID: 8871609398017712972}
   m_Layer: 5
-  m_Name: ActionMessage
+  m_Name: ItemNamePopup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7608,46 +7620,6 @@ RectTransform:
   m_AnchoredPosition: {x: 960.02, y: -937.4263}
   m_SizeDelta: {x: 545.1, y: 52.9674}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &90489425658452408
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3151083965835562661}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!114 &8871609398017712972
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3151083965835562661}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 607e1dbd58d7ad44c83894a1aa4a6421, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.HudActionMessageUI
-  messageRoot: {fileID: 3151083965835562661}
-  messageText: {fileID: 359984443544264633}
-  showDuration: 3
 --- !u!1 &3156728044528234205
 GameObject:
   m_ObjectHideFlags: 0

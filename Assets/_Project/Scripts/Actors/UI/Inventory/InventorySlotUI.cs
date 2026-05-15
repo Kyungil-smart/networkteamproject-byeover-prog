@@ -97,6 +97,10 @@ namespace DeadZone.Actors.UI
         [SerializeField] private ScriptableObject currentItemData;
 
         [BoxGroup("툴팁")]
+        [Tooltip("서버 슬롯에 저장된 실제 itemID입니다. 구형 ID가 새 의료 SO로 해석되어도 소모 요청은 이 ID로 보냅니다.")]
+        [SerializeField] private string currentItemId;
+
+        [BoxGroup("툴팁")]
         [Tooltip("현재 슬롯에 들어있는 아이템 중첩 개수입니다.")]
         [SerializeField] private int currentStackCount;
 
@@ -115,6 +119,9 @@ namespace DeadZone.Actors.UI
         public int SlotIndex => slotIndex;
         public InventorySlotKind SlotKind => slotKind;
         public ItemDataSO CurrentItemData => currentItemData as ItemDataSO;
+        public string CurrentItemId => string.IsNullOrWhiteSpace(currentItemId)
+            ? CurrentItemData != null ? CurrentItemData.itemID : string.Empty
+            : currentItemId;
         public int CurrentStackCount => currentStackCount;
         public bool HasItem => CurrentItemData != null && currentStackCount > 0;
 
@@ -213,6 +220,11 @@ namespace DeadZone.Actors.UI
 
         public void SetItem(ItemDataSO itemData, int stackCount)
         {
+            SetItem(itemData, stackCount, itemData != null ? itemData.itemID : string.Empty);
+        }
+
+        public void SetItem(ItemDataSO itemData, int stackCount, string sourceItemId)
+        {
             if (itemData == null || stackCount <= 0)
             {
                 ClearItem();
@@ -220,6 +232,7 @@ namespace DeadZone.Actors.UI
             }
 
             currentItemData = itemData;
+            currentItemId = string.IsNullOrWhiteSpace(sourceItemId) ? itemData.itemID : sourceItemId;
             currentStackCount = slotKind == InventorySlotKind.QuickSlot
                 ? Mathf.Clamp(stackCount, 1, 99)
                 : Mathf.Clamp(stackCount, 1, GetMaxStack(itemData));
@@ -296,15 +309,33 @@ namespace DeadZone.Actors.UI
                 return false;
             }
 
-            // 퀵슬롯은 아이템 바로가기만 들고 있으므로, 실제 인벤토리에 아이템이 남아 있는지 먼저 확인한다.
-            if (!inventory.HasItem(CurrentItemData.itemID, 1) &&
-                !inventory.HasQuickSlotItem(CurrentItemData.itemID, 1))
+            // 퀵슬롯 사용은 가방과 별도 수량으로 서버에 저장되므로 슬롯 인덱스를 함께 보낸다.
+            if (slotKind == InventorySlotKind.QuickSlot)
             {
-                Debug.LogWarning($"[InventorySlotUI] Medical item use failed. Item is not in the server inventory/quickslot state. itemId={CurrentItemData.itemID}", this);
+                if (slotIndex < 0 || slotIndex >= GridInventory.QUICK_SLOT_COUNT)
+                {
+                    Debug.LogWarning($"[InventorySlotUI] Medical quickslot use failed. Invalid quickslot index={slotIndex}", this);
+                    return false;
+                }
+
+                if (!inventory.HasQuickSlotItem(CurrentItemId, 1))
+                {
+                    Debug.LogWarning($"[InventorySlotUI] Medical quickslot use failed. Item is not in the server quickslot state. itemId={CurrentItemId}", this);
+                    return false;
+                }
+
+                inventory.RequestUseQuickSlot((byte)slotIndex);
+                ApplyQuickSlotUsePreview();
+                return true;
+            }
+
+            if (!inventory.HasItem(CurrentItemId, 1))
+            {
+                Debug.LogWarning($"[InventorySlotUI] Medical item use failed. Item is not in the server inventory state. itemId={CurrentItemId}", this);
                 return false;
             }
 
-            inventory.RequestUseMedicalItem(CurrentItemData.itemID);
+            inventory.RequestUseMedicalItem(CurrentItemId);
             return true;
         }
 
@@ -321,7 +352,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            SetItem(CurrentItemData, currentStackCount - 1);
+            SetItem(CurrentItemData, currentStackCount - 1, CurrentItemId);
         }
 
         private static GridInventory ResolveLocalPlayerInventory()
@@ -558,6 +589,7 @@ namespace DeadZone.Actors.UI
         public void ClearItem()
         {
             currentItemData = null;
+            currentItemId = string.Empty;
             currentStackCount = 0;
 
             if (rarityBackground != null)
@@ -792,20 +824,7 @@ namespace DeadZone.Actors.UI
 
             if (source.slotKind == InventorySlotKind.QuickSlot)
             {
-                if (!HasItem)
-                {
-                    SetItem(sourceItem, sourceCount);
-                    source.ClearItem();
-                    CaptureLobbyInventoryStateIfPresent(this, source);
-                    return true;
-                }
-
-                ItemDataSO targetItem = CurrentItemData;
-                int targetCount = CurrentStackCount;
-                SetItem(sourceItem, sourceCount);
-                source.SetItem(targetItem, targetCount);
-                CaptureLobbyInventoryStateIfPresent(this, source);
-                return true;
+                return TryRequestSwapQuickSlots(source.slotIndex, slotIndex);
             }
 
             if (HasItem)
@@ -832,6 +851,18 @@ namespace DeadZone.Actors.UI
                 gridX,
                 gridY,
                 (byte)Mathf.Clamp(quickSlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1));
+            return true;
+        }
+
+        private static bool TryRequestSwapQuickSlots(int sourceQuickSlotIndex, int targetQuickSlotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            inventory.RequestSwapQuickSlots(
+                (byte)Mathf.Clamp(sourceQuickSlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1),
+                (byte)Mathf.Clamp(targetQuickSlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1));
             return true;
         }
 
