@@ -213,11 +213,16 @@ namespace DeadZone.Actors
 
             for (int i = 0; i < participants.Count; i++)
             {
-                clientId = clientId,
-                extractionId = extractionId,
-                countdownSeconds = extractionTime,
-            });
-            PublishExtractionStartedClientRpc(clientId, new FixedString64Bytes(extractionId), extractionTime);
+                ulong clientId = participants[i];
+                if (clientsInZone.Contains(clientId))
+                    continue;
+
+                Debug.LogWarning(
+                    $"[ExtractionZone] Extraction requires every expected player in zone. missingClientId={clientId}, requester={requestingClientId}, extractionId={extractionId}",
+                    this);
+                return false;
+            }
+
             return true;
         }
 
