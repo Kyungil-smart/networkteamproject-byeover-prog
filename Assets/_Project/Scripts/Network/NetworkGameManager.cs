@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 
 using DeadZone.Actors.UI;
 using DeadZone.Core;
+using DeadZone.Systems.Raid;
 
 namespace DeadZone.Network
 {
@@ -53,6 +54,7 @@ namespace DeadZone.Network
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         public void ReturnToHideoutServerRpc()
         {
+            RaidLoadoutTransferService.SaveCurrentRaidLoadoutsForConnectedClients();
             RaidTimeRemaining.Value = 0f;
             LoadingScreenService.ShowForNetworkLoadOrFallback("Hideout");
             NetworkManager.Singleton.SceneManager.LoadScene("Hideout", LoadSceneMode.Single);

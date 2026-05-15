@@ -68,6 +68,7 @@ namespace DeadZone.Actors.UI
 
         private GridInventory boundGridInventory;
         private bool gridInventorySubscribed;
+        private bool quickSlotsSubscribed;
         private EquipmentSlots subscribedEquipmentSlots;
         private bool equipmentSlotsSubscribed;
         private bool raidQuickSlotLoadoutApplied;
@@ -165,7 +166,8 @@ namespace DeadZone.Actors.UI
             SubscribeEquipmentSlots();
             RefreshGridInventorySlots();
             RefreshEquipmentSlotViews();
-            RefreshQuickSlotsFromInventory();
+            DeadZone.Systems.Raid.RaidLoadoutTransferService.ApplyLocalQuickSlotsToUi();
+            RefreshQuickSlotViews();
         }
 
         public void Close()
@@ -525,6 +527,12 @@ namespace DeadZone.Actors.UI
                 return;
 
             boundGridInventory.ServerGrid.OnListChanged += HandleGridInventoryChanged;
+            if (boundGridInventory.QuickSlots != null)
+            {
+                boundGridInventory.QuickSlots.OnListChanged += HandleQuickSlotsChanged;
+                quickSlotsSubscribed = true;
+            }
+
             gridInventorySubscribed = true;
         }
 
@@ -533,17 +541,26 @@ namespace DeadZone.Actors.UI
             if (!gridInventorySubscribed || boundGridInventory == null || boundGridInventory.ServerGrid == null)
             {
                 gridInventorySubscribed = false;
+                quickSlotsSubscribed = false;
                 return;
             }
 
             boundGridInventory.ServerGrid.OnListChanged -= HandleGridInventoryChanged;
+            if (quickSlotsSubscribed && boundGridInventory.QuickSlots != null)
+                boundGridInventory.QuickSlots.OnListChanged -= HandleQuickSlotsChanged;
+
             gridInventorySubscribed = false;
+            quickSlotsSubscribed = false;
         }
 
         private void HandleGridInventoryChanged(Unity.Netcode.NetworkListEvent<ItemSlotData> changeEvent)
         {
             RefreshGridInventorySlots();
-            RefreshQuickSlotsFromInventory();
+        }
+
+        private void HandleQuickSlotsChanged(Unity.Netcode.NetworkListEvent<QuickSlotData> changeEvent)
+        {
+            RefreshQuickSlotViews();
         }
 
         private void HandleEquipmentSlotIdChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
@@ -600,7 +617,6 @@ namespace DeadZone.Actors.UI
             }
 
             RefreshBagSlots();
-            RefreshQuickSlotsFromInventory();
 
             if (debugGridInventoryView)
                 Debug.Log($"[InventoryUI] GridInventory 표시 갱신 완료. count={boundGridInventory.ServerGrid.Count}", this);
@@ -905,20 +921,42 @@ namespace DeadZone.Actors.UI
                 SetQuickSlotsByIndex(quickSlots, Mathf.Max(0, savedItem.slotIndex), itemData, Mathf.Max(1, savedItem.stackCount));
             }
 
-            raidQuickSlotLoadoutApplied = true;
-            RefreshQuickSlotsFromInventory();
+            RefreshQuickSlotViews();
         }
 
-        private void RefreshQuickSlotsFromInventory()
+        private void RefreshQuickSlotViews()
         {
             if (boundGridInventory == null && autoBindOwnerGridInventory)
                 BindOwnerGridInventoryIfNeeded();
 
-            if (boundGridInventory == null || boundGridInventory.ServerGrid == null)
+            if (boundGridInventory == null || boundGridInventory.QuickSlots == null)
                 return;
 
             List<InventorySlotUI> quickSlots = GetQuickSlotDisplaySlots();
             if (quickSlots.Count == 0)
+                return;
+
+            for (int i = 0; i < quickSlots.Count; i++)
+                quickSlots[i]?.ClearItem();
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+                return;
+
+            for (int i = 0; i < boundGridInventory.QuickSlots.Count; i++)
+            {
+                QuickSlotData slotData = boundGridInventory.QuickSlots[i];
+                if (slotData.IsEmpty)
+                    continue;
+
+                ItemDataSO itemData = itemDatabase.GetById(slotData.itemId.ToString());
+                if (itemData == null)
+                    continue;
+
+                SetQuickSlotsByIndex(quickSlots, slotData.slotIndex, itemData, Mathf.Max(1, slotData.stackCount));
+            }
+
+            if (boundGridInventory.QuickSlots != null)
                 return;
 
             for (int i = 0; i < quickSlots.Count; i++)

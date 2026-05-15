@@ -220,7 +220,9 @@ namespace DeadZone.Actors.UI
             }
 
             currentItemData = itemData;
-            currentStackCount = Mathf.Clamp(stackCount, 1, GetMaxStack(itemData));
+            currentStackCount = slotKind == InventorySlotKind.QuickSlot
+                ? Mathf.Clamp(stackCount, 1, 99)
+                : Mathf.Clamp(stackCount, 1, GetMaxStack(itemData));
 
             SetItem(itemData.icon, ToInventoryRarity(itemData.rarity), currentStackCount);
             SetEmptySlotIconVisible(false);
@@ -295,14 +297,14 @@ namespace DeadZone.Actors.UI
             }
 
             // 퀵슬롯은 아이템 바로가기만 들고 있으므로, 실제 인벤토리에 아이템이 남아 있는지 먼저 확인한다.
-            if (!inventory.HasItem(CurrentItemData.itemID, 1))
+            if (!inventory.HasItem(CurrentItemData.itemID, 1) &&
+                !inventory.HasQuickSlotItem(CurrentItemData.itemID, 1))
             {
-                Debug.LogWarning($"[InventorySlotUI] Medical item use failed. Item is not in the local inventory. itemId={CurrentItemData.itemID}", this);
+                Debug.LogWarning($"[InventorySlotUI] Medical item use failed. Item is not in the server inventory/quickslot state. itemId={CurrentItemData.itemID}", this);
                 return false;
             }
 
             inventory.RequestUseMedicalItem(CurrentItemData.itemID);
-            ApplyQuickSlotUsePreview();
             return true;
         }
 
@@ -635,9 +637,23 @@ namespace DeadZone.Actors.UI
 
             if (!HasItem)
             {
+                if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetEquipmentSlot) &&
+                    source.slotKind == InventorySlotKind.Bag &&
+                    TryRequestInventoryMoveToEquipment(source.slotIndex, targetEquipmentSlot))
+                {
+                    return true;
+                }
+
                 if (slotKind == InventorySlotKind.Bag &&
                     source.TryGetEquipmentTargetSlot(out EquipmentTargetSlot sourceEquipmentSlot) &&
                     TryRequestEquipmentMoveToInventory(sourceEquipmentSlot, slotIndex))
+                {
+                    return true;
+                }
+
+                if (slotKind == InventorySlotKind.Bag &&
+                    source.slotKind == InventorySlotKind.QuickSlot &&
+                    TryRequestQuickSlotMoveToInventory(source.slotIndex, slotIndex))
                 {
                     return true;
                 }
@@ -656,6 +672,13 @@ namespace DeadZone.Actors.UI
 
             ItemDataSO targetItem = CurrentItemData;
             int targetCount = CurrentStackCount;
+
+            if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot occupiedTargetEquipmentSlot) &&
+                source.slotKind == InventorySlotKind.Bag &&
+                TryRequestInventoryMoveToEquipment(source.slotIndex, occupiedTargetEquipmentSlot))
+            {
+                return true;
+            }
 
             if (IsSameStackableItem(targetItem, sourceItem))
             {
@@ -708,6 +731,30 @@ namespace DeadZone.Actors.UI
             return true;
         }
 
+        private static bool TryRequestInventoryMoveToEquipment(int sourceSlotIndex, EquipmentTargetSlot targetEquipmentSlot)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, sourceSlotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, sourceSlotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestMoveInventorySlotToEquipment(gridX, gridY, targetEquipmentSlot);
+            return true;
+        }
+
+        private static bool TryRequestQuickSlotMoveToInventory(int quickSlotIndex, int targetSlotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, targetSlotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, targetSlotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestMoveQuickSlotToInventory((byte)Mathf.Clamp(quickSlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1), gridX, gridY);
+            return true;
+        }
+
         private bool TryAssignQuickSlotShortcut(InventorySlotUI source, ItemDataSO sourceItem, int sourceCount)
         {
             if (source == null || sourceItem == null || sourceCount <= 0)
@@ -716,10 +763,10 @@ namespace DeadZone.Actors.UI
             if (!CanAccept(sourceItem))
                 return false;
 
-            if (source.slotKind != InventorySlotKind.QuickSlot && source.IsStashLikeSlot())
+            if (source.slotKind == InventorySlotKind.Bag &&
+                TryRequestAssignQuickSlot(source.slotIndex, slotIndex))
             {
-                Debug.LogWarning("[InventorySlotUI] Quick slots can only reference carried inventory items, not stash items.", this);
-                return false;
+                return true;
             }
 
             if (source.slotKind == InventorySlotKind.QuickSlot)
@@ -749,6 +796,21 @@ namespace DeadZone.Actors.UI
 
             SetItem(sourceItem, sourceCount);
             CaptureLobbyInventoryStateIfPresent(this);
+            return true;
+        }
+
+        private static bool TryRequestAssignQuickSlot(int sourceSlotIndex, int quickSlotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, sourceSlotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, sourceSlotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestAssignQuickSlot(
+                gridX,
+                gridY,
+                (byte)Mathf.Clamp(quickSlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1));
             return true;
         }
 
