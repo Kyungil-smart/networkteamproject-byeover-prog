@@ -8,39 +8,50 @@ namespace DeadZone.Actors
 {
     /// <summary>
     /// EquipmentSlots에 동기화된 현재 장착 무기를 로컬 시각 모델로 표시하고,
-    /// 장착 무기 내부 MuzzlePoint를 ShootingSystem의 발사 기준점으로 연결한다.
+    /// 장착 무기 안의 MuzzlePoint를 ShootingSystem의 발사 기준으로 연결한다.
+    /// Roll / Knocked / Dead 상태에서는 장착 데이터는 유지한 채 무기 모델 Root만 숨긴다.
     /// </summary>
     public class PlayerEquippedWeaponView : MonoBehaviour
     {
         [Header("장착 상태 참조")]
-        [Tooltip("현재 장착 무기 ID와 탄창 상태를 읽는 컴포넌트입니다. 비워두면 같은 Player에서 자동 탐색합니다.")]
+        [Tooltip("현재 장착 무기 ID와 슬롯 상태를 읽는 컴포넌트입니다. 비워두면 같은 Player에서 자동 검색합니다.")]
         [SerializeField] private EquipmentSlots equipmentSlots;
 
-        [Tooltip("장착 무기의 MuzzlePoint를 전달할 발사 시스템입니다. 비워두면 같은 Player에서 자동 탐색합니다.")]
+        [Tooltip("장착 무기의 MuzzlePoint를 전달할 발사 시스템입니다. 비워두면 같은 Player에서 자동 검색합니다.")]
         [SerializeField] private ShootingSystem shootingSystem;
 
+        [Tooltip("Knocked / Dead 상태를 읽는 체력 상태 컴포넌트입니다. 비워두면 같은 Player에서 자동 검색합니다.")]
+        [SerializeField] private PlayerHealthSystem playerHealthSystem;
+
         [Header("무기 표시 위치")]
-        [Tooltip("장착 무기 worldPrefab이 생성될 기본 부모 Transform입니다. 기존 Player/WeaponHolder를 연결합니다. 타입별 Mount가 없거나 사용할 수 없을 때 fallback parent로 사용됩니다.")]
+        [Tooltip("장착 무기 worldPrefab을 생성할 기본 부모 Transform입니다. 기존 Player/WeaponHolder를 연결합니다.")]
         [SerializeField] private Transform weaponHolder;
 
-        [Tooltip("AR, SMG, Sniper, Shotgun 계열 무기가 생성될 부모 Transform입니다. Player/WeaponHolder/RifleLikeMount를 연결합니다. 비어 있으면 Weapon Holder를 사용합니다.")]
+        [Tooltip("AR, SMG, Sniper, Shotgun 계열 무기가 생성될 부모 Transform입니다. 비어 있으면 WeaponHolder를 사용합니다.")]
         [SerializeField] private Transform rifleLikeMount;
 
-        [Tooltip("Handgun 계열 무기가 생성될 부모 Transform입니다. Player/WeaponHolder/HandgunMount를 연결합니다. 비어 있으면 Weapon Holder를 사용합니다.")]
+        [Tooltip("Handgun 계열 무기가 생성될 부모 Transform입니다. 비어 있으면 WeaponHolder를 사용합니다.")]
         [SerializeField] private Transform handgunMount;
 
-        [Tooltip("장착 무기에서 MuzzlePoint를 찾지 못했거나 무기를 해제했을 때 사용할 기본 총구 Transform입니다. 기존 Player/WeaponHolder/MuzzlePoint를 연결합니다.")]
+        [Tooltip("장착 무기에서 MuzzlePoint를 찾지 못했거나 무기가 없을 때 사용할 기본 총구 Transform입니다.")]
         [SerializeField] private Transform fallbackMuzzle;
 
-        [Header("무기 프리팹 탐색")]
+        [Header("상태 기반 비주얼 숨김")]
+        [Tooltip("Roll 상태를 읽을 Animator입니다. 비워두면 같은 Player에서 자동 검색합니다.")]
+        [SerializeField] private Animator animator;
+
+        [Tooltip("Roll 상태를 나타내는 Animator Bool 파라미터 이름입니다. 원격 플레이어는 NetworkAnimator로 동기화된 값을 기준으로 판단합니다.")]
+        [SerializeField] private string rollingParameterName = "IsRolling";
+
+        [Header("무기 프리팹 검색")]
         [Tooltip("장착 무기 프리팹 내부에서 총구로 사용할 자식 Transform 이름입니다.")]
         [SerializeField] private string muzzlePointName = "MuzzlePoint";
 
-        [Tooltip("생성한 무기 모델의 localPosition/localRotation/localScale을 선택된 Mount 기준 기본값으로 맞춥니다.")]
+        [Tooltip("생성된 무기 모델의 localPosition/localRotation/localScale을 선택한 Mount 기준 기본값으로 맞춥니다.")]
         [SerializeField] private bool resetLocalTransform = true;
 
         [Header("동작 옵션")]
-        [Tooltip("필수 참조가 비어 있으면 같은 Player 하위에서 자동으로 찾습니다. RifleLikeMount와 HandgunMount도 WeaponHolder 하위에서 자동 탐색합니다.")]
+        [Tooltip("필수 참조가 비어 있으면 같은 Player 하위에서 자동으로 찾습니다.")]
         [SerializeField] private bool autoBindReferences = true;
 
         [Tooltip("장착 무기 표시와 MuzzlePoint 연결 과정을 Console에 출력합니다.")]
@@ -49,33 +60,47 @@ namespace DeadZone.Actors
         private GameObject currentWeaponInstance;
         private string displayedWeaponId;
         private bool subscribedToEquipment;
+        private bool subscribedToPlayerState;
+
+        private int rollingHash;
+        private bool hasRollingParameter;
+        private Animator cachedAnimatorForRollingParameter;
+        private bool? lastAppliedWeaponVisualVisible;
 
         private void Awake()
         {
             AutoBindReferences();
+            CacheAnimatorBindings();
         }
 
         private void OnEnable()
         {
             AutoBindReferences();
+            CacheAnimatorBindings();
+
             SubscribeEquipmentEvents();
+            SubscribePlayerStateEvents();
+
             RefreshEquippedWeaponView();
         }
 
         private void OnDisable()
         {
             UnsubscribeEquipmentEvents();
+            UnsubscribePlayerStateEvents();
+
+            // 기존 코드에도 있던 동작이다. 컴포넌트가 비활성화되면 로컬 시각 모델도 정리한다.
             ClearCurrentWeaponView();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeEquipmentEvents();
+            UnsubscribePlayerStateEvents();
         }
 
         private void Update()
         {
-            if (autoBindReferences && !HasRequiredReferences())
-            {
-                AutoBindReferences();
-                SubscribeEquipmentEvents();
-            }
-
             if (equipmentSlots == null)
                 return;
 
@@ -84,7 +109,11 @@ namespace DeadZone.Actors
                 (!string.IsNullOrWhiteSpace(currentWeaponId) && currentWeaponInstance == null))
             {
                 RefreshEquippedWeaponView();
+                return;
             }
+
+            // Roll은 짧은 시간 동안 바뀌는 시각 상태이므로 매 프레임 표시 여부만 갱신한다.
+            RefreshWeaponVisualVisibility();
         }
 
         public void RefreshEquippedWeaponView()
@@ -114,7 +143,10 @@ namespace DeadZone.Actors
             }
 
             if (displayedWeaponId == weaponId && currentWeaponInstance != null)
+            {
+                RefreshWeaponVisualVisibility();
                 return;
+            }
 
             CreateWeaponView(weaponData, weaponId);
         }
@@ -127,7 +159,7 @@ namespace DeadZone.Actors
             Transform selectedMount = ResolveWeaponMount(weaponData);
             if (selectedMount == null)
             {
-                LogDebug("장착 무기 Mount가 연결되어 있지 않아 무기 모델을 표시할 수 없습니다.");
+                LogDebug("장착 무기 Mount가 연결되어 있지 않아 무기 모델을 표시하지 않습니다.");
                 ApplyFallbackMuzzle();
                 return;
             }
@@ -141,6 +173,7 @@ namespace DeadZone.Actors
 
             currentWeaponInstance = Instantiate(weaponData.worldPrefab, selectedMount, false);
             currentWeaponInstance.name = $"{weaponData.worldPrefab.name}_EquippedView";
+            lastAppliedWeaponVisualVisible = null;
 
             if (resetLocalTransform)
             {
@@ -163,17 +196,16 @@ namespace DeadZone.Actors
             {
                 shootingSystem?.SetMuzzleTransform(muzzle);
                 LogDebug($"장착 무기 표시 완료: {weaponId}, mount={selectedMount.name}, muzzle={muzzle.name}");
-                return;
+            }
+            else
+            {
+                LogDebug($"장착 무기에서 {muzzlePointName}을 찾지 못해 fallback muzzle을 사용합니다. weaponId={weaponId}");
+                ApplyFallbackMuzzle();
             }
 
-            LogDebug($"장착 무기에서 {muzzlePointName}을 찾지 못해 fallback muzzle을 사용합니다. weaponId={weaponId}");
-            ApplyFallbackMuzzle();
+            RefreshWeaponVisualVisibility();
         }
 
-        /// <summary>
-        /// WeaponDataSO의 무기 카테고리를 기준으로 장착 모델이 생성될 Mount를 선택한다.
-        /// 타입별 Mount가 연결되어 있지 않으면 기존 WeaponHolder를 fallback parent로 사용한다.
-        /// </summary>
         private Transform ResolveWeaponMount(WeaponDataSO weaponData)
         {
             if (weaponData == null)
@@ -195,6 +227,55 @@ namespace DeadZone.Actors
             }
         }
 
+        private void RefreshWeaponVisualVisibility()
+        {
+            if (currentWeaponInstance == null)
+            {
+                lastAppliedWeaponVisualVisible = null;
+                return;
+            }
+
+            bool visible = ShouldShowWeaponVisual();
+
+            if (lastAppliedWeaponVisualVisible.HasValue &&
+                lastAppliedWeaponVisualVisible.Value == visible &&
+                currentWeaponInstance.activeSelf == visible)
+            {
+                return;
+            }
+
+            currentWeaponInstance.SetActive(visible);
+            lastAppliedWeaponVisualVisible = visible;
+        }
+
+        private bool ShouldShowWeaponVisual()
+        {
+            if (IsKnockedOrDead())
+                return false;
+
+            if (IsRollingForVisual())
+                return false;
+
+            return true;
+        }
+
+        private bool IsKnockedOrDead()
+        {
+            if (playerHealthSystem == null)
+                return false;
+
+            PlayerState state = playerHealthSystem.State.Value;
+            return state == PlayerState.Knocked || state == PlayerState.Dead;
+        }
+
+        private bool IsRollingForVisual()
+        {
+            if (animator == null || !hasRollingParameter)
+                return false;
+
+            return animator.GetBool(rollingHash);
+        }
+
         private void ClearCurrentWeaponView()
         {
             if (currentWeaponInstance != null)
@@ -207,6 +288,7 @@ namespace DeadZone.Actors
 
             currentWeaponInstance = null;
             displayedWeaponId = string.Empty;
+            lastAppliedWeaponVisualVisible = null;
             ApplyFallbackMuzzle();
         }
 
@@ -232,6 +314,15 @@ namespace DeadZone.Actors
             if (shootingSystem == null)
                 shootingSystem = GetComponent<ShootingSystem>();
 
+            if (playerHealthSystem == null)
+                playerHealthSystem = GetComponent<PlayerHealthSystem>();
+
+            if (animator == null)
+                animator = GetComponent<Animator>();
+
+            if (animator == null)
+                animator = GetComponentInChildren<Animator>();
+
             if (weaponHolder == null)
                 weaponHolder = transform.Find("WeaponHolder");
 
@@ -248,11 +339,38 @@ namespace DeadZone.Actors
             }
         }
 
-        private bool HasRequiredReferences()
+        private void CacheAnimatorBindings()
         {
-            return equipmentSlots != null &&
-                   shootingSystem != null &&
-                   weaponHolder != null;
+            if (cachedAnimatorForRollingParameter == animator)
+                return;
+
+            cachedAnimatorForRollingParameter = animator;
+            hasRollingParameter = false;
+            rollingHash = 0;
+
+            if (animator == null || string.IsNullOrWhiteSpace(rollingParameterName))
+                return;
+
+            rollingHash = Animator.StringToHash(rollingParameterName);
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.name != rollingParameterName)
+                    continue;
+
+                hasRollingParameter = parameter.type == AnimatorControllerParameterType.Bool;
+
+                if (!hasRollingParameter)
+                {
+                    LogDebug($"Animator 파라미터 '{rollingParameterName}' 타입이 Bool이 아니어서 Roll 기준 무기 숨김을 적용하지 않습니다.");
+                }
+
+                return;
+            }
+
+            LogDebug($"Animator에서 Bool 파라미터 '{rollingParameterName}'를 찾지 못해 Roll 기준 무기 숨김을 적용하지 않습니다.");
         }
 
         private void SubscribeEquipmentEvents()
@@ -281,6 +399,24 @@ namespace DeadZone.Actors
             subscribedToEquipment = false;
         }
 
+        private void SubscribePlayerStateEvents()
+        {
+            if (playerHealthSystem == null || subscribedToPlayerState)
+                return;
+
+            playerHealthSystem.State.OnValueChanged += OnPlayerStateChanged;
+            subscribedToPlayerState = true;
+        }
+
+        private void UnsubscribePlayerStateEvents()
+        {
+            if (playerHealthSystem == null || !subscribedToPlayerState)
+                return;
+
+            playerHealthSystem.State.OnValueChanged -= OnPlayerStateChanged;
+            subscribedToPlayerState = false;
+        }
+
         private void OnCurrentEquippedChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
         {
             RefreshEquippedWeaponView();
@@ -289,6 +425,11 @@ namespace DeadZone.Actors
         private void OnWeaponSlotIdChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
         {
             RefreshEquippedWeaponView();
+        }
+
+        private void OnPlayerStateChanged(PlayerState previousState, PlayerState newState)
+        {
+            RefreshWeaponVisualVisibility();
         }
 
         private static Transform FindChildRecursive(Transform root, string targetName)
