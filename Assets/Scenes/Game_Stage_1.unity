@@ -4512,8 +4512,6 @@ GameObject:
   m_Component:
   - component: {fileID: 396228423}
   - component: {fileID: 396228422}
-  - component: {fileID: 396228424}
-  - component: {fileID: 396228425}
   m_Layer: 0
   m_Name: Extraction Zone
   m_TagString: Untagged
@@ -4567,9 +4565,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 396228421
+  GlobalObjectIdHash: 2100626232
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4592,12 +4590,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d22a6d19ba5bd9a4d8f614a0e039bd61, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ExtractionZone
+  ShowTopMostFoldoutHeaderGroup: 1
   extractionId: Truck
   extractionTime: 10
   requireAllExpectedPlayersInZone: 1
-  raidClearCoordinator: {fileID: 0}
+  raidClearCoordinator: {fileID: 439961240}
+  extractionUI: {fileID: 1496990079}
 --- !u!114 &404479194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16948,38 +16948,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 246295761044554429, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 246295761044554429, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 246295761044554429, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 133.6665
-      objectReference: {fileID: 0}
-    - target: {fileID: 246295761044554429, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -340.34857
-      objectReference: {fileID: 0}
     - target: {fileID: 521437076813364034, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_Name
       value: Popup_Pause
       objectReference: {fileID: 0}
-    - target: {fileID: 521437076813364034, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4521347516480747277, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: popupSetting
-      value: 
-      objectReference: {fileID: 1777177806}
-    - target: {fileID: 4521347516480747277, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: settingPopupUI
-      value: 
-      objectReference: {fileID: 1777177805}
     - target: {fileID: 4768502148956861504, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -17022,7 +16994,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768502148956861504, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -78.50594
       objectReference: {fileID: 0}
     - target: {fileID: 4768502148956861504, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_LocalRotation.w
@@ -17042,11 +17014,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4768502148956861504, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 13.04573
       objectReference: {fileID: 0}
     - target: {fileID: 4768502148956861504, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: 0.00005
       objectReference: {fileID: 0}
     - target: {fileID: 4768502148956861504, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -17059,54 +17031,6 @@ PrefabInstance:
     - target: {fileID: 4768502148956861504, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6495293056495913172, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6495293056495913172, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6495293056495913172, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 133.6665
-      objectReference: {fileID: 0}
-    - target: {fileID: 6495293056495913172, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -48.621223
-      objectReference: {fileID: 0}
-    - target: {fileID: 7869166448736727559, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7869166448736727559, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7869166448736727559, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 133.6665
-      objectReference: {fileID: 0}
-    - target: {fileID: 7869166448736727559, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -145.86368
-      objectReference: {fileID: 0}
-    - target: {fileID: 7983883121760791423, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7983883121760791423, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7983883121760791423, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 133.6665
-      objectReference: {fileID: 0}
-    - target: {fileID: 7983883121760791423, guid: 7c3e48747da71bb409f103e17d2a45d0, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -243.10611
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18278,10 +18202,6 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5177900921275084082, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5476118898181402931, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -18963,6 +18883,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
+--- !u!114 &1496990079 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2012466973609075537, guid: 9d47c02f39c42894f89028e0ff969457, type: 3}
+  m_PrefabInstance: {fileID: 1496990078}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62285c3c675cb0f4eb9f56687b890316, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ExtractionUI
 --- !u!1001 &1498334101
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23425,22 +23356,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
---- !u!114 &1777177805 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6728513792519004208, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
-  m_PrefabInstance: {fileID: 1777177804}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1777177806}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f99534af9d248b4894b241c41af036d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.SettingPopupUI
---- !u!1 &1777177806 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7392058866433119634, guid: c3f01f45de27ed94b8aafeb0c87c108d, type: 3}
-  m_PrefabInstance: {fileID: 1777177804}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1781792926 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8715717755725154671, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}

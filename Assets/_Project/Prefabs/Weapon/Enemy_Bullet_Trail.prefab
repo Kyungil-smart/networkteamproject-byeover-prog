@@ -164,6 +164,7 @@ MonoBehaviour:
   environmentMask:
     serializedVersion: 2
     m_Bits: 32896
+  collisionRadius: 0.08
 --- !u!96 &8162877662774887221
 TrailRenderer:
   serializedVersion: 4

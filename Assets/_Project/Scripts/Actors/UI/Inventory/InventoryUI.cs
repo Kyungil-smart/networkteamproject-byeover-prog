@@ -613,7 +613,7 @@ namespace DeadZone.Actors.UI
                     continue;
                 }
 
-                bagSlots[slotIndex].SetItem(itemData, slotData.stackCount);
+                bagSlots[slotIndex].SetItem(itemData, slotData.stackCount, itemId);
             }
 
             RefreshBagSlots();
@@ -918,7 +918,7 @@ namespace DeadZone.Actors.UI
                 if (itemData == null)
                     continue;
 
-                SetQuickSlotsByIndex(quickSlots, Mathf.Max(0, savedItem.slotIndex), itemData, Mathf.Max(1, savedItem.stackCount));
+                SetQuickSlotsByIndex(quickSlots, Mathf.Max(0, savedItem.slotIndex), itemData, Mathf.Max(1, savedItem.stackCount), savedItem.itemId);
             }
 
             RefreshQuickSlotViews();
@@ -953,7 +953,7 @@ namespace DeadZone.Actors.UI
                 if (itemData == null)
                     continue;
 
-                SetQuickSlotsByIndex(quickSlots, slotData.slotIndex, itemData, Mathf.Max(1, slotData.stackCount));
+                SetQuickSlotsByIndex(quickSlots, slotData.slotIndex, itemData, Mathf.Max(1, slotData.stackCount), slotData.itemId.ToString());
             }
 
             if (boundGridInventory.QuickSlots != null)
@@ -996,7 +996,7 @@ namespace DeadZone.Actors.UI
             return slots;
         }
 
-        private static void SetQuickSlotsByIndex(List<InventorySlotUI> slots, int slotIndex, ItemDataSO itemData, int stackCount)
+        private static void SetQuickSlotsByIndex(List<InventorySlotUI> slots, int slotIndex, ItemDataSO itemData, int stackCount, string sourceItemId)
         {
             if (slots == null || itemData == null)
                 return;
@@ -1005,7 +1005,7 @@ namespace DeadZone.Actors.UI
             {
                 InventorySlotUI slot = slots[i];
                 if (slot != null && slot.SlotIndex == slotIndex)
-                    slot.SetItem(itemData, stackCount);
+                    slot.SetItem(itemData, stackCount, sourceItemId);
             }
         }
 

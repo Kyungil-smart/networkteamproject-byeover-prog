@@ -630,17 +630,21 @@ namespace DeadZone.Actors
         [ServerRpc]
         public void EquipHelmetServerRpc(FixedString64Bytes helmetId)
         {
+            FixedString64Bytes previousItemId = HeadSlotId.Value;
             HeadSlotId.Value = helmetId;
             var h = Lookup<HelmetDataSO>(helmetId.ToString());
             HelmetDurability.Value = h != null ? h.maxDurability : 0f;
+            PublishEquipmentSlotChanged(EquipmentTargetSlot.Head, previousItemId, helmetId);
         }
 
         [ServerRpc]
         public void EquipArmorServerRpc(FixedString64Bytes armorId)
         {
+            FixedString64Bytes previousItemId = TorsoSlotId.Value;
             TorsoSlotId.Value = armorId;
             var a = Lookup<ArmorDataSO>(armorId.ToString());
             ArmorDurability.Value = a != null ? a.maxDurability : 0f;
+            PublishEquipmentSlotChanged(EquipmentTargetSlot.Armor, previousItemId, armorId);
         }
 
         [ServerRpc]
@@ -697,6 +701,7 @@ namespace DeadZone.Actors
                 return false;
 
             FixedString64Bytes itemId = new(item.itemID);
+            FixedString64Bytes previousItemId = GetEquipmentSlotItemId(targetSlot);
 
             switch (targetSlot)
             {
@@ -705,10 +710,12 @@ namespace DeadZone.Actors
                     HelmetDurability.Value = sourceSlot.currentDurability > 0f
                         ? sourceSlot.currentDurability
                         : item is HelmetDataSO helmet ? helmet.maxDurability : 0f;
+                    PublishEquipmentSlotChanged(targetSlot, previousItemId, itemId);
                     return true;
 
                 case EquipmentTargetSlot.Backpack:
                     EquipBackpack(itemId);
+                    PublishEquipmentSlotChanged(targetSlot, previousItemId, itemId);
                     return true;
 
                 case EquipmentTargetSlot.Armor:
@@ -716,22 +723,27 @@ namespace DeadZone.Actors
                     ArmorDurability.Value = sourceSlot.currentDurability > 0f
                         ? sourceSlot.currentDurability
                         : item is ArmorDataSO armor ? armor.maxDurability : 0f;
+                    PublishEquipmentSlotChanged(targetSlot, previousItemId, itemId);
                     return true;
 
                 case EquipmentTargetSlot.Primary1:
                     UpdateSlot(WeaponSlot.Primary1, item.itemID, CreateWeaponStateFromInventorySlot(item, sourceSlot));
+                    PublishEquipmentSlotChanged(targetSlot, previousItemId, itemId);
                     return true;
 
                 case EquipmentTargetSlot.Primary2:
                     UpdateSlot(WeaponSlot.Primary2, item.itemID, CreateWeaponStateFromInventorySlot(item, sourceSlot));
+                    PublishEquipmentSlotChanged(targetSlot, previousItemId, itemId);
                     return true;
 
                 case EquipmentTargetSlot.Secondary:
                     UpdateSlot(WeaponSlot.Secondary, item.itemID, CreateWeaponStateFromInventorySlot(item, sourceSlot));
+                    PublishEquipmentSlotChanged(targetSlot, previousItemId, itemId);
                     return true;
 
                 case EquipmentTargetSlot.Melee:
                     UpdateSlot(WeaponSlot.Melee, item.itemID, default);
+                    PublishEquipmentSlotChanged(targetSlot, previousItemId, itemId);
                     return true;
 
                 default:
@@ -753,8 +765,10 @@ namespace DeadZone.Actors
                     if (string.IsNullOrWhiteSpace(itemId))
                         return false;
 
+                    FixedString64Bytes previousHeadId = HeadSlotId.Value;
                     HeadSlotId.Value = "";
                     HelmetDurability.Value = 0f;
+                    PublishEquipmentSlotChanged(targetSlot, previousHeadId, default);
                     return true;
 
                 case EquipmentTargetSlot.Backpack:
@@ -762,7 +776,9 @@ namespace DeadZone.Actors
                     if (string.IsNullOrWhiteSpace(itemId))
                         return false;
 
+                    FixedString64Bytes previousBackpackId = BackpackSlotId.Value;
                     EquipBackpack(new FixedString64Bytes(""));
+                    PublishEquipmentSlotChanged(targetSlot, previousBackpackId, default);
                     return true;
 
                 case EquipmentTargetSlot.Armor:
@@ -770,21 +786,23 @@ namespace DeadZone.Actors
                     if (string.IsNullOrWhiteSpace(itemId))
                         return false;
 
+                    FixedString64Bytes previousArmorId = TorsoSlotId.Value;
                     TorsoSlotId.Value = "";
                     ArmorDurability.Value = 0f;
+                    PublishEquipmentSlotChanged(targetSlot, previousArmorId, default);
                     return true;
 
                 case EquipmentTargetSlot.Primary1:
-                    return TryClearWeaponSlotForDrop(WeaponSlot.Primary1, out itemId);
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Primary1, targetSlot, out itemId);
 
                 case EquipmentTargetSlot.Primary2:
-                    return TryClearWeaponSlotForDrop(WeaponSlot.Primary2, out itemId);
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Primary2, targetSlot, out itemId);
 
                 case EquipmentTargetSlot.Secondary:
-                    return TryClearWeaponSlotForDrop(WeaponSlot.Secondary, out itemId);
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Secondary, targetSlot, out itemId);
 
                 case EquipmentTargetSlot.Melee:
-                    return TryClearWeaponSlotForDrop(WeaponSlot.Melee, out itemId);
+                    return TryClearWeaponSlotForDrop(WeaponSlot.Melee, targetSlot, out itemId);
 
                 default:
                     return false;
@@ -878,14 +896,48 @@ namespace DeadZone.Actors
                 : default;
         }
 
-        private bool TryClearWeaponSlotForDrop(WeaponSlot weaponSlot, out string itemId)
+        private bool TryClearWeaponSlotForDrop(
+            WeaponSlot weaponSlot,
+            EquipmentTargetSlot targetSlot,
+            out string itemId)
         {
-            itemId = GetWeaponSlotId(weaponSlot).ToString();
+            FixedString64Bytes previousItemId = GetWeaponSlotId(weaponSlot);
+            itemId = previousItemId.ToString();
             if (string.IsNullOrWhiteSpace(itemId))
                 return false;
 
             UpdateSlot(weaponSlot, string.Empty, default);
+            PublishEquipmentSlotChanged(targetSlot, previousItemId, default);
             return true;
+        }
+
+        private FixedString64Bytes GetEquipmentSlotItemId(EquipmentTargetSlot targetSlot)
+        {
+            return targetSlot switch
+            {
+                EquipmentTargetSlot.Head => HeadSlotId.Value,
+                EquipmentTargetSlot.Backpack => BackpackSlotId.Value,
+                EquipmentTargetSlot.Armor => TorsoSlotId.Value,
+                EquipmentTargetSlot.Primary1 => Primary1Id.Value,
+                EquipmentTargetSlot.Primary2 => Primary2Id.Value,
+                EquipmentTargetSlot.Secondary => SecondaryId.Value,
+                EquipmentTargetSlot.Melee => MeleeId.Value,
+                _ => default
+            };
+        }
+
+        private void PublishEquipmentSlotChanged(
+            EquipmentTargetSlot targetSlot,
+            FixedString64Bytes previousItemId,
+            FixedString64Bytes nextItemId)
+        {
+            EventBus.Publish(new EquipmentSlotChangedEvent
+            {
+                clientId = OwnerClientId,
+                targetSlot = (byte)targetSlot,
+                previousItemId = previousItemId,
+                nextItemId = nextItemId
+            });
         }
 
         [ServerRpc]
