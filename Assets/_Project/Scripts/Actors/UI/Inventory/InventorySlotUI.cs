@@ -637,9 +637,9 @@ namespace DeadZone.Actors.UI
 
             if (!HasItem)
             {
-                if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetEquipmentSlot) &&
+                if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot emptyTargetEquipmentSlot) &&
                     source.slotKind == InventorySlotKind.Bag &&
-                    TryRequestInventoryMoveToEquipment(source.slotIndex, targetEquipmentSlot))
+                    TryRequestInventoryMoveToEquipment(source.slotIndex, emptyTargetEquipmentSlot))
                 {
                     return true;
                 }
@@ -854,7 +854,7 @@ namespace DeadZone.Actors.UI
 
             byte gridX = (byte)(Mathf.Max(0, source.slotIndex) % GridInventory.BASE_WIDTH);
             byte gridY = (byte)(Mathf.Max(0, source.slotIndex) / GridInventory.BASE_WIDTH);
-            inventory.RequestEquipInventorySlotToEquipment(gridX, gridY, targetSlot);
+            inventory.RequestMoveInventorySlotToEquipment(gridX, gridY, targetSlot);
             return true;
         }
 
