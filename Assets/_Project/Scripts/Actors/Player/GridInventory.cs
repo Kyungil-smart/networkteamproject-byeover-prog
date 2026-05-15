@@ -1031,6 +1031,13 @@ namespace DeadZone.Actors
             slot.currentAmmo = (ushort)Mathf.Clamp(weaponState.currentAmmo, 0, ushort.MaxValue);
         }
 
+        private static ushort GetDefaultInventoryAmmo(ItemDataSO item)
+        {
+            return item is WeaponDataSO weapon
+                ? (ushort)Mathf.Clamp(weapon.magSize, 0, ushort.MaxValue)
+                : (ushort)0;
+        }
+
         private bool CanAddItemSlotAt(ItemDataSO item, ItemSlotData sourceSlot, byte gridX, byte gridY)
         {
             if (!IsServer || item == null || sourceSlot.stackCount <= 0)
@@ -1915,7 +1922,7 @@ namespace DeadZone.Actors
                         rotated = false,
                         stackCount = (ushort)Mathf.Clamp(amount, 1, item.maxStackSize),
                         currentDurability = (item is WeaponDataSO weapon) ? weapon.maxDurability : 0,
-                        currentAmmo = 0,
+                        currentAmmo = GetDefaultInventoryAmmo(item),
                     };
                     return true;
                 }
@@ -2383,7 +2390,7 @@ namespace DeadZone.Actors
                         rotated = false,
                         stackCount = (ushort)Mathf.Clamp(amount, 1, item.maxStackSize),
                         currentDurability = (item is WeaponDataSO weapon) ? weapon.maxDurability : 0,
-                        currentAmmo = 0,
+                        currentAmmo = GetDefaultInventoryAmmo(item),
                     });
 
                     EventBus.Publish(new ItemAddedEvent

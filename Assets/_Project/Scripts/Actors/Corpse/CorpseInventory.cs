@@ -57,6 +57,8 @@ namespace DeadZone.Actors
         private void AppendEquippedItem(Unity.Collections.FixedString64Bytes itemId)
         {
             if (itemId.IsEmpty) return;
+            ItemDataSO item = LookupItem(itemId.ToString());
+
             Slots.Add(new ItemSlotData
             {
                 itemId = itemId,
@@ -64,9 +66,24 @@ namespace DeadZone.Actors
                 gridY = 0,
                 rotated = false,
                 stackCount = 1,
-                currentDurability = 0,
-                currentAmmo = 0,
+                currentDurability = GetDamagedEquipmentDurability(item),
+                currentAmmo = item is WeaponDataSO weapon
+                    ? (ushort)Mathf.Clamp(weapon.magSize, 0, ushort.MaxValue)
+                    : (ushort)0,
             });
+        }
+
+        private static float GetDamagedEquipmentDurability(ItemDataSO item)
+        {
+            const float DroppedEquipmentDurabilityRatio = 0.65f;
+
+            return item switch
+            {
+                WeaponDataSO weapon => Mathf.Max(1f, weapon.maxDurability * DroppedEquipmentDurabilityRatio),
+                ArmorDataSO armor => Mathf.Max(1f, armor.maxDurability * DroppedEquipmentDurabilityRatio),
+                HelmetDataSO helmet => Mathf.Max(1f, helmet.maxDurability * DroppedEquipmentDurabilityRatio),
+                _ => 0f
+            };
         }
 
         /// <summary>루팅을 요청한 플레이어 쪽에서만 시체 UI를 연다.</summary>

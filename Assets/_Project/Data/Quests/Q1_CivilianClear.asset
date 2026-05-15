@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: Q1_CivilianClear
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q1
-  questName: "\uBBFC\uAC04 \uC9C0\uC5ED \uC18C\uD0D5"
-  description: "\uBBFC\uAC04 \uC9C0\uC5ED\uC5D0 \uC788\uB294 \uC801 10\uBA85\uC744
+  questName: "\uC801 \uCC98\uCE58 \uD6C8\uB828"
+  description: "\uC5B4\uB5A4 \uAD6C\uC5ED\uC758 \uC801\uC774\uB4E0 10\uBA85\uC744
     \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
   objectives:
   - type: 0
-    targetID: Enemy_Zone1_Any
+    targetID: Enemy_Any
     requiredCount: 10
-    location: "\uBBFC\uAC04 \uC9C0\uC5ED"
+    location: "\uC804 \uAD6C\uC5ED"
   rewards:
   - type: 1
-    itemID: Weapon_Rare_Choice_Q1
+    itemID: Weapon_Glock17
     amount: 1
   unlockZoneID: 
   prerequisiteQuestID: 
