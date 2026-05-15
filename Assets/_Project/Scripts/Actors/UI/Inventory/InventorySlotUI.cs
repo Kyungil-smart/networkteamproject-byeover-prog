@@ -610,6 +610,12 @@ namespace DeadZone.Actors.UI
             ItemDataSO sourceItem = source.CurrentItemData;
             int sourceCount = source.CurrentStackCount;
 
+            if (source.slotKind == InventorySlotKind.QuickSlot && slotKind != InventorySlotKind.QuickSlot)
+            {
+                Debug.Log("[InventorySlotUI] Quick slot shortcuts cannot be moved into item containers. Clear or replace the shortcut instead.", this);
+                return false;
+            }
+
             if (slotKind == InventorySlotKind.QuickSlot)
                 return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
 
@@ -702,6 +708,12 @@ namespace DeadZone.Actors.UI
             if (!CanAccept(sourceItem))
                 return false;
 
+            if (source.slotKind != InventorySlotKind.QuickSlot && source.IsStashLikeSlot())
+            {
+                Debug.LogWarning("[InventorySlotUI] Quick slots can only reference carried inventory items, not stash items.", this);
+                return false;
+            }
+
             if (source.slotKind == InventorySlotKind.QuickSlot)
             {
                 if (!HasItem)
@@ -722,21 +734,13 @@ namespace DeadZone.Actors.UI
 
             if (HasItem)
             {
-                ItemDataSO targetItem = CurrentItemData;
-                int targetCount = CurrentStackCount;
-
-                if (!source.CanAccept(targetItem))
-                    return false;
-
                 SetItem(sourceItem, sourceCount);
-                source.SetItem(targetItem, targetCount);
-                CaptureLobbyInventoryStateIfPresent(this, source);
+                CaptureLobbyInventoryStateIfPresent(this);
                 return true;
             }
 
             SetItem(sourceItem, sourceCount);
-            source.ClearItem();
-            CaptureLobbyInventoryStateIfPresent(this, source);
+            CaptureLobbyInventoryStateIfPresent(this);
             return true;
         }
 
@@ -1457,10 +1461,7 @@ namespace DeadZone.Actors.UI
             if (itemData is WeaponDataSO or ArmorDataSO or HelmetDataSO or BackpackDataSO)
                 return false;
 
-            return itemData.category is not ItemCategory.Weapon
-                and not ItemCategory.Armor
-                and not ItemCategory.Helmet
-                and not ItemCategory.Backpack;
+            return itemData.category == ItemCategory.Med;
         }
 
         private static string GetHierarchyPath(Transform target)

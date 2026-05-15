@@ -43,7 +43,7 @@ namespace DeadZone.Actors
 
         [Header("Projectile Visual")]
         [Tooltip("클라이언트에서 로컬로 재생하는 탄도 시각 효과의 최대 유지 시간입니다. 서버 판정 projectile 수명과는 별개입니다.")]
-        [SerializeField, Min(0.01f)] private float projectileVisualMaxLifetime = 0.35f;
+        [SerializeField, Min(0.01f)] private float projectileVisualMaxLifetime = 1.1f;
 
         [Header("Weapon Visual")]
         [SerializeField] private bool autoEquipWeaponVisual = true;
@@ -453,7 +453,13 @@ namespace DeadZone.Actors
                 normalizedFireDir,
                 velocity,
                 pData.Range,
-                projectileVisualMaxLifetime);
+                CalculateProjectileVisualLifetime(pData.Range, velocity));
+        }
+
+        private float CalculateProjectileVisualLifetime(float range, float velocity)
+        {
+            float travelTime = range / Mathf.Max(1f, velocity);
+            return Mathf.Clamp(travelTime, 0.12f, projectileVisualMaxLifetime);
         }
 
         private Vector3 ApplySpread(Vector3 baseDir, WeaponDataSO weapon)

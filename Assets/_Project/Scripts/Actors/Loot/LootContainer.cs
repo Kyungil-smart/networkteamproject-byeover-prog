@@ -321,10 +321,11 @@ namespace DeadZone.Actors
                 return;
 
             int amount = Mathf.Max(1, slotData.amount);
-            if (!inventory.CanAddItem(itemData, amount))
+            ItemSlotData itemSlot = CreateInventorySlotData(itemData, slotData);
+            if (!inventory.CanAddItemSlot(itemData, itemSlot))
                 return;
 
-            if (!inventory.TryAddItem(itemData, amount))
+            if (!inventory.TryAddItemSlot(itemData, itemSlot))
                 return;
 
             Slots[slotIndex] = new global::ContainerSlotNetData();
@@ -412,9 +413,17 @@ namespace DeadZone.Actors
             if (equipmentSlots == null)
                 return;
 
+            GridInventory inventory = ResolvePlayerInventory(rpcParams.Receive.SenderClientId);
+
             ItemDataSO itemData = ResolveItemData(sourceSlot.itemId.ToString());
             if (itemData == null || !equipmentSlots.CanEquipItemToSlot(itemData, targetSlot))
                 return;
+
+            if (!equipmentSlots.IsEquipmentSlotEmpty(targetSlot))
+            {
+                if (inventory == null || !inventory.TryMoveEquipmentSlotToInventoryOnServer(targetSlot))
+                    return;
+            }
 
             if (!equipmentSlots.TryEquipItemToEmptySlot(itemData, targetSlot))
                 return;
@@ -427,6 +436,26 @@ namespace DeadZone.Actors
 
             sourceSlot.amount--;
             Slots[sourceSlotIndex] = sourceSlot;
+        }
+
+        private static ItemSlotData CreateInventorySlotData(ItemDataSO itemData, global::ContainerSlotNetData sourceSlot)
+        {
+            return new ItemSlotData
+            {
+                itemId = sourceSlot.itemId,
+                stackCount = (ushort)Mathf.Clamp(sourceSlot.amount, 1, Mathf.Max(1, itemData.maxStackSize)),
+                gridX = 0,
+                gridY = 0,
+                rotated = false,
+                currentDurability = itemData switch
+                {
+                    WeaponDataSO weapon => weapon.maxDurability,
+                    ArmorDataSO armor => armor.maxDurability,
+                    HelmetDataSO helmet => helmet.maxDurability,
+                    _ => 0f
+                },
+                currentAmmo = 0
+            };
         }
 
         private void OpenLocalForEditorDebug(ulong clientId)

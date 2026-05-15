@@ -392,6 +392,14 @@ namespace DeadZone.Actors
                 TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
         }
 
+        public bool TryMoveEquipmentSlotToInventoryOnServer(EquipmentTargetSlot targetSlot)
+        {
+            if (!IsServer)
+                return false;
+
+            return TryMoveEquipmentSlotToInventory(targetSlot, byte.MaxValue, byte.MaxValue);
+        }
+
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void MoveEquipmentSlotToInventoryRpc(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY, RpcParams rpcParams = default)
         {
@@ -1194,16 +1202,20 @@ namespace DeadZone.Actors
                 return false;
             }
 
-            AmmoGrade reloadGrade = context.loadedAmmo != null
-                ? context.loadedAmmo.grade
-                : AmmoGrade.LP;
-
-            if (!TryFindAmmoByGrade(
+            bool foundReloadAmmo = context.loadedAmmo != null
+                ? TryFindAmmoByGrade(
                     context.weapon.ammoType,
-                    reloadGrade,
+                    context.loadedAmmo.grade,
                     out AmmoDataSO reloadAmmo,
                     out FixedString64Bytes reloadAmmoId,
-                    out int availableCount))
+                    out int availableCount)
+                : TryFindAnyCompatibleAmmo(
+                    context.weapon.ammoType,
+                    out reloadAmmo,
+                    out reloadAmmoId,
+                    out availableCount);
+
+            if (!foundReloadAmmo)
             {
                 result.failureReason = ReloadCancelReason.NoAmmo;
                 return false;
@@ -1345,6 +1357,48 @@ namespace DeadZone.Actors
                 ammoId = slotItemId;
                 availableCount = CountItemAmount(slotItemId);
 
+                return availableCount > 0;
+            }
+
+            return false;
+        }
+
+        private bool TryFindAnyCompatibleAmmo(
+            AmmoType ammoType,
+            out AmmoDataSO ammoData,
+            out FixedString64Bytes ammoId,
+            out int availableCount)
+        {
+            ammoData = null;
+            ammoId = default;
+            availableCount = 0;
+
+            AmmoGrade[] preferredGrades =
+            {
+                AmmoGrade.LP,
+                AmmoGrade.BP,
+                AmmoGrade.AP
+            };
+
+            for (int i = 0; i < preferredGrades.Length; i++)
+            {
+                if (TryFindAmmoByGrade(ammoType, preferredGrades[i], out ammoData, out ammoId, out availableCount))
+                    return true;
+            }
+
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                FixedString64Bytes slotItemId = ServerGrid[i].itemId;
+
+                if (!TryGetAmmoData(slotItemId, out AmmoDataSO ammo))
+                    continue;
+
+                if (ammo.caliber != ammoType)
+                    continue;
+
+                ammoData = ammo;
+                ammoId = slotItemId;
+                availableCount = CountItemAmount(slotItemId);
                 return availableCount > 0;
             }
 

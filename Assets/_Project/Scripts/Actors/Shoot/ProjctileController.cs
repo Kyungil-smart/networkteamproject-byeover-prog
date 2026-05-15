@@ -31,6 +31,14 @@ namespace DeadZone.Actors
         private float distanceTravelled;
         private bool isInitialized;
 
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            if (!IsServer)
+                SetProjectileVisualsEnabled(false);
+        }
+
         /// <summary>
         /// 생성 직후 서버에서 데이터를 주입하여 투사체를 활성화합니다.
         /// </summary>
@@ -164,6 +172,23 @@ namespace DeadZone.Actors
             else
             {
                 Destroy(gameObject);
+            }
+        }
+
+        private void SetProjectileVisualsEnabled(bool visible)
+        {
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                    renderers[i].enabled = visible;
+            }
+
+            TrailRenderer[] trails = GetComponentsInChildren<TrailRenderer>(true);
+            for (int i = 0; i < trails.Length; i++)
+            {
+                if (trails[i] != null)
+                    trails[i].emitting = visible;
             }
         }
     }
