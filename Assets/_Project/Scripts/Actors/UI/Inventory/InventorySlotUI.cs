@@ -720,16 +720,23 @@ namespace DeadZone.Actors.UI
                 return true;
             }
 
-            if (source.IsStashLikeSlot())
+            if (HasItem)
             {
-                Debug.LogWarning(
-                    $"[InventorySlotUI] Quickslot assignment blocked from stash. Move item to player inventory first. itemID={sourceItem.itemID}",
-                    this);
-                return false;
+                ItemDataSO targetItem = CurrentItemData;
+                int targetCount = CurrentStackCount;
+
+                if (!source.CanAccept(targetItem))
+                    return false;
+
+                SetItem(sourceItem, sourceCount);
+                source.SetItem(targetItem, targetCount);
+                CaptureLobbyInventoryStateIfPresent(this, source);
+                return true;
             }
 
             SetItem(sourceItem, sourceCount);
-            CaptureLobbyInventoryStateIfPresent(this);
+            source.ClearItem();
+            CaptureLobbyInventoryStateIfPresent(this, source);
             return true;
         }
 
