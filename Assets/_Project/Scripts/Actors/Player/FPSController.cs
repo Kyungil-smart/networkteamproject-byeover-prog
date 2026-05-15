@@ -108,6 +108,7 @@ namespace DeadZone.Actors
             
             if (isMoveLocked)
             {
+                ApplyLookRotation();
                 ApplyGravityOnly();
                 return;
             }
