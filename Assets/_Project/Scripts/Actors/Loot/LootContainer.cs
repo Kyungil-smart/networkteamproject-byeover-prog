@@ -262,10 +262,34 @@ namespace DeadZone.Actors
                 return;
 
             if (searchRoutine != null)
+            {
                 StopCoroutine(searchRoutine);
+                searchRoutine = null;
+            }
 
             IsOpened.Value = true;
-            searchRoutine = StartCoroutine(SearchAndOpenRoutine(senderClientId));
+            OpenImmediatelyForClient(senderClientId);
+        }
+
+        private void OpenImmediatelyForClient(ulong requesterClientId)
+        {
+            IsSearching.Value = false;
+            SearchEndsAt.Value = 0d;
+
+            if (!hasGeneratedLoot)
+            {
+                List<global::ContainerSlotNetData> generated = GenerateSlotList();
+                ApplyGeneratedSlotsToNetworkList(generated);
+                hasGeneratedLoot = true;
+            }
+
+            if (printDebugLogOnOpen)
+                PrintNetworkSlotsDebug(requesterClientId);
+
+            if (playLootSoundOnOpen)
+                PlayLootSoundForClient(requesterClientId, AudioCueId.Loot1);
+
+            OpenLootingUiRpc(RpcTarget.Single(requesterClientId, RpcTargetUse.Temp));
         }
 
         private IEnumerator SearchAndOpenRoutine(ulong requesterClientId)

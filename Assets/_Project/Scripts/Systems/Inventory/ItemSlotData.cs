@@ -41,4 +41,36 @@ namespace DeadZone.Systems
         public override bool Equals(object obj) => obj is ItemSlotData o && Equals(o);
         public override int GetHashCode() => itemId.GetHashCode() ^ (gridX << 8) ^ gridY;
     }
+
+    public struct QuickSlotData : INetworkSerializable, IEquatable<QuickSlotData>
+    {
+        public byte slotIndex;
+        public FixedString64Bytes itemId;
+        public ushort stackCount;
+        public float currentDurability;
+        public ushort currentAmmo;
+
+        public bool IsEmpty => itemId.Length == 0 || stackCount == 0;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
+        {
+            s.SerializeValue(ref slotIndex);
+            s.SerializeValue(ref itemId);
+            s.SerializeValue(ref stackCount);
+            s.SerializeValue(ref currentDurability);
+            s.SerializeValue(ref currentAmmo);
+        }
+
+        public bool Equals(QuickSlotData other)
+        {
+            return slotIndex == other.slotIndex
+                && itemId.Equals(other.itemId)
+                && stackCount == other.stackCount
+                && currentDurability.Equals(other.currentDurability)
+                && currentAmmo == other.currentAmmo;
+        }
+
+        public override bool Equals(object obj) => obj is QuickSlotData o && Equals(o);
+        public override int GetHashCode() => itemId.GetHashCode() ^ slotIndex;
+    }
 }
