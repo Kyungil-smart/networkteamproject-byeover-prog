@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: FastHealSyringe
   displayName: "급속 회복 주사기"
-  description: "- 등급: 레어\n- 용도: 심한 부상을 빠르게 회복시키는 주사기\n\n- 효과\n1. 사용 시간: 1초\n2. 즉시 회복: 30"
+  description: "- 등급: 레어\n- 용도: 심한 부상을 빠르게 회복시키는 주사기\n\n- 효과\n1. 즉시 회복: HP +30"
   icon: {fileID: 21300000, guid: 21ee3dd205ec4594d8485d47aa21426f, type: 3}
   category: 5
   rarity: 2

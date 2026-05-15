@@ -548,6 +548,18 @@ namespace DeadZone.Actors
                 TryMoveQuickSlotToInventory(quickSlotIndex, preferredGridX, preferredGridY);
         }
 
+        public void RequestSwapQuickSlots(byte sourceQuickSlotIndex, byte targetQuickSlotIndex)
+        {
+            if (IsSpawned)
+            {
+                SwapQuickSlotsRpc(sourceQuickSlotIndex, targetQuickSlotIndex);
+                return;
+            }
+
+            if (IsServer)
+                TrySwapQuickSlots(sourceQuickSlotIndex, targetQuickSlotIndex);
+        }
+
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void MoveEquipmentSlotToInventoryRpc(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY, RpcParams rpcParams = default)
         {
@@ -591,6 +603,15 @@ namespace DeadZone.Actors
                 return;
 
             TryMoveQuickSlotToInventory(quickSlotIndex, preferredGridX, preferredGridY);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SwapQuickSlotsRpc(byte sourceQuickSlotIndex, byte targetQuickSlotIndex, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            TrySwapQuickSlots(sourceQuickSlotIndex, targetQuickSlotIndex);
         }
 
         private bool TryMoveInventorySlotToEquipment(byte gridX, byte gridY, EquipmentTargetSlot targetSlot)
@@ -704,6 +725,38 @@ namespace DeadZone.Actors
                 : TryAddItemSlot(item, ToItemSlotData(quickSlot));
 
             return added;
+        }
+
+        private bool TrySwapQuickSlots(byte sourceQuickSlotIndex, byte targetQuickSlotIndex)
+        {
+            if (!IsServer ||
+                sourceQuickSlotIndex >= QUICK_SLOT_COUNT ||
+                targetQuickSlotIndex >= QUICK_SLOT_COUNT)
+            {
+                return false;
+            }
+
+            if (sourceQuickSlotIndex == targetQuickSlotIndex)
+                return true;
+
+            if (!TryGetQuickSlot(sourceQuickSlotIndex, out QuickSlotData sourceQuickSlot))
+                return false;
+
+            bool hasTargetQuickSlot = TryGetQuickSlot(targetQuickSlotIndex, out QuickSlotData targetQuickSlot);
+
+            ClearQuickSlot(sourceQuickSlotIndex);
+            ClearQuickSlot(targetQuickSlotIndex);
+
+            sourceQuickSlot.slotIndex = targetQuickSlotIndex;
+            SetQuickSlot(sourceQuickSlot);
+
+            if (hasTargetQuickSlot)
+            {
+                targetQuickSlot.slotIndex = sourceQuickSlotIndex;
+                SetQuickSlot(targetQuickSlot);
+            }
+
+            return true;
         }
 
         private bool TryUseQuickSlot(byte quickSlotIndex)

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: Bandage
   displayName: "붕대"
-  description: "- 등급: 일반\n- 용도: 가벼운 상처 치료용 붕대\n\n- 효과\n1. 사용 시간: 2초\n2. 지속 회복: 5초 동안 초당 5 회복\n3. 총 회복량: 25"
+  description: "- 등급: 일반\n- 용도: 가벼운 상처 치료용 붕대\n\n- 효과\n1. 사용 시간: 2초\n2. 지속 회복: 5초 동안 초당 HP +5\n3. 총 회복량: HP +25"
   icon: {fileID: 21300000, guid: dd5d6811385504a4f81c4d817d2b2b8c, type: 3}
   category: 5
   rarity: 0
