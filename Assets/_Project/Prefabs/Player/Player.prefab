@@ -894,6 +894,10 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+  QuickSlots:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
   droppedLootItemPrefab: {fileID: 6915811656534715392, guid: 3c89fef0925474747b05544b6277b8f2, type: 3}
   dropForwardDistance: 1.25
   dropGroundRayHeight: 1.5
@@ -1596,10 +1600,83 @@ MonoBehaviour:
   fallbackColor:
     serializedVersion: 2
     rgba: 4294967295
+  maxNicknameCharacters: 20
   TeamColor:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+  Nickname:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue:
+      utf8LengthInBytes: 0
+      bytes:
+        offset0000:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        offset0016:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        offset0032:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        byte0048: 0
+        byte0049: 0
+        byte0050: 0
+        byte0051: 0
+        byte0052: 0
+        byte0053: 0
+        byte0054: 0
+        byte0055: 0
+        byte0056: 0
+        byte0057: 0
+        byte0058: 0
+        byte0059: 0
+        byte0060: 0
+        byte0061: 0
 --- !u!114 &9221063217793167294
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1764,10 +1841,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.PlayerEquippedWeaponView
   equipmentSlots: {fileID: 3096256922150323826}
   shootingSystem: {fileID: -7812494434515924552}
+  playerHealthSystem: {fileID: 8354546832462354360}
   weaponHolder: {fileID: 5664201741075324417}
   rifleLikeMount: {fileID: 1828945665493880841}
   handgunMount: {fileID: 1274814248057830927}
   fallbackMuzzle: {fileID: 7489591256997111823}
+  animator: {fileID: 95481129507444498}
+  rollingParameterName: IsRolling
   muzzlePointName: MuzzlePoint
   resetLocalTransform: 1
   autoBindReferences: 1
