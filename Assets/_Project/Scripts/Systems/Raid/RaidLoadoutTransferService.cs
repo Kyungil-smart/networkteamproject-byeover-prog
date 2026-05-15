@@ -134,6 +134,28 @@ namespace DeadZone.Systems.Raid
             return loadoutsByClientId.ContainsKey(clientId);
         }
 
+        public static void SaveCurrentRaidLoadoutsForConnectedClients()
+        {
+            if (!TryGetServerNetworkManager(out NetworkManager networkManager))
+                return;
+
+            foreach (ulong clientId in networkManager.ConnectedClientsIds)
+            {
+                if (!TryResolveLoadoutSource(networkManager, clientId, out GameObject playerObject))
+                    continue;
+
+                RaidLoadoutSaveData liveLoadout = CreateLoadout(clientId, playerObject);
+                if (liveLoadout == null)
+                    continue;
+
+                loadoutsByClientId[clientId] = liveLoadout;
+
+                Debug.Log(
+                    $"[RaidLoadout] Saved current raid loadout clientId={clientId}, inventory={liveLoadout.inventoryItems.Count}, quickSlots={liveLoadout.quickSlotItems.Count}, equipment={CountEquippedItems(liveLoadout.equipmentItems)}",
+                    playerObject);
+            }
+        }
+
         public static bool TryApplyLoadout(ulong clientId, GameObject playerObject)
         {
             if (!TryGetServerNetworkManager(out _))
@@ -176,7 +198,7 @@ namespace DeadZone.Systems.Raid
 
             int equipmentCount = equipment.ImportSnapshot(loadout.equipmentItems, loadout.currentEquippedItemId);
             int inventoryCount = inventory.ImportSnapshot(loadout.inventoryItems);
-            int quickSlotCount = ApplyQuickSlotsToUi(loadout.quickSlotItems);
+            int quickSlotCount = inventory.ImportQuickSlotSnapshot(loadout.quickSlotItems);
 
             Debug.Log(
                 $"[RaidLoadout] Applied inventory items={inventoryCount}, equipment={equipmentCount}, quickslots={quickSlotCount}, clientId={clientId}",
@@ -246,7 +268,7 @@ namespace DeadZone.Systems.Raid
                 clientId = clientId,
                 inventoryItems = inventory.ExportSnapshot(),
                 equipmentItems = equipment.ExportSnapshot(),
-                quickSlotItems = CaptureCurrentQuickSlotSnapshot(),
+                quickSlotItems = inventory.ExportQuickSlotSnapshot(),
                 currentEquippedItemId = equipment.CurrentEquipped.Value.ToString()
             };
         }
@@ -395,7 +417,6 @@ namespace DeadZone.Systems.Raid
                     });
                 }
 
-                AddQuickSlotItemsToInventory(loadout.inventoryItems, dto.quickSlotItems);
             }
 
             if (dto.equipmentItems != null)

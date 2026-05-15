@@ -255,8 +255,8 @@ namespace DeadZone.Systems.Save
                 List<ItemSaveDTO> targetItems =
                     ResolveItemList(containerId, inventoryItems, stashItems, quickSlotItems);
 
-                int slotIndex = Mathf.Max(0, slot.SlotIndex);
                 int gridWidth = GetGridWidth(containerId);
+                int slotIndex = Mathf.Max(0, slot.SlotIndex);
 
                 RemoveItemAtSlot(targetItems, slotIndex, gridWidth);
 
@@ -417,6 +417,7 @@ namespace DeadZone.Systems.Save
             if (items == null || slots == null)
                 return;
 
+            HashSet<int> usedQuickSlotIndices = BuildUsedQuickSlotIndices(items);
             for (int i = 0; i < slots.Length; i++)
             {
                 InventorySlotUI slot = slots[i];
@@ -427,8 +428,9 @@ namespace DeadZone.Systems.Save
                 if (slot.SlotKind != InventorySlotKind.QuickSlot || !slot.HasItem || slot.CurrentItemData == null)
                     continue;
 
-                int slotIndex = Mathf.Max(0, slot.SlotIndex);
+                int slotIndex = ResolveQuickSlotIndex(slot, usedQuickSlotIndices);
                 RemoveItemAtSlot(items, slotIndex, GetGridWidth(QuickSlotContainerId));
+                usedQuickSlotIndices.Add(slotIndex);
                 items.Add(new ItemSaveDTO
                 {
                     itemId = slot.CurrentItemData.itemID,
@@ -442,6 +444,40 @@ namespace DeadZone.Systems.Save
                     currentAmmo = GetDefaultAmmo(slot.CurrentItemData)
                 });
             }
+        }
+
+        private static HashSet<int> BuildUsedQuickSlotIndices(List<ItemSaveDTO> items)
+        {
+            HashSet<int> usedIndices = new();
+            if (items == null)
+                return usedIndices;
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                ItemSaveDTO item = items[i];
+                if (item == null)
+                    continue;
+
+                int slotIndex = Mathf.Clamp(ToLinearSlotIndex(item.x, item.y, QuickSlotGridWidth), 0, QuickSlotGridWidth - 1);
+                usedIndices.Add(slotIndex);
+            }
+
+            return usedIndices;
+        }
+
+        private static int ResolveQuickSlotIndex(InventorySlotUI slot, HashSet<int> usedIndices)
+        {
+            int requestedIndex = Mathf.Clamp(slot != null ? slot.SlotIndex : 0, 0, QuickSlotGridWidth - 1);
+            if (usedIndices == null || !usedIndices.Contains(requestedIndex))
+                return requestedIndex;
+
+            for (int i = 0; i < QuickSlotGridWidth; i++)
+            {
+                if (!usedIndices.Contains(i))
+                    return i;
+            }
+
+            return requestedIndex;
         }
 
         private static List<ItemSaveDTO> CollectStashSlots(Transform root)

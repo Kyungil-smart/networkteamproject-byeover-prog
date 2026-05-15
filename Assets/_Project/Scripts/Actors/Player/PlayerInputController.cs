@@ -432,11 +432,35 @@ namespace DeadZone.Actors
 
         private static void TryUseQuickslot(int slotIndex)
         {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory != null)
+            {
+                byte quickSlotIndex = (byte)Mathf.Clamp(slotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1);
+                inventory.RequestUseQuickSlot(quickSlotIndex);
+                return;
+            }
+
             InventorySlotUI slot = ResolveQuickSlot(slotIndex);
             if (slot == null || !slot.HasItem)
                 return;
 
             slot.TryUseCurrentItem();
+        }
+
+        private static GridInventory ResolveOwnerGridInventory()
+        {
+            GridInventory[] inventories = FindObjectsByType<GridInventory>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < inventories.Length; i++)
+            {
+                GridInventory inventory = inventories[i];
+                if (inventory != null && inventory.IsOwner)
+                    return inventory;
+            }
+
+            return null;
         }
 
         private static InventorySlotUI ResolveQuickSlot(int slotIndex)

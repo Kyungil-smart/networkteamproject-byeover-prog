@@ -2,6 +2,7 @@ using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine;
 
+using DeadZone.Actors.UI;
 using DeadZone.Core;
 using DeadZone.Systems;
 
@@ -16,6 +17,7 @@ namespace DeadZone.Actors
         private IItemDatabase itemDb;
         private GameObject visualInstance;
         private string visualItemId;
+        private bool isConsumed;
 
         public override void OnNetworkSpawn()
         {
@@ -178,6 +180,9 @@ namespace DeadZone.Actors
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void TryLootServerRpc(RpcParams rpc = default)
         {
+            if (isConsumed)
+                return;
+
             ulong clientId = rpc.Receive.SenderClientId;
 
             if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return;
@@ -201,6 +206,7 @@ namespace DeadZone.Actors
             int amount = Mathf.Max(1, Amount.Value);
             if (inv.TryAddItem(item, amount))
             {
+                isConsumed = true;
                 EventBus.Publish(new ItemLootedEvent
                 {
                     clientId = clientId,
@@ -242,6 +248,16 @@ namespace DeadZone.Actors
 
         private void OpenLootingUI()
         {
+            LootingUIController controller = LootingUIController.ActiveInstance != null
+                ? LootingUIController.ActiveInstance
+                : Object.FindFirstObjectByType<LootingUIController>(FindObjectsInactive.Include);
+
+            if (controller != null)
+            {
+                controller.Open(this);
+                return;
+            }
+
             MonoBehaviour[] behaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
             foreach (MonoBehaviour behaviour in behaviours)
             {

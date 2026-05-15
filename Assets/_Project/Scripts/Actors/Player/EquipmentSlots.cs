@@ -688,13 +688,23 @@ namespace DeadZone.Actors
             if (!IsServer || !CanEquipItemToSlot(item, targetSlot) || !IsEquipmentSlotEmpty(targetSlot))
                 return false;
 
+            return TryEquipItemToSlot(item, default, targetSlot);
+        }
+
+        public bool TryEquipItemToSlot(ItemDataSO item, ItemSlotData sourceSlot, EquipmentTargetSlot targetSlot)
+        {
+            if (!IsServer || !CanEquipItemToSlot(item, targetSlot))
+                return false;
+
             FixedString64Bytes itemId = new(item.itemID);
 
             switch (targetSlot)
             {
                 case EquipmentTargetSlot.Head:
                     HeadSlotId.Value = itemId;
-                    HelmetDurability.Value = item is HelmetDataSO helmet ? helmet.maxDurability : 0f;
+                    HelmetDurability.Value = sourceSlot.currentDurability > 0f
+                        ? sourceSlot.currentDurability
+                        : item is HelmetDataSO helmet ? helmet.maxDurability : 0f;
                     return true;
 
                 case EquipmentTargetSlot.Backpack:
@@ -703,19 +713,21 @@ namespace DeadZone.Actors
 
                 case EquipmentTargetSlot.Armor:
                     TorsoSlotId.Value = itemId;
-                    ArmorDurability.Value = item is ArmorDataSO armor ? armor.maxDurability : 0f;
+                    ArmorDurability.Value = sourceSlot.currentDurability > 0f
+                        ? sourceSlot.currentDurability
+                        : item is ArmorDataSO armor ? armor.maxDurability : 0f;
                     return true;
 
                 case EquipmentTargetSlot.Primary1:
-                    UpdateSlot(WeaponSlot.Primary1, item.itemID, CreateInitialWeaponState(item));
+                    UpdateSlot(WeaponSlot.Primary1, item.itemID, CreateWeaponStateFromInventorySlot(item, sourceSlot));
                     return true;
 
                 case EquipmentTargetSlot.Primary2:
-                    UpdateSlot(WeaponSlot.Primary2, item.itemID, CreateInitialWeaponState(item));
+                    UpdateSlot(WeaponSlot.Primary2, item.itemID, CreateWeaponStateFromInventorySlot(item, sourceSlot));
                     return true;
 
                 case EquipmentTargetSlot.Secondary:
-                    UpdateSlot(WeaponSlot.Secondary, item.itemID, CreateInitialWeaponState(item));
+                    UpdateSlot(WeaponSlot.Secondary, item.itemID, CreateWeaponStateFromInventorySlot(item, sourceSlot));
                     return true;
 
                 case EquipmentTargetSlot.Melee:
@@ -815,6 +827,17 @@ namespace DeadZone.Actors
         {
             return item is WeaponDataSO weapon
                 ? new WeaponState { loadedAmmoId = "", currentAmmo = 0 }
+                : default;
+        }
+
+        private static WeaponState CreateWeaponStateFromInventorySlot(ItemDataSO item, ItemSlotData sourceSlot)
+        {
+            return item is WeaponDataSO
+                ? new WeaponState
+                {
+                    loadedAmmoId = "",
+                    currentAmmo = Mathf.Clamp(sourceSlot.currentAmmo, 0, ushort.MaxValue)
+                }
                 : default;
         }
 
