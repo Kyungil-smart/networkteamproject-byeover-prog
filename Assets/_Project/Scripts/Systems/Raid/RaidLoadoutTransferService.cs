@@ -129,6 +129,11 @@ namespace DeadZone.Systems.Raid
             return true;
         }
 
+        public static bool HasLoadoutForClient(ulong clientId)
+        {
+            return loadoutsByClientId.ContainsKey(clientId);
+        }
+
         public static bool TryApplyLoadout(ulong clientId, GameObject playerObject)
         {
             if (!TryGetServerNetworkManager(out _))
@@ -295,7 +300,6 @@ namespace DeadZone.Systems.Raid
             AddRange(dto.stashItems, inventoryState.StashItems);
             AddRange(dto.quickSlotItems, inventoryState.QuickSlotItems);
             AddRange(dto.equipmentItems, inventoryState.EquipmentItems);
-            AddRange(dto.quickSlotItems, inventoryState.QuickSlotItems);
 
             return dto;
         }

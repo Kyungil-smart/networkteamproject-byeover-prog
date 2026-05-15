@@ -20,7 +20,8 @@ namespace DeadZone.Network
     /// </summary>
     public class LobbyRaidStartController : NetworkBehaviour
     {
-        private const int RaidLoadoutSubmissionWaitMs = 350;
+        private const int RaidLoadoutSubmissionTimeoutMs = 2500;
+        private const int RaidLoadoutSubmissionPollMs = 50;
 
         [Header("==== 로비 참조 ====")]
         [SerializeField] private NetworkLobbyState lobbyState;
@@ -204,7 +205,47 @@ namespace DeadZone.Network
                 return;
 
             RequestRaidLoadoutSubmissionClientRpc();
-            await Task.Delay(RaidLoadoutSubmissionWaitMs);
+
+            string missingClientIds = string.Empty;
+            int waitedMs = 0;
+            while (waitedMs < RaidLoadoutSubmissionTimeoutMs &&
+                   !HaveAllConnectedClientLoadouts(out missingClientIds))
+            {
+                await Task.Delay(RaidLoadoutSubmissionPollMs);
+                waitedMs += RaidLoadoutSubmissionPollMs;
+            }
+
+            if (!HaveAllConnectedClientLoadouts(out missingClientIds))
+            {
+                Debug.LogWarning(
+                    $"[RaidLoadout] Timed out waiting for lobby loadout submissions. MissingClientIds={missingClientIds}",
+                    this);
+            }
+        }
+
+        private bool HaveAllConnectedClientLoadouts(out string missingClientIds)
+        {
+            missingClientIds = string.Empty;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return false;
+
+            List<ulong> missing = null;
+            foreach (ulong clientId in networkManager.ConnectedClientsIds)
+            {
+                if (RaidLoadoutTransferService.HasLoadoutForClient(clientId))
+                    continue;
+
+                missing ??= new List<ulong>();
+                missing.Add(clientId);
+            }
+
+            if (missing == null || missing.Count == 0)
+                return true;
+
+            missingClientIds = string.Join(", ", missing);
+            return false;
         }
 
         private async Task<bool> TryStartSoloSessionAsync()

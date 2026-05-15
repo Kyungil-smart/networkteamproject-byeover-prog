@@ -31,15 +31,15 @@ namespace DeadZone.Actors
 
         [Header("Shotgun")]
         [Tooltip("샷건 1회 사격 시 동시에 생성할 투사체 수")]
-        [SerializeField, Min(1)] private int shotgunProjectileCount = 12;
+        [SerializeField, Min(1)] private int shotgunProjectileCount = 8;
         [Tooltip("샷건 투사체가 퍼질 전체 각도")]
-        [SerializeField, Range(0f, 180f)] private float shotgunSpreadAngle = 24f;
+        [SerializeField, Range(0f, 180f)] private float shotgunSpreadAngle = 14f;
         [Tooltip("샷건 투사체마다 더해지는 무작위 각도 오차")]
-        [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 2f;
-        [SerializeField, Min(0.1f)] private float shotgunEffectiveRange = 8f;
+        [SerializeField, Range(0f, 15f)] private float shotgunPelletAngleJitter = 1.5f;
+        [SerializeField, Min(0.1f)] private float shotgunEffectiveRange = 7f;
         [SerializeField, Min(0.1f)] private float shotgunMaxRange = 18f;
-        [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.3f;
-        [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.2f;
+        [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.45f;
+        [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.35f;
 
         [Header("Projectile Visual")]
         [Tooltip("클라이언트에서 로컬로 재생하는 탄도 시각 효과의 최대 유지 시간입니다. 서버 판정 projectile 수명과는 별개입니다.")]
@@ -243,10 +243,11 @@ namespace DeadZone.Actors
             return hitPoint + (revDir * (h / cos));
         }
 
-        [ServerRpc]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void FireServerRpc(Vector3 target, ulong tId, bool head, 
-            FixedString64Bytes weaponId, ServerRpcParams rpc = default)
+            FixedString64Bytes weaponId, RpcParams rpc = default)
         {
+            if (rpc.Receive.SenderClientId != OwnerClientId) return;
             if (IsReloading()) return;
 
             var weapon = equipment?.Lookup(weaponId.ToString()) as WeaponDataSO;
@@ -391,16 +392,28 @@ namespace DeadZone.Actors
 
             for (int i = 0; i < projectileCount; i++)
             {
-                float normalizedIndex = projectileCount == 1
-                    ? 0.5f
-                    : i / (float)(projectileCount - 1);
-                float baseYaw = Mathf.Lerp(-halfAngle, halfAngle, normalizedIndex);
-                float jitter = Random.Range(-shotgunPelletAngleJitter, shotgunPelletAngleJitter);
+                float baseYaw = GetShotgunPelletBaseYaw(i, projectileCount, halfAngle);
+                float jitterScale = i == 0 ? 0.25f : 1f;
+                float jitter = Random.Range(-shotgunPelletAngleJitter, shotgunPelletAngleJitter) * jitterScale;
                 float yaw = Mathf.Clamp(baseYaw + jitter, -halfAngle, halfAngle);
                 Vector3 pelletDir = Quaternion.AngleAxis(yaw, Vector3.up) * baseDir;
 
                 SpawnProjectileWithDirection(pelletData, w, pelletDir.normalized, velocity);
             }
+        }
+
+        private static float GetShotgunPelletBaseYaw(int pelletIndex, int projectileCount, float halfAngle)
+        {
+            if (projectileCount <= 1 || pelletIndex == 0)
+                return 0f;
+
+            if (projectileCount == 2)
+                return halfAngle;
+
+            float normalizedIndex = (pelletIndex - 1) / (float)(projectileCount - 2);
+            float spreadPosition = Mathf.Lerp(-1f, 1f, normalizedIndex);
+            float centerBiasedPosition = Mathf.Sign(spreadPosition) * Mathf.Pow(Mathf.Abs(spreadPosition), 1.35f);
+            return centerBiasedPosition * halfAngle;
         }
 
         /// <summary>

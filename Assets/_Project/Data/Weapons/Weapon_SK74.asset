@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_SK74
   displayName: SK-74
-  description: "- \uC18C\uB828 \uC804\uD1B5 AR\uC18C\uCD1D\n- \uB4F1\uAE09: \uB808\uC5B4\n\n-
-    \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 38\n2. \uACF5\uACA9 \uC18D\uB3C4: 10\n3.
-    \uD0C4\uCC3D \uD06C\uAE30: 30"
+  description: "SK-74 AR\n- 등급: 레어\n\n- 특징\n1. 데미지: 32\n2. 공격 속도: 8\n3. 탄창 크기: 30"
   icon: {fileID: 21300000, guid: b764e29058ac1c649852b4ed8873aa0d, type: 3}
   category: 0
   rarity: 2
@@ -27,16 +25,16 @@ MonoBehaviour:
   baseSellPrice: 12000
   worldPrefab: {fileID: 9118640726169689449, guid: 69e755bce754f1f46b0aee5fde40fb6e, type: 3}
   weaponCategory: 0
-  damage: 38
-  fireRate: 10
+  damage: 32
+  fireRate: 8
   magSize: 30
-  engageRange: {x: 30, y: 180}
+  engageRange: {x: 20, y: 65}
   ammoType: 0
   availableModes: 0100
-  muzzleVelocity: 180
+  muzzleVelocity: 130
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.2
-  spreadAngle: {x: 0.6, y: 4}
+  spreadAngle: {x: 0.55, y: 3.6}
   spreadRecovery: 9
   maxDurability: 100

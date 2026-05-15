@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine;
@@ -16,6 +16,7 @@ namespace DeadZone.Actors
     {
         [SerializeField] private string extractionId = "Truck";
         [SerializeField] private float extractionTime = 7f;
+        [SerializeField] private RaidClearCoordinator raidClearCoordinator;
 
         private Dictionary<ulong, float> playersInZone = new();
 
@@ -41,6 +42,7 @@ namespace DeadZone.Actors
                     extractionId = extractionId,
                     countdownSeconds = extractionTime,
                 });
+                PublishExtractionStartedClientRpc(cid, new FixedString64Bytes(extractionId), extractionTime);
             }
         }
 
@@ -69,10 +71,51 @@ namespace DeadZone.Actors
                         clientId = cid,
                         extractionId = extractionId,
                     });
+                    PublishExtractionCompletedClientRpc(cid, new FixedString64Bytes(extractionId));
                     playersInZone.Remove(cid);
-                    Core.ServiceLocator.Get<NetworkGameManager>()?.ReturnToHideoutServerRpc();
+                    if (!TryRequestRaidClear(cid))
+                        Core.ServiceLocator.Get<NetworkGameManager>()?.ReturnToHideoutServerRpc();
                 }
             }
+        }
+
+        private bool TryRequestRaidClear(ulong clientId)
+        {
+            if (raidClearCoordinator == null)
+                raidClearCoordinator = FindFirstObjectByType<RaidClearCoordinator>();
+
+            return raidClearCoordinator != null &&
+                   raidClearCoordinator.TryRequestPartyClear(clientId);
+        }
+
+        [ClientRpc]
+        private void PublishExtractionStartedClientRpc(
+            ulong clientId,
+            FixedString64Bytes id,
+            float countdownSeconds)
+        {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new ExtractionStartedEvent
+            {
+                clientId = clientId,
+                extractionId = id.ToString(),
+                countdownSeconds = countdownSeconds,
+            });
+        }
+
+        [ClientRpc]
+        private void PublishExtractionCompletedClientRpc(ulong clientId, FixedString64Bytes id)
+        {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new ExtractionCompletedEvent
+            {
+                clientId = clientId,
+                extractionId = id.ToString(),
+            });
         }
     }
 }

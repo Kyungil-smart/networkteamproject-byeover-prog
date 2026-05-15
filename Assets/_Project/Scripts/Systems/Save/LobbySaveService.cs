@@ -42,6 +42,7 @@ namespace DeadZone.Systems.Save
         private Coroutine pendingCloudLoadCoroutine;
         private bool isInitialLoadCompleted;
         private string lastLoadedLocalJsonPath;
+        private bool CanUseLocalJsonFallback => useLocalJsonFallback && Application.isEditor;
         public bool IsInitialLoadCompleted => isInitialLoadCompleted;
 
         private void OnEnable()
@@ -155,7 +156,7 @@ namespace DeadZone.Systems.Save
 
             if (saveSystem == null)
             {
-                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Saving local JSON fallback.", this);
+                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Cloud save was not written.", this);
                 SaveLobbyDataToLocalJson(dto, "CloudSaveSystem missing");
                 return false;
             }
@@ -207,7 +208,7 @@ namespace DeadZone.Systems.Save
             CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
             if (saveSystem == null)
             {
-                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Trying local JSON fallback.", this);
+                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Server lobby save cannot be loaded.", this);
                 TryLoadLobbyDataFromLocalJson("CloudSaveSystem missing");
                 isInitialLoadCompleted = true;
                 return;
@@ -216,7 +217,7 @@ namespace DeadZone.Systems.Save
             LobbySaveDTO dto = saveSystem.CreateLobbySaveDTOFromCurrentData();
             if (dto == null)
             {
-                Debug.LogWarning("[LobbySaveService] Server DTO missing. Trying local JSON fallback.", this);
+                Debug.LogWarning("[LobbySaveService] Server DTO missing. Server lobby save cannot be loaded.", this);
                 TryLoadLobbyDataFromLocalJson("Server DTO missing");
                 isInitialLoadCompleted = true;
                 return;
@@ -549,7 +550,7 @@ namespace DeadZone.Systems.Save
 
         private bool TryLoadLobbyDataFromLocalJson(string reason)
         {
-            if (!useLocalJsonFallback)
+            if (!CanUseLocalJsonFallback)
                 return false;
 
             if (!TryReadFirstLocalJsonDTO(out LobbySaveDTO dto, out string path, out string json))
@@ -570,7 +571,7 @@ namespace DeadZone.Systems.Save
 
         private void MergeLocalJsonSectionsInto(LobbySaveDTO dto, string reason)
         {
-            if (dto == null || !useLocalJsonFallback)
+            if (dto == null || !CanUseLocalJsonFallback)
                 return;
 
             if (!TryReadFirstLocalJsonDTO(out LobbySaveDTO localDto, out string path, out _))
@@ -635,7 +636,7 @@ namespace DeadZone.Systems.Save
 
         public bool LocalJsonExists()
         {
-            if (!useLocalJsonFallback)
+            if (!CanUseLocalJsonFallback)
                 return false;
 
             string[] candidatePaths = GetLocalJsonCandidatePaths();
@@ -650,7 +651,7 @@ namespace DeadZone.Systems.Save
 
         private void SaveLobbyDataToLocalJson(LobbySaveDTO dto, string reason)
         {
-            if (!useLocalJsonFallback || dto == null)
+            if (!CanUseLocalJsonFallback || dto == null)
                 return;
 
             string path = GetLocalJsonPath();

@@ -74,6 +74,8 @@ namespace DeadZone.Actors
 
         [Tooltip("검사 간격 동안 이 거리보다 적게 움직이면 끼임으로 판단합니다.")]
         [SerializeField] private float stuckMoveThreshold = 0.15f;
+        [SerializeField, Min(1)] private int hardStuckRecoveryThreshold = 3;
+        [SerializeField, Min(0.5f)] private float hardStuckRecoveryRadius = 3f;
 
         [Header("엄폐 수색")]
         [Tooltip("시야를 잃은 뒤 엄폐물 주변을 수색하는 최대 시간입니다.")]
@@ -189,6 +191,7 @@ namespace DeadZone.Actors
         private float activeSearchPointEnterTime;
         private float footstepTimer;
         private Vector3 lastStuckCheckPosition;
+        private int consecutiveStuckChecks;
         private bool canPlayAlertSound = true;
         private Coroutine alertSoundCooldownRoutine;
 
@@ -1594,17 +1597,64 @@ namespace DeadZone.Actors
             lastStuckCheckPosition = transform.position;
 
             if (movedDistance > stuckMoveThreshold)
+            {
+                consecutiveStuckChecks = 0;
                 return;
+            }
+
+            consecutiveStuckChecks++;
 
             if (!HasBlockingObstacleBetween(transform.position, rawDestination, out RaycastHit hit))
+            {
+                TryHardRecoverFromStuck(rawDestination);
                 return;
+            }
 
             if (TryFindDetourPoint(rawDestination, hit, out Vector3 detour, out NavMeshPath detourPath))
             {
                 agent.SetPath(detourPath);
                 agent.isStopped = false;
                 lastDestination = detour;
+                consecutiveStuckChecks = 0;
+                return;
             }
+
+            TryHardRecoverFromStuck(rawDestination);
+        }
+
+        private void TryHardRecoverFromStuck(Vector3 rawDestination)
+        {
+            if (consecutiveStuckChecks < hardStuckRecoveryThreshold)
+                return;
+
+            consecutiveStuckChecks = 0;
+
+            Vector3 awayFromCurrent = rawDestination - transform.position;
+            awayFromCurrent.y = 0f;
+
+            if (awayFromCurrent.sqrMagnitude < 0.01f)
+                awayFromCurrent = transform.forward;
+
+            awayFromCurrent.Normalize();
+
+            int attempts = 8;
+            for (int i = 0; i < attempts; i++)
+            {
+                float angle = (360f / attempts) * i;
+                Vector3 direction = Quaternion.Euler(0f, angle, 0f) * awayFromCurrent;
+                Vector3 candidate = transform.position + direction * hardStuckRecoveryRadius;
+
+                if (!TryBuildSafeDestination(candidate, out Vector3 destination, out NavMeshPath path))
+                    continue;
+
+                agent.SetPath(path);
+                agent.isStopped = false;
+                lastDestination = destination;
+                return;
+            }
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, hardStuckRecoveryRadius, NavMesh.AllAreas))
+                agent.Warp(hit.position);
         }
 
         private bool HasArrived()
