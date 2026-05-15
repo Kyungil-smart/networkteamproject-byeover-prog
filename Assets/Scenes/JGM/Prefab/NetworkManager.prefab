@@ -119,4 +119,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3acc29bb92f07841920dc9307dc83fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Network._LSH_Temp.LocalNetworkTestBootstrap
-  startHostOnStart: 1
+  startHostOnStart: 0

@@ -17,6 +17,8 @@ namespace DeadZone.Systems.Raid
     {
         private const string LobbyInventoryContainerId = "inventory";
         private const string LobbyQuickSlotContainerId = "quickslot";
+        private const string CashItemId = "USDollars";
+        private const int FallbackCashItemCreditValue = 100;
 
         private static readonly Dictionary<ulong, RaidLoadoutSaveData> loadoutsByClientId = new();
 
@@ -357,10 +359,53 @@ namespace DeadZone.Systems.Raid
 
             AddInventoryItemsToLobby(dto.inventoryItems, loadout.inventoryItems);
             AddEquipmentItemsToLobby(dto.equipmentItems, loadout.equipmentItems);
+            ConvertCashItemsToCredits(dto);
 
             List<ItemSaveDTO> rawQuickSlotItems = CreateLobbyQuickSlotItems(loadout.quickSlotItems);
             List<ItemSaveDTO> validQuickSlotItems = CreateValidQuickSlotItems(rawQuickSlotItems);
             AddRange(dto.quickSlotItems, validQuickSlotItems);
+        }
+
+        private static void ConvertCashItemsToCredits(LobbySaveDTO dto)
+        {
+            if (dto == null || dto.inventoryItems == null)
+                return;
+
+            int cashCount = 0;
+            for (int i = dto.inventoryItems.Count - 1; i >= 0; i--)
+            {
+                ItemSaveDTO item = dto.inventoryItems[i];
+                if (item == null || !IsCashItem(item.itemId))
+                    continue;
+
+                cashCount += Mathf.Max(1, item.stackCount);
+                dto.inventoryItems.RemoveAt(i);
+            }
+
+            if (cashCount <= 0)
+                return;
+
+            int creditValue = ResolveCashItemCreditValue();
+            int creditAmount = cashCount * creditValue;
+            dto.hasCredits = true;
+            dto.credits = Mathf.Max(0, dto.credits) + creditAmount;
+
+            Debug.Log($"[RaidLoadout] Converted cash items to credits. itemId={CashItemId}, count={cashCount}, credits={creditAmount}");
+        }
+
+        private static bool IsCashItem(string itemId)
+        {
+            return string.Equals(itemId, CashItemId, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(itemId, $"ITM_{CashItemId}", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int ResolveCashItemCreditValue()
+        {
+            IItemDatabase itemDatabase = ResolveItemDatabase();
+            ItemDataSO cashItem = itemDatabase?.GetById(CashItemId);
+            return cashItem != null && cashItem.baseSellPrice > 0
+                ? cashItem.baseSellPrice
+                : FallbackCashItemCreditValue;
         }
 
         private static void AddInventoryItemsToLobby(

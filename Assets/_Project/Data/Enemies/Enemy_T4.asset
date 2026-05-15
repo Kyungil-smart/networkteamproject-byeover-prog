@@ -19,10 +19,10 @@ MonoBehaviour:
   enemyId: Enemy_Zone1_Any
   maxHP: 200
   defaultArmor: {fileID: 11400000, guid: 0c43fb65333b1e1479b993b6175851f9, type: 2}
-  defaultWeapon: {fileID: 11400000, guid: 2fbf9be39f6fcc245894b4b70b10ade4, type: 2}
-  defaultAmmo: {fileID: 11400000, guid: 5a3b383a31ce9eb4d85c5a09f712b23d, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 6682fefcfde8e664a85942ba69578c43, type: 2}
   penetrationModifier: 0
-  damageMultiplier: 0.75
+  damageMultiplier: 0.65
   fireInterval: 0.6
   burstSize: 4
   burstRestDelay: 0.5

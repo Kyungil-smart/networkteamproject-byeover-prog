@@ -314,6 +314,17 @@ namespace DeadZone.Actors.UI.Hideout
             inventory = null;
             localHousingProgress = null;
 
+            if (HousingInventoryResolver.TryGetLobbyInventory(
+                    out IInventory lobbyInventory,
+                    out MonoBehaviour lobbyInventoryBehaviour))
+            {
+                inventory = lobbyInventory;
+                inventoryBehaviour = lobbyInventoryBehaviour;
+
+                if (lobbyInventoryBehaviour != null)
+                    DebugLog($"로비 저장 인벤토리 연결 완료: {lobbyInventoryBehaviour.gameObject.name}");
+            }
+
             // 네트워크 우선 기준: 현재 로컬 플레이어의 PlayerObject 인벤토리를 가장 먼저 찾습니다.
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
@@ -333,7 +344,7 @@ namespace DeadZone.Actors.UI.Hideout
                         if (playerInventory == null)
                             playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
 
-                        if (playerInventory != null)
+                        if (inventory == null && playerInventory != null)
                         {
                             inventory = playerInventory;
                             inventoryBehaviour = playerInventory as MonoBehaviour;
@@ -351,7 +362,7 @@ namespace DeadZone.Actors.UI.Hideout
             // 인스펙터에 직접 연결된 인벤토리입니다.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // 네트워크 플레이어가 없는 로비/하이드아웃 테스트에서는 F12 제작 재료 테스트 인벤토리를 사용합니다.
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            if (inventory == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening))
             {
                 HousingCraftMaterialDebugInventory debugInventory = HousingCraftMaterialDebugInventory.Instance;
                 if (debugInventory != null)
@@ -363,7 +374,7 @@ namespace DeadZone.Actors.UI.Hideout
             }
 #endif
 
-            if (inventoryBehaviour != null)
+            if (inventory == null && inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
                 {

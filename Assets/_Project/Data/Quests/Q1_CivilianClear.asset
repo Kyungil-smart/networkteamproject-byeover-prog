@@ -13,18 +13,20 @@ MonoBehaviour:
   m_Name: Q1_CivilianClear
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q1
-  questName: "\uC801 \uCC98\uCE58 \uD6C8\uB828"
-  description: "\uC5B4\uB5A4 \uAD6C\uC5ED\uC758 \uC801\uC774\uB4E0 10\uBA85\uC744
-    \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  questName: "적 처치 임무"
+  description: "아무 지역에서 적 10명을 처치 하십시오."
   objectives:
   - type: 0
     targetID: Enemy_Any
     requiredCount: 10
-    location: "\uC804 \uAD6C\uC5ED"
+    location: "아무 지역"
   rewards:
   - type: 1
-    itemID: Weapon_Glock17
+    itemID: Weapon_B90
     amount: 1
+  - type: 1
+    itemID: Ammo_SMG_BP
+    amount: 120
   unlockZoneID: 
   prerequisiteQuestID: 
   isSideQuest: 0

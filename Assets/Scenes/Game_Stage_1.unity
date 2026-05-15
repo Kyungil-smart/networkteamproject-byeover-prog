@@ -4512,6 +4512,8 @@ GameObject:
   m_Component:
   - component: {fileID: 396228423}
   - component: {fileID: 396228422}
+  - component: {fileID: 396228424}
+  - component: {fileID: 396228425}
   m_Layer: 0
   m_Name: Extraction Zone
   m_TagString: Untagged

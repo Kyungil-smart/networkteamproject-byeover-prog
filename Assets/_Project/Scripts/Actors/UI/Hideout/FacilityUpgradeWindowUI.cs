@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using TMPro;
@@ -339,7 +339,12 @@ namespace DeadZone.Actors.UI.Hideout
                 ResolveLocalPlayerReferences();
 
             if (localHousingProgress == null)
+            {
+                if (HousingInventoryResolver.TryGetLobbyFacilityLevel(currentFacility.Type, out int lobbyFacilityLevel))
+                    return lobbyFacilityLevel;
+
                 return currentFacility.GetCurrentLevel();
+            }
 
             return localHousingProgress.GetLevel(currentFacility.Type);
         }
@@ -348,6 +353,15 @@ namespace DeadZone.Actors.UI.Hideout
         {
             inventory = null;
             localHousingProgress = null;
+
+            if (HousingInventoryResolver.TryGetLobbyInventory(
+                    out IInventory lobbyInventory,
+                    out MonoBehaviour lobbyInventoryBehaviour))
+            {
+                inventory = lobbyInventory;
+                inventoryBehaviour = lobbyInventoryBehaviour;
+                DebugLog($"로비 저장 인벤토리 연결 완료: {lobbyInventoryBehaviour.gameObject.name}");
+            }
 
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
@@ -367,7 +381,7 @@ namespace DeadZone.Actors.UI.Hideout
                         if (playerInventory == null)
                             playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
 
-                        if (playerInventory != null)
+                        if (inventory == null && playerInventory != null)
                         {
                             inventory = playerInventory;
                             inventoryBehaviour = playerInventory as MonoBehaviour;
@@ -378,13 +392,13 @@ namespace DeadZone.Actors.UI.Hideout
                         if (localHousingProgress != null)
                             DebugLog($"로컬 플레이어 하우징 진행도 연결 완료: {localHousingProgress.gameObject.name}");
 
-                        if (inventory != null || localHousingProgress != null)
+                        if (inventory != null && localHousingProgress != null)
                             return;
                     }
                 }
             }
 
-            if (inventoryBehaviour != null)
+            if (inventory == null && inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
                 {
@@ -439,7 +453,12 @@ namespace DeadZone.Actors.UI.Hideout
             if (inventory == null)
                 Debug.LogWarning("[FacilityUpgradeWindowUI] 씬에서 IInventory 구현체를 찾지 못했습니다.", this);
 
-            if (localHousingProgress == null)
+            bool hasLobbyFacilityLevel =
+                currentFacility != null &&
+                HousingInventoryResolver.TryGetLobbyFacilityLevel(currentFacility.Type, out _);
+            bool networkIsListening = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+
+            if (localHousingProgress == null && networkIsListening && !hasLobbyFacilityLevel)
                 Debug.LogWarning("[FacilityUpgradeWindowUI] 씬에서 PlayerHousingProgress를 찾지 못했습니다.", this);
         }
 

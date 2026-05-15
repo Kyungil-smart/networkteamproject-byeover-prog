@@ -13,18 +13,17 @@ MonoBehaviour:
   m_Name: Q2_1_ForestBoss
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q2-1
-  questName: "\uC232\uC758 \uC0AC\uB0E5\uAFBC"
-  description: "[\uC0AC\uC774\uB4DC] \uC232\uC5D0 \uC788\uB294 \uBCF4\uC2A4\uB97C
-    \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  questName: "숲 보스 처치"
+  description: "숲에 있는 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_Forest_Sniper
     requiredCount: 1
-    location: "\uC232"
+    location: "숲"
   rewards:
   - type: 1
-    itemID: Weapon_SK74
-    amount: 1
+    itemID: Ammo_Sniper_AP
+    amount: 60
   unlockZoneID: 
   prerequisiteQuestID: Q1
   isSideQuest: 1

@@ -150,6 +150,15 @@ namespace DeadZone.Actors
         [Tooltip("적 발걸음 볼륨 배율입니다. AudioLibrary의 개별 볼륨과 AudioManager의 SFX 볼륨이 함께 적용됩니다.")]
         [SerializeField, Range(0f, 2f)] private float footstepVolumeMultiplier = 0.9f;
 
+        [Header("발각 표시")]
+        [Tooltip("플레이어를 처음 발각했을 때 적 머리 위에 표시할 느낌표 오브젝트입니다. 비워두면 AlertIndicator 또는 Exclamation 이름의 자식을 자동으로 찾습니다.")]
+        [SerializeField] private GameObject alertIndicatorRoot;
+
+        [SerializeField, Min(0.1f)] private float alertIndicatorDuration = 0.55f;
+        [SerializeField, Min(0.01f)] private float alertIndicatorStartScale = 0.18f;
+        [SerializeField, Min(0.01f)] private float alertIndicatorEndScale = 0.45f;
+        [SerializeField, Min(0.1f)] private float alertIndicatorHeight = 1.8f;
+
         [Header("네트워크 상태")]
         [Tooltip("현재 AI 상태입니다. 서버가 값을 변경하고 클라이언트는 읽습니다.")]
         public NetworkVariable<AIState> State = new(AIState.Patrol);
@@ -194,6 +203,7 @@ namespace DeadZone.Actors
         private int consecutiveStuckChecks;
         private bool canPlayAlertSound = true;
         private Coroutine alertSoundCooldownRoutine;
+        private Coroutine alertIndicatorRoutine;
 
         private bool CanUseNetworkState => IsSpawned && NetworkObject != null && NetworkObject.IsSpawned;
         private AIState CurrentState => CanUseNetworkState ? State.Value : localState;
@@ -230,11 +240,19 @@ namespace DeadZone.Actors
                 alertSoundCooldownRoutine = null;
             }
 
+            if (alertIndicatorRoutine != null)
+            {
+                StopCoroutine(alertIndicatorRoutine);
+                alertIndicatorRoutine = null;
+            }
+
             base.OnNetworkDespawn();
         }
 
         private void Start()
         {
+            ResolveAlertIndicator();
+
             if (!IsSpawned)
             {
                 ResolveSpawnPositionOnNavMesh();
@@ -447,6 +465,30 @@ namespace DeadZone.Actors
                     this);
                 return;
             }
+
+            CreateDefaultAlertIndicator();
+        }
+
+        private void CreateDefaultAlertIndicator()
+        {
+            GameObject indicator = new("AlertIndicator");
+            indicator.transform.SetParent(transform, false);
+            indicator.transform.localPosition = Vector3.up * Mathf.Max(0.1f, alertIndicatorHeight);
+
+            TextMesh textMesh = indicator.AddComponent<TextMesh>();
+            textMesh.text = "!";
+            textMesh.anchor = TextAnchor.MiddleCenter;
+            textMesh.alignment = TextAlignment.Center;
+            textMesh.characterSize = 0.32f;
+            textMesh.fontSize = 96;
+            textMesh.color = new Color(1f, 0.05f, 0.03f, 1f);
+
+            MeshRenderer renderer = indicator.GetComponent<MeshRenderer>();
+            if (renderer != null)
+                renderer.sortingOrder = 100;
+
+            alertIndicatorRoot = indicator;
+            alertIndicatorRoot.SetActive(false);
         }
 
         private NavMeshObstacle FindContainingNavMeshObstacle()
@@ -865,10 +907,12 @@ namespace DeadZone.Actors
 
             if (IsSpawned)
             {
+                PlayAlertIndicatorClientRpc();
                 PlayEnemyAlertAudioClientRpc(transform.position, alertSoundVolumeMultiplier);
             }
             else
             {
+                PlayAlertIndicatorLocal();
                 PublishEnemyAlertAudio(transform.position, alertSoundVolumeMultiplier);
             }
         }
@@ -878,6 +922,92 @@ namespace DeadZone.Actors
             yield return new WaitForSeconds(alertSoundCooldown);
             canPlayAlertSound = true;
             alertSoundCooldownRoutine = null;
+        }
+
+        [ClientRpc]
+        private void PlayAlertIndicatorClientRpc()
+        {
+            PlayAlertIndicatorLocal();
+        }
+
+        private void ResolveAlertIndicator()
+        {
+            if (alertIndicatorRoot != null)
+            {
+                alertIndicatorRoot.SetActive(false);
+                return;
+            }
+
+            Transform[] children = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null || child == transform)
+                    continue;
+
+                string childName = child.name;
+                if (!string.Equals(childName, "AlertIndicator", System.StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(childName, "Exclamation", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                alertIndicatorRoot = child.gameObject;
+                alertIndicatorRoot.SetActive(false);
+                return;
+            }
+        }
+
+        private void PlayAlertIndicatorLocal()
+        {
+            ResolveAlertIndicator();
+            if (alertIndicatorRoot == null)
+                return;
+
+            if (alertIndicatorRoutine != null)
+                StopCoroutine(alertIndicatorRoutine);
+
+            alertIndicatorRoutine = StartCoroutine(PlayAlertIndicatorRoutine());
+        }
+
+        private System.Collections.IEnumerator PlayAlertIndicatorRoutine()
+        {
+            Transform indicatorTransform = alertIndicatorRoot.transform;
+            float startScale = Mathf.Max(0.01f, alertIndicatorStartScale);
+            float endScale = Mathf.Max(startScale, alertIndicatorEndScale);
+            float duration = Mathf.Max(0.1f, alertIndicatorDuration);
+            float elapsed = 0f;
+
+            alertIndicatorRoot.SetActive(true);
+            indicatorTransform.localScale = Vector3.one * startScale;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float ratio = Mathf.Clamp01(elapsed / duration);
+                float eased = 1f - Mathf.Pow(1f - ratio, 3f);
+                FaceAlertIndicatorToCamera(indicatorTransform);
+                indicatorTransform.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, eased);
+                yield return null;
+            }
+
+            FaceAlertIndicatorToCamera(indicatorTransform);
+            indicatorTransform.localScale = Vector3.one * endScale;
+            alertIndicatorRoot.SetActive(false);
+            alertIndicatorRoutine = null;
+        }
+
+        private static void FaceAlertIndicatorToCamera(Transform indicatorTransform)
+        {
+            Camera camera = Camera.main;
+            if (indicatorTransform == null || camera == null)
+                return;
+
+            Vector3 direction = indicatorTransform.position - camera.transform.position;
+            if (direction.sqrMagnitude <= 0.0001f)
+                return;
+
+            indicatorTransform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
         [ClientRpc]
@@ -1637,7 +1767,7 @@ namespace DeadZone.Actors
 
             awayFromCurrent.Normalize();
 
-            int attempts = 8;
+            int attempts = 12;
             for (int i = 0; i < attempts; i++)
             {
                 float angle = (360f / attempts) * i;
@@ -1653,8 +1783,29 @@ namespace DeadZone.Actors
                 return;
             }
 
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, hardStuckRecoveryRadius, NavMesh.AllAreas))
-                agent.Warp(hit.position);
+            for (int i = 0; i < attempts; i++)
+            {
+                float angle = (360f / attempts) * i;
+                Vector3 direction = Quaternion.Euler(0f, angle, 0f) * awayFromCurrent;
+                Vector3 candidate = transform.position + direction * hardStuckRecoveryRadius;
+
+                if (!NavMesh.SamplePosition(candidate, out NavMeshHit recoveryHit, hardStuckRecoveryRadius, NavMesh.AllAreas))
+                    continue;
+
+                agent.Warp(recoveryHit.position);
+                TrySetDestination(rawDestination);
+                return;
+            }
+
+            if (NavMesh.SamplePosition(rawDestination, out NavMeshHit destinationHit, hardStuckRecoveryRadius, NavMesh.AllAreas))
+            {
+                agent.Warp(destinationHit.position);
+                TrySetDestination(rawDestination);
+                return;
+            }
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit currentHit, hardStuckRecoveryRadius, NavMesh.AllAreas))
+                agent.Warp(currentHit.position);
         }
 
         private bool HasArrived()

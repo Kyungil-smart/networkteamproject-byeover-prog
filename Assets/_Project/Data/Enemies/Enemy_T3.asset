@@ -17,12 +17,12 @@ MonoBehaviour:
   faction: 1
   isBoss: 0
   enemyId: Enemy_Zone1_Any
-  maxHP: 140
+  maxHP: 150
   defaultArmor: {fileID: 11400000, guid: 9f51616f2f98c7e42b29bfcd6d27af3d, type: 2}
-  defaultWeapon: {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
-  defaultAmmo: {fileID: 11400000, guid: 6682fefcfde8e664a85942ba69578c43, type: 2}
+  defaultWeapon: {fileID: 11400000, guid: 4e7f75c1d36e7004aa003eee4af8517c, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: e491f7c867712204e8d52cf0913e7e68, type: 2}
   penetrationModifier: 0
-  damageMultiplier: 0.75
+  damageMultiplier: 0.6
   fireInterval: 0.8
   burstSize: 3
   burstRestDelay: 0.6
