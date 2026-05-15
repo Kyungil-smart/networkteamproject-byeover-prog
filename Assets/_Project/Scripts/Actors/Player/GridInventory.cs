@@ -515,6 +515,18 @@ namespace DeadZone.Actors
                 TryMoveInventorySlotToEquipment(gridX, gridY, targetSlot);
         }
 
+        public void RequestMoveInventorySlot(byte sourceGridX, byte sourceGridY, byte targetGridX, byte targetGridY)
+        {
+            if (IsSpawned)
+            {
+                MoveInventorySlotRpc(sourceGridX, sourceGridY, targetGridX, targetGridY);
+                return;
+            }
+
+            if (IsServer)
+                TryMoveInventorySlot(sourceGridX, sourceGridY, targetGridX, targetGridY);
+        }
+
         public void RequestAssignQuickSlot(byte gridX, byte gridY, byte quickSlotIndex)
         {
             if (IsSpawned)
@@ -591,6 +603,15 @@ namespace DeadZone.Actors
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void MoveInventorySlotRpc(byte sourceGridX, byte sourceGridY, byte targetGridX, byte targetGridY, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            TryMoveInventorySlot(sourceGridX, sourceGridY, targetGridX, targetGridY);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void AssignQuickSlotRpc(byte gridX, byte gridY, byte quickSlotIndex, RpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId != OwnerClientId)
@@ -662,6 +683,121 @@ namespace DeadZone.Actors
 
             Debug.LogError($"[GridInventory] Failed to place swapped equipment item into inventory. itemId={equippedItem.itemID}, slot={targetSlot}", this);
             return false;
+        }
+
+        private bool TryMoveInventorySlot(byte sourceGridX, byte sourceGridY, byte targetGridX, byte targetGridY)
+        {
+            if (!IsServer || (sourceGridX == targetGridX && sourceGridY == targetGridY))
+                return false;
+
+            if (!TryGetSlotIndexAt(sourceGridX, sourceGridY, out int sourceIndex, out ItemSlotData sourceSlot))
+                return false;
+
+            ItemDataSO sourceItem = ResolveItem(sourceSlot.itemId.ToString());
+            if (sourceItem == null)
+                return false;
+
+            bool hasTarget = TryGetSlotIndexAt(targetGridX, targetGridY, out int targetIndex, out ItemSlotData targetSlot);
+            if (!hasTarget)
+                return TryMoveInventorySlotToEmptyPosition(sourceIndex, sourceSlot, sourceItem, targetGridX, targetGridY);
+
+            ItemDataSO targetItem = ResolveItem(targetSlot.itemId.ToString());
+            if (targetItem == null)
+                return false;
+
+            if (TryMergeInventorySlots(sourceIndex, sourceSlot, targetIndex, targetSlot, sourceItem, targetItem))
+                return true;
+
+            return TrySwapInventorySlots(sourceIndex, sourceSlot, sourceItem, targetIndex, targetSlot, targetItem);
+        }
+
+        private bool TryMoveInventorySlotToEmptyPosition(
+            int sourceIndex,
+            ItemSlotData sourceSlot,
+            ItemDataSO sourceItem,
+            byte targetGridX,
+            byte targetGridY)
+        {
+            List<ItemSlotData> simulatedSlots = BuildGridSnapshotWithout(sourceIndex);
+            if (!CanPlaceAt(simulatedSlots, targetGridX, targetGridY, sourceItem.gridSize, false))
+                return false;
+
+            sourceSlot.gridX = targetGridX;
+            sourceSlot.gridY = targetGridY;
+            sourceSlot.rotated = false;
+            ServerGrid[sourceIndex] = sourceSlot;
+            return true;
+        }
+
+        private bool TryMergeInventorySlots(
+            int sourceIndex,
+            ItemSlotData sourceSlot,
+            int targetIndex,
+            ItemSlotData targetSlot,
+            ItemDataSO sourceItem,
+            ItemDataSO targetItem)
+        {
+            if (!sourceSlot.itemId.Equals(targetSlot.itemId) ||
+                sourceItem.itemID != targetItem.itemID ||
+                sourceItem.maxStackSize <= 1 ||
+                sourceSlot.currentDurability > 0f ||
+                targetSlot.currentDurability > 0f ||
+                sourceSlot.currentAmmo != 0 ||
+                targetSlot.currentAmmo != 0)
+            {
+                return false;
+            }
+
+            int maxStack = Mathf.Max(1, sourceItem.maxStackSize);
+            int available = maxStack - targetSlot.stackCount;
+            if (available <= 0)
+                return false;
+
+            int moved = Mathf.Min(available, sourceSlot.stackCount);
+            targetSlot.stackCount += (ushort)moved;
+            sourceSlot.stackCount -= (ushort)moved;
+
+            ServerGrid[targetIndex] = targetSlot;
+
+            if (sourceSlot.stackCount <= 0)
+                ServerGrid.RemoveAt(sourceIndex);
+            else
+                ServerGrid[sourceIndex] = sourceSlot;
+
+            return true;
+        }
+
+        private bool TrySwapInventorySlots(
+            int sourceIndex,
+            ItemSlotData sourceSlot,
+            ItemDataSO sourceItem,
+            int targetIndex,
+            ItemSlotData targetSlot,
+            ItemDataSO targetItem)
+        {
+            List<ItemSlotData> simulatedSlots = BuildGridSnapshotWithout(sourceIndex, targetIndex);
+            if (!CanPlaceAt(simulatedSlots, targetSlot.gridX, targetSlot.gridY, sourceItem.gridSize, false) ||
+                !CanPlaceAt(simulatedSlots, sourceSlot.gridX, sourceSlot.gridY, targetItem.gridSize, false))
+            {
+                return false;
+            }
+
+            byte sourceX = sourceSlot.gridX;
+            byte sourceY = sourceSlot.gridY;
+            byte targetX = targetSlot.gridX;
+            byte targetY = targetSlot.gridY;
+
+            sourceSlot.gridX = targetX;
+            sourceSlot.gridY = targetY;
+            sourceSlot.rotated = false;
+
+            targetSlot.gridX = sourceX;
+            targetSlot.gridY = sourceY;
+            targetSlot.rotated = false;
+
+            ServerGrid[sourceIndex] = sourceSlot;
+            ServerGrid[targetIndex] = targetSlot;
+            return true;
         }
 
         private bool TryAssignQuickSlot(byte gridX, byte gridY, byte quickSlotIndex)
@@ -1580,6 +1716,28 @@ namespace DeadZone.Actors
         }
 
         // ----------- 장전 실행 처리 -----------
+
+        private List<ItemSlotData> BuildGridSnapshotWithout(params int[] excludedIndices)
+        {
+            List<ItemSlotData> snapshot = new(ServerGrid.Count);
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                bool excluded = false;
+                for (int j = 0; j < excludedIndices.Length; j++)
+                {
+                    if (i == excludedIndices[j])
+                    {
+                        excluded = true;
+                        break;
+                    }
+                }
+
+                if (!excluded)
+                    snapshot.Add(ServerGrid[i]);
+            }
+
+            return snapshot;
+        }
 
         private struct ReloadContext
         {
