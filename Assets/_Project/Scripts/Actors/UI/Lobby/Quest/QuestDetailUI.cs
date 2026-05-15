@@ -10,25 +10,27 @@ namespace DeadZone.Actors.UI.Lobby
 {
     public class QuestDetailUI : MonoBehaviour
     {
-        [Header("오른쪽 상세 텍스트")]
+        [Header("상세 텍스트")]
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text descriptionText;
         [SerializeField] private TMP_Text objectivesText;
         [SerializeField] private TMP_Text rewardText;
 
-        [Header("수락 버튼")]
+        [Header("액션 버튼")]
         [SerializeField] private Button acceptButton;
         [SerializeField] private TMP_Text acceptButtonText;
 
         private QuestDataSO currentQuest;
         private Action<QuestDataSO> onAcceptClicked;
+        private Action<QuestDataSO> onClaimRewardClicked;
+        private bool canClaimReward;
 
         private void Awake()
         {
             if (acceptButton != null)
             {
-                acceptButton.onClick.RemoveListener(HandleAcceptClicked);
-                acceptButton.onClick.AddListener(HandleAcceptClicked);
+                acceptButton.onClick.RemoveListener(HandleActionClicked);
+                acceptButton.onClick.AddListener(HandleActionClicked);
             }
         }
 
@@ -36,10 +38,15 @@ namespace DeadZone.Actors.UI.Lobby
             QuestDataSO quest,
             QuestViewState state,
             string progressText,
-            Action<QuestDataSO> acceptCallback)
+            Action<QuestDataSO> acceptCallback,
+            Action<QuestDataSO> claimRewardCallback = null,
+            bool canClaimReward = false,
+            bool rewardClaimed = false)
         {
             currentQuest = quest;
             onAcceptClicked = acceptCallback;
+            onClaimRewardClicked = claimRewardCallback;
+            this.canClaimReward = canClaimReward;
 
             if (quest == null)
             {
@@ -61,13 +68,15 @@ namespace DeadZone.Actors.UI.Lobby
             if (rewardText != null)
                 rewardText.text = BuildRewardsText(quest);
 
-            RefreshButton(state);
+            RefreshButton(state, canClaimReward, rewardClaimed);
         }
 
         public void Clear()
         {
             currentQuest = null;
             onAcceptClicked = null;
+            onClaimRewardClicked = null;
+            canClaimReward = false;
 
             if (titleText != null)
                 titleText.text = "퀘스트 선택";
@@ -88,19 +97,24 @@ namespace DeadZone.Actors.UI.Lobby
                 acceptButtonText.text = "-";
         }
 
-        private void RefreshButton(QuestViewState state)
+        private void RefreshButton(QuestViewState state, bool canClaimReward, bool rewardClaimed)
         {
             if (acceptButtonText != null)
-                acceptButtonText.text = GetButtonText(state);
+                acceptButtonText.text = GetButtonText(state, canClaimReward, rewardClaimed);
 
             if (acceptButton != null)
-                acceptButton.interactable = state == QuestViewState.Available;
+                acceptButton.interactable = state == QuestViewState.Available || canClaimReward;
         }
 
-        private void HandleAcceptClicked()
+        private void HandleActionClicked()
         {
-            if (currentQuest == null) return;
-            onAcceptClicked?.Invoke(currentQuest);
+            if (currentQuest == null)
+                return;
+
+            if (canClaimReward)
+                onClaimRewardClicked?.Invoke(currentQuest);
+            else
+                onAcceptClicked?.Invoke(currentQuest);
         }
 
         private static string BuildObjectivesText(QuestDataSO quest, string progressText)
@@ -138,7 +152,7 @@ namespace DeadZone.Actors.UI.Lobby
 
             foreach (QuestReward reward in quest.rewards)
             {
-                string rewardText = reward.type switch
+                string text = reward.type switch
                 {
                     RewardType.Credits => $"{reward.amount} Cr",
                     RewardType.Item => $"{reward.itemID} x{reward.amount}",
@@ -146,7 +160,7 @@ namespace DeadZone.Actors.UI.Lobby
                     _ => $"{reward.itemID} x{reward.amount}"
                 };
 
-                sb.AppendLine($"- {rewardText}");
+                sb.AppendLine($"- {text}");
             }
 
             if (!string.IsNullOrWhiteSpace(quest.unlockZoneID))
@@ -174,14 +188,20 @@ namespace DeadZone.Actors.UI.Lobby
             };
         }
 
-        private static string GetButtonText(QuestViewState state)
+        private static string GetButtonText(QuestViewState state, bool canClaimReward, bool rewardClaimed)
         {
+            if (rewardClaimed)
+                return "수령 완료";
+
+            if (canClaimReward)
+                return "보상 받기";
+
             return state switch
             {
                 QuestViewState.Locked => "잠김",
                 QuestViewState.Available => "수락",
-                QuestViewState.Active => "진행중",
-                QuestViewState.Completed => "완료",
+                QuestViewState.Active => "진행 중",
+                QuestViewState.Completed => "보상 받기",
                 _ => "-"
             };
         }
@@ -189,7 +209,7 @@ namespace DeadZone.Actors.UI.Lobby
         private void OnDestroy()
         {
             if (acceptButton != null)
-                acceptButton.onClick.RemoveListener(HandleAcceptClicked);
+                acceptButton.onClick.RemoveListener(HandleActionClicked);
         }
     }
 }

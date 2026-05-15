@@ -40,6 +40,7 @@ namespace DeadZone.Actors.UI.Lobby
             EventBus.Subscribe<QuestAcceptedEvent>(OnQuestAccepted);
             EventBus.Subscribe<QuestProgressEvent>(OnQuestProgress);
             EventBus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
+            EventBus.Subscribe<QuestRewardClaimedEvent>(OnQuestRewardClaimed);
         }
 
         private void OnDisable()
@@ -47,6 +48,7 @@ namespace DeadZone.Actors.UI.Lobby
             EventBus.Unsubscribe<QuestAcceptedEvent>(OnQuestAccepted);
             EventBus.Unsubscribe<QuestProgressEvent>(OnQuestProgress);
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
+            EventBus.Unsubscribe<QuestRewardClaimedEvent>(OnQuestRewardClaimed);
         }
 
         private void ResolveQuestManager()
@@ -119,7 +121,10 @@ namespace DeadZone.Actors.UI.Lobby
                 quest,
                 GetQuestState(quest),
                 GetObjectiveProgressText(quest),
-                RequestAcceptQuest
+                RequestAcceptQuest,
+                RequestClaimQuestReward,
+                CanClaimReward(quest),
+                IsRewardClaimed(quest)
             );
         }
 
@@ -195,6 +200,24 @@ namespace DeadZone.Actors.UI.Lobby
             return string.Join("\n", lines);
         }
 
+        private bool CanClaimReward(QuestDataSO quest)
+        {
+            if (quest == null)
+                return false;
+
+            ResolveQuestManager();
+            return questManager != null && questManager.CanClaimReward(questManager.GetLocalClientIdForState(), quest.questID);
+        }
+
+        private bool IsRewardClaimed(QuestDataSO quest)
+        {
+            if (quest == null)
+                return false;
+
+            ResolveQuestManager();
+            return questManager != null && questManager.IsQuestRewardClaimed(questManager.GetLocalClientIdForState(), quest.questID);
+        }
+
         private void RequestAcceptQuest(QuestDataSO quest)
         {
             if (quest == null) return;
@@ -227,6 +250,37 @@ namespace DeadZone.Actors.UI.Lobby
             SelectQuest(quest);
         }
 
+        private void RequestClaimQuestReward(QuestDataSO quest)
+        {
+            if (quest == null) return;
+
+            ResolveQuestManager();
+
+            if (questManager == null)
+            {
+                Debug.LogWarning("[LobbyQuestUI] QuestManager를 찾을 수 없습니다.");
+                return;
+            }
+
+            if (!CanClaimReward(quest))
+                return;
+
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            {
+                questManager.ClaimReward(questManager.GetLocalClientIdForState(), quest.questID);
+            }
+            else if (NetworkManager.Singleton.IsServer)
+            {
+                questManager.ClaimReward(NetworkManager.Singleton.LocalClientId, quest.questID);
+            }
+            else
+            {
+                questManager.ClaimQuestRewardServerRpc(quest.questID);
+            }
+
+            SelectQuest(quest);
+        }
+
         private void RefreshCurrentView()
         {
             RefreshRowsSelection();
@@ -237,7 +291,10 @@ namespace DeadZone.Actors.UI.Lobby
                     selectedQuest,
                     GetQuestState(selectedQuest),
                     GetObjectiveProgressText(selectedQuest),
-                    RequestAcceptQuest
+                    RequestAcceptQuest,
+                    RequestClaimQuestReward,
+                    CanClaimReward(selectedQuest),
+                    IsRewardClaimed(selectedQuest)
                 );
             }
         }
@@ -255,6 +312,12 @@ namespace DeadZone.Actors.UI.Lobby
         }
 
         private void OnQuestCompleted(QuestCompletedEvent e)
+        {
+            if (!IsLocalClientEvent(e.clientId)) return;
+            RefreshCurrentView();
+        }
+
+        private void OnQuestRewardClaimed(QuestRewardClaimedEvent e)
         {
             if (!IsLocalClientEvent(e.clientId)) return;
             RefreshCurrentView();

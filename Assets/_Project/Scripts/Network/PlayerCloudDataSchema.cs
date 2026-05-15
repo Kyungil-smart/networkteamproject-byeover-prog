@@ -36,6 +36,7 @@ namespace DeadZone.Network
         [FirestoreProperty] public int credits { get; set; }
         [FirestoreProperty] public List<string> personalActiveQuestIds { get; set; } = new List<string>();
         [FirestoreProperty] public List<string> personalCompletedQuestIds { get; set; } = new List<string>();
+        [FirestoreProperty] public List<string> rewardClaimedQuestIds { get; set; } = new List<string>();
         [FirestoreProperty] public List<string> unlockedZones { get; set; } = new List<string>();
         [FirestoreProperty] public List<QuestObjectiveProgress> questObjectives { get; set; } = new List<QuestObjectiveProgress>();
         [FirestoreProperty] public List<string> pendingCompletionIds { get; set; } = new List<string>();
