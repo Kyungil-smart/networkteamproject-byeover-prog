@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using DeadZone.Core;
+using DeadZone.Actors.Player;
 
 // 작성자 : 홍정옥
 // 기능 : 우상단 킬피드 UI
@@ -146,10 +147,37 @@ namespace DeadZone.Actors
         private string ResolveName(ulong clientId)
         {
             if (clientId == ulong.MaxValue) return "Enemy";
+
+            if (TryResolvePlayerNickname(clientId, out string nickname))
+                return nickname;
+
             return $"Player {clientId}";
         }
 
         // 엔트리 프리팹 인스턴스화 + 큐 관리 + 수명 예약
+        private bool TryResolvePlayerNickname(ulong clientId, out string nickname)
+        {
+            nickname = string.Empty;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null ||
+                !networkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient client) ||
+                client.PlayerObject == null)
+            {
+                return false;
+            }
+
+            PlayerTeamIdentity identity = client.PlayerObject.GetComponent<PlayerTeamIdentity>();
+            if (identity == null)
+                identity = client.PlayerObject.GetComponentInChildren<PlayerTeamIdentity>(true);
+
+            if (identity == null)
+                return false;
+
+            nickname = identity.CurrentNickname;
+            return !string.IsNullOrWhiteSpace(nickname);
+        }
+
         private KillFeedEntry AddEntry(string text, bool isCritical)
         {
             if (entryPrefab == null || entriesRoot == null)
