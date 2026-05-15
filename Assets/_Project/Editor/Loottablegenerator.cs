@@ -195,6 +195,7 @@ namespace DeadZone.EditorTools
                 .Select(g => AssetDatabase.GUIDToAssetPath(g))
                 .Select(p => AssetDatabase.LoadAssetAtPath<ItemDataSO>(p))
                 .Where(so => so != null && !string.IsNullOrEmpty(so.itemID))
+                .Where(so => so.category != ItemCategory.Weapon || so is WeaponDataSO)
                 .ToList();
         }
 

@@ -46,8 +46,8 @@ namespace DeadZone.Systems
         /// 유저가 트레이더에게서 아이템 구매.
         /// 서버: 통신장비 레벨 체크 → 크레딧 차감 → 인벤토리 추가.
         /// </summary>
-        [ServerRpc(RequireOwnership = false)]
-        public void BuyItemServerRpc(string itemID, ServerRpcParams rpcParams = default)
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        public void BuyItemServerRpc(string itemID, RpcParams rpcParams = default)
         {
             ulong clientId = rpcParams.Receive.SenderClientId;
 
@@ -73,8 +73,8 @@ namespace DeadZone.Systems
             Debug.Log($"[TraderManager] Client {clientId} 구매: {itemID} ({entry.Value.basePrice} Cr)");
         }
         
-        [ServerRpc(RequireOwnership = false)]
-        public void SellItemServerRpc(string itemID, ServerRpcParams rpcParams = default)
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        public void SellItemServerRpc(string itemID, RpcParams rpcParams = default)
         {
             ulong clientId = rpcParams.Receive.SenderClientId;
 

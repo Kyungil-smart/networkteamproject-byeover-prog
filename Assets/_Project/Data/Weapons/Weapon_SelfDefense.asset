@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_SelfDefense
   displayName: "\uD638\uC2E0\uC6A9 \uAD8C\uCD1D"
-  description: "- \uBCF4\uD638\uC6A9 \uAE34\uAE09 \uAD8C\uCD1D\n- \uB4F1\uAE09: \uC77C\uBC18\n\n-
-    \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 14\n2. \uACF5\uACA9 \uC18D\uB3C4: 6\n3.
-    \uD0C4\uCC3D \uD06C\uAE30: 8"
+  description: "호신용 권총\n- 등급: 일반\n\n- 특징\n1. 데미지: 16\n2. 공격 속도: 5\n3. 탄창 크기: 8"
   icon: {fileID: 21300000, guid: 15d632b7df32db5488aee0bf4868508b, type: 3}
   category: 0
   rarity: 0
@@ -27,16 +25,16 @@ MonoBehaviour:
   baseSellPrice: 800
   worldPrefab: {fileID: 835998254784508830, guid: e25c7888fe1705e4ebb811eadc54417f, type: 3}
   weaponCategory: 2
-  damage: 14
-  fireRate: 6
+  damage: 16
+  fireRate: 5
   magSize: 8
-  engageRange: {x: 0, y: 20}
+  engageRange: {x: 0, y: 25}
   ammoType: 2
   availableModes: 00
-  muzzleVelocity: 300
+  muzzleVelocity: 70
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.15
-  spreadAngle: {x: 1.2, y: 5}
-  spreadRecovery: 10
+  spreadAngle: {x: 1.3, y: 5.2}
+  spreadRecovery: 9
   maxDurability: 100

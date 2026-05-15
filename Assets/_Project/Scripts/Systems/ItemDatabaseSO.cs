@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using UnityEngine;
 using DeadZone.Core;
+using UnityEngine;
 
 namespace DeadZone.Systems
 {
@@ -10,44 +10,218 @@ namespace DeadZone.Systems
         order = 0)]
     public class ItemDatabaseSO : ScriptableObject
     {
-        [Tooltip("Editor 스크립트가 자동 채움 — 수동 편집 금지")]
+        [Tooltip("Editor scripts populate this list. Do not edit it manually unless rebuilding item data.")]
         [SerializeField] public List<ItemDataSO> allItems = new();
 
-        private Dictionary<string, ItemDataSO> _cache;
+        private static readonly Dictionary<string, string> LegacyWeaponAliases = new()
+        {
+            { "DefensePistol", "Weapon_SelfDefense" },
+            { "DragSniper", "Weapon_BoltSR" },
+            { "PumpShotgun", "Weapon_PumpSG" }
+        };
 
-        /// <summary>런타임 캐시 빌드. 중복 시 첫 등록 유지.</summary>
+        private static readonly Dictionary<string, string> LegacyMedicalAliases = new()
+        {
+            { "ITM_Bandage", "Bandage" },
+            { "FirstAidKit", "ITM_FirstAidKit" },
+            { "SlowHealSyringe", "ITM_SlowHealSyringe" },
+            { "AdvancedFirstAidKit", "ITM_AdvancedFirstAidKit" },
+            { "ITM_FastHealSyringe", "FastHealSyringe" },
+            { "ITM_WeightCapacitySyringe", "WeightCapacitySyringe" }
+        };
+
+        private Dictionary<string, ItemDataSO> _cache;
+        private readonly HashSet<string> loggedLegacyWeaponAliases = new();
+        private readonly HashSet<string> loggedLegacyMedicalAliases = new();
+
         public void BuildCache()
         {
             _cache = new Dictionary<string, ItemDataSO>(allItems.Count);
-            foreach (var item in allItems)
+            int duplicateCount = 0;
+            int specializedReplacementCount = 0;
+            List<string> duplicateSamples = new();
+
+            foreach (ItemDataSO item in allItems)
             {
-                if (item == null) continue;
-                if (_cache.ContainsKey(item.itemID))
+                if (item == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(item.itemID))
                 {
-                    Debug.LogError(
-                        $"[ItemDB] 중복 itemID '{item.itemID}': " +
-                        $"'{_cache[item.itemID].name}' vs '{item.name}'. " +
-                        $"Editor에서 Rebuild 실행 필요.");
+                    Debug.LogWarning($"[ItemDB] Skipped item with empty itemID: {item.name}", item);
                     continue;
                 }
+
+                if (_cache.TryGetValue(item.itemID, out ItemDataSO existing))
+                {
+                    duplicateCount++;
+                    if (duplicateSamples.Count < 8)
+                        duplicateSamples.Add($"{item.itemID}: {existing.name} vs {item.name}");
+
+                    if (GetDataPriority(item) > GetDataPriority(existing))
+                    {
+                        _cache[item.itemID] = item;
+                        specializedReplacementCount++;
+                    }
+
+                    continue;
+                }
+
                 _cache.Add(item.itemID, item);
             }
-            Debug.Log($"[ItemDB] {_cache.Count}개 아이템 등록 완료.");
+
+            if (duplicateCount > 0)
+            {
+                Debug.LogWarning(
+                    $"[ItemDB] Duplicate itemIDs detected: {duplicateCount}. " +
+                    $"Specialized replacements={specializedReplacementCount}. " +
+                    $"Samples: {string.Join(", ", duplicateSamples)}",
+                    this);
+            }
+
+            Debug.Log($"[ItemDB] Registered {_cache.Count} items.");
         }
 
         public ItemDataSO GetByID(string itemID)
         {
-            if (_cache == null) BuildCache();
-            _cache.TryGetValue(itemID, out var result);
-            return result;
+            if (string.IsNullOrWhiteSpace(itemID))
+                return null;
+
+            if (_cache == null)
+                BuildCache();
+
+            if (_cache.TryGetValue(itemID, out ItemDataSO result))
+            {
+                ItemDataSO specialized = ResolveSpecializedAlias(itemID, result);
+                return specialized != null ? specialized : result;
+            }
+
+            if (TryGetLegacyMedicalAlias(itemID, out ItemDataSO medicalAlias))
+                return medicalAlias;
+
+            return TryGetLegacyWeaponAlias(itemID, out ItemDataSO aliasResult)
+                ? aliasResult
+                : null;
         }
 
         public IReadOnlyDictionary<string, ItemDataSO> GetAll()
         {
-            if (_cache == null) BuildCache();
+            if (_cache == null)
+                BuildCache();
+
             return _cache;
         }
 
         public int Count => _cache?.Count ?? allItems.Count;
+
+        private ItemDataSO ResolveSpecializedAlias(string requestedItemId, ItemDataSO result)
+        {
+            if (result == null)
+                return null;
+
+            if (result is WeaponDataSO)
+                return result;
+
+            if (result.category == ItemCategory.Med &&
+                TryGetLegacyMedicalAlias(requestedItemId, out ItemDataSO medicalAlias))
+            {
+                return medicalAlias;
+            }
+
+            if (result.category == ItemCategory.Weapon &&
+                TryGetLegacyWeaponAlias(requestedItemId, out ItemDataSO weaponAlias))
+            {
+                if (loggedLegacyWeaponAliases.Add(requestedItemId))
+                {
+                    Debug.LogWarning(
+                        $"[ItemDB] Legacy weapon itemID '{requestedItemId}' resolved to '{weaponAlias.itemID}'. " +
+                        "Replace old ItemDataSO references with WeaponDataSO assets.",
+                        weaponAlias);
+                }
+
+                return weaponAlias;
+            }
+
+            return null;
+        }
+
+        private bool TryGetLegacyMedicalAlias(string itemID, out ItemDataSO result)
+        {
+            result = null;
+
+            if (_cache == null || string.IsNullOrWhiteSpace(itemID))
+                return false;
+
+            if (!LegacyMedicalAliases.TryGetValue(itemID, out string aliasItemId))
+                return false;
+
+            if (!_cache.TryGetValue(aliasItemId, out ItemDataSO candidate))
+                return false;
+
+            if (candidate is not MedicalItemDataSO)
+                return false;
+
+            if (loggedLegacyMedicalAliases.Add(itemID))
+            {
+                Debug.LogWarning(
+                    $"[ItemDB] Legacy medical itemID '{itemID}' resolved to '{candidate.itemID}'. " +
+                    "Replace old ItemDataSO references with MedicalItemDataSO assets.",
+                    candidate);
+            }
+
+            result = candidate;
+            return true;
+        }
+
+        private bool TryGetLegacyWeaponAlias(string itemID, out ItemDataSO result)
+        {
+            result = null;
+
+            if (_cache == null || string.IsNullOrWhiteSpace(itemID))
+                return false;
+
+            if (LegacyWeaponAliases.TryGetValue(itemID, out string explicitAlias) &&
+                TryGetWeaponData(explicitAlias, out result))
+            {
+                return true;
+            }
+
+            string prefixedAlias = itemID.StartsWith("Weapon_")
+                ? itemID
+                : $"Weapon_{itemID}";
+
+            return TryGetWeaponData(prefixedAlias, out result);
+        }
+
+        private bool TryGetWeaponData(string itemID, out ItemDataSO result)
+        {
+            result = null;
+
+            if (string.IsNullOrWhiteSpace(itemID))
+                return false;
+
+            if (!_cache.TryGetValue(itemID, out ItemDataSO candidate))
+                return false;
+
+            if (candidate is not WeaponDataSO)
+                return false;
+
+            result = candidate;
+            return true;
+        }
+
+        private static int GetDataPriority(ItemDataSO item)
+        {
+            return item switch
+            {
+                WeaponDataSO => 100,
+                ArmorDataSO => 90,
+                HelmetDataSO => 90,
+                BackpackDataSO => 90,
+                AmmoDataSO => 80,
+                MedicalItemDataSO => 70,
+                _ => 0
+            };
+        }
     }
 }

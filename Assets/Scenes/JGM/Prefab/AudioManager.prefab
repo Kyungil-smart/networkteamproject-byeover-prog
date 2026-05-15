@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7679071927033250928
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6655568067190010451}
+  - component: {fileID: 1289638981154815962}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6655568067190010451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7679071927033250928}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1289638981154815962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7679071927033250928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9de8baf02f28418aab27e2ee8d7c6f14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Systems.Audio.AudioManager
+  audioLibrary: {fileID: 11400000, guid: b8d2058fa58a4d8cbb1f210231e90f4a, type: 2}
+  masterVolume: 1
+  bgmVolume: 1
+  sfxVolume: 1
+  uiVolume: 1
+  cueVolumeOverrides: []
+  playBgmByScene: 1
+  sceneBgmMappings:
+  - sceneName: Title
+    bgmCueId: 400
+  - sceneName: Game_Stage_1
+    bgmCueId: 401
+  - sceneName: Game_Stage_2
+    bgmCueId: 402
+  - sceneName: Ending
+    bgmCueId: 403
+  playLootSoundFromEvent: 1
+  playPlayerInjuredFromEvent: 1
+  onlyLocalPlayerInjurySound: 1
+  pooledSourceCount: 16
+  expandPoolWhenNeeded: 1
+  logMissingCue: 0

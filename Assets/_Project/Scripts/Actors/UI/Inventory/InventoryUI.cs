@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Raid;
 using Unity.Collections;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -67,8 +68,10 @@ namespace DeadZone.Actors.UI
 
         private GridInventory boundGridInventory;
         private bool gridInventorySubscribed;
+        private bool quickSlotsSubscribed;
         private EquipmentSlots subscribedEquipmentSlots;
         private bool equipmentSlotsSubscribed;
+        private bool raidQuickSlotLoadoutApplied;
 
         [BoxGroup("ItemDataSO 테스트")]
         [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
@@ -83,6 +86,7 @@ namespace DeadZone.Actors.UI
             ResolveTooltipUI();
             EnsureDropSlots();
             InitializeSlots();
+            ApplyRaidQuickSlotLoadoutIfAvailable();
             RefreshBagSlots();
 
             Close();
@@ -94,10 +98,17 @@ namespace DeadZone.Actors.UI
             EventBus.Subscribe<BackpackChangedEvent>(HandleBackpackChanged);
             SubscribeGridInventory();
             SubscribeEquipmentSlots();
+            ApplyRaidQuickSlotLoadoutIfAvailable();
+        }
+
+        private void Start()
+        {
+            ApplyRaidQuickSlotLoadoutIfAvailable();
         }
 
         private void OnDisable()
         {
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Inventory, false);
             EventBus.Unsubscribe<BackpackChangedEvent>(HandleBackpackChanged);
             UnsubscribeGridInventory();
             UnsubscribeEquipmentSlots();
@@ -141,10 +152,12 @@ namespace DeadZone.Actors.UI
             }
 
             inventoryRoot.SetActive(true);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Inventory, true);
             CursorStateController.PushUiOwner(this);
             ResolveTooltipUI();
             EnsureDropSlots();
             AssignTooltipToSlots();
+            ApplyRaidQuickSlotLoadoutIfAvailable();
             RefreshBagSlots();
 
             if (autoBindOwnerGridInventory)
@@ -153,6 +166,8 @@ namespace DeadZone.Actors.UI
             SubscribeEquipmentSlots();
             RefreshGridInventorySlots();
             RefreshEquipmentSlotViews();
+            DeadZone.Systems.Raid.RaidLoadoutTransferService.ApplyLocalQuickSlotsToUi();
+            RefreshQuickSlotViews();
         }
 
         public void Close()
@@ -164,6 +179,7 @@ namespace DeadZone.Actors.UI
                 itemTooltipUI.Hide();
 
             inventoryRoot.SetActive(false);
+            GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Inventory, false);
             CursorStateController.PopUiOwner(this);
         }
 
@@ -511,6 +527,12 @@ namespace DeadZone.Actors.UI
                 return;
 
             boundGridInventory.ServerGrid.OnListChanged += HandleGridInventoryChanged;
+            if (boundGridInventory.QuickSlots != null)
+            {
+                boundGridInventory.QuickSlots.OnListChanged += HandleQuickSlotsChanged;
+                quickSlotsSubscribed = true;
+            }
+
             gridInventorySubscribed = true;
         }
 
@@ -519,16 +541,26 @@ namespace DeadZone.Actors.UI
             if (!gridInventorySubscribed || boundGridInventory == null || boundGridInventory.ServerGrid == null)
             {
                 gridInventorySubscribed = false;
+                quickSlotsSubscribed = false;
                 return;
             }
 
             boundGridInventory.ServerGrid.OnListChanged -= HandleGridInventoryChanged;
+            if (quickSlotsSubscribed && boundGridInventory.QuickSlots != null)
+                boundGridInventory.QuickSlots.OnListChanged -= HandleQuickSlotsChanged;
+
             gridInventorySubscribed = false;
+            quickSlotsSubscribed = false;
         }
 
         private void HandleGridInventoryChanged(Unity.Netcode.NetworkListEvent<ItemSlotData> changeEvent)
         {
             RefreshGridInventorySlots();
+        }
+
+        private void HandleQuickSlotsChanged(Unity.Netcode.NetworkListEvent<QuickSlotData> changeEvent)
+        {
+            RefreshQuickSlotViews();
         }
 
         private void HandleEquipmentSlotIdChanged(FixedString64Bytes previousValue, FixedString64Bytes newValue)
@@ -581,7 +613,7 @@ namespace DeadZone.Actors.UI
                     continue;
                 }
 
-                bagSlots[slotIndex].SetItem(itemData, slotData.stackCount);
+                bagSlots[slotIndex].SetItem(itemData, slotData.stackCount, itemId);
             }
 
             RefreshBagSlots();
@@ -855,6 +887,126 @@ namespace DeadZone.Actors.UI
             }
 
             return result;
+        }
+
+        private void ApplyRaidQuickSlotLoadoutIfAvailable()
+        {
+            if (raidQuickSlotLoadoutApplied)
+                return;
+
+            if (!RaidLoadoutTransferService.TryGetQuickSlotItemsForLocalClient(out IReadOnlyList<QuickSlotSaveData> quickSlotItems))
+                return;
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+                return;
+
+            List<InventorySlotUI> quickSlots = GetQuickSlotDisplaySlots();
+            if (quickSlots.Count == 0)
+                return;
+
+            for (int i = 0; i < quickSlots.Count; i++)
+                quickSlots[i]?.ClearItem();
+
+            for (int i = 0; i < quickSlotItems.Count; i++)
+            {
+                QuickSlotSaveData savedItem = quickSlotItems[i];
+                if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
+                    continue;
+
+                ItemDataSO itemData = itemDatabase.GetById(savedItem.itemId);
+                if (itemData == null)
+                    continue;
+
+                SetQuickSlotsByIndex(quickSlots, Mathf.Max(0, savedItem.slotIndex), itemData, Mathf.Max(1, savedItem.stackCount), savedItem.itemId);
+            }
+
+            RefreshQuickSlotViews();
+        }
+
+        private void RefreshQuickSlotViews()
+        {
+            if (boundGridInventory == null && autoBindOwnerGridInventory)
+                BindOwnerGridInventoryIfNeeded();
+
+            if (boundGridInventory == null || boundGridInventory.QuickSlots == null)
+                return;
+
+            List<InventorySlotUI> quickSlots = GetQuickSlotDisplaySlots();
+            if (quickSlots.Count == 0)
+                return;
+
+            for (int i = 0; i < quickSlots.Count; i++)
+                quickSlots[i]?.ClearItem();
+
+            itemDatabase ??= ServiceLocator.Get<IItemDatabase>();
+            if (itemDatabase == null)
+                return;
+
+            for (int i = 0; i < boundGridInventory.QuickSlots.Count; i++)
+            {
+                QuickSlotData slotData = boundGridInventory.QuickSlots[i];
+                if (slotData.IsEmpty)
+                    continue;
+
+                ItemDataSO itemData = itemDatabase.GetById(slotData.itemId.ToString());
+                if (itemData == null)
+                    continue;
+
+                SetQuickSlotsByIndex(quickSlots, slotData.slotIndex, itemData, Mathf.Max(1, slotData.stackCount), slotData.itemId.ToString());
+            }
+
+            if (boundGridInventory.QuickSlots != null)
+                return;
+
+            for (int i = 0; i < quickSlots.Count; i++)
+            {
+                InventorySlotUI slot = quickSlots[i];
+                if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
+                    continue;
+
+                int availableCount = boundGridInventory.GetItemCount(slot.CurrentItemData.itemID);
+                if (availableCount <= 0)
+                {
+                    // 퀵슬롯은 실제 아이템이 아니라 바로가기이므로, 원본 아이템이 없으면 즉시 비운다.
+                    slot.ClearItem();
+                    continue;
+                }
+
+                if (slot.CurrentStackCount != availableCount)
+                    slot.SetItem(slot.CurrentItemData, availableCount);
+            }
+        }
+
+        private List<InventorySlotUI> GetQuickSlotDisplaySlots()
+        {
+            List<InventorySlotUI> slots = new();
+            HashSet<InventorySlotUI> visited = new();
+
+            foreach (InventorySlotUI slot in GetAllKnownSlots())
+            {
+                if (slot == null || !visited.Add(slot))
+                    continue;
+
+                slot.PrepareForSaveSnapshot();
+                if (slot.SlotKind == InventorySlotKind.QuickSlot)
+                    slots.Add(slot);
+            }
+
+            return slots;
+        }
+
+        private static void SetQuickSlotsByIndex(List<InventorySlotUI> slots, int slotIndex, ItemDataSO itemData, int stackCount, string sourceItemId)
+        {
+            if (slots == null || itemData == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot != null && slot.SlotIndex == slotIndex)
+                    slot.SetItem(itemData, stackCount, sourceItemId);
+            }
         }
 
         private void ResolveTooltipUI()

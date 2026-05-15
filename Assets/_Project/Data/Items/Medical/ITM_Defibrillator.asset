@@ -17,11 +17,11 @@ MonoBehaviour:
   description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uC740\uC2E0\uCC98
     \uC6A9 \uC544\uC774\uD15C(\uC758\uB8CC \uC2DC\uC124)"
   icon: {fileID: 21300000, guid: c946c4e1cfd76444485d47bee82de104, type: 3}
-  category: 5
+  category: 8
   rarity: 2
   isValuable: 0
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 2.5
   baseSellPrice: 8000
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}

@@ -31,7 +31,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private bool saveToCloudOnApplicationPause = true;
         [SerializeField] private bool saveToCloudOnApplicationQuit = true;
         [SerializeField] private bool useLocalJsonFallback = true;
-        [SerializeField] private bool preferLocalJsonInventorySections = true;
+        [SerializeField] private bool preferLocalJsonInventorySections = false;
         [SerializeField] private bool allowLifecycleAutoSave;
 
         [Header("Debug JSON")]
@@ -41,7 +41,8 @@ namespace DeadZone.Systems.Save
         private bool isCloudSaveRunning;
         private Coroutine pendingCloudLoadCoroutine;
         private bool isInitialLoadCompleted;
-
+        private string lastLoadedLocalJsonPath;
+        private bool CanUseLocalJsonFallback => useLocalJsonFallback && Application.isEditor;
         public bool IsInitialLoadCompleted => isInitialLoadCompleted;
 
         private void OnEnable()
@@ -67,7 +68,13 @@ namespace DeadZone.Systems.Save
             if (!allowLifecycleAutoSave || !pauseStatus || !saveToCloudOnApplicationPause)
                 return;
 
-            SaveLobbyDataToCloud();
+            if (!isInitialLoadCompleted)
+            {
+                Debug.LogWarning("[Save] Pause save skipped because load is not completed yet.", this);
+                return;
+            }
+
+            SaveLobbyDataToLocalJson(CreateCurrentLobbySaveDTO(), "ApplicationPause backup");
         }
 
         private void OnApplicationQuit()
@@ -82,7 +89,6 @@ namespace DeadZone.Systems.Save
             }
 
             SaveLobbyDataToLocalJson(CreateCurrentLobbySaveDTO(), "ApplicationQuit backup");
-            SaveLobbyDataToCloud();
         }
 
         [Button("Print Lobby Save JSON")]
@@ -150,7 +156,7 @@ namespace DeadZone.Systems.Save
 
             if (saveSystem == null)
             {
-                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Saving local JSON fallback.", this);
+                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Cloud save was not written.", this);
                 SaveLobbyDataToLocalJson(dto, "CloudSaveSystem missing");
                 return false;
             }
@@ -185,10 +191,24 @@ namespace DeadZone.Systems.Save
         [Button("Load Lobby From Firebase")]
         public void LoadLobbyDataFromCloud()
         {
+            LoadLobbyDataFromCloud(allowLocalJsonMerge: false, localSyncReason: "Server load success sync");
+        }
+
+        public void LoadLobbyDataFromCloudIgnoringLocalJson(string localSyncReason)
+        {
+            LoadLobbyDataFromCloud(
+                allowLocalJsonMerge: false,
+                localSyncReason: string.IsNullOrWhiteSpace(localSyncReason)
+                    ? "Server load success sync"
+                    : localSyncReason);
+        }
+
+        private void LoadLobbyDataFromCloud(bool allowLocalJsonMerge, string localSyncReason)
+        {
             CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
             if (saveSystem == null)
             {
-                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Trying local JSON fallback.", this);
+                Debug.LogWarning("[LobbySaveService] CloudSaveSystem missing. Server lobby save cannot be loaded.", this);
                 TryLoadLobbyDataFromLocalJson("CloudSaveSystem missing");
                 isInitialLoadCompleted = true;
                 return;
@@ -197,7 +217,7 @@ namespace DeadZone.Systems.Save
             LobbySaveDTO dto = saveSystem.CreateLobbySaveDTOFromCurrentData();
             if (dto == null)
             {
-                Debug.LogWarning("[LobbySaveService] Server DTO missing. Trying local JSON fallback.", this);
+                Debug.LogWarning("[LobbySaveService] Server DTO missing. Server lobby save cannot be loaded.", this);
                 TryLoadLobbyDataFromLocalJson("Server DTO missing");
                 isInitialLoadCompleted = true;
                 return;
@@ -209,13 +229,19 @@ namespace DeadZone.Systems.Save
                 return;
             }
 
-            MergeLocalJsonSectionsInto(dto, "Server DTO missing lobby inventory sections");
+            if (allowLocalJsonMerge)
+                MergeLocalJsonSectionsInto(dto, "Server DTO missing lobby inventory sections");
+            else
+                Debug.Log("[LobbySaveService] Local JSON merge skipped. Applying server lobby save as authoritative.", this);
 
             string json = JsonUtility.ToJson(dto, true);
             lastJson = json;
 
-            LoadLobbyDataFromJson(json);
-            SaveLobbyDataToLocalJson(dto, "Server load success sync");
+            ApplyLobbySaveDTO(dto, preserveRuntimeInventoryOnEmptyInput: allowLocalJsonMerge);
+            Debug.Log("[LobbySaveService] Lobby save JSON loaded.", this);
+            SaveLobbyDataToLocalJson(
+                dto,
+                string.IsNullOrWhiteSpace(localSyncReason) ? "Server load success sync" : localSyncReason);
             isInitialLoadCompleted = true;
         }
 
@@ -245,28 +271,40 @@ namespace DeadZone.Systems.Save
                 return;
             }
 
-            ApplyLobbySaveDTO(dto);
+            ApplyLobbySaveDTO(dto, preserveRuntimeInventoryOnEmptyInput: true);
             Debug.Log("[LobbySaveService] Lobby save JSON loaded.", this);
         }
 
-        private void ApplyLobbySaveDTO(LobbySaveDTO dto)
+        private void ApplyLobbySaveDTO(LobbySaveDTO dto, bool preserveRuntimeInventoryOnEmptyInput)
         {
             if (inventoryState != null)
             {
                 if (dto.hasCredits)
                     inventoryState.SetCredits(dto.credits);
 
-                if (ShouldKeepExistingInventoryItems(dto))
-                {
-                    Debug.LogWarning("[LobbySaveService] Incoming inventoryItems is empty while runtime inventory has items. Keeping runtime player inventory to avoid scene-transition wipe.", this);
-                }
-                else
+                if (ShouldApplyInventorySection(dto))
                 {
                     inventoryState.SetInventoryItems(dto.inventoryItems);
                 }
+                else
+                {
+                    Debug.LogWarning("[LobbySaveService] Incoming inventoryItems section is unknown. Keeping runtime player inventory to avoid scene-transition wipe.", this);
+                }
 
-                inventoryState.SetStashItems(dto.stashItems);
-                inventoryState.SetEquipmentItems(dto.equipmentItems);
+                if (ShouldApplyStashSection(dto))
+                    inventoryState.SetStashItems(dto.stashItems);
+                else
+                    Debug.LogWarning("[LobbySaveService] Incoming stashItems section is unknown. Keeping runtime stash state.", this);
+
+                if (ShouldApplyEquipmentSection(dto))
+                    inventoryState.SetEquipmentItems(dto.equipmentItems);
+                else
+                    Debug.LogWarning("[LobbySaveService] Incoming equipmentItems section is unknown. Keeping runtime equipment state.", this);
+
+                if (ShouldApplyQuickSlotSection(dto))
+                    inventoryState.SetQuickSlotItems(dto.quickSlotItems);
+                else
+                    Debug.LogWarning("[LobbySaveService] Incoming quickSlotItems section is unknown. Keeping runtime quickslot state.", this);
             }
             else
             {
@@ -396,17 +434,32 @@ namespace DeadZone.Systems.Save
                 : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
         }
 
-        private bool ShouldKeepExistingInventoryItems(LobbySaveDTO incomingDto)
+        private bool ShouldApplyInventorySection(LobbySaveDTO incomingDto)
         {
-            if (!isInitialLoadCompleted)
-                return false;
+            return incomingDto != null &&
+                   (incomingDto.hasInventorySection ||
+                    (incomingDto.inventoryItems != null && incomingDto.inventoryItems.Count > 0));
+        }
 
-            if (incomingDto == null || incomingDto.inventoryItems == null || incomingDto.inventoryItems.Count > 0)
-                return false;
+        private static bool ShouldApplyStashSection(LobbySaveDTO incomingDto)
+        {
+            return incomingDto != null &&
+                   (incomingDto.hasStashSection ||
+                    (incomingDto.stashItems != null && incomingDto.stashItems.Count > 0));
+        }
 
-            return inventoryState != null &&
-                   inventoryState.InventoryItems != null &&
-                   inventoryState.InventoryItems.Count > 0;
+        private static bool ShouldApplyEquipmentSection(LobbySaveDTO incomingDto)
+        {
+            return incomingDto != null &&
+                   (incomingDto.hasEquipmentSection ||
+                    (incomingDto.equipmentItems != null && incomingDto.equipmentItems.Count > 0));
+        }
+
+        private static bool ShouldApplyQuickSlotSection(LobbySaveDTO incomingDto)
+        {
+            return incomingDto != null &&
+                   (incomingDto.hasQuickSlotSection ||
+                    (incomingDto.quickSlotItems != null && incomingDto.quickSlotItems.Count > 0));
         }
 
         private LobbySaveDTO CreateCurrentLobbySaveDTO()
@@ -434,12 +487,19 @@ namespace DeadZone.Systems.Save
             {
                 dto.hasCredits = inventoryState.HasCredits;
                 dto.credits = inventoryState.Credits;
+                dto.hasInventorySection = true;
+                dto.hasStashSection = true;
+                dto.hasEquipmentSection = true;
+                dto.hasQuickSlotSection = true;
 
                 if (inventoryState.InventoryItems != null)
                     dto.inventoryItems.AddRange(inventoryState.InventoryItems);
 
                 if (inventoryState.StashItems != null)
                     dto.stashItems.AddRange(inventoryState.StashItems);
+
+                if (inventoryState.QuickSlotItems != null)
+                    dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
 
                 if (inventoryState.EquipmentItems != null)
                     dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
@@ -484,7 +544,7 @@ namespace DeadZone.Systems.Save
 
         private bool TryLoadLobbyDataFromLocalJson(string reason)
         {
-            if (!useLocalJsonFallback)
+            if (!CanUseLocalJsonFallback)
                 return false;
 
             if (!TryReadFirstLocalJsonDTO(out LobbySaveDTO dto, out string path, out string json))
@@ -497,7 +557,7 @@ namespace DeadZone.Systems.Save
             Debug.Log($"[LobbySaveService] Applying local JSON fallback. Reason={reason}, Path={path}", this);
             Debug.LogWarning("[HideoutLoad] Applying facility levels from=LocalJson", this);
             lastJson = json;
-            ApplyLobbySaveDTO(dto);
+            ApplyLobbySaveDTO(dto, preserveRuntimeInventoryOnEmptyInput: true);
             Debug.Log("[LobbySaveService] Lobby save JSON loaded.", this);
             isInitialLoadCompleted = true;
             return true;
@@ -505,7 +565,7 @@ namespace DeadZone.Systems.Save
 
         private void MergeLocalJsonSectionsInto(LobbySaveDTO dto, string reason)
         {
-            if (dto == null || !useLocalJsonFallback)
+            if (dto == null || !CanUseLocalJsonFallback)
                 return;
 
             if (!TryReadFirstLocalJsonDTO(out LobbySaveDTO localDto, out string path, out _))
@@ -520,21 +580,42 @@ namespace DeadZone.Systems.Save
                 changed = true;
             }
 
-            if ((preferLocalJsonInventorySections || !HasAny(dto.inventoryItems)) && HasAny(localDto.inventoryItems))
+            if (!preferLocalJsonInventorySections)
+                return;
+
+            if (localDto.hasInventorySection || HasAny(localDto.inventoryItems))
             {
-                dto.inventoryItems = new List<ItemSaveDTO>(localDto.inventoryItems);
+                dto.inventoryItems = localDto.inventoryItems != null
+                    ? new List<ItemSaveDTO>(localDto.inventoryItems)
+                    : new List<ItemSaveDTO>();
+                dto.hasInventorySection = true;
                 changed = true;
             }
 
-            if ((preferLocalJsonInventorySections || !HasAny(dto.stashItems)) && HasAny(localDto.stashItems))
+            if (localDto.hasStashSection || HasAny(localDto.stashItems))
             {
-                dto.stashItems = new List<ItemSaveDTO>(localDto.stashItems);
+                dto.stashItems = localDto.stashItems != null
+                    ? new List<ItemSaveDTO>(localDto.stashItems)
+                    : new List<ItemSaveDTO>();
+                dto.hasStashSection = true;
                 changed = true;
             }
 
-            if ((preferLocalJsonInventorySections || !HasAny(dto.equipmentItems)) && HasAny(localDto.equipmentItems))
+            if (localDto.hasEquipmentSection || HasAny(localDto.equipmentItems))
             {
-                dto.equipmentItems = new List<EquipmentSaveDTO>(localDto.equipmentItems);
+                dto.equipmentItems = localDto.equipmentItems != null
+                    ? new List<EquipmentSaveDTO>(localDto.equipmentItems)
+                    : new List<EquipmentSaveDTO>();
+                dto.hasEquipmentSection = true;
+                changed = true;
+            }
+
+            if (localDto.hasQuickSlotSection || HasAny(localDto.quickSlotItems))
+            {
+                dto.quickSlotItems = localDto.quickSlotItems != null
+                    ? new List<ItemSaveDTO>(localDto.quickSlotItems)
+                    : new List<ItemSaveDTO>();
+                dto.hasQuickSlotSection = true;
                 changed = true;
             }
 
@@ -543,13 +624,13 @@ namespace DeadZone.Systems.Save
 
             Debug.Log(
                 $"[LobbySaveService] Merged local JSON lobby sections into loaded server save. Reason={reason}, Path={path}, " +
-                $"preferLocal={preferLocalJsonInventorySections}, inventory={dto.inventoryItems.Count}, stash={dto.stashItems.Count}, equipment={dto.equipmentItems.Count}",
+                $"preferLocal={preferLocalJsonInventorySections}, inventory={dto.inventoryItems.Count}, stash={dto.stashItems.Count}, quickSlots={dto.quickSlotItems?.Count ?? 0}, equipment={dto.equipmentItems.Count}",
                 this);
         }
 
         public bool LocalJsonExists()
         {
-            if (!useLocalJsonFallback)
+            if (!CanUseLocalJsonFallback)
                 return false;
 
             string[] candidatePaths = GetLocalJsonCandidatePaths();
@@ -564,7 +645,7 @@ namespace DeadZone.Systems.Save
 
         private void SaveLobbyDataToLocalJson(LobbySaveDTO dto, string reason)
         {
-            if (!useLocalJsonFallback || dto == null)
+            if (!CanUseLocalJsonFallback || dto == null)
                 return;
 
             string path = GetLocalJsonPath();
@@ -595,7 +676,14 @@ namespace DeadZone.Systems.Save
 
         private string GetLocalJsonPath()
         {
-            return GetLocalJsonPathForUserKey(GetLocalJsonUserKey());
+            string userKey = GetLocalJsonUserKey();
+            if (string.Equals(userKey, "local", System.StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(lastLoadedLocalJsonPath))
+            {
+                return lastLoadedLocalJsonPath;
+            }
+
+            return GetLocalJsonPathForUserKey(userKey);
         }
 
         private string[] GetLocalJsonCandidatePaths()
@@ -604,12 +692,52 @@ namespace DeadZone.Systems.Save
             string primaryPath = GetLocalJsonPath();
             string localPath = GetLocalJsonPathForUserKey("local");
 
-            paths.Add(primaryPath);
+            AddLocalJsonCandidatePath(paths, primaryPath);
+            AddLocalJsonCandidatePath(paths, localPath);
 
-            if (!string.Equals(primaryPath, localPath, System.StringComparison.OrdinalIgnoreCase))
-                paths.Add(localPath);
+            AddExistingLocalJsonPaths(paths);
 
             return paths.ToArray();
+        }
+
+        private static void AddExistingLocalJsonPaths(List<string> paths)
+        {
+            string directory = Path.Combine(Application.persistentDataPath, "LobbySave");
+            if (!Directory.Exists(directory))
+                return;
+
+            string[] files;
+            try
+            {
+                files = Directory.GetFiles(directory, "lobby_*.json", SearchOption.TopDirectoryOnly);
+            }
+            catch
+            {
+                return;
+            }
+
+            System.Array.Sort(
+                files,
+                (left, right) => File.GetLastWriteTimeUtc(right).CompareTo(File.GetLastWriteTimeUtc(left)));
+
+            for (int i = 0; i < files.Length; i++)
+            {
+                AddLocalJsonCandidatePath(paths, files[i]);
+            }
+        }
+
+        private static void AddLocalJsonCandidatePath(List<string> paths, string path)
+        {
+            if (paths == null || string.IsNullOrWhiteSpace(path))
+                return;
+
+            for (int i = 0; i < paths.Count; i++)
+            {
+                if (string.Equals(paths[i], path, System.StringComparison.OrdinalIgnoreCase))
+                    return;
+            }
+
+            paths.Add(path);
         }
 
         private bool TryReadFirstLocalJsonDTO(out LobbySaveDTO dto, out string path, out string json)
@@ -617,6 +745,9 @@ namespace DeadZone.Systems.Save
             dto = null;
             path = null;
             json = null;
+            LobbySaveDTO firstValidDto = null;
+            string firstValidPath = null;
+            string firstValidJson = null;
 
             string[] candidatePaths = GetLocalJsonCandidatePaths();
             for (int i = 0; i < candidatePaths.Length; i++)
@@ -635,9 +766,22 @@ namespace DeadZone.Systems.Save
                     if (candidateDto == null)
                         continue;
 
+                    NormalizeSectionFlags(candidateDto);
+
+                    if (firstValidDto == null)
+                    {
+                        firstValidDto = candidateDto;
+                        firstValidPath = candidatePath;
+                        firstValidJson = candidateJson;
+                    }
+
+                    if (!HasMeaningfulSaveData(candidateDto))
+                        continue;
+
                     dto = candidateDto;
                     path = candidatePath;
                     json = candidateJson;
+                    lastLoadedLocalJsonPath = candidatePath;
                     return true;
                 }
                 catch (System.Exception exception)
@@ -646,7 +790,14 @@ namespace DeadZone.Systems.Save
                 }
             }
 
-            return false;
+            if (firstValidDto == null)
+                return false;
+
+            dto = firstValidDto;
+            path = firstValidPath;
+            json = firstValidJson;
+            lastLoadedLocalJsonPath = firstValidPath;
+            return true;
         }
 
         private string GetLocalJsonUserKey()
@@ -696,7 +847,7 @@ namespace DeadZone.Systems.Save
                 return false;
 
             LobbySaveDTO existingDto = TryReadLocalJsonDTO(path);
-            return HasMeaningfulSaveData(existingDto);
+            return HasMeaningfulSaveData(existingDto) || HasMeaningfulLocalJsonSave();
         }
 
         private bool HasMeaningfulLocalJsonSave()
@@ -724,7 +875,9 @@ namespace DeadZone.Systems.Save
                 if (string.IsNullOrWhiteSpace(json))
                     return null;
 
-                return JsonUtility.FromJson<LobbySaveDTO>(json);
+                LobbySaveDTO dto = JsonUtility.FromJson<LobbySaveDTO>(json);
+                NormalizeSectionFlags(dto);
+                return dto;
             }
             catch
             {
@@ -799,10 +952,41 @@ namespace DeadZone.Systems.Save
                 return false;
 
             return dto.hasCredits ||
+                   dto.hasInventorySection ||
+                   dto.hasStashSection ||
+                   dto.hasEquipmentSection ||
+                   dto.hasQuickSlotSection ||
                    HasAny(dto.inventoryItems) ||
                    HasAny(dto.stashItems) ||
+                   HasAny(dto.quickSlotItems) ||
                    HasAny(dto.equipmentItems) ||
                    HasAny(dto.facilities);
+        }
+
+        private static bool HasAnyLobbyInventorySection(LobbySaveDTO dto)
+        {
+            if (dto == null)
+                return false;
+
+            return dto.hasInventorySection ||
+                   dto.hasStashSection ||
+                   dto.hasEquipmentSection ||
+                   dto.hasQuickSlotSection ||
+                   HasAny(dto.inventoryItems) ||
+                   HasAny(dto.stashItems) ||
+                   HasAny(dto.quickSlotItems) ||
+                   HasAny(dto.equipmentItems);
+        }
+
+        private static void NormalizeSectionFlags(LobbySaveDTO dto)
+        {
+            if (dto == null)
+                return;
+
+            dto.hasInventorySection |= HasAny(dto.inventoryItems);
+            dto.hasStashSection |= HasAny(dto.stashItems);
+            dto.hasEquipmentSection |= HasAny(dto.equipmentItems);
+            dto.hasQuickSlotSection |= HasAny(dto.quickSlotItems);
         }
 
         private static bool HasAny<T>(System.Collections.Generic.ICollection<T> items)
@@ -815,9 +999,20 @@ namespace DeadZone.Systems.Save
             if (dto == null)
                 return true;
 
+            bool allInventorySectionsAuthoritative =
+                dto.hasInventorySection &&
+                dto.hasStashSection &&
+                dto.hasEquipmentSection &&
+                dto.hasQuickSlotSection;
+
+            if (allInventorySectionsAuthoritative)
+                return false;
+
             return !HasAny(dto.inventoryItems) &&
                    !HasAny(dto.stashItems) &&
+                   !HasAny(dto.quickSlotItems) &&
                    !HasAny(dto.equipmentItems) &&
+                   !HasAny(dto.quickSlotItems) &&
                    !HasNonDefaultFacility(dto);
         }
 
@@ -828,7 +1023,9 @@ namespace DeadZone.Systems.Save
 
             return HasAny(dto.inventoryItems) ||
                    HasAny(dto.stashItems) ||
+                   HasAny(dto.quickSlotItems) ||
                    HasAny(dto.equipmentItems) ||
+                   HasAny(dto.quickSlotItems) ||
                    HasNonDefaultFacility(dto);
         }
 

@@ -1,260 +1,140 @@
-using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.UI;
+
+using DeadZone.Actors.Player;
 
 namespace DeadZone.Actors
 {
     public class MapMarkerFollower : MonoBehaviour
     {
-        [BoxGroup("참조")]
-        [Tooltip("마커 좌표 공간으로 사용할 UI 맵 RectTransform")]
         [SerializeField] private RectTransform mapRect;
-
-        [BoxGroup("참조")]
-        [Tooltip("이동시킬 마커 RectTransform")]
         [SerializeField] private RectTransform markerRect;
-
-        [BoxGroup("참조")]
-        [Tooltip("월드 대상 Transform입니다. 로컬 플레이어는 런타임에 할당됨.")]
         [SerializeField] private Transform target;
-
-        [BoxGroup("월드 경계")]
-        [Tooltip("선택 사항인 공유 경계 제공자입니다. 비워두면 부모에서 찾고, 없으면 아래 직렬화 값을 사용합니다.")]
-        [SerializeField] private MapBoundsProvider boundsProvider;
-
-        [BoxGroup("월드 경계")]
-        [Tooltip("맵 이미지의 좌하단에 해당하는 월드 X/Z 좌표")]
         [SerializeField] private Vector2 worldMin = new(-406.74f, -149.42f);
-
-        [BoxGroup("월드 경계")]
-        [Tooltip("맵 이미지의 우상단에 해당하는 월드 X/Z 좌표")]
         [SerializeField] private Vector2 worldMax = new(6.08078f, 55.42514f);
-
-        [BoxGroup("옵션")]
         [SerializeField] private bool updateEveryFrame = true;
-
-        [BoxGroup("옵션")]
         [SerializeField] private bool clampToMap = true;
-
-        [BoxGroup("옵션")]
         [SerializeField] private bool invertY;
 
-        public Transform Target => target;
+        [Header("색상")]
+        [SerializeField] private Image markerImage;
+        [SerializeField] private Color fallbackColor = Color.white;
 
-        private bool warnedTargetOutsideBounds;
-
-        private void Reset()
-        {
-            markerRect = transform as RectTransform;
-        }
+        private PlayerTeamIdentity teamIdentity;
 
         private void Awake()
         {
-            ResolveBoundsProvider();
+            EnsureReferences();
+            BindTeamIdentityFromTarget();
+            ApplyTeamColor();
+            UpdateMarkerPosition();
+        }
+
+        private void OnEnable()
+        {
+            BindTeamIdentityFromTarget();
+            ApplyTeamColor();
+            UpdateMarkerPosition();
+        }
+
+        private void OnDisable()
+        {
+            UnbindTeamIdentity();
         }
 
         private void LateUpdate()
         {
-            if (!updateEveryFrame)
-                return;
-
-            RefreshMarkerPosition();
+            if (updateEveryFrame)
+                UpdateMarkerPosition();
         }
 
-        public void SetTarget(Transform newTarget, bool refreshImmediately = true)
+        public void Bind(Transform followTarget, RectTransform ownerMapRect = null)
         {
-            bool targetChanged = target != newTarget;
-            target = newTarget;
+            target = followTarget;
 
-            if (targetChanged)
-                LogTargetBoundsState("SetTarget");
+            if (ownerMapRect != null)
+                mapRect = ownerMapRect;
 
-            if (refreshImmediately)
-                RefreshMarkerPosition();
+            BindTeamIdentityFromTarget();
+            ApplyTeamColor();
+            UpdateMarkerPosition();
         }
 
-        public void Setup(
-            RectTransform newMapRect,
-            RectTransform newMarkerRect,
-            Transform newTarget,
-            Vector2 newWorldMin,
-            Vector2 newWorldMax)
+        private void EnsureReferences()
         {
-            mapRect = newMapRect;
-            markerRect = newMarkerRect;
-            target = newTarget;
-            worldMin = newWorldMin;
-            worldMax = newWorldMax;
-            RefreshMarkerPosition();
+            if (markerRect == null)
+                markerRect = transform as RectTransform;
+
+            if (markerImage == null)
+                markerImage = GetComponent<Image>();
         }
 
-        public void SetBoundsProvider(MapBoundsProvider newBoundsProvider, bool refreshImmediately = true)
+        private void UpdateMarkerPosition()
         {
-            boundsProvider = newBoundsProvider;
+            EnsureReferences();
 
-            if (refreshImmediately)
-                RefreshMarkerPosition();
-        }
-
-        public void SetInvertY(bool newInvertY)
-        {
-            invertY = newInvertY;
-            RefreshMarkerPosition();
-        }
-
-        [Button("전체 맵 경계 적용")]
-        public void ApplyFullMapBounds()
-        {
-            worldMin = MapCoordinateUtility.FullMapWorldMin;
-            worldMax = MapCoordinateUtility.FullMapWorldMax;
-            if (boundsProvider != null)
-                boundsProvider.ApplyFullMapBounds();
-
-            RefreshMarkerPosition();
-        }
-
-        [Button("울타리 경계 적용")]
-        public void ApplyFenceBounds()
-        {
-            worldMin = MapCoordinateUtility.FenceWorldMin;
-            worldMax = MapCoordinateUtility.FenceWorldMax;
-            if (boundsProvider != null)
-                boundsProvider.ApplyFenceBounds();
-
-            RefreshMarkerPosition();
-        }
-
-        [Button("마커 위치 새로고침")]
-        public void RefreshMarkerPosition()
-        {
             if (mapRect == null || markerRect == null || target == null)
                 return;
 
-            GetActiveBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax);
-            WarnIfTargetOutsideBounds(activeWorldMin, activeWorldMax);
+            float x01 = Mathf.InverseLerp(worldMin.x, worldMax.x, target.position.x);
+            float y01 = Mathf.InverseLerp(worldMin.y, worldMax.y, target.position.z);
 
-            Vector2 correctedNormalized = GetCorrectedNormalizedTargetPosition();
-            markerRect.anchoredPosition = MapCoordinateUtility.NormalizedToCenteredRectPosition(correctedNormalized, mapRect);
-        }
+            if (invertY)
+                y01 = 1f - y01;
 
-        [Button("현재 월드맵 위치 디버그")]
-        public void DebugCurrentWorldMapPosition()
-        {
-            if (mapRect == null || markerRect == null || target == null)
+            if (clampToMap)
             {
-                Debug.LogWarning("[MapMarkerFollower] Cannot debug position because mapRect, markerRect, or target is missing.", this);
-                return;
+                x01 = Mathf.Clamp01(x01);
+                y01 = Mathf.Clamp01(y01);
             }
 
-            Vector2 rawNormalized = GetRawNormalizedTargetPosition();
-            Vector2 correctedNormalized = CorrectNormalized(rawNormalized);
-            GetActiveBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax);
-            GetNormalizedCorrection(out Vector2 anchor, out Vector2 scale, out Vector2 offset);
-            Debug.Log(
-                $"[MapMarkerFollower] provider={(boundsProvider != null ? boundsProvider.name : "null")}, mapRect={(mapRect != null ? mapRect.name : "null")}, targetX={target.position.x}, targetZ={target.position.z}, rawNormalized={rawNormalized}, correctedNormalized={correctedNormalized}, normalizedAnchor={anchor}, normalizedScale={scale}, normalizedOffset={offset}, markerPosition={markerRect.anchoredPosition}, worldMin={activeWorldMin}, worldMax={activeWorldMax}",
-                this);
+            Rect rect = mapRect.rect;
+            markerRect.anchoredPosition = new Vector2(
+                Mathf.Lerp(rect.xMin, rect.xMax, x01),
+                Mathf.Lerp(rect.yMin, rect.yMax, y01));
         }
 
-        private Vector2 GetCorrectedNormalizedTargetPosition()
+        private void BindTeamIdentityFromTarget()
         {
-            return CorrectNormalized(GetRawNormalizedTargetPosition());
-        }
+            UnbindTeamIdentity();
 
-        private Vector2 GetRawNormalizedTargetPosition()
-        {
-            GetActiveBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax);
-            return MapCoordinateUtility.WorldToNormalized(target.position, activeWorldMin, activeWorldMax, false, invertY);
-        }
-
-        private void GetActiveBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax)
-        {
-            ResolveBoundsProvider();
-
-            if (boundsProvider != null)
-            {
-                boundsProvider.GetBounds(out activeWorldMin, out activeWorldMax);
-                return;
-            }
-
-            activeWorldMin = worldMin;
-            activeWorldMax = worldMax;
-            MapCoordinateUtility.NormalizeBounds(ref activeWorldMin, ref activeWorldMax);
-        }
-
-        private void ResolveBoundsProvider()
-        {
-            if (boundsProvider != null)
-                return;
-
-            boundsProvider = GetComponentInParent<MapBoundsProvider>();
-
-            if (boundsProvider == null)
-                boundsProvider = FindObjectOfType<MapBoundsProvider>();
-        }
-
-        private Vector2 CorrectNormalized(Vector2 rawNormalized)
-        {
-            GetNormalizedCorrection(out Vector2 anchor, out Vector2 scale, out Vector2 offset);
-            return MapCoordinateUtility.ApplyNormalizedCorrection(rawNormalized, anchor, scale, offset, clampToMap);
-        }
-
-        private void GetNormalizedCorrection(out Vector2 anchor, out Vector2 scale, out Vector2 offset)
-        {
-            ResolveBoundsProvider();
-
-            if (boundsProvider != null)
-            {
-                anchor = boundsProvider.NormalizedAnchor;
-                scale = boundsProvider.NormalizedScale;
-                offset = boundsProvider.NormalizedOffset;
-                return;
-            }
-
-            anchor = new Vector2(0.5f, 0.5f);
-            scale = Vector2.one;
-            offset = Vector2.zero;
-        }
-
-        private void WarnIfTargetOutsideBounds(Vector2 activeWorldMin, Vector2 activeWorldMax)
-        {
-            bool inside = MapCoordinateUtility.ContainsWorldPosition(target.position, activeWorldMin, activeWorldMax);
-            if (inside)
-            {
-                warnedTargetOutsideBounds = false;
-                return;
-            }
-
-            if (warnedTargetOutsideBounds)
-                return;
-
-            warnedTargetOutsideBounds = true;
-            Debug.LogWarning(
-                $"[MapMarkerFollower] Target is outside map bounds. target={target.name}, position=({target.position.x}, {target.position.z}), worldMin={activeWorldMin}, worldMax={activeWorldMax}",
-                this);
-        }
-
-        private void LogTargetBoundsState(string reason)
-        {
             if (target == null)
                 return;
 
-            GetActiveBounds(out Vector2 activeWorldMin, out Vector2 activeWorldMax);
-            Vector2 rawNormalized = MapCoordinateUtility.WorldToNormalized(target.position, activeWorldMin, activeWorldMax, false, invertY);
-            Vector2 correctedNormalized = CorrectNormalized(rawNormalized);
-            GetNormalizedCorrection(out Vector2 anchor, out Vector2 scale, out Vector2 offset);
-            bool inside = MapCoordinateUtility.ContainsWorldPosition(target.position, activeWorldMin, activeWorldMax);
-            Debug.Log(
-                $"[MapMarkerFollower] {reason}: provider={(boundsProvider != null ? boundsProvider.name : "null")}, mapRect={(mapRect != null ? mapRect.name : "null")}, playerX={target.position.x}, playerZ={target.position.z}, worldMin={activeWorldMin}, worldMax={activeWorldMax}, inside={inside}, rawNormalized={rawNormalized}, correctedNormalized={correctedNormalized}, normalizedAnchor={anchor}, normalizedScale={scale}, normalizedOffset={offset}",
-                this);
+            teamIdentity = target.GetComponent<PlayerTeamIdentity>();
+            if (teamIdentity == null)
+                teamIdentity = target.GetComponentInParent<PlayerTeamIdentity>();
+            if (teamIdentity == null)
+                teamIdentity = target.GetComponentInChildren<PlayerTeamIdentity>(true);
+
+            if (teamIdentity != null)
+                teamIdentity.TeamColorChanged += HandleTeamColorChanged;
         }
 
-#if UNITY_EDITOR
-        [Button("마커를 자기 자신으로 설정")]
-        private void SetMarkerToSelf()
+        private void UnbindTeamIdentity()
         {
-            markerRect = transform as RectTransform;
+            if (teamIdentity != null)
+                teamIdentity.TeamColorChanged -= HandleTeamColorChanged;
+
+            teamIdentity = null;
         }
-#endif
+
+        private void ApplyTeamColor()
+        {
+            EnsureReferences();
+
+            if (markerImage == null)
+                return;
+
+            markerImage.color = teamIdentity != null ? teamIdentity.CurrentColor : fallbackColor;
+        }
+
+        private void HandleTeamColorChanged(Color32 color)
+        {
+            EnsureReferences();
+
+            if (markerImage != null)
+                markerImage.color = color;
+        }
     }
-
-
 }

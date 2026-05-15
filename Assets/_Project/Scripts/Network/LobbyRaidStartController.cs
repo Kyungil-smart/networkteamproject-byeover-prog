@@ -20,6 +20,9 @@ namespace DeadZone.Network
     /// </summary>
     public class LobbyRaidStartController : NetworkBehaviour
     {
+        private const int RaidLoadoutSubmissionTimeoutMs = 2500;
+        private const int RaidLoadoutSubmissionPollMs = 50;
+
         [Header("==== 로비 참조 ====")]
         [SerializeField] private NetworkLobbyState lobbyState;
         [SerializeField] private NetworkGameManager gameManager;
@@ -187,7 +190,62 @@ namespace DeadZone.Network
                 return;
             }
 
+            await SubmitRaidLoadoutsBeforeStartAsync();
             StartRaidServerRpc();
+        }
+
+        private async Task SubmitRaidLoadoutsBeforeStartAsync()
+        {
+            RaidLoadoutTransferService.Clear();
+            RaidLoadoutTransferService.StoreLocalLobbyLoadoutForLocalClient();
+            LobbyPlayerCustomizeCache.Clear();
+            LobbyPlayerCustomizeCache.StoreLocalCustomizeForLocalClient();
+
+            if (!IsServer || NetworkManager.Singleton == null || NetworkManager.Singleton.ConnectedClientsIds.Count <= 1)
+                return;
+
+            RequestRaidLoadoutSubmissionClientRpc();
+
+            string missingClientIds = string.Empty;
+            int waitedMs = 0;
+            while (waitedMs < RaidLoadoutSubmissionTimeoutMs &&
+                   !HaveAllConnectedClientLoadouts(out missingClientIds))
+            {
+                await Task.Delay(RaidLoadoutSubmissionPollMs);
+                waitedMs += RaidLoadoutSubmissionPollMs;
+            }
+
+            if (!HaveAllConnectedClientLoadouts(out missingClientIds))
+            {
+                Debug.LogWarning(
+                    $"[RaidLoadout] Timed out waiting for lobby loadout submissions. MissingClientIds={missingClientIds}",
+                    this);
+            }
+        }
+
+        private bool HaveAllConnectedClientLoadouts(out string missingClientIds)
+        {
+            missingClientIds = string.Empty;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return false;
+
+            List<ulong> missing = null;
+            foreach (ulong clientId in networkManager.ConnectedClientsIds)
+            {
+                if (RaidLoadoutTransferService.HasLoadoutForClient(clientId))
+                    continue;
+
+                missing ??= new List<ulong>();
+                missing.Add(clientId);
+            }
+
+            if (missing == null || missing.Count == 0)
+                return true;
+
+            missingClientIds = string.Join(", ", missing);
+            return false;
         }
 
         private async Task<bool> TryStartSoloSessionAsync()
@@ -198,6 +256,9 @@ namespace DeadZone.Network
             ResolveReferences();
 
             SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
+            if (sessionManager == null)
+                sessionManager = FindFirstObjectByType<SessionManager>(FindObjectsInactive.Include);
+
             if (sessionManager == null)
             {
                 Debug.LogWarning("[LobbyRaidStartController] 1인 출격을 시작할 SessionManager를 찾지 못했습니다.", this);
@@ -275,6 +336,9 @@ namespace DeadZone.Network
                 return;
             }
 
+            CacheLobbyTeamColorsForRaid();
+            CacheLobbyDisplayNamesForRaid();
+            LobbyPlayerCustomizeCache.SaveCustomizesForClients(expectedClientIdsBuffer);
             RaidLoadoutTransferService.SaveLoadoutsForClients(expectedClientIdsBuffer);
 
             if (!TryBeginLoadTracking(sceneName, expectedClientIdsBuffer, out reason))
@@ -291,6 +355,36 @@ namespace DeadZone.Network
                 CancelLoadTracking(reason);
                 Debug.LogWarning($"[LobbyRaidStartController] 레이드 씬 로드 실패: {reason}", this);
             }
+        }
+
+        [ClientRpc]
+        private void RequestRaidLoadoutSubmissionClientRpc()
+        {
+            string loadoutJson = RaidLoadoutTransferService.CreateLocalLobbyLoadoutJson();
+            if (!string.IsNullOrWhiteSpace(loadoutJson))
+                SubmitRaidLoadoutServerRpc(loadoutJson);
+
+            string customizeJson = LobbyPlayerCustomizeCache.CreateLocalCustomizeJson();
+            if (!string.IsNullOrWhiteSpace(customizeJson))
+                SubmitRaidCustomizeServerRpc(customizeJson);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SubmitRaidLoadoutServerRpc(string loadoutJson, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            RaidLoadoutTransferService.StoreSubmittedLobbyLoadout(rpcParams.Receive.SenderClientId, loadoutJson);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SubmitRaidCustomizeServerRpc(string customizeJson, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            LobbyPlayerCustomizeCache.StoreSubmittedCustomize(rpcParams.Receive.SenderClientId, customizeJson);
         }
 
         public bool CanStartRaid()
@@ -535,6 +629,34 @@ namespace DeadZone.Network
             return true;
         }
 
+        private void CacheLobbyTeamColorsForRaid()
+        {
+            if (!IsServer || lobbyState == null || lobbyState.Players == null)
+                return;
+
+            for (int i = 0; i < lobbyState.Players.Count; i++)
+            {
+                LobbyPlayerState player = lobbyState.Players[i];
+                Color32 iconColor = PartyPlayerColorCache.ToColor32(player.IconColorRgba);
+                LobbyTeamColorCache.SetColor(player.ClientId, iconColor);
+            }
+        }
+        
+        private void CacheLobbyDisplayNamesForRaid()
+        {
+            if (!IsServer || lobbyState == null || lobbyState.Players == null)
+                return;
+
+            LobbyPlayerDisplayNameCache.Clear();
+
+            for (int i = 0; i < lobbyState.Players.Count; i++)
+            {
+                LobbyPlayerState player = lobbyState.Players[i];
+                LobbyPlayerDisplayNameCache.SetName(player.ClientId, player.DisplayName);
+            }
+        }
+
+
         private bool TryBeginLoadTracking(string sceneName, IReadOnlyList<ulong> clientIds, out string reason)
         {
             if (!TryResolveGameSessionManager(out GameSessionManager gameSessionManager, out reason))
@@ -559,7 +681,7 @@ namespace DeadZone.Network
                 gameSessionManager = registeredManager;
 
             if (gameSessionManager == null)
-                gameSessionManager = FindObjectOfType<GameSessionManager>();
+                gameSessionManager = FindFirstObjectByType<GameSessionManager>();
 
             if (gameSessionManager == null)
             {
@@ -613,10 +735,10 @@ namespace DeadZone.Network
         private void ResolveReferences()
         {
             if (lobbyState == null)
-                lobbyState = FindObjectOfType<NetworkLobbyState>();
+                lobbyState = FindFirstObjectByType<NetworkLobbyState>();
 
             if (gameManager == null)
-                gameManager = FindObjectOfType<NetworkGameManager>();
+                gameManager = FindFirstObjectByType<NetworkGameManager>();
         }
 
         private bool IsNetworkSessionActive()

@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace DeadZone.Actors
@@ -15,7 +15,7 @@ namespace DeadZone.Actors
         [SerializeField, Min(0.1f)] private float interactRadius = 3f;
 
         [Tooltip("Player 전방 기준으로 상호작용을 허용할 각도입니다. 360이면 주변 전체를 허용합니다.")]
-        [SerializeField, Range(1f, 360f)] private float interactAngle = 150f;
+        [SerializeField, Range(1f, 360f)] private float interactAngle = 360f;
 
         [Tooltip("상호작용 후보로 감지할 레이어입니다. 컨테이너는 ItemBox 레이어를 사용합니다.")]
         [SerializeField] private LayerMask interactMask = ~0;
@@ -31,6 +31,7 @@ namespace DeadZone.Actors
         [SerializeField] private bool drawDebugGizmos;
 
         private NetworkObject playerNetworkObject;
+        private Camera interactionCamera;
 
         private void Awake()
         {
@@ -43,7 +44,7 @@ namespace DeadZone.Actors
         /// </summary>
         public void SetInteractionCamera(Camera camera)
         {
-            _ = camera;
+            interactionCamera = camera;
         }
 
         public void TryInteract()
@@ -105,6 +106,7 @@ namespace DeadZone.Actors
             int colliderCount = 0;
             int missingInteractableCount = 0;
             int angleRejectedCount = 0;
+            int bestPriority = int.MaxValue;
 
             foreach (Collider candidateCollider in colliders)
             {
@@ -116,7 +118,7 @@ namespace DeadZone.Actors
 
                 colliderCount++;
 
-                IInteractable candidate = candidateCollider.GetComponentInParent<IInteractable>();
+                IInteractable candidate = ResolveInteractableForCollider(candidateCollider, out int candidatePriority);
                 if (candidate == null)
                 {
                     missingInteractableCount++;
@@ -131,26 +133,28 @@ namespace DeadZone.Actors
                 if (distance > interactRadius)
                     continue;
 
+                bool fullCircle = interactAngle >= 359.9f;
                 float angle = 0f;
-                if (toCandidate.sqrMagnitude > 0.0001f)
+                if (!fullCircle && toCandidate.sqrMagnitude > 0.0001f)
                 {
                     angle = Vector3.Angle(forward, toCandidate.normalized);
                 }
 
-                float halfAngle = interactAngle >= 359.9f ? 180f : interactAngle * 0.5f;
-                if (angle > halfAngle)
+                float halfAngle = fullCircle ? 180f : interactAngle * 0.5f;
+                if (!fullCircle && angle > halfAngle)
                 {
                     angleRejectedCount++;
                     continue;
                 }
 
-                if (!IsBetterCandidate(angle, distance, bestAngle, bestDistance))
+                if (!IsBetterCandidate(candidatePriority, angle, distance, bestPriority, bestAngle, bestDistance))
                     continue;
 
                 bestInteractable = candidate;
                 bestCollider = candidateCollider;
                 bestDistance = distance;
                 bestAngle = angle;
+                bestPriority = candidatePriority;
             }
 
             if (bestInteractable != null)
@@ -161,16 +165,59 @@ namespace DeadZone.Actors
         }
 
         /// <summary>
-        /// 캐릭터가 바라보는 대상과 상호작용한다는 조작감을 우선하기 위해 각도를 먼저 비교한다.
-        /// 각도 차이가 작을 때는 실제 거리가 더 가까운 대상을 선택한다.
+        /// 같은 오브젝트 계층에 여러 상호작용 컴포넌트가 섞여 있어도
+        /// 바닥 단일 아이템은 즉시 줍기, 상자는 루팅 UI 흐름으로 분리한다.
+        /// 우선순위: LootInteractable → LootContainer → 기타 IInteractable.
+        /// </summary>
+        private IInteractable ResolveInteractableForCollider(Collider candidateCollider, out int priority)
+        {
+            priority = int.MaxValue;
+
+            if (candidateCollider == null)
+                return null;
+
+            LootInteractable lootItem = candidateCollider.GetComponentInParent<LootInteractable>();
+            if (lootItem != null)
+            {
+                priority = 0;
+                return lootItem;
+            }
+
+            LootContainer lootContainer = candidateCollider.GetComponentInParent<LootContainer>();
+            if (lootContainer != null)
+            {
+                priority = 1;
+                return lootContainer;
+            }
+
+            IInteractable interactable = candidateCollider.GetComponentInParent<IInteractable>();
+            if (interactable != null)
+            {
+                priority = 2;
+                return interactable;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 상호작용 타입 우선순위를 먼저 비교하고, 같은 타입끼리는 캐릭터가 바라보는 대상의 각도와 거리를 비교한다.
         /// </summary>
         private bool IsBetterCandidate(
+            int candidatePriority,
             float candidateAngle,
             float candidateDistance,
+            int currentBestPriority,
             float currentBestAngle,
             float currentBestDistance)
         {
             const float angleTolerance = 3f;
+
+            if (candidatePriority < currentBestPriority)
+                return true;
+
+            if (candidatePriority > currentBestPriority)
+                return false;
 
             if (candidateAngle < currentBestAngle - angleTolerance)
                 return true;
@@ -186,8 +233,14 @@ namespace DeadZone.Actors
 
         private Vector3 GetPlanarForward()
         {
-            Vector3 forward = transform.forward;
+            Vector3 forward = interactionCamera != null ? interactionCamera.transform.forward : transform.forward;
             forward.y = 0f;
+
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = transform.forward;
+                forward.y = 0f;
+            }
 
             if (forward.sqrMagnitude < 0.0001f)
                 return Vector3.forward;

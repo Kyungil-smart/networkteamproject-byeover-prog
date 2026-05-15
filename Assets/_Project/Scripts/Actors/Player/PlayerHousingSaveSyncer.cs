@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using Unity.Netcode;
 using UnityEngine;
@@ -39,6 +40,17 @@ namespace DeadZone.Actors
         private PlayerHousingProgress progress;
         private string lastAppliedLoadSignature;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private readonly Dictionary<string, DebugCraftMaterialGrant> debugCraftMaterialGrants = new();
+
+        private sealed class DebugCraftMaterialGrant
+        {
+            public ItemDataSO item;
+            public int baselineCount;
+            public int grantedCount;
+        }
+#endif
+
         private void Awake()
         {
             progress = GetComponent<PlayerHousingProgress>();
@@ -54,7 +66,7 @@ namespace DeadZone.Actors
             EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
             EventBus.Subscribe<SceneChangedEvent>(HandleSceneChanged);
             SceneManager.sceneLoaded += HandleUnitySceneLoaded;
-            TryApplyLoadedDataForCurrentHideoutScene("PlayerHousingSaveSyncer spawned in Hideout");
+            TryApplyLoadedDataForCurrentScene("PlayerHousingSaveSyncer spawned");
         }
 
         public override void OnNetworkDespawn()
@@ -111,6 +123,54 @@ namespace DeadZone.Actors
                 saveReason,
                 RpcTarget.Single(OwnerClientId, RpcTargetUse.Temp)
             );
+        }
+
+        // 서버 제작 성공 후 오너 클라이언트가 로비 인벤토리 스냅샷을 Cloud Save에 올리도록 요청합니다.
+        public void RequestLobbyInventorySaveFromServer(string saveReason)
+        {
+            if (!IsServer)
+                return;
+
+            if (IsOwner)
+            {
+                _ = SaveLobbyInventorySnapshotAsync(saveReason);
+                return;
+            }
+
+            RequestLobbyInventorySaveRpc(saveReason, RpcTarget.Single(OwnerClientId, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void RequestLobbyInventorySaveRpc(string saveReason, RpcParams rpcParams = default)
+        {
+            if (!IsOwner)
+                return;
+
+            _ = SaveLobbyInventorySnapshotAsync(saveReason);
+        }
+
+        private async Task SaveLobbyInventorySnapshotAsync(string saveReason)
+        {
+            LobbySaveService saveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+
+            if (saveService == null)
+            {
+                Debug.LogWarning(
+                    $"[PlayerHousingSaveSyncer] LobbySaveService missing. Inventory snapshot save skipped. reason={saveReason}",
+                    this);
+                return;
+            }
+
+            bool success = await saveService.SaveLobbyDataToCloudAsync();
+
+            if (!logSaveRequest)
+                return;
+
+            Debug.Log(
+                success
+                    ? $"[PlayerHousingSaveSyncer] Lobby inventory snapshot saved. reason={saveReason}"
+                    : $"[PlayerHousingSaveSyncer] Lobby inventory snapshot save failed or skipped. reason={saveReason}",
+                this);
         }
 
         [Rpc(SendTo.SpecifiedInParams)]
@@ -215,9 +275,6 @@ namespace DeadZone.Actors
             if (!IsOwner)
                 return;
 
-            if (!IsHideoutScene(SceneManager.GetActiveScene().name))
-                return;
-
             TryApplyLoadedCloudDataToServer("Cloud Save loaded");
         }
 
@@ -225,10 +282,10 @@ namespace DeadZone.Actors
         {
             string sceneName = e.sceneName.ToString();
 
-            if (!IsHideoutScene(sceneName))
+            if (!IsLobbyOrHideoutScene(sceneName) && !IsGameplayScene(sceneName))
                 return;
 
-            TryApplyLoadedCloudDataToServer("Hideout network scene loaded");
+            TryApplyLoadedCloudDataToServer($"{sceneName} network scene loaded");
         }
 
         private void HandleUnitySceneLoaded(Scene scene, LoadSceneMode mode)
@@ -236,17 +293,18 @@ namespace DeadZone.Actors
             if (!IsOwner)
                 return;
 
-            if (!IsHideoutScene(scene.name))
+            if (!IsLobbyOrHideoutScene(scene.name) && !IsGameplayScene(scene.name))
                 return;
 
-            TryApplyLoadedCloudDataToServer("Hideout unity scene loaded");
+            TryApplyLoadedCloudDataToServer($"{scene.name} unity scene loaded");
         }
 
-        private void TryApplyLoadedDataForCurrentHideoutScene(string reason)
+        // 스폰 시점에 이미 현재 씬이 로비/하이드아웃/게임이면 저장된 하우징 레벨을 즉시 적용합니다.
+        private void TryApplyLoadedDataForCurrentScene(string reason)
         {
             Scene activeScene = SceneManager.GetActiveScene();
 
-            if (!IsHideoutScene(activeScene.name))
+            if (!IsLobbyOrHideoutScene(activeScene.name) && !IsGameplayScene(activeScene.name))
                 return;
 
             TryApplyLoadedCloudDataToServer(reason);
@@ -262,9 +320,10 @@ namespace DeadZone.Actors
             bool serverSaveExists = HasLoadedServerHousingData();
             bool localJsonExists = HasLocalJsonSave();
 
-            Debug.Log($"[HideoutLoad] Enter Hideout. isInParty={isInParty}, userId={userId}", this);
-            Debug.Log($"[HideoutLoad] Server save exists={serverSaveExists}", this);
-            Debug.Log($"[HideoutLoad] Local json exists={localJsonExists}", this);
+            string sceneName = SceneManager.GetActiveScene().name;
+            Debug.Log($"[HousingLoad] Apply requested. scene={sceneName}, isInParty={isInParty}, userId={userId}", this);
+            Debug.Log($"[HousingLoad] Server save exists={serverSaveExists}", this);
+            Debug.Log($"[HousingLoad] Local json exists={localJsonExists}", this);
 
             if (!TryCreateLoadedHousingProgressDTO(out PlayerHousingProgressDTO dto, out string source))
             {
@@ -274,7 +333,7 @@ namespace DeadZone.Actors
                 Debug.Log("[Facility] Default level generated. reason=No server or local facility save data", this);
             }
 
-            Debug.Log($"[HideoutLoad] Applying facility levels from={source}", this);
+            Debug.Log($"[HousingLoad] Applying facility levels from={source}", this);
 
             if (dto == null)
                 return;
@@ -282,7 +341,7 @@ namespace DeadZone.Actors
             string loadSignature = BuildLoadSignature(dto, source);
             if (lastAppliedLoadSignature == loadSignature)
             {
-                Debug.Log($"[HideoutLoad] Same housing data already applied. source={source}", this);
+                Debug.Log($"[HousingLoad] Same housing data already applied. source={source}", this);
                 return;
             }
 
@@ -425,7 +484,9 @@ namespace DeadZone.Actors
             }
 
             progress.ApplySaveDataFromServer(dto);
-            ApplyToSceneFacilities(dto);
+            // 씬 오브젝트 시설 레벨은 하이드아웃에서만 직접 갱신하고, 게임 씬에서는 플레이어 보너스 적용만 사용합니다.
+            if (IsHideoutScene(SceneManager.GetActiveScene().name))
+                ApplyToSceneFacilities(dto);
             RefreshOpenHideoutWindows();
 
             if (!logSaveRequest)
@@ -561,6 +622,13 @@ namespace DeadZone.Actors
                    string.Equals(sceneName, "Lobby", System.StringComparison.OrdinalIgnoreCase);
         }
 
+        // 레이드 게임 씬에서도 하우징 보너스를 받을 수 있게 Game_ 접두 씬을 적용 대상으로 포함합니다.
+        private static bool IsGameplayScene(string sceneName)
+        {
+            return !string.IsNullOrWhiteSpace(sceneName) &&
+                   sceneName.StartsWith("Game_", System.StringComparison.OrdinalIgnoreCase);
+        }
+
         private static string GetCurrentUserId()
         {
             CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem(true);
@@ -591,6 +659,217 @@ namespace DeadZone.Actors
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // F12 테스트 입력을 네트워크 플레이어 경로로 전달합니다. 실제 인벤토리 GridInventory가 있을 때 사용됩니다.
+        public bool TryRunDebugCraftMaterialTest(bool removeMaterials)
+        {
+            if (!IsSpawned || !IsOwner)
+                return false;
+
+            RequestDebugCraftMaterialTestRpc(removeMaterials);
+            return true;
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void RequestDebugCraftMaterialTestRpc(bool removeMaterials, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+            {
+                Debug.LogWarning(
+                    $"[PlayerHousingSaveSyncer] F12 제작 재료 테스트 요청을 거부했습니다. Sender={rpcParams.Receive.SenderClientId}, Owner={OwnerClientId}",
+                    this);
+                return;
+            }
+
+            GridInventory inventory = GetComponent<GridInventory>();
+            if (inventory == null)
+                inventory = GetComponentInChildren<GridInventory>(true);
+
+            if (inventory == null)
+            {
+                Debug.LogWarning("[PlayerHousingSaveSyncer] F12 제작 재료 테스트 실패. GridInventory가 없습니다.", this);
+                return;
+            }
+
+            if (removeMaterials)
+            {
+                RemoveDebugCraftMaterials(inventory);
+                return;
+            }
+
+            AddDebugCraftMaterials(inventory);
+        }
+
+        private void AddDebugCraftMaterials(GridInventory inventory)
+        {
+            if (inventory == null)
+                return;
+
+            // 작업대/의료시설의 모든 레시피 재료를 모아 한 번에 테스트 재료로 지급합니다.
+            Dictionary<string, DebugCraftMaterialGrant> requestedMaterials = CollectDebugCraftMaterialRequirements();
+
+            if (requestedMaterials.Count == 0)
+            {
+                Debug.LogWarning("[PlayerHousingSaveSyncer] F12 제작 재료 테스트 실패. 작업대/의료시설 레시피 재료를 찾지 못했습니다.", this);
+                return;
+            }
+
+            debugCraftMaterialGrants.Clear();
+
+            int addedKinds = 0;
+            int addedTotal = 0;
+
+            foreach (DebugCraftMaterialGrant grant in requestedMaterials.Values)
+            {
+                if (grant == null || grant.item == null || grant.grantedCount <= 0)
+                    continue;
+
+                grant.baselineCount = inventory.GetItemCount(grant.item.itemID);
+
+                if (!inventory.TryAddItem(grant.item, grant.grantedCount))
+                {
+                    Debug.LogWarning(
+                        $"[PlayerHousingSaveSyncer] F12 제작 재료 추가 실패. item={grant.item.itemID}, amount={grant.grantedCount}",
+                        this);
+                    continue;
+                }
+
+                debugCraftMaterialGrants[grant.item.itemID] = grant;
+                addedKinds++;
+                addedTotal += grant.grantedCount;
+            }
+
+            Debug.Log(
+                $"[PlayerHousingSaveSyncer] F12 제작 재료 추가 완료\n" +
+                $"ClientId: {OwnerClientId}\n" +
+                $"아이템 종류: {addedKinds}\n" +
+                $"총 수량: {addedTotal}",
+                this);
+        }
+
+        private void RemoveDebugCraftMaterials(GridInventory inventory)
+        {
+            if (inventory == null)
+                return;
+
+            if (debugCraftMaterialGrants.Count == 0)
+            {
+                Debug.Log("[PlayerHousingSaveSyncer] Shift+F12 제거할 테스트 제작 재료 기록이 없습니다.", this);
+                return;
+            }
+
+            int removedKinds = 0;
+            int removedTotal = 0;
+
+            foreach (DebugCraftMaterialGrant grant in debugCraftMaterialGrants.Values)
+            {
+                if (grant == null || grant.item == null || string.IsNullOrWhiteSpace(grant.item.itemID))
+                    continue;
+
+                int currentCount = inventory.GetItemCount(grant.item.itemID);
+                int removableCount = Mathf.Min(
+                    Mathf.Max(0, grant.grantedCount),
+                    Mathf.Max(0, currentCount - Mathf.Max(0, grant.baselineCount)));
+
+                if (removableCount <= 0)
+                    continue;
+
+                if (!inventory.ConsumeItem(grant.item.itemID, removableCount))
+                {
+                    Debug.LogWarning(
+                        $"[PlayerHousingSaveSyncer] Shift+F12 제작 재료 제거 실패. item={grant.item.itemID}, amount={removableCount}",
+                        this);
+                    continue;
+                }
+
+                removedKinds++;
+                removedTotal += removableCount;
+            }
+
+            debugCraftMaterialGrants.Clear();
+
+            Debug.Log(
+                $"[PlayerHousingSaveSyncer] Shift+F12 제작 재료 제거 완료\n" +
+                $"ClientId: {OwnerClientId}\n" +
+                $"아이템 종류: {removedKinds}\n" +
+                $"총 수량: {removedTotal}",
+                this);
+        }
+
+        // 씬에 배치된 작업대/의료시설 제작 레시피를 훑어 필요한 재료 총량을 계산합니다.
+        private static Dictionary<string, DebugCraftMaterialGrant> CollectDebugCraftMaterialRequirements()
+        {
+            Dictionary<string, DebugCraftMaterialGrant> materials = new();
+
+            WorkbenchRecipeCatalog[] workbenchCatalogs = FindObjectsByType<WorkbenchRecipeCatalog>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < workbenchCatalogs.Length; i++)
+            {
+                if (workbenchCatalogs[i] == null)
+                    continue;
+
+                AddRecipeMaterials(materials, workbenchCatalogs[i].GetAllRecipes());
+            }
+
+            MedicalCraftingController[] medicalControllers = FindObjectsByType<MedicalCraftingController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < medicalControllers.Length; i++)
+            {
+                if (medicalControllers[i] == null)
+                    continue;
+
+                AddRecipeMaterials(materials, medicalControllers[i].GetAllRecipes());
+            }
+
+            return materials;
+        }
+
+        private static void AddRecipeMaterials(
+            Dictionary<string, DebugCraftMaterialGrant> materials,
+            IReadOnlyList<RecipeSO> recipes)
+        {
+            if (materials == null || recipes == null)
+                return;
+
+            for (int recipeIndex = 0; recipeIndex < recipes.Count; recipeIndex++)
+            {
+                RecipeSO recipe = recipes[recipeIndex];
+
+                if (recipe == null || recipe.ingredients == null)
+                    continue;
+
+                for (int ingredientIndex = 0; ingredientIndex < recipe.ingredients.Count; ingredientIndex++)
+                {
+                    ItemRequirement ingredient = recipe.ingredients[ingredientIndex];
+
+                    if (ingredient.item == null || string.IsNullOrWhiteSpace(ingredient.item.itemID))
+                        continue;
+
+                    int amount = Mathf.Max(1, ingredient.amount);
+                    string itemId = ingredient.item.itemID;
+
+                    if (!materials.TryGetValue(itemId, out DebugCraftMaterialGrant grant))
+                    {
+                        grant = new DebugCraftMaterialGrant
+                        {
+                            item = ingredient.item,
+                            grantedCount = 0
+                        };
+
+                        materials.Add(itemId, grant);
+                    }
+
+                    grant.grantedCount += amount;
+                }
+            }
+        }
+
         public bool TryRunDebugHousingLevelTest(bool resetToLevelOne)
         {
             if (!IsSpawned || !IsOwner)

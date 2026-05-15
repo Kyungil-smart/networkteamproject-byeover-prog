@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -37,6 +38,8 @@ namespace DeadZone.Actors
         /// </summary>
         public bool IsDead => CurrentHP.Value <= 0;
 
+        private bool deathPresentationApplied;
+
         /// <summary>
         /// IDamageable 호환용 플레이어 여부입니다. 적은 항상 false입니다.
         /// </summary>
@@ -47,6 +50,8 @@ namespace DeadZone.Actors
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            CurrentHP.OnValueChanged += HandleCurrentHpChanged;
+
             if (IsServer && statsSO != null)
             {
                 CurrentHP.Value = statsSO.maxHP;
@@ -54,6 +59,20 @@ namespace DeadZone.Actors
                     ? statsSO.defaultArmor.maxDurability
                     : 0f;
             }
+
+            if (CurrentHP.Value <= 0f)
+                ApplyDeathPresentation();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            CurrentHP.OnValueChanged -= HandleCurrentHpChanged;
+        }
+
+        private void HandleCurrentHpChanged(float previousValue, float currentValue)
+        {
+            if (currentValue <= 0f)
+                ApplyDeathPresentation();
         }
 
         /// <summary>
@@ -94,11 +113,15 @@ namespace DeadZone.Actors
 
         private void Die(ulong attackerClientId)
         {
+            ApplyDeathPresentationClientRpc();
+            ApplyDeathPresentation();
+
             // 1. EnemyKilledEvent 발행 (QuestManager, KillFeedUI 등이 구독)
             EventBus.Publish(new EnemyKilledEvent
             {
                 attackerClientId = attackerClientId,
                 tier = statsSO != null ? statsSO.tier : EnemyTier.T1,
+                isBoss = statsSO != null && statsSO.isBoss,
                 position = transform.position,
                 enemyId = statsSO != null && !string.IsNullOrEmpty(statsSO.enemyId)
                     ? new FixedString64Bytes(statsSO.enemyId)
@@ -109,7 +132,74 @@ namespace DeadZone.Actors
             SpawnCorpse();
 
             // 3. 원본 적 오브젝트 제거
-            NetworkObject?.Despawn(destroy: true);
+            DespawnEnemyObject();
+        }
+
+        private void DespawnEnemyObject()
+        {
+            if (NetworkObject == null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (!NetworkObject.IsSpawned)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            bool isSceneObject = NetworkObject.IsSceneObject.HasValue && NetworkObject.IsSceneObject.Value;
+            if (isSceneObject)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
+            NetworkObject.Despawn(true);
+        }
+
+        [ClientRpc]
+        private void ApplyDeathPresentationClientRpc()
+        {
+            ApplyDeathPresentation();
+        }
+
+        private void ApplyDeathPresentation()
+        {
+            if (deathPresentationApplied)
+                return;
+
+            deathPresentationApplied = true;
+
+            EnemyAI enemyAI = GetComponent<EnemyAI>();
+            if (enemyAI != null)
+                enemyAI.enabled = false;
+
+            EnemyVision enemyVision = GetComponent<EnemyVision>();
+            if (enemyVision != null)
+                enemyVision.enabled = false;
+
+            EnemyShooter enemyShooter = GetComponent<EnemyShooter>();
+            if (enemyShooter != null)
+                enemyShooter.enabled = false;
+
+            NavMeshAgent navMeshAgent = GetComponent<NavMeshAgent>();
+            if (navMeshAgent != null && navMeshAgent.enabled)
+            {
+                if (navMeshAgent.isOnNavMesh)
+                    navMeshAgent.isStopped = true;
+
+                navMeshAgent.enabled = false;
+            }
+
+            Collider[] colliders = GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+                colliders[i].enabled = false;
+
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+                renderers[i].enabled = false;
         }
 
         private void SpawnCorpse()
@@ -120,6 +210,20 @@ namespace DeadZone.Actors
             GameObject prefab = statsSO.corpsePrefab != null
                 ? statsSO.corpsePrefab
                 : fallbackCorpsePrefab;
+
+            if (prefab != null && prefab.GetComponent<NetworkObject>() == null)
+            {
+                if (fallbackCorpsePrefab != null && fallbackCorpsePrefab.GetComponent<NetworkObject>() != null)
+                {
+                    Debug.LogWarning($"[EnemyStats] Corpse prefab '{prefab.name}' is missing NetworkObject. Using fallback corpse prefab '{fallbackCorpsePrefab.name}'.", this);
+                    prefab = fallbackCorpsePrefab;
+                }
+                else
+                {
+                    Debug.LogWarning($"[EnemyStats] Corpse prefab '{prefab.name}' is missing NetworkObject. Corpse spawn skipped.", this);
+                    return;
+                }
+            }
 
             if (prefab == null)
             {
@@ -132,7 +236,7 @@ namespace DeadZone.Actors
             var netObj = corpseObj.GetComponent<NetworkObject>();
             if (netObj == null)
             {
-                Debug.LogError($"[EnemyStats] 시체 프리팹에 NetworkObject가 없음: {prefab.name}");
+                Debug.LogWarning($"[EnemyStats] Corpse prefab is missing NetworkObject after instantiate: {prefab.name}", this);
                 Destroy(corpseObj);
                 return;
             }

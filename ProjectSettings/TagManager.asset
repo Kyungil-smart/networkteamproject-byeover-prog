@@ -28,11 +28,11 @@ TagManager:
   - ViewBlocker
   - Ground
   - ItemBox
+  - Minimap
+  - FovMesh
   - 
   - 
-  - 
-  - 
-  - 
+  - EnemyHitBox
   - 
   - 
   - 

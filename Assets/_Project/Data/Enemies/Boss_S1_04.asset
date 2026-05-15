@@ -16,14 +16,14 @@ MonoBehaviour:
   tier: 5
   faction: 1
   isBoss: 1
-  enemyId: 
+  enemyId: Boss_Forest_Sniper
   maxHP: 300
   defaultArmor: {fileID: 0}
   defaultWeapon: {fileID: 11400000, guid: 8aeaa47fb847b284c94f2a413a3699a3, type: 2}
   defaultAmmo: {fileID: 11400000, guid: eabc0fa96f2e3e040a7a92ae8e13d191, type: 2}
   penetrationModifier: 0
-  damageMultiplier: 1.2
-  fireInterval: 2
+  damageMultiplier: 0.85
+  fireInterval: 3.2
   burstSize: 1
   burstRestDelay: 2.5
   spreadAngleMin: 0.1
@@ -38,11 +38,9 @@ MonoBehaviour:
   preferredRangeMin: 20
   preferredRangeMax: 180
   canCallReinforcements: 0
-  canThrowGrenades: 0
-  grenadeCooldown: 5
   dropEquippedGear: 1
-  extraLootTable: {fileID: 0}
+  extraLootTable: {fileID: 11400000, guid: 60c3e02632616ef4fbb7ffa52c705ecd, type: 2}
   extraLootCount: 1
-  corpsePrefab: {fileID: 0}
+  corpsePrefab: {fileID: 2706845702117162606, guid: 2229262e873706a4d929d6bfc82f6d74, type: 3}
   corpseDespawnTime: 120
   corpseDespawnWhenEmpty: 30

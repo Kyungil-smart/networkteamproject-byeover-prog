@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_F2
   displayName: F2
-  description: "- \uD504\uB791\uC2A4\uC0B0 \uC81C\uC2DD \uC800\uACA9\uC18C\uCD1D\n-
-    \uB4F1\uAE09: \uC5D0\uD53D\n\n- \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 42\n2. \uACF5\uACA9
-    \uC18D\uB3C4: 14\n3. \uD0C4\uCC3D \uD06C\uAE30: 25"
+  description: "F2 AR\n- 등급: 에픽\n\n- 특징\n1. 데미지: 36\n2. 공격 속도: 9\n3. 탄창 크기: 25"
   icon: {fileID: 21300000, guid: 7c05ec0c7f7d09f4ebdbb820a29c4c7a, type: 3}
   category: 0
   rarity: 3
@@ -27,16 +25,16 @@ MonoBehaviour:
   baseSellPrice: 45000
   worldPrefab: {fileID: 5863959962671997655, guid: 84e96cfa27210fe4488f053115ff8dd8, type: 3}
   weaponCategory: 0
-  damage: 42
-  fireRate: 14
+  damage: 36
+  fireRate: 9
   magSize: 25
-  engageRange: {x: 30, y: 250}
+  engageRange: {x: 25, y: 70}
   ammoType: 0
   availableModes: 0100
-  muzzleVelocity: 950
+  muzzleVelocity: 140
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.2
-  spreadAngle: {x: 0.4, y: 2.8}
+  spreadAngle: {x: 0.4, y: 2.6}
   spreadRecovery: 11
   maxDurability: 100

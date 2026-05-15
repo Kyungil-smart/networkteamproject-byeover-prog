@@ -3829,6 +3829,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a2d59e03490bc6a4c9653c3e85b25bfe, type: 2}
   - {fileID: 11400000, guid: be4fc9ff7f5c2e74e8b45439dadacc48, type: 2}
   - {fileID: 11400000, guid: 75444941930b93e49ae44388cb90f2bf, type: 2}
+  - {fileID: 11400000, guid: 48e6b8e65b1d4a2b9393f994d5e7f071, type: 2}
+  - {fileID: 11400000, guid: e7e54ea8b4fc43d88386a26a7b24ad77, type: 2}
   logCraftResult: 1
 --- !u!114 &5753693819362568856
 MonoBehaviour:

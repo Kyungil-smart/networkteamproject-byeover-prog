@@ -9,13 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
+  m_Script: {fileID: 11500000, guid: c539c0f8f4614e84bb126ef54bd7892a, type: 3}
   m_Name: ITM_FastHealSyringe
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: FastHealSyringe
-  displayName: "\uAE09\uC18D \uD68C\uBCF5 \uC8FC\uC0AC\uAE30"
-  description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uC2EC\uAC04\uD55C
-    \uBD80\uC0C1\uC744 \uC2E0\uC18D\uD788 \uD68C\uBCF5 \uC2DC\uCF1C\uC8FC\uB294 \uC8FC\uC0AC\uAE30"
+  displayName: "급속 회복 주사기"
+  description: "- 등급: 레어\n- 용도: 심한 부상을 빠르게 회복시키는 주사기\n\n- 효과\n1. 사용 시간: 1초\n2. 즉시 회복: 30"
   icon: {fileID: 21300000, guid: 21ee3dd205ec4594d8485d47aa21426f, type: 3}
   category: 5
   rarity: 2
@@ -24,4 +23,11 @@ MonoBehaviour:
   maxStackSize: 3
   weightKg: 0.1
   baseSellPrice: 4000
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
+  useSeconds: 1
+  instantHeal: 30
+  healDurationSeconds: 0
+  healPerSecond: 0
+  buffDurationSeconds: 0
+  weightCapacityMultiplierBonus: 0
+  staminaCostMultiplierBonus: 0

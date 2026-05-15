@@ -98,7 +98,7 @@ namespace DeadZone.Network
             EventBus.Unsubscribe<QuestProgressEvent>(OnQuestProgress);
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
 
-            ServiceLocator.Unregister<CloudSaveSystem>();
+            ServiceLocator.Unregister(this);
             isRegistered = false;
         }
 
@@ -567,6 +567,7 @@ namespace DeadZone.Network
                 ? ToLobbySaveDTO(currentData.lobbySave)
                 : CreateLobbySaveDTOFromLegacyCloudFields();
 
+            ReconcileLegacyInventorySectionsIntoLobbySaveDTO(dto);
             ReconcileLegacyFacilitiesIntoLobbySaveDTO(dto);
             return dto;
         }
@@ -731,9 +732,17 @@ namespace DeadZone.Network
                 bankruptcyLobbySave.hasCredits = true;
                 bankruptcyLobbySave.credits = starterPack.StartingCredits;
                 bankruptcyLobbySave.inventoryItems.Clear();
+                bankruptcyLobbySave.quickSlotItems.Clear();
                 bankruptcyLobbySave.equipmentItems.Clear();
+                ForceFacilityLevel(bankruptcyLobbySave, "Stash", 1);
+                bankruptcyLobbySave.quickSlotItems.Clear();
+                bankruptcyLobbySave.hasInventorySection = true;
+                bankruptcyLobbySave.hasStashSection = true;
+                bankruptcyLobbySave.hasEquipmentSection = true;
+                bankruptcyLobbySave.hasQuickSlotSection = true;
 
                 currentData.lobbySave = ToLobbySaveCloudData(bankruptcyLobbySave);
+                ApplyBankruptcyLobbyStateToRuntime(bankruptcyLobbySave);
 
                 currentData.profile.lastPlayedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -772,6 +781,7 @@ namespace DeadZone.Network
             currentData.progress ??= new ProgressData();
             currentData.progress.personalActiveQuestIds ??= new List<string>();
             currentData.progress.personalCompletedQuestIds ??= new List<string>();
+            currentData.progress.rewardClaimedQuestIds ??= new List<string>();
             currentData.progress.unlockedZones ??= new List<string>();
             currentData.progress.questObjectives ??= new List<QuestObjectiveProgress>();
             currentData.progress.pendingCompletionIds ??= new List<string>();
@@ -793,6 +803,7 @@ namespace DeadZone.Network
             currentData.lobbySave.inventoryItems ??= new List<LobbyItemCloudData>();
             currentData.lobbySave.stashItems ??= new List<LobbyItemCloudData>();
             currentData.lobbySave.equipmentItems ??= new List<LobbyEquipmentCloudData>();
+            currentData.lobbySave.quickSlotItems ??= new List<LobbyItemCloudData>();
             currentData.lobbySave.facilities ??= new List<LobbyFacilityCloudData>();
         }
 
@@ -820,11 +831,12 @@ namespace DeadZone.Network
             int lobbyInventoryCount = currentData.lobbySave?.inventoryItems?.Count ?? -1;
             int lobbyStashCount = currentData.lobbySave?.stashItems?.Count ?? -1;
             int lobbyEquipmentCount = currentData.lobbySave?.equipmentItems?.Count ?? -1;
+            int lobbyQuickSlotCount = currentData.lobbySave?.quickSlotItems?.Count ?? -1;
             int lobbyFacilityCount = currentData.lobbySave?.facilities?.Count ?? -1;
 
             return
                 $"credits={credits} legacyStash={legacyStashCount} lobbyInventory={lobbyInventoryCount} " +
-                $"lobbyStash={lobbyStashCount} lobbyEquipment={lobbyEquipmentCount} lobbyFacilities={lobbyFacilityCount} " +
+                $"lobbyStash={lobbyStashCount} lobbyEquipment={lobbyEquipmentCount} lobbyQuickSlots={lobbyQuickSlotCount} lobbyFacilities={lobbyFacilityCount} " +
                 BuildFacilityAuditSummary();
         }
 
@@ -846,8 +858,11 @@ namespace DeadZone.Network
 
             string credits = dto.hasCredits ? dto.credits.ToString() : "none";
             return
-                $"dtoCredits={credits} dtoInventory={dto.inventoryItems?.Count ?? -1} dtoStash={dto.stashItems?.Count ?? -1} " +
-                $"dtoEquipment={dto.equipmentItems?.Count ?? -1} dtoFacilities={dto.facilities?.Count ?? -1}";
+                $"dtoCredits={credits} dtoInventory={dto.inventoryItems?.Count ?? -1}(known={dto.hasInventorySection}) " +
+                $"dtoStash={dto.stashItems?.Count ?? -1}(known={dto.hasStashSection}) " +
+                $"dtoEquipment={dto.equipmentItems?.Count ?? -1}(known={dto.hasEquipmentSection}) " +
+                $"dtoQuickSlots={dto.quickSlotItems?.Count ?? -1}(known={dto.hasQuickSlotSection}) " +
+                $"dtoFacilities={dto.facilities?.Count ?? -1}";
         }
 
         private static string BuildHousingDtoAuditSummary(PlayerHousingProgressDTO dto)
@@ -1058,10 +1073,70 @@ namespace DeadZone.Network
         {
             currentData.progress.credits = starterPack.StartingCredits;
             currentData.stash.slots = BuildStarterPackStashSlots(starterPack);
+            currentData.facilities ??= new FacilitiesData();
+            currentData.facilities.stash = 1;
+            ApplyBankruptcyStashLevelToRuntimeState();
+            MirrorFacilitiesToLobbySave();
             currentData.safePocket.slots.Clear();
             currentData.equipment = new EquipmentData();
             currentData.insurance.Clear();
             currentData.schemaVersion = Mathf.Max(currentData.schemaVersion, EconomyStarterPackSchemaVersion);
+        }
+
+        private void ApplyBankruptcyStashLevelToRuntimeState()
+        {
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+            facilityState?.SetFacilityLevel("Stash", 1);
+
+            NetworkObject localPlayer = FindLocalPlayer();
+            PlayerHousingProgress housingProgress = localPlayer != null
+                ? localPlayer.GetComponent<PlayerHousingProgress>()
+                : null;
+
+            if (housingProgress == null && localPlayer != null)
+                housingProgress = localPlayer.GetComponentInChildren<PlayerHousingProgress>(true);
+
+            if (housingProgress != null && housingProgress.IsServer)
+                housingProgress.TrySetLevelFromServer(FacilityType.Stash, 1);
+
+            DeadZone.Actors.UI.StashGridUI stashGridUI = FindFirstObjectByType<DeadZone.Actors.UI.StashGridUI>(FindObjectsInactive.Include);
+            if (stashGridUI != null)
+                stashGridUI.SetLevel(1);
+        }
+
+        private static void ApplyBankruptcyLobbyStateToRuntime(LobbySaveDTO bankruptcyLobbySave)
+        {
+            if (bankruptcyLobbySave == null)
+                return;
+
+            LobbyInventoryState inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            if (inventoryState != null)
+            {
+                inventoryState.SetCredits(bankruptcyLobbySave.credits);
+                inventoryState.SetInventoryItems(bankruptcyLobbySave.inventoryItems);
+                inventoryState.SetStashItems(bankruptcyLobbySave.stashItems);
+                inventoryState.SetQuickSlotItems(bankruptcyLobbySave.quickSlotItems);
+                inventoryState.SetEquipmentItems(bankruptcyLobbySave.equipmentItems);
+            }
+
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+            if (facilityState != null)
+                facilityState.SetFacilities(bankruptcyLobbySave.facilities);
+
+            LobbyInventoryStateUiBridge uiBridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            if (uiBridge != null)
+                uiBridge.ApplyStateToUi();
+
+            WalletSystem walletSystem = FindFirstObjectByType<WalletSystem>(FindObjectsInactive.Include);
+            if (walletSystem != null)
+                walletSystem.SetCreditsLocalTest(bankruptcyLobbySave.credits);
+
+            DeadZone.Actors.UI.StashGridUI stashGridUI = FindFirstObjectByType<DeadZone.Actors.UI.StashGridUI>(FindObjectsInactive.Include);
+            if (stashGridUI != null)
+            {
+                stashGridUI.SetLevel(1);
+                stashGridUI.ApplySavedStashItems(bankruptcyLobbySave.stashItems, ServiceLocator.Get<IItemDatabase>());
+            }
         }
 
         private bool TryApplyStarterPackMigration()
@@ -1109,35 +1184,46 @@ namespace DeadZone.Network
         private static List<StashSlot> BuildStarterPackStashSlots(StarterPackConfigSO starterPack)
         {
             List<StashSlot> result = new List<StashSlot>();
-            int nextSlotIndex = 0;
+            List<RectInt> occupiedRects = new List<RectInt>();
 
             IReadOnlyList<StarterPackEntry> entries = starterPack.Entries;
             for (int i = 0; i < entries.Count; i++)
             {
-                AppendStarterPackEntry(result, entries[i], ref nextSlotIndex);
+                AppendStarterPackEntry(result, occupiedRects, entries[i]);
             }
 
             return result;
         }
 
-        private static void AppendStarterPackEntry(List<StashSlot> result, StarterPackEntry entry, ref int nextSlotIndex)
+        private static void AppendStarterPackEntry(
+            List<StashSlot> result,
+            List<RectInt> occupiedRects,
+            StarterPackEntry entry)
         {
             if (entry == null || entry.Item == null)
                 return;
 
             int remaining = entry.Amount;
             int maxStack = Mathf.Max(1, entry.Item.maxStackSize);
+            Vector2Int itemSize = Vector2Int.one;
 
             while (remaining > 0)
             {
                 int stackCount = Mathf.Min(maxStack, remaining);
-                result.Add(CreateStarterPackSlot(entry, stackCount, nextSlotIndex));
-                nextSlotIndex++;
+
+                if (!TryFindStarterPackPlacement(occupiedRects, itemSize, out int gridX, out int gridY))
+                {
+                    Debug.LogWarning($"[CloudSaveSystem] Starter pack item placement failed. itemId={entry.Item.itemID}");
+                    return;
+                }
+
+                result.Add(CreateStarterPackSlot(entry, stackCount, gridX, gridY));
+                occupiedRects.Add(new RectInt(gridX, gridY, itemSize.x, itemSize.y));
                 remaining -= stackCount;
             }
         }
 
-        private static StashSlot CreateStarterPackSlot(StarterPackEntry entry, int stackCount, int slotIndex)
+        private static StashSlot CreateStarterPackSlot(StarterPackEntry entry, int stackCount, int gridX, int gridY)
         {
             ItemDataSO item = entry.Item;
 
@@ -1145,12 +1231,66 @@ namespace DeadZone.Network
             {
                 itemId = item.itemID,
                 stackCount = stackCount,
-                gridX = slotIndex % DefaultStashColumnCount,
-                gridY = slotIndex / DefaultStashColumnCount,
+                gridX = gridX,
+                gridY = gridY,
                 rotated = false,
                 currentDurability = GetDurabilityValue(item, entry.DurabilityRatio),
                 currentAmmo = GetCurrentAmmoValue(item, entry.CurrentAmmo),
             };
+        }
+
+        private static bool TryFindStarterPackPlacement(
+            List<RectInt> occupiedRects,
+            Vector2Int itemSize,
+            out int gridX,
+            out int gridY)
+        {
+            gridX = 0;
+            gridY = 0;
+
+            const int maxStarterPackRows = 100;
+
+            for (int y = 0; y < maxStarterPackRows; y++)
+            {
+                for (int x = 0; x <= DefaultStashColumnCount - itemSize.x; x++)
+                {
+                    if (!OverlapsAnyStarterPackSlot(occupiedRects, x, y, itemSize))
+                    {
+                        gridX = x;
+                        gridY = y;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool OverlapsAnyStarterPackSlot(
+            List<RectInt> occupiedRects,
+            int x,
+            int y,
+            Vector2Int size)
+        {
+            RectInt candidate = new RectInt(x, y, size.x, size.y);
+
+            for (int i = 0; i < occupiedRects.Count; i++)
+            {
+                if (candidate.Overlaps(occupiedRects[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static Vector2Int GetSafeGridSize(ItemDataSO item)
+        {
+            if (item == null)
+                return Vector2Int.one;
+
+            return new Vector2Int(
+                Mathf.Clamp(item.gridSize.x, 1, DefaultStashColumnCount),
+                Mathf.Max(1, item.gridSize.y));
         }
 
         private static int GetDurabilityValue(ItemDataSO item, float durabilityRatio)
@@ -1204,6 +1344,10 @@ namespace DeadZone.Network
             LobbySaveCloudData cloudData = new LobbySaveCloudData();
             cloudData.hasCredits = dto.hasCredits;
             cloudData.credits = dto.credits;
+            cloudData.hasInventorySection = dto.hasInventorySection || dto.inventoryItems?.Count > 0;
+            cloudData.hasStashSection = dto.hasStashSection || dto.stashItems?.Count > 0;
+            cloudData.hasEquipmentSection = dto.hasEquipmentSection || dto.equipmentItems?.Count > 0;
+            cloudData.hasQuickSlotSection = dto.hasQuickSlotSection || dto.quickSlotItems?.Count > 0;
 
             if (dto.inventoryItems != null)
             {
@@ -1221,6 +1365,12 @@ namespace DeadZone.Network
             {
                 for (int i = 0; i < dto.equipmentItems.Count; i++)
                     cloudData.equipmentItems.Add(ToCloudEquipment(dto.equipmentItems[i]));
+            }
+
+            if (dto.quickSlotItems != null)
+            {
+                for (int i = 0; i < dto.quickSlotItems.Count; i++)
+                    cloudData.quickSlotItems.Add(ToCloudItem(dto.quickSlotItems[i]));
             }
 
             if (dto.facilities != null)
@@ -1245,25 +1395,40 @@ namespace DeadZone.Network
                 nextLobbySave.credits = currentLobbySave.credits;
             }
 
-            if ((nextLobbySave.inventoryItems == null || nextLobbySave.inventoryItems.Count == 0)
+            if (!nextLobbySave.hasInventorySection
+                && (nextLobbySave.inventoryItems == null || nextLobbySave.inventoryItems.Count == 0)
                 && currentLobbySave.inventoryItems != null
                 && currentLobbySave.inventoryItems.Count > 0)
             {
+                nextLobbySave.hasInventorySection = true;
                 nextLobbySave.inventoryItems = CloneLobbyItems(currentLobbySave.inventoryItems);
             }
 
-            if ((nextLobbySave.stashItems == null || nextLobbySave.stashItems.Count == 0)
+            if (!nextLobbySave.hasStashSection
+                && (nextLobbySave.stashItems == null || nextLobbySave.stashItems.Count == 0)
                 && currentLobbySave.stashItems != null
                 && currentLobbySave.stashItems.Count > 0)
             {
+                nextLobbySave.hasStashSection = true;
                 nextLobbySave.stashItems = CloneLobbyItems(currentLobbySave.stashItems);
             }
 
-            if ((nextLobbySave.equipmentItems == null || nextLobbySave.equipmentItems.Count == 0)
+            if (!nextLobbySave.hasEquipmentSection
+                && (nextLobbySave.equipmentItems == null || nextLobbySave.equipmentItems.Count == 0)
                 && currentLobbySave.equipmentItems != null
                 && currentLobbySave.equipmentItems.Count > 0)
             {
+                nextLobbySave.hasEquipmentSection = true;
                 nextLobbySave.equipmentItems = CloneLobbyEquipment(currentLobbySave.equipmentItems);
+            }
+
+            if (!nextLobbySave.hasQuickSlotSection
+                && (nextLobbySave.quickSlotItems == null || nextLobbySave.quickSlotItems.Count == 0)
+                && currentLobbySave.quickSlotItems != null
+                && currentLobbySave.quickSlotItems.Count > 0)
+            {
+                nextLobbySave.hasQuickSlotSection = true;
+                nextLobbySave.quickSlotItems = CloneLobbyItems(currentLobbySave.quickSlotItems);
             }
         }
 
@@ -1288,7 +1453,9 @@ namespace DeadZone.Network
                     x = item.x,
                     y = item.y,
                     rotated = item.rotated,
-                    stackCount = item.stackCount
+                    stackCount = item.stackCount,
+                    currentDurability = item.currentDurability,
+                    currentAmmo = item.currentAmmo
                 });
             }
 
@@ -1327,6 +1494,10 @@ namespace DeadZone.Network
             LobbySaveDTO dto = new LobbySaveDTO();
             dto.hasCredits = cloudData.hasCredits;
             dto.credits = cloudData.credits;
+            dto.hasInventorySection = cloudData.hasInventorySection || HasItems(cloudData.inventoryItems);
+            dto.hasStashSection = cloudData.hasStashSection || HasItems(cloudData.stashItems);
+            dto.hasEquipmentSection = cloudData.hasEquipmentSection || HasItems(cloudData.equipmentItems);
+            dto.hasQuickSlotSection = cloudData.hasQuickSlotSection || HasItems(cloudData.quickSlotItems);
 
             if (cloudData.inventoryItems != null)
             {
@@ -1344,6 +1515,12 @@ namespace DeadZone.Network
             {
                 for (int i = 0; i < cloudData.equipmentItems.Count; i++)
                     dto.equipmentItems.Add(ToEquipmentSaveDTO(cloudData.equipmentItems[i]));
+            }
+
+            if (cloudData.quickSlotItems != null)
+            {
+                for (int i = 0; i < cloudData.quickSlotItems.Count; i++)
+                    dto.quickSlotItems.Add(ToItemSaveDTO(cloudData.quickSlotItems[i]));
             }
 
             if (cloudData.facilities != null)
@@ -1455,9 +1632,14 @@ namespace DeadZone.Network
                 return false;
 
             return lobbySave.hasCredits ||
+                   lobbySave.hasInventorySection ||
+                   lobbySave.hasStashSection ||
+                   lobbySave.hasEquipmentSection ||
+                   lobbySave.hasQuickSlotSection ||
                    HasItems(lobbySave.inventoryItems) ||
                    HasItems(lobbySave.stashItems) ||
                    HasItems(lobbySave.equipmentItems) ||
+                   HasItems(lobbySave.quickSlotItems) ||
                    HasItems(lobbySave.facilities);
         }
 
@@ -1468,11 +1650,11 @@ namespace DeadZone.Network
 
         private void ApplyLobbySaveToLegacyCloudFields(LobbySaveDTO lobbySaveDto)
         {
-            if (lobbySaveDto.stashItems != null && lobbySaveDto.stashItems.Count > 0)
+            if (lobbySaveDto.hasStashSection || lobbySaveDto.stashItems?.Count > 0)
             {
                 currentData.stash.slots.Clear();
 
-                for (int i = 0; i < lobbySaveDto.stashItems.Count; i++)
+                for (int i = 0; lobbySaveDto.stashItems != null && i < lobbySaveDto.stashItems.Count; i++)
                 {
                     ItemSaveDTO item = lobbySaveDto.stashItems[i];
                     if (item == null)
@@ -1491,11 +1673,11 @@ namespace DeadZone.Network
                 }
             }
 
-            if (lobbySaveDto.equipmentItems != null && lobbySaveDto.equipmentItems.Count > 0)
+            if (lobbySaveDto.hasEquipmentSection || lobbySaveDto.equipmentItems?.Count > 0)
             {
                 currentData.equipment = new EquipmentData();
 
-                for (int i = 0; i < lobbySaveDto.equipmentItems.Count; i++)
+                for (int i = 0; lobbySaveDto.equipmentItems != null && i < lobbySaveDto.equipmentItems.Count; i++)
                     ApplyEquipmentToLegacyField(lobbySaveDto.equipmentItems[i]);
             }
 
@@ -1831,6 +2013,8 @@ namespace DeadZone.Network
             LobbySaveDTO dto = new LobbySaveDTO();
             dto.hasCredits = false;
             dto.credits = 0;
+            dto.hasStashSection = currentData.stash != null;
+            dto.hasEquipmentSection = currentData.equipment != null;
 
             if (currentData.stash?.slots != null)
             {
@@ -1894,6 +2078,51 @@ namespace DeadZone.Network
             });
         }
 
+        private void ReconcileLegacyInventorySectionsIntoLobbySaveDTO(LobbySaveDTO dto)
+        {
+            if (dto == null || currentData == null)
+                return;
+
+            if (!dto.hasStashSection && !HasItems(dto.stashItems))
+            {
+                dto.hasStashSection = currentData.stash != null;
+
+                if (currentData.stash?.slots != null)
+                {
+                    for (int i = 0; i < currentData.stash.slots.Count; i++)
+                    {
+                        StashSlot slot = currentData.stash.slots[i];
+                        if (slot == null || string.IsNullOrWhiteSpace(slot.itemId))
+                            continue;
+
+                        dto.stashItems.Add(new ItemSaveDTO
+                        {
+                            itemId = slot.itemId,
+                            containerId = "stash",
+                            x = GetStashSlotIndex(slot),
+                            y = 0,
+                            rotated = slot.rotated,
+                            stackCount = slot.stackCount,
+                            currentDurability = Mathf.Max(0, slot.currentDurability),
+                            currentAmmo = Mathf.Max(0, slot.currentAmmo)
+                        });
+                    }
+                }
+            }
+
+            if (!dto.hasEquipmentSection && !HasItems(dto.equipmentItems))
+            {
+                dto.hasEquipmentSection = currentData.equipment != null;
+
+                AddLegacyEquipment(dto, "EquipmentHead", currentData.equipment?.helmetId, currentData.equipment?.helmetDurability ?? 0f);
+                AddLegacyEquipment(dto, "EquipmentArmor", currentData.equipment?.armorId, currentData.equipment?.armorDurability ?? 0f);
+                AddLegacyEquipment(dto, "primary1", currentData.equipment?.primary1, 0f);
+                AddLegacyEquipment(dto, "primary2", currentData.equipment?.primary2, 0f);
+                AddLegacyEquipment(dto, "EquipmentSecondaryWeapon", currentData.equipment?.secondary, 0f);
+                AddLegacyEquipment(dto, "EquipmentMeleeWeapon", currentData.equipment?.melee, 0f);
+            }
+        }
+
         private void ReconcileLegacyFacilitiesIntoLobbySaveDTO(LobbySaveDTO dto)
         {
             if (dto == null || currentData?.facilities == null)
@@ -1930,6 +2159,38 @@ namespace DeadZone.Network
 
                 facility.facilityId = facilityId;
                 facility.level = Mathf.Max(Mathf.Max(1, facility.level), safeLevel);
+                return;
+            }
+
+            dto.facilities.Add(new FacilitySaveDTO
+            {
+                facilityId = facilityId,
+                level = safeLevel
+            });
+        }
+
+        private static void ForceFacilityLevel(LobbySaveDTO dto, string facilityId, int level)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(facilityId))
+                return;
+
+            dto.facilities ??= new List<FacilitySaveDTO>();
+
+            string normalizedId = NormalizeFacilityId(facilityId);
+            int safeLevel = Mathf.Max(1, level);
+
+            for (int i = 0; i < dto.facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = dto.facilities[i];
+
+                if (facility == null)
+                    continue;
+
+                if (NormalizeFacilityId(facility.facilityId) != normalizedId)
+                    continue;
+
+                facility.facilityId = facilityId;
+                facility.level = safeLevel;
                 return;
             }
 

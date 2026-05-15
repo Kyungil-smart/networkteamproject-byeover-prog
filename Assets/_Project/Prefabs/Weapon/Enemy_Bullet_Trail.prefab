@@ -71,7 +71,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 339a00a6416b2884fa18682f56b186a3, type: 2}
+  - {fileID: -876546973899608171, guid: 43d5ec72e512d2a4cabda50694cd7d71, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -164,6 +164,7 @@ MonoBehaviour:
   environmentMask:
     serializedVersion: 2
     m_Bits: 32896
+  collisionRadius: 0.08
 --- !u!96 &8162877662774887221
 TrailRenderer:
   serializedVersion: 4

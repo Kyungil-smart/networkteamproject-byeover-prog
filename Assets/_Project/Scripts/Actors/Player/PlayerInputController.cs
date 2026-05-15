@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -47,6 +47,8 @@ namespace DeadZone.Actors
         private Vector2 lookDirection = Vector2.up;
         private bool fireHeld;
         private bool firePressedThisFrame;
+        private float lastInteractInputTime = -999f;
+        private const float InteractInputGuardSeconds = 0.15f;
 
         private void Awake()
         {
@@ -121,6 +123,12 @@ namespace DeadZone.Actors
             if (!CanProcessInput || !inputEnabled || currentContext == null)
                 return;
 
+            if (GameplayInputBlocker.IsBlocked)
+            {
+                ClearGameplayInputState();
+                return;
+            }
+
             ReadContinuousInput();
             UpdateLookDirectionFromMousePosition();
 
@@ -193,6 +201,13 @@ namespace DeadZone.Actors
             firePressedThisFrame = false;
         }
 
+        private void ClearGameplayInputState()
+        {
+            ResetInputState();
+            currentContext?.OnAim(false);
+            currentContext?.OnSprint(false);
+        }
+
         private void ReadContinuousInput()
         {
             moveInput = inputActions.Player.Move.ReadValue<Vector2>();
@@ -247,8 +262,12 @@ namespace DeadZone.Actors
 
         public void OnFire(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked)
+            {
+                fireHeld = false;
+                firePressedThisFrame = false;
                 return;
+            }
 
             if (context.performed)
             {
@@ -266,6 +285,12 @@ namespace DeadZone.Actors
             if (!CanProcessInput)
                 return;
 
+            if (GameplayInputBlocker.IsBlocked)
+            {
+                currentContext?.OnAim(false);
+                return;
+            }
+
             if (context.performed)
             {
                 currentContext?.OnAim(true);
@@ -278,7 +303,7 @@ namespace DeadZone.Actors
 
         public void OnReload(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnReload();
@@ -286,15 +311,19 @@ namespace DeadZone.Actors
 
         public void OnInteract(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || (!context.started && !context.performed))
                 return;
 
+            if (Time.unscaledTime - lastInteractInputTime < InteractInputGuardSeconds)
+                return;
+
+            lastInteractInputTime = Time.unscaledTime;
             currentContext?.OnInteract();
         }
 
         public void OnRoll(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnRoll();
@@ -304,6 +333,12 @@ namespace DeadZone.Actors
         {
             if (!CanProcessInput)
                 return;
+
+            if (GameplayInputBlocker.IsBlocked)
+            {
+                currentContext?.OnSprint(false);
+                return;
+            }
 
             if (context.performed)
             {
@@ -317,7 +352,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Secondary(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Secondary);
@@ -325,7 +360,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Primary1(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Primary1);
@@ -333,7 +368,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Primary2(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Primary2);
@@ -341,7 +376,7 @@ namespace DeadZone.Actors
 
         public void OnWeapon_Melee(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
             currentContext?.OnEquipSlot(WeaponSlot.Melee);
@@ -349,38 +384,109 @@ namespace DeadZone.Actors
 
         public void OnQuickslot_1(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
+
+            TryUseQuickslot(0);
         }
 
         public void OnQuickslot_2(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
+
+            TryUseQuickslot(1);
         }
 
         public void OnQuickslot_3(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
+
+            TryUseQuickslot(2);
         }
 
         public void OnQuickslot_4(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
+
+            TryUseQuickslot(3);
         }
 
         public void OnQuickslot_5(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
+
+            TryUseQuickslot(4);
         }
 
         public void OnQuickslot_6(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || !context.performed)
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
+
+            TryUseQuickslot(5);
+        }
+
+        private static void TryUseQuickslot(int slotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory != null)
+            {
+                byte quickSlotIndex = (byte)Mathf.Clamp(slotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1);
+                inventory.RequestUseQuickSlot(quickSlotIndex);
+                return;
+            }
+
+            InventorySlotUI slot = ResolveQuickSlot(slotIndex);
+            if (slot == null || !slot.HasItem)
+                return;
+
+            slot.TryUseCurrentItem();
+        }
+
+        private static GridInventory ResolveOwnerGridInventory()
+        {
+            GridInventory[] inventories = FindObjectsByType<GridInventory>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < inventories.Length; i++)
+            {
+                GridInventory inventory = inventories[i];
+                if (inventory != null && inventory.IsOwner)
+                    return inventory;
+            }
+
+            return null;
+        }
+
+        private static InventorySlotUI ResolveQuickSlot(int slotIndex)
+        {
+            InventorySlotUI fallback = null;
+            InventorySlotUI[] slots = FindObjectsByType<InventorySlotUI>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null ||
+                    slot.SlotKind != InventorySlotKind.QuickSlot ||
+                    slot.SlotIndex != slotIndex)
+                {
+                    continue;
+                }
+
+                if (slot.gameObject.activeInHierarchy)
+                    return slot;
+
+                fallback ??= slot;
+            }
+
+            return fallback;
         }
 
         public void OnInventory(InputAction.CallbackContext context)

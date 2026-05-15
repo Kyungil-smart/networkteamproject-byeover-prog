@@ -1,3 +1,4 @@
+using DeadZone.Actors.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -99,11 +100,14 @@ namespace DeadZone.Actors.UI
 
         private void LoadSavedData()
         {
+            CharacterCustomizeNetworkData savedNetworkData =
+                PlayerCharacterCustomizeState.LoadLocalSavedCustomizeData();
+
             savedData = new CharacterCustomizeData(
-                Mathf.Clamp(PlayerPrefs.GetInt(BodyPrefsKey, 0), 0, GetOptionCount(bodyRow) - 1),
-                Mathf.Clamp(PlayerPrefs.GetInt(HeadPrefsKey, 0), 0, GetOptionCount(headRow) - 1),
-                Mathf.Clamp(PlayerPrefs.GetInt(BeardPrefsKey, 0), 0, GetOptionCount(beardRow) - 1),
-                Mathf.Clamp(PlayerPrefs.GetInt(HatPrefsKey, 0), 0, GetOptionCount(hatRow) - 1));
+                Mathf.Clamp(savedNetworkData.BodyIndex, 0, GetOptionCount(bodyRow) - 1),
+                Mathf.Clamp(savedNetworkData.HeadIndex, 0, GetOptionCount(headRow) - 1),
+                Mathf.Clamp(savedNetworkData.BeardIndex, 0, GetOptionCount(beardRow) - 1),
+                Mathf.Clamp(savedNetworkData.HatIndex, 0, GetOptionCount(hatRow) - 1));
         }
 
         private void SaveCurrentData()
@@ -111,11 +115,12 @@ namespace DeadZone.Actors.UI
             tempData = ClampData(tempData);
             savedData = tempData;
 
-            PlayerPrefs.SetInt(BodyPrefsKey, savedData.bodyIndex);
-            PlayerPrefs.SetInt(HeadPrefsKey, savedData.headIndex);
-            PlayerPrefs.SetInt(BeardPrefsKey, savedData.beardIndex);
-            PlayerPrefs.SetInt(HatPrefsKey, savedData.hatIndex);
-            PlayerPrefs.Save();
+            PlayerCharacterCustomizeState.SaveLocalCustomizeData(
+                new CharacterCustomizeNetworkData(
+                    savedData.bodyIndex,
+                    savedData.headIndex,
+                    savedData.beardIndex,
+                    savedData.hatIndex));
 
             ApplyPreview();
             Saved?.Invoke(savedData);

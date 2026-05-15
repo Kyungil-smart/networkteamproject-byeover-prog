@@ -29,16 +29,15 @@ namespace DeadZone.Actors.UI
 
         private ulong boundClientId;
 
+        private bool loggedInvalidRoot;
+
         public ulong BoundClientId => boundClientId;
 
         public void Bind(ulong clientId, Color teamColor, float hp, float maxHp)
         {
             boundClientId = clientId;
 
-            if (root != null)
-                root.SetActive(true);
-            else
-                gameObject.SetActive(true);
+            GetSafeRoot().SetActive(true);
 
             if (teamIcon != null)
                 teamIcon.color = teamColor;
@@ -57,24 +56,47 @@ namespace DeadZone.Actors.UI
             RefreshHpText(clampedHp, denom);
         }
 
+        public void SetTeamColor(Color teamColor)
+        {
+            if (teamIcon != null)
+                teamIcon.color = teamColor;
+        }
+
         private void RefreshHpText(float hp, float maxHp)
         {
             if (hpValueText == null)
                 return;
 
             int cur = Mathf.CeilToInt(hp);
-            int max = Mathf.CeilToInt(maxHp);
-            hpValueText.text = $"{cur} / {max}";
+            hpValueText.text = cur.ToString();
         }
 
         public void Clear()
         {
             boundClientId = 0;
 
-            if (root != null)
-                root.SetActive(false);
-            else
-                gameObject.SetActive(false);
+            GetSafeRoot().SetActive(false);
+        }
+
+        private GameObject GetSafeRoot()
+        {
+            if (root == null)
+                return gameObject;
+
+            if (root != gameObject && transform.IsChildOf(root.transform))
+            {
+                if (!loggedInvalidRoot)
+                {
+                    loggedInvalidRoot = true;
+                    Debug.LogWarning(
+                        $"[TeamHpSlotUI] Root is an ancestor of this slot. Assign the slot GameObject itself as root. slot={name}, root={root.name}",
+                        this);
+                }
+
+                return gameObject;
+            }
+
+            return root;
         }
     }
 }

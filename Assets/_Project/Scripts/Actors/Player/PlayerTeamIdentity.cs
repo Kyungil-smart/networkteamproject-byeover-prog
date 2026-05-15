@@ -1,4 +1,5 @@
 using System;
+using DeadZone.Core;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -52,15 +53,22 @@ namespace DeadZone.Actors.Player
         [Header("==== 팀 색상 ====")]
         [Tooltip("로비 색상을 찾지 못했을 때 사용할 기본 색상입니다.")]
         [SerializeField] private Color32 fallbackColor = new Color32(255, 255, 255, 255);
+        [SerializeField, Range(1, 20)] private int maxNicknameCharacters = 20;
 
         public NetworkVariable<NetworkColor32> TeamColor = new(
             new NetworkColor32(new Color32(255, 255, 255, 255)),
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
+        public NetworkVariable<Unity.Collections.FixedString64Bytes> Nickname = new(
+            default,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
         public event Action<Color32> TeamColorChanged;
 
         public Color32 CurrentColor => TeamColor.Value.ToColor32();
+        public string CurrentNickname => Nickname.Value.ToString();
 
         public override void OnNetworkSpawn()
         {
@@ -68,6 +76,9 @@ namespace DeadZone.Actors.Player
 
             if (IsServer)
                 ApplyLobbyColorServer();
+
+            if (IsOwner)
+                SubmitLocalNicknameIfAvailable();
 
             TeamColorChanged?.Invoke(CurrentColor);
         }
@@ -97,6 +108,58 @@ namespace DeadZone.Actors.Player
             }
 
             TeamColor.Value = new NetworkColor32(fallbackColor);
+        }
+
+        private void SubmitLocalNicknameIfAvailable()
+        {
+            string nickname = ResolveLocalNickname();
+            if (string.IsNullOrWhiteSpace(nickname))
+                return;
+
+            Unity.Collections.FixedString64Bytes fixedNickname = new(nickname);
+            if (IsServer)
+                Nickname.Value = fixedNickname;
+            else
+                SubmitNicknameServerRpc(fixedNickname);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SubmitNicknameServerRpc(
+            Unity.Collections.FixedString64Bytes nickname,
+            RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            Nickname.Value = new Unity.Collections.FixedString64Bytes(SanitizeNickname(nickname.ToString()));
+        }
+
+        private string ResolveLocalNickname()
+        {
+            CloudSaveSystem cloudSave = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSave == null ||
+                !cloudSave.HasLoadedData ||
+                cloudSave.CurrentData?.profile == null)
+            {
+                return string.Empty;
+            }
+
+            return SanitizeNickname(cloudSave.CurrentData.profile.displayName);
+        }
+
+        private string SanitizeNickname(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            string sanitized = value.Trim();
+            if (sanitized.Length > maxNicknameCharacters)
+                sanitized = sanitized.Substring(0, maxNicknameCharacters);
+
+            return sanitized;
         }
     }
 }

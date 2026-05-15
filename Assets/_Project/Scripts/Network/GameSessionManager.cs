@@ -91,13 +91,14 @@ namespace DeadZone.Network
             LogDebug("네트워크 Despawn 완료.");
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (instance == this)
                 instance = null;
 
             UnsubscribeSceneEvents();
             UnregisterFromServiceLocator();
+            base.OnDestroy();
         }
 
         /// <summary>
@@ -311,7 +312,7 @@ namespace DeadZone.Network
             if (!isRegisteredToServiceLocator)
                 return;
 
-            ServiceLocator.Unregister<GameSessionManager>();
+            ServiceLocator.Unregister(this);
             isRegisteredToServiceLocator = false;
 
             LogDebug("ServiceLocator 등록 해제 완료.");

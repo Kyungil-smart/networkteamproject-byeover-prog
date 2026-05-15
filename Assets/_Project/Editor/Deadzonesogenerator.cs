@@ -44,11 +44,11 @@ namespace DeadZone.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[SOGenerator] 완료! 레시피 11개 + 트레이더 4개 생성");
+            Debug.Log("[SOGenerator] 완료! 레시피 13개 + 트레이더 4개 생성");
             EditorUtility.DisplayDialog("완료",
-                "레시피 11개 + 트레이더 4개 생성 완료!\n\n" +
+                "레시피 13개 + 트레이더 4개 생성 완료!\n\n" +
                 "Recipes/Workbench (7개)\n" +
-                "Recipes/Medical (4개)\n" +
+                "Recipes/Medical (6개)\n" +
                 "Traders (Igor, Vera, Doc, Shade)", "확인");
         }
 
@@ -124,6 +124,14 @@ namespace DeadZone.Editor
             MakeRecipe(RECIPES_MD, "Recipe_RegenSyringe", "recipe_regen_syringe",
                 Load<ItemDataSO>(ITEMS + "/Medical/ITM_SlowHealSyringe.asset"), 1, 4, RarityTier.Rare,
                 (bandage, 3));
+
+            MakeRecipe(RECIPES_MD, "Recipe_FastHealSyringe", "recipe_fast_heal_syringe",
+                Load<ItemDataSO>(ITEMS + "/Medical/ITM_FastHealSyringe.asset"), 1, 4, RarityTier.Rare,
+                (medSupplies, 3), (bandage, 1));
+
+            MakeRecipe(RECIPES_MD, "Recipe_WeightCapacitySyringe", "recipe_weight_capacity_syringe",
+                Load<ItemDataSO>(ITEMS + "/Medical/ITM_WeightCapacitySyringe.asset"), 1, 4, RarityTier.Rare,
+                (medSupplies, 4), (Load<ItemDataSO>(ITEMS + "/Medical/ITM_Defibrillator.asset"), 1));
         }
 
         // ═══════════════════════════════════════
@@ -139,7 +147,6 @@ namespace DeadZone.Editor
             {
                 Entry(WEAPONS + "/Weapon_Glock17.asset",       3000,  1),
                 Entry(WEAPONS + "/Weapon_SelfDefense.asset",   2400,  1),
-                Entry(ITEMS   + "/Materials/ITM_Grenade.asset", 6000,  1),
                 Entry(WEAPONS + "/Weapon_Revolver.asset",      10000, 2),
                 Entry(WEAPONS + "/Weapon_PumpSG.asset",        13000, 2),
                 Entry(WEAPONS + "/Weapon_SK74.asset",          24000, 3),

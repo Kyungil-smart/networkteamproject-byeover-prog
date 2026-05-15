@@ -34,21 +34,42 @@ namespace DeadZone.Actors
         [Tooltip("적 장착 장비가 시체에 들어갈 때 소모된 내구도 비율 범위입니다.")]
         [SerializeField] private Vector2 durabilityRatioRange = new(0.3f, 0.8f);
 
-        [Tooltip("적 기본 탄약이 시체에 들어갈 때 드랍할 총 탄 수 범위입니다.")]
-        [SerializeField] private Vector2Int ammoDropRange = new(30, 60);
-
         private float spawnedAt;
         private float emptySince = -1f;
+        private int remainingAmmoDropBudget;
+        private const string InteractableLayerName = "ItemBox";
+        private const int NormalEnemyAmmoDropLimit = 30;
+        private const int BossEnemyAmmoDropLimit = 60;
 
         /// <summary>
         /// 네트워크 스폰 시 시체 인벤토리 참조와 생성 시간을 초기화합니다.
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            EnsureInteractionSurface();
+
             if (corpseInventory == null)
                 corpseInventory = GetComponent<CorpseInventory>();
 
             spawnedAt = Time.time;
+        }
+
+        private void EnsureInteractionSurface()
+        {
+            int interactableLayer = LayerMask.NameToLayer(InteractableLayerName);
+            if (interactableLayer >= 0)
+                gameObject.layer = interactableLayer;
+
+            BoxCollider interactionCollider = GetComponent<BoxCollider>();
+            if (interactionCollider == null)
+                interactionCollider = gameObject.AddComponent<BoxCollider>();
+
+            interactionCollider.isTrigger = true;
+            if (interactionCollider.size == Vector3.zero)
+            {
+                interactionCollider.size = new Vector3(1.2f, 0.8f, 1.2f);
+                interactionCollider.center = new Vector3(0f, 0.4f, 0f);
+            }
         }
 
         private void Update()
@@ -95,7 +116,6 @@ namespace DeadZone.Actors
         {
             if (IsEmpty.Value) return;
             corpseInventory?.RequestOpenServerRpc(clientId);
-            corpseInventory?.OpenLootingUI();
         }
 
         // ───────── 서버 초기화 (EnemyStats.OnDeath에서 호출) ─────────
@@ -112,6 +132,9 @@ namespace DeadZone.Actors
             EnemyName.Value = statsSO.displayName;
             despawnWithItems = statsSO.corpseDespawnTime;
             despawnWhenEmpty = statsSO.corpseDespawnWhenEmpty;
+            remainingAmmoDropBudget = statsSO.isBoss
+                ? BossEnemyAmmoDropLimit
+                : NormalEnemyAmmoDropLimit;
 
             if (corpseInventory == null) return;
 
@@ -128,26 +151,42 @@ namespace DeadZone.Actors
             {
                 for (int i = 0; i < statsSO.extraLootCount; i++)
                 {
-                    var rolledItem = statsSO.extraLootTable.RollOne();
-                    AddItemToCorpse(rolledItem);
+                    if (LootRollUtility.TryRollOne(statsSO.extraLootTable, out ItemDataSO rolledItem, out int amount))
+                        AddItemToCorpse(rolledItem, amount);
                 }
             }
         }
 
-        private void AddItemToCorpse(ItemDataSO itemSO)
+        private void AddItemToCorpse(ItemDataSO itemSO, int amount = 1)
         {
             if (itemSO == null || corpseInventory == null) return;
 
-            corpseInventory.Slots.Add(new ItemSlotData
+            int remaining = Mathf.Max(1, amount);
+            if (itemSO is AmmoDataSO)
             {
-                itemId = new FixedString64Bytes(itemSO.itemID),
-                gridX = 0,
-                gridY = 0,
-                rotated = false,
-                stackCount = 1,
-                currentDurability = 0,
-                currentAmmo = 0,
-            });
+                remaining = ReserveAmmoDropAmount(remaining);
+                if (remaining <= 0)
+                    return;
+            }
+
+            int maxStackSize = Mathf.Max(1, itemSO.maxStackSize);
+
+            while (remaining > 0)
+            {
+                int stackAmount = Mathf.Min(maxStackSize, remaining);
+                remaining -= stackAmount;
+
+                corpseInventory.Slots.Add(new ItemSlotData
+                {
+                    itemId = new FixedString64Bytes(itemSO.itemID),
+                    gridX = 0,
+                    gridY = 0,
+                    rotated = false,
+                    stackCount = (ushort)Mathf.Clamp(stackAmount, 1, ushort.MaxValue),
+                    currentDurability = stackAmount == 1 ? BuildDroppedDurability(itemSO, null, GetMaxDurability(itemSO)) : 0f,
+                    currentAmmo = 0,
+                });
+            }
         }
 
         private void AddEquipmentToCorpse(ItemDataSO itemSO, EnemyStats sourceStats)
@@ -173,9 +212,10 @@ namespace DeadZone.Actors
         {
             if (ammoSO == null || corpseInventory == null) return;
 
-            int minAmmo = Mathf.Max(0, Mathf.Min(ammoDropRange.x, ammoDropRange.y));
-            int maxAmmo = Mathf.Max(minAmmo, Mathf.Max(ammoDropRange.x, ammoDropRange.y));
-            int remainingAmmo = Random.Range(minAmmo, maxAmmo + 1);
+            int remainingAmmo = ReserveAmmoDropAmount(remainingAmmoDropBudget);
+            if (remainingAmmo <= 0)
+                return;
+
             int maxStackSize = Mathf.Max(1, ammoSO.maxStackSize);
 
             while (remainingAmmo > 0)
@@ -194,6 +234,16 @@ namespace DeadZone.Actors
                     currentAmmo = 0,
                 });
             }
+        }
+
+        private int ReserveAmmoDropAmount(int requestedAmount)
+        {
+            if (requestedAmount <= 0 || remainingAmmoDropBudget <= 0)
+                return 0;
+
+            int reservedAmount = Mathf.Min(requestedAmount, remainingAmmoDropBudget);
+            remainingAmmoDropBudget -= reservedAmount;
+            return reservedAmount;
         }
 
         private float GetDurabilityMin()

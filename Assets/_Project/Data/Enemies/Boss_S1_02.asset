@@ -16,13 +16,13 @@ MonoBehaviour:
   tier: 5
   faction: 1
   isBoss: 1
-  enemyId: 
+  enemyId: Boss_MilitaryBase
   maxHP: 400
   defaultArmor: {fileID: 11400000, guid: 0c43fb65333b1e1479b993b6175851f9, type: 2}
   defaultWeapon: {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
   defaultAmmo: {fileID: 11400000, guid: 6682fefcfde8e664a85942ba69578c43, type: 2}
   penetrationModifier: -1
-  damageMultiplier: 1.1
+  damageMultiplier: 0.8
   fireInterval: 0.5
   burstSize: 5
   burstRestDelay: 0.4
@@ -38,11 +38,9 @@ MonoBehaviour:
   preferredRangeMin: 25
   preferredRangeMax: 70
   canCallReinforcements: 0
-  canThrowGrenades: 0
-  grenadeCooldown: 10
   dropEquippedGear: 1
-  extraLootTable: {fileID: 0}
+  extraLootTable: {fileID: 11400000, guid: 60c3e02632616ef4fbb7ffa52c705ecd, type: 2}
   extraLootCount: 1
-  corpsePrefab: {fileID: 0}
+  corpsePrefab: {fileID: 2706845702117162606, guid: 2229262e873706a4d929d6bfc82f6d74, type: 3}
   corpseDespawnTime: 120
   corpseDespawnWhenEmpty: 30

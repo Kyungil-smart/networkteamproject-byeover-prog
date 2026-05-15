@@ -9,13 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bae153457bcc376458568fafb125b4c5, type: 3}
+  m_Script: {fileID: 11500000, guid: c539c0f8f4614e84bb126ef54bd7892a, type: 3}
   m_Name: ITM_SlowHealSyringe
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.ItemDataSO
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.MedicalItemDataSO
   itemID: ITM_SlowHealSyringe
-  displayName: "\uC9C0\uC18D \uD68C\uBCF5 \uC8FC\uC0AC\uAE30"
-  description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uC0C1\uCC98\uAC00
-    \uC544\uBB3C\uAC8C \uD574\uC8FC\uB294 \uC8FC\uC0AC\uAE30"
+  displayName: "지속 회복 주사기"
+  description: "- 등급: 희귀\n- 용도: 긴 시간 동안 체력을 천천히 회복시키는 주사기\n\n- 효과\n1. 지속 회복: 20초 동안 초당 HP +2.5\n2. 총 회복량: HP +50"
   icon: {fileID: 21300000, guid: 9bac4f7022850e146a087cb017045364, type: 3}
   category: 5
   rarity: 1
@@ -24,4 +23,11 @@ MonoBehaviour:
   maxStackSize: 3
   weightKg: 0.1
   baseSellPrice: 1500
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
+  useSeconds: 1
+  instantHeal: 0
+  healDurationSeconds: 20
+  healPerSecond: 2.5
+  buffDurationSeconds: 0
+  weightCapacityMultiplierBonus: 0
+  staminaCostMultiplierBonus: 0

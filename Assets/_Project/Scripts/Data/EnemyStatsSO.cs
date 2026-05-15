@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace DeadZone.Core
 {
@@ -97,10 +97,6 @@ namespace DeadZone.Core
 
         [Header("━━━ 확장 능력 (T3+) ━━━")]
         public bool canCallReinforcements;
-        public bool canThrowGrenades;
-
-        [Range(5f, 60f)]
-        public float grenadeCooldown = 25f;
 
         [Header("━━━ 사망 드랍 ━━━")]
         [Tooltip("장착 무기/탄약/아머를 시체에 드랍할지")]

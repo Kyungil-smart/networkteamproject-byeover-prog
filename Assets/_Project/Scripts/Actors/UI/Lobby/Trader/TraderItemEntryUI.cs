@@ -55,7 +55,7 @@ namespace DeadZone.Actors.UI
             UnbindButtons();
         }
 
-        public void SetupBuyEntry(TraderEntry entry, int currentCommLevel, UnityAction<TraderEntry> onBuyClicked)
+        public void SetupBuyEntry(TraderEntry entry, int currentWorkbenchLevel, UnityAction<TraderEntry> onBuyClicked)
         {
             AutoBindReferences();
             ApplyStableEntryLayout();
@@ -66,10 +66,10 @@ namespace DeadZone.Actors.UI
 
             ItemDataSO item = entry.item;
             bool hasItem = item != null;
-            bool isLocked = entry.requiredCommLevel > currentCommLevel;
+            bool isLocked = entry.requiredCommLevel > currentWorkbenchLevel;
 
             ApplyItemView(item, entry.basePrice);
-            ApplyLockState(isLocked, currentCommLevel, entry.requiredCommLevel);
+            ApplyLockState(isLocked, currentWorkbenchLevel, entry.requiredCommLevel);
             ConfigureActionButton("구매", hasItem && !isLocked);
 
             gameObject.SetActive(true);
@@ -111,7 +111,7 @@ namespace DeadZone.Actors.UI
                 priceText.text = price.ToString();
         }
 
-        private void ApplyLockState(bool isLocked, int currentCommLevel, int requiredCommLevel)
+        private void ApplyLockState(bool isLocked, int currentWorkbenchLevel, int requiredCommLevel)
         {
             if (lockRoot != null)
                 lockRoot.SetActive(isLocked);
@@ -124,7 +124,7 @@ namespace DeadZone.Actors.UI
 
             lockReasonText.gameObject.SetActive(isLocked);
             lockReasonText.text = isLocked
-                ? $"거래 권한 부족\n현재 통신장비 Lv.{currentCommLevel}\n통신장비를 Lv.{requiredCommLevel}까지 업그레이드하면 구매할 수 있습니다."
+                ? $"거래 권한 부족\n현재 총기 작업대 Lv.{currentWorkbenchLevel}\n총기 작업대를 Lv.{requiredCommLevel}까지 업그레이드하면 구매할 수 있습니다."
                 : string.Empty;
         }
 

@@ -1,6 +1,7 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using UnityEngine;
 
+using DeadZone.Actors;
 using DeadZone.Systems;
 
 namespace DeadZone.Core
@@ -24,6 +25,8 @@ namespace DeadZone.Core
         public ulong clientId;
         public float oldValue;
         public float newValue;
+        // 하우징 보너스가 반영된 최대 스태미너를 HUD까지 함께 전달하기 위한 값입니다.
+        public float maxValue;
     }
 
     public struct PlayerDiedEvent : IGameEvent
@@ -36,9 +39,17 @@ namespace DeadZone.Core
     {
         public ulong attackerClientId;
         public EnemyTier tier;
+        public bool isBoss;
         public Vector3 position;
         /// <summary>[v2.1 추가] 처치된 적의 식별자 (Boss_PowerPlant, Enemy_Zone1_Any 등). QuestManager가 Kill objective 매칭에 사용.</summary>
         public FixedString64Bytes enemyId;
+    }
+
+    public struct EnemyAlertedEvent : IGameEvent
+    {
+        public ulong enemyNetworkObjectId;
+        public ulong targetNetworkObjectId;
+        public Vector3 position;
     }
 
     public struct CriticalHitEvent : IGameEvent
@@ -139,6 +150,7 @@ namespace DeadZone.Core
         public ulong clientId;
         public FixedString64Bytes itemId;
         public int amount;
+        public bool suppressAudio;
     }
 
     public struct ItemAddedEvent : IGameEvent
@@ -153,10 +165,80 @@ namespace DeadZone.Core
         public FixedString64Bytes itemId;
     }
 
+    // ShootingSystem이 플레이어와 총구 사이의 장애물을 감지해 투사체 대신 벽 피격 FX를 출력해야 할 때 발행된다.
+    public struct BlockedShotImpactEvent : IGameEvent
+    {
+        public ulong shooterClientId;
+        public Vector3 hitPoint;
+        public Vector3 hitNormal;
+    }
+
     public struct DoorStateChangedEvent : IGameEvent
     {
         public Vector3 position;
         public bool isOpen;
+    }
+
+    // CameraCutoutTarget이 활성화되어 카메라 컷아웃 관리 대상에 등록될 때 발행된다.
+    // 씬 초기화 시 Start에서 한 번 발행되고, 이후 비활성화된 오브젝트가 다시 활성화될 때 OnEnable에서 발행된다.
+    public struct CameraCutoutTargetRegisteredEvent : IGameEvent
+    {
+        public CameraCutoutTarget target;
+    }
+
+    // CameraCutoutTarget이 비활성화되어 카메라 컷아웃 관리 대상에서 해제될 때 발행된다.
+    // 등록된 대상이 OnDisable을 호출할 때 발행된다.
+    public struct CameraCutoutTargetUnregisteredEvent : IGameEvent
+    {
+        public CameraCutoutTarget target;
+    }
+
+    // 플레이어 NetworkObject가 스폰되어 공유 시야 시스템에 플레이어 루트 Transform을 제공할 때 발행된다.
+    public struct PlayerRootRegisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 플레이어 NetworkObject가 디스폰되어 공유 시야 시스템이 플레이어 루트 Transform 참조를 해제해야 할 때 발행된다.
+    public struct PlayerRootUnregisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // VisionMask 셰이더 제어를 받을 Renderer들이 활성화되어 등록될 때 발행된다.
+    public struct VisionMaskRenderersRegisteredEvent : IGameEvent
+    {
+        public Renderer[] renderers;
+    }
+
+    // VisionMask 셰이더 제어를 받던 Renderer들이 비활성화되거나 제거되어 해제될 때 발행된다.
+    public struct VisionMaskRenderersUnregisteredEvent : IGameEvent
+    {
+        public Renderer[] renderers;
+    }
+
+    // 로컬 Owner 플레이어가 스폰되어 로컬 카메라/컷아웃 시스템에 플레이어 루트 Transform을 제공할 때 발행된다.
+    public struct OwnerPlayerRootRegisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 로컬 Owner 플레이어가 디스폰되어 로컬 카메라/컷아웃 시스템이 플레이어 루트 Transform 참조를 해제해야 할 때 발행된다.
+    public struct OwnerPlayerRootUnregisteredEvent : IGameEvent
+    {
+        public Transform playerRoot;
+    }
+
+    // 로컬 Owner 플레이어 카메라가 활성화되어 로컬 카메라/컷아웃 시스템에 Camera 참조를 제공할 때 발행된다.
+    public struct OwnerPlayerCameraRegisteredEvent : IGameEvent
+    {
+        public Camera playerCamera;
+    }
+
+    // 로컬 Owner 플레이어 카메라가 비활성화되거나 디스폰되어 로컬 카메라/컷아웃 시스템이 Camera 참조를 해제해야 할 때 발행된다.
+    public struct OwnerPlayerCameraUnregisteredEvent : IGameEvent
+    {
+        public Camera playerCamera;
     }
 
     public struct ZoneEnteredEvent : IGameEvent
@@ -184,6 +266,18 @@ namespace DeadZone.Core
         public FixedString64Bytes targetId;
     }
 
+    /// <summary>QuestManager가 저장된 퀘스트 상태를 복원한 뒤, HUD가 현재 표시해야 할 퀘스트 진행도를 초기화할 때 발행된다.</summary>
+    public struct QuestTrackerSnapshotEvent : IGameEvent
+    {
+        public FixedString64Bytes questId;
+        public ObjectiveType objectiveType;
+        public int currentCount;
+        public int requiredCount;
+        public ulong clientId;
+        public FixedString64Bytes targetId;
+        public bool isPendingCompletion;
+    }
+
     public struct QuestCompletedEvent : IGameEvent
     {
         public FixedString64Bytes questId;
@@ -191,6 +285,12 @@ namespace DeadZone.Core
         public ulong clientId;
         /// <summary>[v2.1 추가] 완료 시 해금되는 구역 ID (ZoneUnlockSystem 구독용).</summary>
         public FixedString64Bytes unlockZoneId;
+    }
+
+    public struct QuestRewardClaimedEvent : IGameEvent
+    {
+        public FixedString64Bytes questId;
+        public ulong clientId;
     }
 
     public struct ExtractionStartedEvent : IGameEvent
@@ -201,6 +301,12 @@ namespace DeadZone.Core
     }
 
     public struct ExtractionCompletedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes extractionId;
+    }
+
+    public struct ExtractionCanceledEvent : IGameEvent
     {
         public ulong clientId;
         public FixedString64Bytes extractionId;
