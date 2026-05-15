@@ -330,6 +330,7 @@ namespace DeadZone.Systems.Save
             if (walletSystem != null && inventoryState.HasCredits)
                 walletSystem.SetCreditsLocalTest(inventoryState.Credits);
 
+            ApplyLobbyBagLevelFromEquipment(inventoryState.EquipmentItems, database);
             ApplyItemSlots(inventorySlotsRoot, inventoryState.InventoryItems, database, InventoryContainerId);
             ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database, StashContainerId);
             ApplyQuickSlotItems(quickSlotSlotsRoot, inventoryState.QuickSlotItems, database);
@@ -337,6 +338,49 @@ namespace DeadZone.Systems.Save
                 ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database, StashContainerId);
             ApplyEquipmentSlots(equipmentSlotsRoot, inventoryState.EquipmentItems, database);
             ApplyItemSlots(quickSlotsRoot, inventoryState.QuickSlotItems, database, QuickSlotContainerId);
+        }
+
+        private void ApplyLobbyBagLevelFromEquipment(
+            IReadOnlyList<EquipmentSaveDTO> equipmentItems,
+            IItemDatabase database)
+        {
+            LobbyPlayerInventoryUI lobbyInventory = inventorySlotsRoot != null
+                ? inventorySlotsRoot.GetComponentInParent<LobbyPlayerInventoryUI>(true)
+                : null;
+
+            if (lobbyInventory == null && inventorySlotsRoot != null)
+                lobbyInventory = inventorySlotsRoot.GetComponentInChildren<LobbyPlayerInventoryUI>(true);
+
+            if (lobbyInventory == null)
+                lobbyInventory = FindFirstObjectByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include);
+
+            if (lobbyInventory == null)
+                return;
+
+            int bagLevel = 0;
+            if (equipmentItems != null)
+            {
+                for (int i = 0; i < equipmentItems.Count; i++)
+                {
+                    EquipmentSaveDTO equipmentItem = equipmentItems[i];
+                    if (equipmentItem == null ||
+                        string.IsNullOrWhiteSpace(equipmentItem.slotId) ||
+                        string.IsNullOrWhiteSpace(equipmentItem.itemId) ||
+                        !equipmentItem.slotId.Contains("Backpack", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    BackpackDataSO backpackData = database.GetById<BackpackDataSO>(equipmentItem.itemId);
+                    if (backpackData != null)
+                    {
+                        bagLevel = Mathf.Clamp(backpackData.backpackLevel, 0, 4);
+                        break;
+                    }
+                }
+            }
+
+            lobbyInventory.SetBagLevel(bagLevel);
         }
 
         private static bool ApplyStashGridSlots(

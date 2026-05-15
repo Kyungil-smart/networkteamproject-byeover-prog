@@ -7,6 +7,7 @@ using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems;
+using DeadZone.Systems.Save;
 
 namespace DeadZone.Systems.Quests
 {
@@ -22,6 +23,14 @@ namespace DeadZone.Systems.Quests
 
         private readonly Dictionary<ulong, PlayerQuestState> playerStates = new();
         private readonly Dictionary<string, QuestDataSO> questLookup = new();
+
+        private const string LobbyInventoryContainerId = "inventory";
+        private const int LobbyInventoryGridWidth = 4;
+        private const int LobbyInventoryBaseCapacity = 20;
+        private const int LobbyInventoryLevel1Capacity = 25;
+        private const int LobbyInventoryLevel2Capacity = 30;
+        private const int LobbyInventoryLevel3Capacity = 35;
+        private const int LobbyInventoryLevel4Capacity = 40;
 
         private void Awake()
         {
@@ -212,7 +221,16 @@ namespace DeadZone.Systems.Quests
                     int newCount = state.AddProgress(questId, targetId, amount, objective.requiredCount);
                     PublishQuestProgress(clientId, questId, targetId, type, newCount, objective.requiredCount);
 
-                    if (state.AreAllObjectivesComplete(questId) && !state.PendingCompletionIds.Contains(questId))
+                    if (!state.AreAllObjectivesComplete(questId))
+                        continue;
+
+                    if (ShouldCompleteImmediately(questId))
+                    {
+                        CompleteQuest(clientId, questId);
+                        continue;
+                    }
+
+                    if (!state.PendingCompletionIds.Contains(questId))
                     {
                         state.PendingCompletionIds.Add(questId);
                         PublishQuestPending(clientId, questId, targetId, type, newCount, objective.requiredCount);
@@ -349,6 +367,9 @@ namespace DeadZone.Systems.Quests
 
         private void TryAutoClaimCompletedReward(ulong clientId, string questId)
         {
+            if (!ShouldAutoClaimReward(questId))
+                return;
+
             if (!CanClaimReward(clientId, questId))
                 return;
 
@@ -358,6 +379,12 @@ namespace DeadZone.Systems.Quests
                     $"[QuestManager] Quest completed, but reward could not be added immediately. questId={questId}, clientId={clientId}");
             }
         }
+
+        private static bool ShouldCompleteImmediately(string questId)
+            => string.Equals(questId, "Q6", System.StringComparison.OrdinalIgnoreCase);
+
+        private static bool ShouldAutoClaimReward(string questId)
+            => ShouldCompleteImmediately(questId);
 
         private void ConfirmRaidQuestCompletions(ulong clientId)
         {
@@ -609,8 +636,13 @@ namespace DeadZone.Systems.Quests
                 return true;
 
             GridInventory inventory = ResolveClientInventory(clientId);
+            LobbyInventoryState lobbyInventoryState = inventory == null ? ResolveLobbyInventoryState() : null;
             WalletSystem wallet = ResolveClientWallet(clientId);
             IItemDatabase itemDatabase = ResolveItemDatabase();
+
+            List<ItemSaveDTO> simulatedLobbyItems = lobbyInventoryState != null
+                ? CloneLobbyItems(lobbyInventoryState.InventoryItems)
+                : null;
 
             foreach (QuestReward reward in questData.rewards)
             {
@@ -626,7 +658,16 @@ namespace DeadZone.Systems.Quests
                 }
 
                 if (inventory == null || itemDatabase == null)
-                    return false;
+                {
+                    if (lobbyInventoryState == null || itemDatabase == null)
+                        return false;
+
+                    ItemDataSO lobbyItemData = itemDatabase.GetById(reward.itemID);
+                    if (!TryAddRewardToLobbyItems(simulatedLobbyItems, lobbyInventoryState, lobbyItemData, reward.amount))
+                        return false;
+
+                    continue;
+                }
 
                 ItemDataSO itemData = itemDatabase.GetById(reward.itemID);
                 if (itemData == null || !inventory.CanAddItem(itemData, reward.amount))
@@ -643,7 +684,9 @@ namespace DeadZone.Systems.Quests
 
             WalletSystem wallet = ResolveClientWallet(clientId);
             GridInventory inventory = ResolveClientInventory(clientId);
+            LobbyInventoryState lobbyInventoryState = inventory == null ? ResolveLobbyInventoryState() : null;
             IItemDatabase itemDatabase = ResolveItemDatabase();
+            bool changedLobbyInventory = false;
 
             foreach (QuestReward reward in questData.rewards)
             {
@@ -662,11 +705,288 @@ namespace DeadZone.Systems.Quests
                     case RewardType.Item:
                     case RewardType.FacilityMaterial:
                         ItemDataSO itemData = itemDatabase?.GetById(reward.itemID);
-                        if (itemData != null)
+                        if (itemData == null)
+                            break;
+
+                        if (inventory != null)
                             inventory?.TryAddItem(itemData, reward.amount);
+                        else if (TryAddRewardToLobbyState(lobbyInventoryState, itemData, reward.amount))
+                            changedLobbyInventory = true;
+
                         break;
                 }
             }
+
+            if (changedLobbyInventory)
+                PersistLobbyInventoryReward();
+        }
+
+        private static LobbyInventoryState ResolveLobbyInventoryState()
+        {
+            LobbyInventoryState inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            if (inventoryState != null)
+                return inventoryState;
+
+            return ServiceLocator.Get<LobbyInventoryState>();
+        }
+
+        private static bool TryAddRewardToLobbyState(LobbyInventoryState lobbyInventoryState, ItemDataSO itemData, int amount)
+        {
+            if (lobbyInventoryState == null || itemData == null || amount <= 0)
+                return false;
+
+            List<ItemSaveDTO> items = CloneLobbyItems(lobbyInventoryState.InventoryItems);
+            if (!TryAddRewardToLobbyItems(items, lobbyInventoryState, itemData, amount))
+                return false;
+
+            lobbyInventoryState.SetInventoryItems(items);
+            return true;
+        }
+
+        private static bool TryAddRewardToLobbyItems(
+            List<ItemSaveDTO> items,
+            LobbyInventoryState lobbyInventoryState,
+            ItemDataSO itemData,
+            int amount)
+        {
+            if (items == null || lobbyInventoryState == null || itemData == null || amount <= 0)
+                return false;
+
+            int remaining = amount;
+            int maxStack = Mathf.Max(1, itemData.maxStackSize);
+
+            if (maxStack > 1 && IsPlainStackReward(itemData))
+            {
+                for (int i = 0; i < items.Count && remaining > 0; i++)
+                {
+                    ItemSaveDTO item = items[i];
+                    if (item == null ||
+                        !string.Equals(item.itemId, itemData.itemID, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    int available = maxStack - Mathf.Max(0, item.stackCount);
+                    if (available <= 0)
+                        continue;
+
+                    int addCount = Mathf.Min(available, remaining);
+                    item.stackCount += addCount;
+
+                    remaining -= addCount;
+                }
+            }
+
+            int capacity = GetLobbyInventoryCapacity(lobbyInventoryState);
+            while (remaining > 0)
+            {
+                int stackCount = Mathf.Min(maxStack, remaining);
+                if (!TryFindLobbyInventoryPlacement(items, itemData, capacity, out int slotIndex))
+                    return false;
+
+                items.Add(CreateLobbyRewardItem(itemData, slotIndex, stackCount));
+
+                remaining -= stackCount;
+            }
+
+            return true;
+        }
+
+        private static bool IsPlainStackReward(ItemDataSO itemData)
+            => itemData != null &&
+               itemData.maxStackSize > 1 &&
+               itemData is not WeaponDataSO &&
+               itemData is not ArmorDataSO &&
+               itemData is not HelmetDataSO &&
+               itemData is not BackpackDataSO;
+
+        private static ItemSaveDTO CreateLobbyRewardItem(ItemDataSO itemData, int slotIndex, int stackCount)
+        {
+            return new ItemSaveDTO
+            {
+                itemId = itemData.itemID,
+                instanceId = $"{LobbyInventoryContainerId}_{slotIndex}_{itemData.itemID}",
+                containerId = LobbyInventoryContainerId,
+                x = slotIndex % LobbyInventoryGridWidth,
+                y = slotIndex / LobbyInventoryGridWidth,
+                rotated = false,
+                stackCount = Mathf.Clamp(stackCount, 1, Mathf.Max(1, itemData.maxStackSize)),
+                currentDurability = GetDefaultRewardDurability(itemData),
+                currentAmmo = GetDefaultRewardAmmo(itemData)
+            };
+        }
+
+        private static float GetDefaultRewardDurability(ItemDataSO itemData)
+        {
+            return itemData switch
+            {
+                WeaponDataSO weaponData => Mathf.Max(0f, weaponData.maxDurability),
+                ArmorDataSO armorData => Mathf.Max(0f, armorData.maxDurability),
+                HelmetDataSO helmetData => Mathf.Max(0f, helmetData.maxDurability),
+                _ => 0f
+            };
+        }
+
+        private static int GetDefaultRewardAmmo(ItemDataSO itemData)
+            => itemData is WeaponDataSO weaponData ? Mathf.Max(0, weaponData.magSize) : 0;
+
+        private static int GetLobbyInventoryCapacity(LobbyInventoryState lobbyInventoryState)
+        {
+            int bagLevel = 0;
+            IReadOnlyList<EquipmentSaveDTO> equipmentItems = lobbyInventoryState.EquipmentItems;
+            IItemDatabase itemDatabase = ResolveItemDatabase();
+
+            if (equipmentItems != null)
+            {
+                for (int i = 0; i < equipmentItems.Count; i++)
+                {
+                    EquipmentSaveDTO equipmentItem = equipmentItems[i];
+                    if (equipmentItem == null ||
+                        string.IsNullOrWhiteSpace(equipmentItem.itemId) ||
+                        string.IsNullOrWhiteSpace(equipmentItem.slotId) ||
+                        !equipmentItem.slotId.Contains("Backpack", System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    BackpackDataSO backpackData = itemDatabase?.GetById<BackpackDataSO>(equipmentItem.itemId);
+                    if (backpackData != null)
+                        bagLevel = Mathf.Max(bagLevel, Mathf.Clamp(backpackData.backpackLevel, 0, 4));
+                }
+            }
+
+            return bagLevel switch
+            {
+                1 => LobbyInventoryLevel1Capacity,
+                2 => LobbyInventoryLevel2Capacity,
+                3 => LobbyInventoryLevel3Capacity,
+                4 => LobbyInventoryLevel4Capacity,
+                _ => LobbyInventoryBaseCapacity
+            };
+        }
+
+        private static bool TryFindLobbyInventoryPlacement(
+            IReadOnlyList<ItemSaveDTO> items,
+            ItemDataSO itemData,
+            int capacity,
+            out int slotIndex)
+        {
+            slotIndex = -1;
+            if (itemData == null || capacity <= 0)
+                return false;
+
+            int rows = Mathf.CeilToInt(capacity / (float)LobbyInventoryGridWidth);
+            Vector2Int size = new(
+                Mathf.Max(1, itemData.gridSize.x),
+                Mathf.Max(1, itemData.gridSize.y));
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < LobbyInventoryGridWidth; x++)
+                {
+                    int linearIndex = y * LobbyInventoryGridWidth + x;
+                    if (linearIndex >= capacity)
+                        return false;
+
+                    if (!CanPlaceLobbyItemAt(items, x, y, size, capacity))
+                        continue;
+
+                    slotIndex = linearIndex;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CanPlaceLobbyItemAt(
+            IReadOnlyList<ItemSaveDTO> items,
+            int x,
+            int y,
+            Vector2Int size,
+            int capacity)
+        {
+            if (x < 0 || y < 0 || x + size.x > LobbyInventoryGridWidth)
+                return false;
+
+            int rows = Mathf.CeilToInt(capacity / (float)LobbyInventoryGridWidth);
+            if (y + size.y > rows)
+                return false;
+
+            for (int cellY = y; cellY < y + size.y; cellY++)
+            {
+                for (int cellX = x; cellX < x + size.x; cellX++)
+                {
+                    int linearIndex = cellY * LobbyInventoryGridWidth + cellX;
+                    if (linearIndex >= capacity || IsLobbyCellOccupied(items, cellX, cellY))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsLobbyCellOccupied(IReadOnlyList<ItemSaveDTO> items, int x, int y)
+        {
+            if (items == null)
+                return false;
+
+            IItemDatabase itemDatabase = ResolveItemDatabase();
+            for (int i = 0; i < items.Count; i++)
+            {
+                ItemSaveDTO item = items[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                    continue;
+
+                ItemDataSO itemData = itemDatabase?.GetById(item.itemId);
+                Vector2Int size = itemData != null
+                    ? new Vector2Int(Mathf.Max(1, itemData.gridSize.x), Mathf.Max(1, itemData.gridSize.y))
+                    : Vector2Int.one;
+
+                if (x >= item.x && x < item.x + size.x && y >= item.y && y < item.y + size.y)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static List<ItemSaveDTO> CloneLobbyItems(IReadOnlyList<ItemSaveDTO> source)
+        {
+            List<ItemSaveDTO> items = new();
+            if (source == null)
+                return items;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                ItemSaveDTO item = source[i];
+                if (item == null)
+                    continue;
+
+                items.Add(new ItemSaveDTO
+                {
+                    itemId = item.itemId,
+                    instanceId = item.instanceId,
+                    containerId = item.containerId,
+                    x = item.x,
+                    y = item.y,
+                    rotated = item.rotated,
+                    stackCount = item.stackCount,
+                    currentDurability = item.currentDurability,
+                    currentAmmo = item.currentAmmo
+                });
+            }
+
+            return items;
+        }
+
+        private static void PersistLobbyInventoryReward()
+        {
+            LobbyInventoryStateUiBridge bridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            bridge?.ApplyStateToUi();
+
+            LobbySaveService saveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            saveService?.SaveCurrentStateToLocalJson("Quest reward claimed");
+            saveService?.SaveLobbyDataToCloud();
         }
 
         private static WalletSystem ResolveClientWallet(ulong clientId)

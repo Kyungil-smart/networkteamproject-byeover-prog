@@ -20,9 +20,9 @@ MonoBehaviour:
   maxHP: 300
   defaultArmor: {fileID: 0}
   defaultWeapon: {fileID: 11400000, guid: 8aeaa47fb847b284c94f2a413a3699a3, type: 2}
-  defaultAmmo: {fileID: 11400000, guid: eabc0fa96f2e3e040a7a92ae8e13d191, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: a20e433692afb9442b6f7297c106f0ea, type: 2}
   penetrationModifier: 0
-  damageMultiplier: 0.85
+  damageMultiplier: 0.7
   fireInterval: 3.2
   burstSize: 1
   burstRestDelay: 2.5

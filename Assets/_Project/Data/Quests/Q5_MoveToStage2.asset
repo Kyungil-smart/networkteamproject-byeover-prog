@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Q5_MoveToStage2
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q5
-  questName: "\uC2A4\uD14C\uC774\uC9C0 2 \uC9C4\uC785"
-  description: "\uCD94\uB77D \uC9C0\uC810\uC744 \uD1B5\uD574 \uC2A4\uD14C\uC774\uC9C0
-    2\uB85C \uC774\uB3D9\uD558\uC2ED\uC2DC\uC624."
+  questName: "스테이지2 진입"
+  description: "추락 지점을 통해 스테이지2로 이동 하십시오."
   objectives:
   - type: 2
     targetID: CrashSite_TransitionPoint
     requiredCount: 1
-    location: "\uCD94\uB77D \uC9C0\uC810"
+    location: "추락 지점"
   rewards:
   - type: 1
     itemID: Armor_C6

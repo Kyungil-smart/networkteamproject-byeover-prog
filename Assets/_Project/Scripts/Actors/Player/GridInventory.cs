@@ -332,7 +332,7 @@ namespace DeadZone.Actors
 
             for (int i = 0; i < ServerGrid.Count; i++)
             {
-                if (ServerGrid[i].itemId.ToString() == itemId)
+                if (ItemIdsMatch(ServerGrid[i].itemId.ToString(), itemId))
                     total += ServerGrid[i].stackCount;
             }
 
@@ -349,7 +349,7 @@ namespace DeadZone.Actors
             for (int i = 0; i < QuickSlots.Count; i++)
             {
                 QuickSlotData slot = QuickSlots[i];
-                if (slot.itemId.ToString() == itemId)
+                if (ItemIdsMatch(slot.itemId.ToString(), itemId))
                     total += slot.stackCount;
             }
 
@@ -367,7 +367,7 @@ namespace DeadZone.Actors
             {
                 var slot = ServerGrid[i];
 
-                if (slot.itemId.ToString() != itemId)
+                if (!ItemIdsMatch(slot.itemId.ToString(), itemId))
                     continue;
 
                 if (slot.stackCount <= remaining)
@@ -1459,7 +1459,7 @@ namespace DeadZone.Actors
             for (int i = QuickSlots.Count - 1; i >= 0; i--)
             {
                 QuickSlotData quickSlot = QuickSlots[i];
-                if (quickSlot.itemId.ToString() != itemId)
+                if (!ItemIdsMatch(quickSlot.itemId.ToString(), itemId))
                     continue;
 
                 if (availableCount <= 0)
@@ -1521,7 +1521,7 @@ namespace DeadZone.Actors
             for (int i = 0; i < QuickSlots.Count; i++)
             {
                 QuickSlotData slot = QuickSlots[i];
-                if (slot.itemId.ToString() != itemId || slot.stackCount < count)
+                if (!ItemIdsMatch(slot.itemId.ToString(), itemId) || slot.stackCount < count)
                     continue;
 
                 if (slot.stackCount == count)
@@ -1546,7 +1546,7 @@ namespace DeadZone.Actors
             for (int i = 0; i < QuickSlots.Count; i++)
             {
                 QuickSlotData slot = QuickSlots[i];
-                if (slot.slotIndex != quickSlotIndex || slot.itemId.ToString() != itemId || slot.stackCount < count)
+                if (slot.slotIndex != quickSlotIndex || !ItemIdsMatch(slot.itemId.ToString(), itemId) || slot.stackCount < count)
                     continue;
 
                 if (slot.stackCount == count)
@@ -1610,6 +1610,23 @@ namespace DeadZone.Actors
             return itemDb?.GetById(itemId);
         }
 
+        private bool ItemIdsMatch(string storedItemId, string requestedItemId)
+        {
+            if (string.IsNullOrWhiteSpace(storedItemId) || string.IsNullOrWhiteSpace(requestedItemId))
+                return false;
+
+            if (storedItemId == requestedItemId)
+                return true;
+
+            ItemDataSO storedItem = ResolveItem(storedItemId);
+            ItemDataSO requestedItem = ResolveItem(requestedItemId);
+
+            return storedItem != null &&
+                   requestedItem != null &&
+                   !string.IsNullOrWhiteSpace(storedItem.itemID) &&
+                   storedItem.itemID == requestedItem.itemID;
+        }
+
         public void RequestUseMedicalItem(string itemId)
         {
             if (string.IsNullOrWhiteSpace(itemId))
@@ -1670,9 +1687,7 @@ namespace DeadZone.Actors
                                      HasItem(itemData.itemID, 1));
             bool hasQuickSlotItem = consumeQuickSlotFirst
                 ? TryGetQuickSlot(quickSlotIndex, out QuickSlotData quickSlot) &&
-                  (quickSlot.itemId.ToString() == itemId ||
-                   !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
-                   quickSlot.itemId.ToString() == itemData.itemID)
+                  ItemIdsMatch(quickSlot.itemId.ToString(), itemId)
                 : HasQuickSlotItem(itemId, 1) ||
                   (!string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
                    HasQuickSlotItem(itemData.itemID, 1));

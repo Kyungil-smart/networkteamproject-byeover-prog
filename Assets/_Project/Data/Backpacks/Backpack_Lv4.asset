@@ -18,13 +18,13 @@ MonoBehaviour:
     \n1. \uC778\uBCA4\uD1A0\uB9AC \uCE78: 20\uD655\uC7A5\n2. \uCD5C\uB300 \uBB34\uAC8C:
     25kg"
   icon: {fileID: 21300000, guid: c84e6f24c431d274caf15317002ea5a0, type: 3}
-  category: 2
+  category: 4
   rarity: 3
   isValuable: 0
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.1
-  baseSellPrice: 50000
+  baseSellPrice: 25000
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
   backpackLevel: 4
   extraSlots: 20

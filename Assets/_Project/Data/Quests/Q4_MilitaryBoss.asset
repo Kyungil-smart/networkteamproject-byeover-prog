@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Q4_MilitaryBoss
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q4
-  questName: "\uAD70\uC0AC \uC9C0\uC5ED \uBCF4\uC2A4 \uCC98\uCE58"
-  description: "\uAD70\uC0AC \uC9C0\uC5ED\uC5D0 \uC788\uB294 \uBCF4\uC2A4\uB97C \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  questName: "군사 지역 보스 처치"
+  description: "군사 지역 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_MilitaryBase
     requiredCount: 1
-    location: "\uAD70\uC0AC \uC9C0\uC5ED"
+    location: "군사 지역"
   rewards: []
   unlockZoneID: MapA_Zone4
   prerequisiteQuestID: Q3

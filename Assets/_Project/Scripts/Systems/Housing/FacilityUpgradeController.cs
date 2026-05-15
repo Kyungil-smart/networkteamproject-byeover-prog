@@ -55,6 +55,12 @@ namespace DeadZone.Systems.Housing
 
             if (!HousingInventoryResolver.IsNetworkReady(out string failReason))
             {
+                if (HousingInventoryResolver.TryGetLobbyInventory(out IInventory lobbyInventory, out _))
+                {
+                    TryUpgradeWithLobbySave(lobbyInventory);
+                    return;
+                }
+
                 FailUpgrade(failReason, 0, 0);
                 return;
             }
@@ -170,12 +176,11 @@ namespace DeadZone.Systems.Housing
             if (saveSyncer != null)
             {
                 saveSyncer.RequestSaveFromServer($"{facilityType} 시설 업그레이드");
-                saveSyncer.RequestLobbyInventorySaveFromServer($"{facilityType} 시설 업그레이드 재료 소비");
             }
             else
             {
                 Debug.LogWarning(
-                    $"[FacilityUpgradeController] PlayerHousingSaveSyncer가 없어 시설 레벨/재료 저장 요청을 보낼 수 없습니다. ClientId: {requesterClientId}",
+                    $"[FacilityUpgradeController] PlayerHousingSaveSyncer가 없어 시설 레벨 저장 요청을 보낼 수 없습니다. ClientId: {requesterClientId}",
                     progress
                 );
             }
@@ -194,7 +199,7 @@ namespace DeadZone.Systems.Housing
                     $"[FacilityUpgradeController] 플레이어별 시설 업그레이드 성공\n" +
                     $"ClientId: {requesterClientId}\n" +
                     $"시설: {facilityType}\n" +
-                    $"레벨: LV{currentLevel} -> LV{nextLevel}",
+                    $"레벨: LV{currentLevel} → LV{nextLevel}",
                     this
                 );
             }
@@ -202,6 +207,88 @@ namespace DeadZone.Systems.Housing
             return true;
         }
 
+        private bool TryUpgradeWithLobbySave(IInventory inventory)
+        {
+            if (targetFacility == null)
+            {
+                FailUpgrade("업그레이드 대상 시설이 없습니다.", 0, 0);
+                return false;
+            }
+
+            if (inventory == null)
+            {
+                FailUpgrade("업그레이드에 사용할 로비 인벤토리가 없습니다.", 0, 0);
+                return false;
+            }
+
+            FacilityType facilityType = targetFacility.Type;
+            int currentLevel = HousingInventoryResolver.TryGetLobbyFacilityLevel(facilityType, out int savedLevel)
+                ? savedLevel
+                : targetFacility.GetCurrentLevel();
+            int maxLevel = targetFacility.GetMaxLevel();
+            int nextLevel = currentLevel + 1;
+
+            if (maxLevel <= 0)
+            {
+                FailUpgrade("FacilityDataSO의 레벨 데이터가 없습니다.", currentLevel, currentLevel);
+                return false;
+            }
+
+            if (currentLevel >= maxLevel)
+            {
+                FailUpgrade("이미 최대 레벨입니다.", currentLevel, currentLevel);
+                return false;
+            }
+
+            FacilityLevel nextLevelData = targetFacility.GetLevelData(nextLevel);
+
+            if (nextLevelData == null)
+            {
+                FailUpgrade($"LV{nextLevel} 데이터가 FacilityDataSO에 없습니다.", currentLevel, currentLevel);
+                return false;
+            }
+
+            if (!HasAllMaterials(inventory, nextLevelData))
+            {
+                FailUpgrade($"LV{nextLevel} 업그레이드 재료가 부족합니다.", currentLevel, currentLevel);
+                return false;
+            }
+
+            if (!ConsumeAllMaterials(inventory, nextLevelData))
+            {
+                FailUpgrade($"LV{nextLevel} 업그레이드 재료 소모에 실패했습니다.", currentLevel, currentLevel);
+                return false;
+            }
+
+            if (!HousingInventoryResolver.TrySetLobbyFacilityLevel(facilityType, nextLevel, out string saveFailReason))
+            {
+                RestoreConsumedMaterials(inventory);
+                FailUpgrade($"{saveFailReason} 소모한 재료를 되돌렸습니다.", currentLevel, currentLevel);
+                return false;
+            }
+
+            consumedMaterials.Clear();
+
+            PublishUpgradeResult(currentLevel, nextLevel, true, "업그레이드 성공");
+
+            EventBus.Publish(new FacilityUpgradedEvent
+            {
+                facilityType = facilityType,
+                newLevel = nextLevel
+            });
+
+            if (logUpgradeResult)
+            {
+                Debug.Log(
+                    $"[FacilityUpgradeController] 로비 저장 데이터 기반 시설 업그레이드 성공\n" +
+                    $"시설: {facilityType}\n" +
+                    $"레벨: LV{currentLevel} → LV{nextLevel}",
+                    this
+                );
+            }
+
+            return true;
+        }
         private bool HasAllMaterials(IInventory inventory, FacilityLevel levelData)
         {
             if (inventory == null || levelData == null)
