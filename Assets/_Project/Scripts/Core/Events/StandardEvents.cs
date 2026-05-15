@@ -306,6 +306,12 @@ namespace DeadZone.Core
         public FixedString64Bytes extractionId;
     }
 
+    public struct ExtractionCanceledEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes extractionId;
+    }
+
     public struct FacilityUpgradedEvent : IGameEvent
     {
         public FacilityType facilityType;

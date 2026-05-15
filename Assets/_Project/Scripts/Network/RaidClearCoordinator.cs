@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DeadZone.Core;
+using DeadZone.Systems.Raid;
+using DeadZone.Systems.Save;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -131,7 +133,23 @@ namespace DeadZone.Network
                     return;
                 }
 
-                bool success = await cloudSaveSystem.UnlockZoneAndUploadAsync(zoneId);
+                if (!RaidLoadoutTransferService.TryCreateLocalRaidReturnLobbySaveDTO(out LobbySaveDTO extractionSaveDto))
+                {
+                    Debug.LogWarning(
+                        $"[RaidClearCoordinator] Extraction save DTO failed. ClientId={localClientId}, ZoneId={zoneId}",
+                        this);
+
+                    ReportZoneUnlockSaveResultRpc(
+                        new FixedString64Bytes(zoneId),
+                        false,
+                        new FixedString128Bytes("Extraction save DTO failed"));
+
+                    return;
+                }
+
+                bool loadoutSaved = await cloudSaveSystem.SaveLobbyDataAsync(extractionSaveDto);
+                bool zoneUnlocked = await cloudSaveSystem.UnlockZoneAndUploadAsync(zoneId);
+                bool success = loadoutSaved && zoneUnlocked;
 
                 if (success)
                 {

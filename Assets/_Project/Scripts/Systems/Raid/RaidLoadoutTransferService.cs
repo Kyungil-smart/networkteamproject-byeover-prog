@@ -15,6 +15,9 @@ namespace DeadZone.Systems.Raid
 {
     public static class RaidLoadoutTransferService
     {
+        private const string LobbyInventoryContainerId = "inventory";
+        private const string LobbyQuickSlotContainerId = "quickslot";
+
         private static readonly Dictionary<ulong, RaidLoadoutSaveData> loadoutsByClientId = new();
 
         public static void Clear()
@@ -229,6 +232,62 @@ namespace DeadZone.Systems.Raid
             return true;
         }
 
+        public static bool TryCreateLocalRaidReturnLobbySaveDTO(out LobbySaveDTO dto)
+        {
+            dto = CreateLobbySaveDTOFromCloud() ?? new LobbySaveDTO();
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+            {
+                Debug.LogWarning("[RaidLoadout] Cannot create extraction save. NetworkManager is missing.");
+                return false;
+            }
+
+            if (!TryResolveLocalPlayerObject(networkManager, out GameObject playerObject))
+            {
+                Debug.LogWarning($"[RaidLoadout] Cannot create extraction save. Local player was not found clientId={networkManager.LocalClientId}.");
+                return false;
+            }
+
+            CaptureLocalQuickSlotsFromUi();
+
+            RaidLoadoutSaveData loadout = CreateLoadout(networkManager.LocalClientId, playerObject);
+            if (loadout == null)
+                return false;
+
+            ApplyRaidLoadoutToLobbyDto(dto, loadout);
+            loadoutsByClientId[networkManager.LocalClientId] = loadout;
+
+            Debug.Log(
+                $"[RaidLoadout] Created extraction lobby save clientId={networkManager.LocalClientId}, inventory={dto.inventoryItems.Count}, quickSlots={dto.quickSlotItems.Count}, equipment={dto.equipmentItems.Count}",
+                playerObject);
+            return true;
+        }
+
+        public static bool TryCreateAbandonedRaidLobbySaveDTO(out LobbySaveDTO dto)
+        {
+            dto = CreateLobbySaveDTOFromCloud() ?? new LobbySaveDTO();
+
+            dto.hasInventorySection = true;
+            dto.hasEquipmentSection = true;
+            dto.hasQuickSlotSection = true;
+            dto.inventoryItems.Clear();
+            dto.equipmentItems.Clear();
+            dto.quickSlotItems.Clear();
+
+            Debug.Log("[RaidLoadout] Created abandoned raid lobby save. Inventory/equipment/quickslots will be cleared.");
+            return true;
+        }
+
+        public static void ClearLocalClientLoadout()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return;
+
+            loadoutsByClientId.Remove(networkManager.LocalClientId);
+        }
+
         private static RaidLoadoutSaveData CreateEmptyLoadout(ulong clientId)
         {
             return new RaidLoadoutSaveData
@@ -236,6 +295,137 @@ namespace DeadZone.Systems.Raid
                 clientId = clientId,
                 currentEquippedItemId = string.Empty
             };
+        }
+
+        private static bool TryResolveLocalPlayerObject(NetworkManager networkManager, out GameObject playerObject)
+        {
+            playerObject = null;
+
+            if (networkManager == null || networkManager.SpawnManager == null)
+                return false;
+
+            ulong localClientId = networkManager.LocalClientId;
+
+            foreach (NetworkObject networkObject in networkManager.SpawnManager.SpawnedObjectsList)
+            {
+                if (networkObject == null ||
+                    !networkObject.IsPlayerObject ||
+                    networkObject.OwnerClientId != localClientId ||
+                    !HasLoadoutComponents(networkObject.gameObject))
+                {
+                    continue;
+                }
+
+                playerObject = networkObject.gameObject;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyRaidLoadoutToLobbyDto(LobbySaveDTO dto, RaidLoadoutSaveData loadout)
+        {
+            dto.hasInventorySection = true;
+            dto.hasEquipmentSection = true;
+            dto.hasQuickSlotSection = true;
+
+            dto.inventoryItems.Clear();
+            dto.equipmentItems.Clear();
+            dto.quickSlotItems.Clear();
+
+            AddInventoryItemsToLobby(dto.inventoryItems, loadout.inventoryItems);
+            AddEquipmentItemsToLobby(dto.equipmentItems, loadout.equipmentItems);
+
+            List<ItemSaveDTO> rawQuickSlotItems = CreateLobbyQuickSlotItems(loadout.quickSlotItems);
+            List<ItemSaveDTO> validQuickSlotItems = CreateValidQuickSlotItems(rawQuickSlotItems, dto.inventoryItems);
+            AddRange(dto.quickSlotItems, validQuickSlotItems);
+        }
+
+        private static void AddInventoryItemsToLobby(
+            List<ItemSaveDTO> target,
+            IReadOnlyList<InventoryItemSaveData> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                InventoryItemSaveData item = source[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                    continue;
+
+                target.Add(new ItemSaveDTO
+                {
+                    itemId = item.itemId,
+                    instanceId = item.instanceId,
+                    containerId = LobbyInventoryContainerId,
+                    x = Mathf.Max(0, item.gridX),
+                    y = Mathf.Max(0, item.gridY),
+                    rotated = item.rotated,
+                    stackCount = Mathf.Max(1, item.stackCount),
+                    currentDurability = Mathf.Max(0f, item.currentDurability),
+                    currentAmmo = Mathf.Max(0, item.currentAmmo)
+                });
+            }
+        }
+
+        private static void AddEquipmentItemsToLobby(
+            List<EquipmentSaveDTO> target,
+            IReadOnlyList<EquipmentSaveData> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                EquipmentSaveData equipment = source[i];
+                if (equipment == null || string.IsNullOrWhiteSpace(equipment.itemId))
+                    continue;
+
+                string lobbySlotId = ToLobbyEquipmentSlotId(equipment.slotId);
+                if (string.IsNullOrWhiteSpace(lobbySlotId))
+                    continue;
+
+                target.Add(new EquipmentSaveDTO
+                {
+                    slotId = lobbySlotId,
+                    itemId = equipment.itemId,
+                    instanceId = equipment.instanceId,
+                    loadedAmmoId = equipment.loadedAmmoId,
+                    currentAmmo = Mathf.Max(0, equipment.currentAmmo),
+                    durability = Mathf.Max(0f, equipment.currentDurability)
+                });
+            }
+        }
+
+        private static List<ItemSaveDTO> CreateLobbyQuickSlotItems(IReadOnlyList<QuickSlotSaveData> source)
+        {
+            List<ItemSaveDTO> result = new();
+            if (source == null)
+                return result;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                QuickSlotSaveData item = source[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                    continue;
+
+                int slotIndex = Mathf.Clamp(item.slotIndex, 0, 5);
+                result.Add(new ItemSaveDTO
+                {
+                    itemId = item.itemId,
+                    instanceId = item.instanceId,
+                    containerId = LobbyQuickSlotContainerId,
+                    x = slotIndex,
+                    y = 0,
+                    rotated = false,
+                    stackCount = Mathf.Max(1, item.stackCount),
+                    currentDurability = Mathf.Max(0f, item.currentDurability),
+                    currentAmmo = Mathf.Max(0, item.currentAmmo)
+                });
+            }
+
+            return result;
         }
 
         private static RaidLoadoutSaveData CreateLoadout(ulong clientId, GameObject playerObject)
@@ -755,6 +945,24 @@ namespace DeadZone.Systems.Raid
                 "primary2" => "Primary2",
                 "equipmentsecondaryweapon" or "secondary" => "Secondary",
                 "equipmentmeleeweapon" or "melee" => "Melee",
+                _ => string.Empty
+            };
+        }
+
+        private static string ToLobbyEquipmentSlotId(string raidSlotId)
+        {
+            if (string.IsNullOrWhiteSpace(raidSlotId))
+                return string.Empty;
+
+            return raidSlotId.Trim().Replace("_", "").Replace(" ", "").ToLowerInvariant() switch
+            {
+                "head" => "EquipmentHead",
+                "torso" or "armor" => "EquipmentArmor",
+                "backpack" => "EquipmentBackpack",
+                "primary1" => "EquipmentPrimaryWeapon",
+                "primary2" => "Primary2",
+                "secondary" => "EquipmentSecondaryWeapon",
+                "melee" => "EquipmentMeleeWeapon",
                 _ => string.Empty
             };
         }

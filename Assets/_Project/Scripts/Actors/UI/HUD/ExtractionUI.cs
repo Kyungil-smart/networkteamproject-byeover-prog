@@ -74,6 +74,7 @@ namespace DeadZone.Actors
         {
             EventBus.Subscribe<ExtractionStartedEvent>(OnStarted);
             EventBus.Subscribe<ExtractionCompletedEvent>(OnCompleted);
+            EventBus.Subscribe<ExtractionCanceledEvent>(OnCanceled);
         }
 
         // 컴포넌트 비활성화 시 구독 해제
@@ -81,6 +82,7 @@ namespace DeadZone.Actors
         {
             EventBus.Unsubscribe<ExtractionStartedEvent>(OnStarted);
             EventBus.Unsubscribe<ExtractionCompletedEvent>(OnCompleted);
+            EventBus.Unsubscribe<ExtractionCanceledEvent>(OnCanceled);
         }
 
         // 탈출 존 진입 시 카운트다운 시작
@@ -116,6 +118,17 @@ namespace DeadZone.Actors
         }
 
         // 매 프레임 타이머 감소 + UI 갱신 + 초 단위 틱 피드백
+        private void OnCanceled(ExtractionCanceledEvent e)
+        {
+            if (NetworkManager.Singleton == null) return;
+            if (e.clientId != NetworkManager.Singleton.LocalClientId) return;
+
+            Debug.Log($"[ExtractionUI] ExtractionCanceled id={e.extractionId}", this);
+
+            active = false;
+            if (panelRoot != null) panelRoot.SetActive(false);
+        }
+
         private void Update()
         {
             if (!active) return;
