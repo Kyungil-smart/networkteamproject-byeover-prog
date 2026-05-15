@@ -326,6 +326,8 @@ namespace DeadZone.Systems.Quests
             if (!string.IsNullOrEmpty(questData.unlockZoneID))
                 state.UnlockedZones.Add(questData.unlockZoneID);
 
+            TryAutoClaimCompletedReward(clientId, questId);
+
             EventBus.Publish(new QuestCompletedEvent
             {
                 questId = new FixedString64Bytes(questId),
@@ -343,6 +345,18 @@ namespace DeadZone.Systems.Quests
 
             Debug.Log($"[QuestManager] Client {clientId} completed {questId}");
             TryAutoAcceptNextQuest(clientId, questId);
+        }
+
+        private void TryAutoClaimCompletedReward(ulong clientId, string questId)
+        {
+            if (!CanClaimReward(clientId, questId))
+                return;
+
+            if (!ClaimReward(clientId, questId))
+            {
+                Debug.LogWarning(
+                    $"[QuestManager] Quest completed, but reward could not be added immediately. questId={questId}, clientId={clientId}");
+            }
         }
 
         private void ConfirmRaidQuestCompletions(ulong clientId)
@@ -385,6 +399,9 @@ namespace DeadZone.Systems.Quests
             string enemyId = e.enemyId.ToString();
             if (!string.IsNullOrEmpty(enemyId))
                 ReportProgress(e.attackerClientId, ObjectiveType.Kill, enemyId, 1);
+
+            if (enemyId != "Enemy_Any")
+                ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Enemy_Any", 1);
 
             if (!e.isBoss)
             {

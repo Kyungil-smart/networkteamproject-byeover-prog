@@ -479,7 +479,9 @@ namespace DeadZone.Actors
                     HelmetDataSO helmet => helmet.maxDurability,
                     _ => 0f
                 },
-                currentAmmo = 0
+                currentAmmo = itemData is WeaponDataSO weaponData
+                    ? (ushort)Mathf.Clamp(weaponData.magSize, 0, ushort.MaxValue)
+                    : (ushort)0
             };
         }
 
