@@ -296,29 +296,11 @@ namespace DeadZone.Actors.UI
                 return false;
             }
 
-            // 퀵슬롯 사용은 가방과 별도 수량으로 서버에 저장되므로 슬롯 인덱스를 함께 보낸다.
-            if (slotKind == InventorySlotKind.QuickSlot)
+            // 퀵슬롯은 아이템 바로가기만 들고 있으므로, 실제 인벤토리에 아이템이 남아 있는지 먼저 확인한다.
+            if (!inventory.HasItem(CurrentItemData.itemID, 1) &&
+                !inventory.HasQuickSlotItem(CurrentItemData.itemID, 1))
             {
-                if (slotIndex < 0 || slotIndex >= GridInventory.QUICK_SLOT_COUNT)
-                {
-                    Debug.LogWarning($"[InventorySlotUI] Medical quickslot use failed. Invalid quickslot index={slotIndex}", this);
-                    return false;
-                }
-
-                if (!inventory.HasQuickSlotItem(CurrentItemData.itemID, 1))
-                {
-                    Debug.LogWarning($"[InventorySlotUI] Medical quickslot use failed. Item is not in the server quickslot state. itemId={CurrentItemData.itemID}", this);
-                    return false;
-                }
-
-                inventory.RequestUseQuickSlot((byte)slotIndex);
-                ApplyQuickSlotUsePreview();
-                return true;
-            }
-
-            if (!inventory.HasItem(CurrentItemData.itemID, 1))
-            {
-                Debug.LogWarning($"[InventorySlotUI] Medical item use failed. Item is not in the server inventory state. itemId={CurrentItemData.itemID}", this);
+                Debug.LogWarning($"[InventorySlotUI] Medical item use failed. Item is not in the server inventory/quickslot state. itemId={CurrentItemData.itemID}", this);
                 return false;
             }
 

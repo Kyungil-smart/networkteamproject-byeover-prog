@@ -13,6 +13,9 @@ MonoBehaviour:
   m_Name: LT_MedicalCase
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.LootTableSO
   entries:
+  - item: {fileID: 11400000, guid: 771885c03bd11074aa30d0110f6f6197, type: 2}
+    weight: 2000
+    countRange: {x: 1, y: 2}
   - item: {fileID: 11400000, guid: 7433f73e64ef87341b970691c4658c4a, type: 2}
     weight: 2000
     countRange: {x: 1, y: 2}
@@ -25,6 +28,12 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 872594b163b7df8459d658c5ffd45d19, type: 2}
     weight: 800
     countRange: {x: 1, y: 2}
+  - item: {fileID: 11400000, guid: 1362889d070338a4499ff0eef8fbe169, type: 2}
+    weight: 800
+    countRange: {x: 1, y: 2}
+  - item: {fileID: 11400000, guid: 3f3b401696788d246b34307bb7ae7e8d, type: 2}
+    weight: 800
+    countRange: {x: 1, y: 2}
   - item: {fileID: 11400000, guid: 16afedd06c1b33e46985c80e79b3e6a3, type: 2}
     weight: 100
     countRange: {x: 1, y: 2}
@@ -35,6 +44,18 @@ MonoBehaviour:
     weight: 100
     countRange: {x: 1, y: 2}
   - item: {fileID: 11400000, guid: bff5e037139d0fd4495065eac0965818, type: 2}
+    weight: 100
+    countRange: {x: 1, y: 2}
+  - item: {fileID: 11400000, guid: 287d393747b3b9045a45f872ccb8610d, type: 2}
+    weight: 100
+    countRange: {x: 1, y: 2}
+  - item: {fileID: 11400000, guid: d96690876468c78439ec11867f988a7f, type: 2}
+    weight: 100
+    countRange: {x: 1, y: 2}
+  - item: {fileID: 11400000, guid: e263dd7fb1ba7db4d9874c34b85f1f71, type: 2}
+    weight: 100
+    countRange: {x: 1, y: 2}
+  - item: {fileID: 11400000, guid: 2de9ebba2e92a254a8dcb2e06af8244a, type: 2}
     weight: 100
     countRange: {x: 1, y: 2}
   lockedZoneMultiplier: 1.5
