@@ -291,9 +291,6 @@ namespace DeadZone.Systems.Save
                     Debug.LogWarning("[LobbySaveService] Incoming inventoryItems section is unknown. Keeping runtime player inventory to avoid scene-transition wipe.", this);
                 }
 
-                inventoryState.SetStashItems(dto.stashItems);
-                inventoryState.SetQuickSlotItems(dto.quickSlotItems);
-                inventoryState.SetEquipmentItems(dto.equipmentItems);
                 if (ShouldApplyStashSection(dto))
                     inventoryState.SetStashItems(dto.stashItems);
                 else
@@ -506,9 +503,6 @@ namespace DeadZone.Systems.Save
 
                 if (inventoryState.EquipmentItems != null)
                     dto.equipmentItems.AddRange(inventoryState.EquipmentItems);
-
-                if (inventoryState.QuickSlotItems != null)
-                    dto.quickSlotItems.AddRange(inventoryState.QuickSlotItems);
             }
             else
             {

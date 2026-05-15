@@ -237,6 +237,20 @@ namespace DeadZone.Systems.Raid
                 : 0;
         }
 
+        public static bool CaptureLocalQuickSlotsFromUi()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return false;
+
+            if (!loadoutsByClientId.TryGetValue(networkManager.LocalClientId, out RaidLoadoutSaveData loadout))
+                return false;
+
+            loadout.quickSlotItems = CaptureCurrentQuickSlotSnapshot();
+            loadoutsByClientId[networkManager.LocalClientId] = loadout;
+            return true;
+        }
+
         private static RaidLoadoutSaveData CreateEmptyLoadout(ulong clientId)
         {
             return new RaidLoadoutSaveData
@@ -374,7 +388,8 @@ namespace DeadZone.Systems.Raid
             };
 
             IReadOnlyList<ItemSaveDTO> inventoryItems = dto.inventoryItems;
-            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems, dto.quickSlotItems);
+            List<ItemSaveDTO> quickSlotItems = CreateValidQuickSlotItems(dto.quickSlotItems, dto.inventoryItems);
+            List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems);
 
             if (inventoryItems != null)
             {
@@ -398,11 +413,11 @@ namespace DeadZone.Systems.Raid
                 }
             }
 
-            if (dto.quickSlotItems != null)
+            if (quickSlotItems != null)
             {
-                for (int i = 0; i < dto.quickSlotItems.Count; i++)
+                for (int i = 0; i < quickSlotItems.Count; i++)
                 {
-                    ItemSaveDTO item = dto.quickSlotItems[i];
+                    ItemSaveDTO item = quickSlotItems[i];
                     if (item == null || string.IsNullOrWhiteSpace(item.itemId))
                         continue;
 
@@ -619,149 +634,66 @@ namespace DeadZone.Systems.Raid
             return itemDatabase;
         }
 
-        private static List<ItemSaveDTO> CreateAmmoLookupItems(
-            IReadOnlyList<ItemSaveDTO> inventoryItems,
-            IReadOnlyList<ItemSaveDTO> quickSlotItems)
+        private static List<ItemSaveDTO> CreateAmmoLookupItems(IReadOnlyList<ItemSaveDTO> inventoryItems)
         {
             List<ItemSaveDTO> items = new();
             AddRange(items, inventoryItems);
-            AddRange(items, quickSlotItems);
             return items;
         }
 
-        private static void AddQuickSlotItemsToInventory(
-            List<InventoryItemSaveData> inventoryItems,
-            IReadOnlyList<ItemSaveDTO> quickSlotItems)
+        private static List<ItemSaveDTO> CreateValidQuickSlotItems(
+            IReadOnlyList<ItemSaveDTO> quickSlotItems,
+            IReadOnlyList<ItemSaveDTO> inventoryItems)
         {
-            if (inventoryItems == null || quickSlotItems == null || quickSlotItems.Count == 0)
-                return;
+            List<ItemSaveDTO> result = new();
+            if (quickSlotItems == null || quickSlotItems.Count == 0)
+                return result;
 
-            IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
-            if (itemDatabase == null)
-                itemDatabase = Object.FindFirstObjectByType<ItemDatabase>(FindObjectsInactive.Include);
+            Dictionary<string, int> availableCounts = new(System.StringComparer.OrdinalIgnoreCase);
+            if (inventoryItems != null)
+            {
+                for (int i = 0; i < inventoryItems.Count; i++)
+                {
+                    ItemSaveDTO inventoryItem = inventoryItems[i];
+                    if (inventoryItem == null || string.IsNullOrWhiteSpace(inventoryItem.itemId))
+                        continue;
 
-            bool[,] occupied = BuildOccupiedGrid(inventoryItems, itemDatabase);
+                    int stackCount = Mathf.Max(1, inventoryItem.stackCount);
+                    if (availableCounts.TryGetValue(inventoryItem.itemId, out int currentCount))
+                        availableCounts[inventoryItem.itemId] = currentCount + stackCount;
+                    else
+                        availableCounts.Add(inventoryItem.itemId, stackCount);
+                }
+            }
 
+            HashSet<string> assignedItemIds = new(System.StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < quickSlotItems.Count; i++)
             {
                 ItemSaveDTO quickSlotItem = quickSlotItems[i];
-                if (quickSlotItem == null || string.IsNullOrWhiteSpace(quickSlotItem.itemId))
-                    continue;
-
-                ItemDataSO itemData = itemDatabase?.GetById(quickSlotItem.itemId);
-                Vector2Int itemSize = itemData != null ? itemData.gridSize : Vector2Int.one;
-
-                if (!TryFindEmptyInventoryCell(occupied, itemSize, out int gridX, out int gridY))
+                if (quickSlotItem == null ||
+                    string.IsNullOrWhiteSpace(quickSlotItem.itemId) ||
+                    !availableCounts.TryGetValue(quickSlotItem.itemId, out int availableCount) ||
+                    availableCount <= 0 ||
+                    !assignedItemIds.Add(quickSlotItem.itemId))
                 {
-                    Debug.LogWarning($"[RaidLoadout] QuickSlot item could not be added to inventory snapshot. No empty grid cell. itemId={quickSlotItem.itemId}");
                     continue;
                 }
 
-                MarkOccupied(occupied, gridX, gridY, itemSize);
-                inventoryItems.Add(new InventoryItemSaveData
+                result.Add(new ItemSaveDTO
                 {
                     itemId = quickSlotItem.itemId,
-                    instanceId = string.IsNullOrWhiteSpace(quickSlotItem.instanceId)
-                        ? $"quickslot_{quickSlotItem.x}_{quickSlotItem.itemId}"
-                        : quickSlotItem.instanceId,
-                    gridX = gridX,
-                    gridY = gridY,
-                    rotated = false,
-                    stackCount = Mathf.Max(1, quickSlotItem.stackCount),
+                    instanceId = quickSlotItem.instanceId,
+                    containerId = quickSlotItem.containerId,
+                    x = quickSlotItem.x,
+                    y = quickSlotItem.y,
+                    rotated = quickSlotItem.rotated,
+                    stackCount = Mathf.Clamp(quickSlotItem.stackCount, 1, availableCount),
                     currentDurability = Mathf.Max(0f, quickSlotItem.currentDurability),
                     currentAmmo = Mathf.Max(0, quickSlotItem.currentAmmo)
                 });
             }
-        }
 
-        private static bool[,] BuildOccupiedGrid(
-            IReadOnlyList<InventoryItemSaveData> inventoryItems,
-            IItemDatabase itemDatabase)
-        {
-            bool[,] occupied = new bool[GridInventory.BASE_WIDTH, 10];
-
-            for (int i = 0; i < inventoryItems.Count; i++)
-            {
-                InventoryItemSaveData item = inventoryItems[i];
-                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
-                    continue;
-
-                ItemDataSO itemData = itemDatabase?.GetById(item.itemId);
-                Vector2Int size = itemData != null ? itemData.gridSize : Vector2Int.one;
-                MarkOccupied(occupied, Mathf.Max(0, item.gridX), Mathf.Max(0, item.gridY), size);
-            }
-
-            return occupied;
-        }
-
-        private static bool TryFindEmptyInventoryCell(
-            bool[,] occupied,
-            Vector2Int itemSize,
-            out int gridX,
-            out int gridY)
-        {
-            gridX = 0;
-            gridY = 0;
-
-            int width = Mathf.Max(1, itemSize.x);
-            int height = Mathf.Max(1, itemSize.y);
-
-            for (int y = 0; y <= occupied.GetLength(1) - height; y++)
-            {
-                for (int x = 0; x <= occupied.GetLength(0) - width; x++)
-                {
-                    if (!CanPlaceInGrid(occupied, x, y, width, height))
-                        continue;
-
-                    gridX = x;
-                    gridY = y;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool CanPlaceInGrid(bool[,] occupied, int gridX, int gridY, int width, int height)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int checkX = gridX + x;
-                    int checkY = gridY + y;
-
-                    if (checkX < 0 || checkX >= occupied.GetLength(0) ||
-                        checkY < 0 || checkY >= occupied.GetLength(1) ||
-                        occupied[checkX, checkY])
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        private static void MarkOccupied(bool[,] occupied, int gridX, int gridY, Vector2Int itemSize)
-        {
-            int width = Mathf.Max(1, itemSize.x);
-            int height = Mathf.Max(1, itemSize.y);
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int checkX = gridX + x;
-                    int checkY = gridY + y;
-
-                    if (checkX >= 0 && checkX < occupied.GetLength(0) &&
-                        checkY >= 0 && checkY < occupied.GetLength(1))
-                    {
-                        occupied[checkX, checkY] = true;
-                    }
-                }
-            }
+            return result;
         }
 
         private static int ResolveGridX(ItemSaveDTO item)

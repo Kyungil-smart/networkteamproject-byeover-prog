@@ -823,11 +823,48 @@ namespace DeadZone.Actors
             return item is WeaponDataSO weapon && weapon.weaponCategory == WeaponCategory.Melee;
         }
 
-        private static WeaponState CreateInitialWeaponState(ItemDataSO item)
+        private WeaponState CreateInitialWeaponState(ItemDataSO item, int currentAmmo = 0)
         {
-            return item is WeaponDataSO weapon
-                ? new WeaponState { loadedAmmoId = "", currentAmmo = 0 }
-                : default;
+            if (item is not WeaponDataSO weapon)
+                return default;
+
+            int ammoCount = Mathf.Clamp(currentAmmo, 0, weapon.magSize);
+            return new WeaponState
+            {
+                loadedAmmoId = ammoCount > 0 ? ResolveDefaultAmmoId(weapon.ammoType) : "",
+                currentAmmo = ammoCount
+            };
+        }
+
+        private static float ResolveEquippedDurability(float sourceDurability, float maxDurability)
+        {
+            if (maxDurability <= 0f)
+                return 0f;
+
+            return sourceDurability > 0f
+                ? Mathf.Clamp(sourceDurability, 0f, maxDurability)
+                : maxDurability;
+        }
+
+        private FixedString64Bytes ResolveDefaultAmmoId(AmmoType ammoType)
+        {
+            string ammoId = ammoType switch
+            {
+                AmmoType.AR => "Ammo_AR_BP",
+                AmmoType.SMG => "Ammo_SMG_BP",
+                AmmoType.Handgun => "Ammo_Handgun_BP",
+                AmmoType.Sniper => "Ammo_Sniper_BP",
+                AmmoType.Shotgun => "Ammo_SG_BP",
+                _ => string.Empty
+            };
+
+            if (string.IsNullOrWhiteSpace(ammoId))
+                return "";
+
+            AmmoDataSO ammo = itemDb?.GetById<AmmoDataSO>(ammoId);
+            return ammo != null && ammo.caliber == ammoType
+                ? new FixedString64Bytes(ammo.itemID)
+                : "";
         }
 
         private static WeaponState CreateWeaponStateFromInventorySlot(ItemDataSO item, ItemSlotData sourceSlot)

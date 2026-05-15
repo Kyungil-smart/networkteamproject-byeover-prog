@@ -1,5 +1,6 @@
 using DeadZone.Core;
 using DeadZone.Actors;
+using DeadZone.Systems.Raid;
 using DeadZone.Systems.Save;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
@@ -612,8 +613,21 @@ namespace DeadZone.Actors.UI
             ItemDataSO sourceItem = source.CurrentItemData;
             int sourceCount = source.CurrentStackCount;
 
+            if (source.slotKind == InventorySlotKind.QuickSlot && slotKind != InventorySlotKind.QuickSlot)
+            {
+                Debug.Log("[InventorySlotUI] Quick slot shortcuts cannot be moved into item containers. Clear or replace the shortcut instead.", this);
+                return false;
+            }
+
             if (slotKind == InventorySlotKind.QuickSlot)
                 return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
+
+            if (source.slotKind == InventorySlotKind.Bag &&
+                TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetEquipmentSlot) &&
+                TryRequestInventorySlotEquipToEquipment(source, targetEquipmentSlot))
+            {
+                return true;
+            }
 
             if (!CanAccept(sourceItem))
             {
@@ -775,21 +789,13 @@ namespace DeadZone.Actors.UI
 
             if (HasItem)
             {
-                ItemDataSO targetItem = CurrentItemData;
-                int targetCount = CurrentStackCount;
-
-                if (!source.CanAccept(targetItem))
-                    return false;
-
                 SetItem(sourceItem, sourceCount);
-                source.SetItem(targetItem, targetCount);
-                CaptureLobbyInventoryStateIfPresent(this, source);
+                CaptureLobbyInventoryStateIfPresent(this);
                 return true;
             }
 
             SetItem(sourceItem, sourceCount);
-            source.ClearItem();
-            CaptureLobbyInventoryStateIfPresent(this, source);
+            CaptureLobbyInventoryStateIfPresent(this);
             return true;
         }
 
@@ -823,16 +829,33 @@ namespace DeadZone.Actors.UI
             LobbyInventoryStateUiBridge bridge =
                 FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
 
-            if (bridge == null)
-                return;
+            if (bridge != null)
+            {
+                bridge.CaptureChangedItemSlots(changedSlots);
+                bridge.CaptureChangedEquipmentSlots(changedSlots);
 
-            bridge.CaptureChangedItemSlots(changedSlots);
-            bridge.CaptureChangedEquipmentSlots(changedSlots);
+                LobbySaveService saveService =
+                    FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
 
-            LobbySaveService saveService =
-                FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+                saveService?.SaveCurrentStateToLocalJson("Inventory UI drop snapshot");
+            }
 
-            saveService?.SaveCurrentStateToLocalJson("Inventory UI drop snapshot");
+            RaidLoadoutTransferService.CaptureLocalQuickSlotsFromUi();
+        }
+
+        private static bool TryRequestInventorySlotEquipToEquipment(InventorySlotUI source, EquipmentTargetSlot targetSlot)
+        {
+            if (source == null || targetSlot == EquipmentTargetSlot.None)
+                return false;
+
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, source.slotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, source.slotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestEquipInventorySlotToEquipment(gridX, gridY, targetSlot);
+            return true;
         }
 
         private static bool TrySyncEquipmentSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)
@@ -1525,10 +1548,7 @@ namespace DeadZone.Actors.UI
             if (itemData is WeaponDataSO or ArmorDataSO or HelmetDataSO or BackpackDataSO)
                 return false;
 
-            return itemData.category is not ItemCategory.Weapon
-                and not ItemCategory.Armor
-                and not ItemCategory.Helmet
-                and not ItemCategory.Backpack;
+            return itemData.category == ItemCategory.Med;
         }
 
         private static string GetHierarchyPath(Transform target)

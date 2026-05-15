@@ -147,6 +147,7 @@ namespace DeadZone.Systems.Save
                     "[LobbyInventoryStateUiBridge] Stash slots root missing. Keeping existing stash state.", this);
 
             List<ItemSaveDTO> capturedQuickSlotItems = CollectQuickSlotSlots(quickSlotSlotsRoot);
+            PruneQuickSlotItemsAgainstInventory(capturedQuickSlotItems, inventoryState.InventoryItems);
             if (capturedQuickSlotItems.Count > 0 || inventoryState.QuickSlotItems == null ||
                 inventoryState.QuickSlotItems.Count == 0)
                 inventoryState.SetQuickSlotItems(capturedQuickSlotItems);
@@ -167,6 +168,7 @@ namespace DeadZone.Systems.Save
             if (quickSlotsRoot != null)
             {
                 List<ItemSaveDTO> capturedQuickSlotsRootItems = CollectItemSlots(quickSlotsRoot, QuickSlotContainerId);
+                PruneQuickSlotItemsAgainstInventory(capturedQuickSlotsRootItems, inventoryState.InventoryItems);
                 if (capturedQuickSlotsRootItems.Count > 0 || inventoryState.QuickSlotItems == null || inventoryState.QuickSlotItems.Count == 0)
                     inventoryState.SetQuickSlotItems(capturedQuickSlotsRootItems);
                 else
@@ -283,6 +285,9 @@ namespace DeadZone.Systems.Save
                 else
                     inventoryChanged = true;
             }
+
+            if (PruneQuickSlotItemsAgainstInventory(quickSlotItems, inventoryItems))
+                quickSlotChanged = true;
 
             if (inventoryChanged)
                 inventoryState.SetInventoryItems(inventoryItems);
@@ -603,7 +608,59 @@ namespace DeadZone.Systems.Save
                     });
                 }
 
-                return items;
+            return items;
+        }
+
+            private static bool PruneQuickSlotItemsAgainstInventory(
+                List<ItemSaveDTO> quickSlotItems,
+                IReadOnlyList<ItemSaveDTO> inventoryItems)
+            {
+                if (quickSlotItems == null || quickSlotItems.Count == 0)
+                    return false;
+
+                Dictionary<string, int> availableCounts = new(System.StringComparer.OrdinalIgnoreCase);
+                if (inventoryItems != null)
+                {
+                    for (int i = 0; i < inventoryItems.Count; i++)
+                    {
+                        ItemSaveDTO item = inventoryItems[i];
+                        if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                            continue;
+
+                        int stackCount = Mathf.Max(1, item.stackCount);
+                        if (availableCounts.TryGetValue(item.itemId, out int currentCount))
+                            availableCounts[item.itemId] = currentCount + stackCount;
+                        else
+                            availableCounts.Add(item.itemId, stackCount);
+                    }
+                }
+
+                bool changed = false;
+                HashSet<string> assignedItemIds = new(System.StringComparer.OrdinalIgnoreCase);
+
+                for (int i = quickSlotItems.Count - 1; i >= 0; i--)
+                {
+                    ItemSaveDTO quickSlotItem = quickSlotItems[i];
+                    if (quickSlotItem == null ||
+                        string.IsNullOrWhiteSpace(quickSlotItem.itemId) ||
+                        !availableCounts.TryGetValue(quickSlotItem.itemId, out int availableCount) ||
+                        availableCount <= 0 ||
+                        !assignedItemIds.Add(quickSlotItem.itemId))
+                    {
+                        quickSlotItems.RemoveAt(i);
+                        changed = true;
+                        continue;
+                    }
+
+                    int safeStackCount = Mathf.Clamp(quickSlotItem.stackCount, 1, availableCount);
+                    if (quickSlotItem.stackCount != safeStackCount)
+                    {
+                        quickSlotItem.stackCount = safeStackCount;
+                        changed = true;
+                    }
+                }
+
+                return changed;
             }
 
             private string ResolveChangedItemContainerId(InventorySlotUI slot)
