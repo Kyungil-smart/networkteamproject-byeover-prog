@@ -680,6 +680,7 @@ namespace DeadZone.Systems.Save
                 IItemDatabase database)
             {
                 InventorySlotUI[] slots = GetEquipmentSlotsForApply(root);
+                PrepareEquipmentSlotsForTooltip(slots);
                 ClearSlots(slots);
 
                 if (slots.Length == 0 || equipmentItems == null)

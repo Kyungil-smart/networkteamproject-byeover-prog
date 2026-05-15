@@ -781,6 +781,7 @@ namespace DeadZone.Network
             currentData.progress ??= new ProgressData();
             currentData.progress.personalActiveQuestIds ??= new List<string>();
             currentData.progress.personalCompletedQuestIds ??= new List<string>();
+            currentData.progress.rewardClaimedQuestIds ??= new List<string>();
             currentData.progress.unlockedZones ??= new List<string>();
             currentData.progress.questObjectives ??= new List<QuestObjectiveProgress>();
             currentData.progress.pendingCompletionIds ??= new List<string>();

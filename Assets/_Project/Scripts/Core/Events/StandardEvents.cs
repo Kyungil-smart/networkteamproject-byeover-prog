@@ -287,6 +287,12 @@ namespace DeadZone.Core
         public FixedString64Bytes unlockZoneId;
     }
 
+    public struct QuestRewardClaimedEvent : IGameEvent
+    {
+        public FixedString64Bytes questId;
+        public ulong clientId;
+    }
+
     public struct ExtractionStartedEvent : IGameEvent
     {
         public ulong clientId;
