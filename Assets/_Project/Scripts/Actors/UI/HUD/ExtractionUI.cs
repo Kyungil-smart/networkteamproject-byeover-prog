@@ -41,7 +41,7 @@ namespace DeadZone.Actors
         [SerializeField] private MMF_Player onCompletedFeedback;
 
         [TitleGroup("Debug")]
-        [ShowInInspector, ReadOnly] private bool promptActive;
+        [ShowInInspector, ReadOnly] private bool PromptActive => panelRoot != null && panelRoot.activeSelf;
         [ShowInInspector, ReadOnly] private float currentElapsed;
         [ShowInInspector, ReadOnly] private float currentDuration;
 
@@ -74,7 +74,6 @@ namespace DeadZone.Actors
 
             Debug.Log($"[ExtractionUI] Extraction confirmation opened id={e.extractionId}", this);
 
-            promptActive = true;
             SetPanelVisible(true);
 
             if (extractionNameText != null)
@@ -112,7 +111,6 @@ namespace DeadZone.Actors
 
         public void Show(string extractionName, float duration)
         {
-            promptActive = true;
             currentElapsed = 0f;
             currentDuration = Mathf.Max(0f, duration);
             SetPanelVisible(true);
@@ -141,7 +139,6 @@ namespace DeadZone.Actors
 
         public void Hide()
         {
-            promptActive = false;
             SetPanelVisible(false);
             ResetUI();
         }
