@@ -623,6 +623,13 @@ namespace DeadZone.Actors.UI
                 return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
 
             if (source.slotKind == InventorySlotKind.Bag &&
+                slotKind == InventorySlotKind.Bag &&
+                TryRequestInventorySlotMove(source.slotIndex, slotIndex))
+            {
+                return true;
+            }
+
+            if (source.slotKind == InventorySlotKind.Bag &&
                 TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetEquipmentSlot) &&
                 TryRequestInventorySlotEquipToEquipment(source, targetEquipmentSlot))
             {
@@ -740,6 +747,20 @@ namespace DeadZone.Actors.UI
             byte gridX = (byte)(Mathf.Max(0, sourceSlotIndex) % GridInventory.BASE_WIDTH);
             byte gridY = (byte)(Mathf.Max(0, sourceSlotIndex) / GridInventory.BASE_WIDTH);
             inventory.RequestMoveInventorySlotToEquipment(gridX, gridY, targetEquipmentSlot);
+            return true;
+        }
+
+        private static bool TryRequestInventorySlotMove(int sourceSlotIndex, int targetSlotIndex)
+        {
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte sourceGridX = (byte)(Mathf.Max(0, sourceSlotIndex) % GridInventory.BASE_WIDTH);
+            byte sourceGridY = (byte)(Mathf.Max(0, sourceSlotIndex) / GridInventory.BASE_WIDTH);
+            byte targetGridX = (byte)(Mathf.Max(0, targetSlotIndex) % GridInventory.BASE_WIDTH);
+            byte targetGridY = (byte)(Mathf.Max(0, targetSlotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestMoveInventorySlot(sourceGridX, sourceGridY, targetGridX, targetGridY);
             return true;
         }
 
