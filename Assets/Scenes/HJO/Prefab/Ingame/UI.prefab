@@ -16176,7 +16176,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ExtractionUI
   panelRoot: {fileID: 6363939815605685146}
   countdownText: {fileID: 6296477151260825793}
-  extractionNameText: {fileID: 0}
+  extractionNameText: {fileID: 2046234559229737273}
   progressFill: {fileID: 1593893952773289265}
   confirmYesButton: {fileID: 0}
   confirmNoButton: {fileID: 0}
