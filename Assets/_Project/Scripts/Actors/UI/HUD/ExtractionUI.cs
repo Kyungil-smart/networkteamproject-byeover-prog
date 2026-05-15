@@ -1,3 +1,4 @@
+using DeadZone.Core;
 using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -5,193 +6,249 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-using DeadZone.Core;
-
-// 작성자 : 홍정옥
-// 기능 : 탈출 존 진입 시 카운트다운 UI
-// 탈출까지 남은 시간 표시, 진행도 Fill, 초 단위 틱 피드백
-// EventBus로 ExtractionStarted / ExtractionCompleted 구독
 namespace DeadZone.Actors
 {
-    /// <summary>
-    /// 탈출 존 진입 시 카운트다운과 진행도를 표시
-    /// </summary>
     public class ExtractionUI : MonoBehaviour
     {
-        // UI 레퍼런스
-        [BoxGroup("참조")]
-        [Required, SerializeField] private GameObject panelRoot;// 탈출 UI 루트 (진입 시 활성화)
+        [BoxGroup("References")]
+        [Required, SerializeField] private GameObject panelRoot;
 
-        [BoxGroup("참조")]
-        [Required, SerializeField] private TMP_Text countdownText;// 남은 시간 텍스트
+        [BoxGroup("References")]
+        [Required, SerializeField] private TMP_Text countdownText;
 
-        [BoxGroup("참조")]
-        [Required, SerializeField] private TMP_Text extractionNameText;// 탈출 지점 이름
+        [BoxGroup("References")]
+        [Required, SerializeField] private TMP_Text extractionNameText;
 
-        [BoxGroup("참조")]
-        [Required, SerializeField] private Image progressFill;// 진행도 Fill (0 -> 1)
+        [BoxGroup("References")]
+        [Required, SerializeField] private Image progressFill;
 
-        // 설정값
-        [BoxGroup("설정")]
-        [Tooltip("이 시간 이하 구간에서 강한 틱 피드백이 매초 재생됨")]
-        [MinValue(1), SerializeField] private int finalCountdownSeconds = 3;
+        [BoxGroup("References")]
+        [SerializeField] private Button confirmYesButton;
 
-        // Feel 피드백
-        [FoldoutGroup("피드백")]
-        [Tooltip("탈출 카운트다운 시작 시 재생")]
+        [BoxGroup("References")]
+        [SerializeField] private Button confirmNoButton;
+
+        [FoldoutGroup("Feedback")]
         [SerializeField] private MMF_Player onStartFeedback;
 
-        [FoldoutGroup("피드백")]
-        [Tooltip("남은 초가 1 줄어들 때마다 재생 (일반 구간)")]
+        [FoldoutGroup("Feedback")]
         [SerializeField] private MMF_Player onTickFeedback;
 
-        [FoldoutGroup("피드백")]
-        [Tooltip("최종 카운트다운 시간 이하 구간에서 매초 재생 (긴장 구간)")]
+        [FoldoutGroup("Feedback")]
         [SerializeField] private MMF_Player onFinalCountdownTickFeedback;
 
-        [FoldoutGroup("피드백")]
-        [Tooltip("탈출 완료 시 재생")]
+        [FoldoutGroup("Feedback")]
         [SerializeField] private MMF_Player onCompletedFeedback;
 
-        // 런타임 상태 (디버그 표시용)
-        [TitleGroup("디버그")]
-        [ShowInInspector, ReadOnly] private bool active;// 카운트다운 진행 여부
-        [TitleGroup("디버그")]
-        [ShowInInspector, ReadOnly] private float timeRemaining;// 현재 남은 시간
-        [TitleGroup("디버그")]
-        [ShowInInspector, ReadOnly] private float totalTime;// 총 카운트다운 시간
-        [TitleGroup("디버그")]
-        [ShowInInspector, ReadOnly] private int lastDisplayedSecond = -1;// 직전 프레임에 표시한 초 (틱 감지용)
+        [TitleGroup("Debug")]
+        [ShowInInspector, ReadOnly] private bool promptActive;
 
-        // 시작 시 패널 숨기기
         private void Awake()
         {
-            if (panelRoot != null) panelRoot.SetActive(false);
+            EnsureConfirmationButtons();
+            SetPanelVisible(false);
         }
 
-        // 컴포넌트 활성화 시 EventBus 구독 시작
         private void OnEnable()
         {
             EventBus.Subscribe<ExtractionStartedEvent>(OnStarted);
             EventBus.Subscribe<ExtractionCompletedEvent>(OnCompleted);
             EventBus.Subscribe<ExtractionCanceledEvent>(OnCanceled);
+            BindConfirmationButtons();
         }
 
-        // 컴포넌트 비활성화 시 구독 해제
         private void OnDisable()
         {
             EventBus.Unsubscribe<ExtractionStartedEvent>(OnStarted);
             EventBus.Unsubscribe<ExtractionCompletedEvent>(OnCompleted);
             EventBus.Unsubscribe<ExtractionCanceledEvent>(OnCanceled);
+            UnbindConfirmationButtons();
         }
 
-        // 탈출 존 진입 시 카운트다운 시작
         private void OnStarted(ExtractionStartedEvent e)
         {
-            if (NetworkManager.Singleton == null) return;
-            if (e.clientId != NetworkManager.Singleton.LocalClientId) return;
+            if (!IsLocalClientEvent(e.clientId))
+                return;
 
-            Debug.Log($"[ExtractionUI] ExtractionStarted id={e.extractionId}, countdown={e.countdownSeconds:F1}", this);
+            Debug.Log($"[ExtractionUI] Extraction confirmation opened id={e.extractionId}", this);
 
-            active = true;
-            timeRemaining = e.countdownSeconds;
-            totalTime = e.countdownSeconds;
-            lastDisplayedSecond = -1;// 첫 프레임에 강제로 갱신 & 틱 판정되도록 초기화
+            promptActive = true;
+            SetPanelVisible(true);
 
-            if (panelRoot != null) panelRoot.SetActive(true);
-            if (extractionNameText != null) extractionNameText.text = e.extractionId.ToString();
+            if (extractionNameText != null)
+                extractionNameText.text = e.extractionId.ToString();
 
-            UIFeedbackTester.Play(onStartFeedback, this, "탈출 시작");
+            if (countdownText != null)
+                countdownText.text = "은신처로 돌아가시겠습니까?";
+
+            if (progressFill != null)
+                progressFill.fillAmount = 1f;
+
+            SetConfirmationButtonsVisible(true);
+            UIFeedbackTester.Play(onStartFeedback, this, "탈출 확인");
         }
 
-        // 탈출 완료 시 UI 종료
         private void OnCompleted(ExtractionCompletedEvent e)
         {
-            if (NetworkManager.Singleton == null) return;
-            if (e.clientId != NetworkManager.Singleton.LocalClientId) return;
+            if (!IsLocalClientEvent(e.clientId))
+                return;
 
-            Debug.Log($"[ExtractionUI] ExtractionCompleted id={e.extractionId}", this);
-
-            active = false;
+            Debug.Log($"[ExtractionUI] Extraction confirmed id={e.extractionId}", this);
+            promptActive = false;
+            SetPanelVisible(false);
             UIFeedbackTester.Play(onCompletedFeedback, this, "탈출 완료");
-            if (panelRoot != null) panelRoot.SetActive(false);
         }
 
-        // 매 프레임 타이머 감소 + UI 갱신 + 초 단위 틱 피드백
         private void OnCanceled(ExtractionCanceledEvent e)
         {
-            if (NetworkManager.Singleton == null) return;
-            if (e.clientId != NetworkManager.Singleton.LocalClientId) return;
+            if (!IsLocalClientEvent(e.clientId))
+                return;
 
-            Debug.Log($"[ExtractionUI] ExtractionCanceled id={e.extractionId}", this);
-
-            active = false;
-            if (panelRoot != null) panelRoot.SetActive(false);
+            Debug.Log($"[ExtractionUI] Extraction canceled id={e.extractionId}", this);
+            promptActive = false;
+            SetPanelVisible(false);
         }
 
-        private void Update()
+        private static bool IsLocalClientEvent(ulong clientId)
         {
-            if (!active) return;
+            return NetworkManager.Singleton != null && clientId == NetworkManager.Singleton.LocalClientId;
+        }
 
-            timeRemaining = Mathf.Max(0f, timeRemaining - Time.deltaTime);
-
-            // 텍스트는 소수점 1자리 표시 (3.9, 3.8, ...)
-            if (countdownText != null) countdownText.text = timeRemaining.ToString("F1");
-
-            if (progressFill != null && totalTime > 0f)
-                progressFill.fillAmount = 1f - (timeRemaining / totalTime);
-
-            // 정수 초가 바뀌는 순간에만 틱 피드백 재생 (매 프레임 재생 방지)
-            int displaySecond = Mathf.CeilToInt(timeRemaining);
-            if (displaySecond != lastDisplayedSecond && displaySecond > 0)
+        private void BindConfirmationButtons()
+        {
+            if (confirmYesButton != null)
             {
-                lastDisplayedSecond = displaySecond;
+                confirmYesButton.onClick.RemoveListener(HandleConfirmYesClicked);
+                confirmYesButton.onClick.AddListener(HandleConfirmYesClicked);
+            }
 
-                // 파이널 구간은 강한 틱, 일반 구간은 약한 틱
-                if (displaySecond <= finalCountdownSeconds)
-                {
-                    Debug.Log($"[ExtractionUI] FinalTick second={displaySecond}", this);
-                    UIFeedbackTester.Play(onFinalCountdownTickFeedback, this, "탈출 마지막 카운트다운");
-                }
-                else
-                {
-                    Debug.Log($"[ExtractionUI] Tick second={displaySecond}", this);
-                    UIFeedbackTester.Play(onTickFeedback, this, "탈출 일반 틱");
-                }
+            if (confirmNoButton != null)
+            {
+                confirmNoButton.onClick.RemoveListener(HandleConfirmNoClicked);
+                confirmNoButton.onClick.AddListener(HandleConfirmNoClicked);
             }
         }
 
-        // 에디터 전용 테스트 버튼
-#if UNITY_EDITOR
-        [TitleGroup("디버그")]
-        [Button("탈출 시작 피드백"), GUIColor(1f, 0.9f, 0.5f)]
-        private void TestStart() => UIFeedbackTester.Play(onStartFeedback, this, "탈출 시작");
-
-        [TitleGroup("디버그")]
-        [Button("일반 틱 피드백")]
-        private void TestTick() => UIFeedbackTester.Play(onTickFeedback, this, "일반 틱");
-
-        [TitleGroup("디버그")]
-        [Button("마지막 카운트다운 피드백"), GUIColor(1f, 0.5f, 0.5f)]
-        private void TestFinalTick() => UIFeedbackTester.Play(onFinalCountdownTickFeedback, this, "마지막 카운트다운");
-
-        [TitleGroup("디버그")]
-        [Button("탈출 완료 피드백"), GUIColor(0.6f, 1f, 0.6f)]
-        private void TestCompleted() => UIFeedbackTester.Play(onCompletedFeedback, this, "탈출 완료");
-
-        // 이벤트 없이 10초 카운트다운 시뮬레이션
-        [TitleGroup("디버그")]
-        [Button("10초 카운트다운 테스트"), GUIColor(0.8f, 0.8f, 1f)]
-        private void SimulateCountdown()
+        private void UnbindConfirmationButtons()
         {
-            if (!Application.isPlaying) return;
-            active = true;
-            timeRemaining = 10f;
-            totalTime = 10f;
-            lastDisplayedSecond = -1;
-            if (panelRoot != null) panelRoot.SetActive(true);
-            UIFeedbackTester.Play(onStartFeedback, this, "탈출 시작");
+            if (confirmYesButton != null)
+                confirmYesButton.onClick.RemoveListener(HandleConfirmYesClicked);
+
+            if (confirmNoButton != null)
+                confirmNoButton.onClick.RemoveListener(HandleConfirmNoClicked);
         }
-#endif
+
+        private void HandleConfirmYesClicked()
+        {
+            ExtractionZone.ConfirmCurrentPrompt();
+        }
+
+        private void HandleConfirmNoClicked()
+        {
+            ExtractionZone.CancelCurrentPrompt();
+        }
+
+        private void SetPanelVisible(bool visible)
+        {
+            if (panelRoot != null)
+                panelRoot.SetActive(visible);
+
+            SetConfirmationButtonsVisible(visible);
+        }
+
+        private void SetConfirmationButtonsVisible(bool visible)
+        {
+            if (confirmYesButton != null)
+                confirmYesButton.gameObject.SetActive(visible);
+
+            if (confirmNoButton != null)
+                confirmNoButton.gameObject.SetActive(visible);
+        }
+
+        private void EnsureConfirmationButtons()
+        {
+            if (panelRoot == null)
+                return;
+
+            confirmYesButton ??= FindButton(panelRoot.transform, "Btn_Yes", "Button_Yes", "Yes");
+            confirmNoButton ??= FindButton(panelRoot.transform, "Btn_No", "Button_No", "No");
+
+            if (confirmYesButton != null && confirmNoButton != null)
+                return;
+
+            RectTransform buttonRoot = CreateButtonRoot(panelRoot.transform);
+            confirmYesButton ??= CreateConfirmButton(buttonRoot, "Btn_Yes", "YES");
+            confirmNoButton ??= CreateConfirmButton(buttonRoot, "Btn_No", "NO");
+        }
+
+        private static Button FindButton(Transform root, params string[] names)
+        {
+            if (root == null || names == null)
+                return null;
+
+            Button[] buttons = root.GetComponentsInChildren<Button>(true);
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                Button button = buttons[i];
+                if (button == null)
+                    continue;
+
+                for (int j = 0; j < names.Length; j++)
+                {
+                    if (button.name == names[j])
+                        return button;
+                }
+            }
+
+            return null;
+        }
+
+        private static RectTransform CreateButtonRoot(Transform parent)
+        {
+            GameObject root = new("ExtractionConfirmButtons", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            root.transform.SetParent(parent, false);
+
+            RectTransform rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 48f);
+            rect.sizeDelta = new Vector2(260f, 56f);
+
+            HorizontalLayoutGroup layout = root.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = 20f;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+            return rect;
+        }
+
+        private static Button CreateConfirmButton(Transform parent, string objectName, string label)
+        {
+            GameObject buttonObject = new(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonObject.transform.SetParent(parent, false);
+
+            Image image = buttonObject.GetComponent<Image>();
+            image.color = new Color(0.05f, 0.35f, 0.65f, 0.95f);
+
+            GameObject textObject = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(buttonObject.transform, false);
+
+            RectTransform textRect = textObject.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            text.text = label;
+            text.alignment = TextAlignmentOptions.Center;
+            text.fontSize = 24f;
+            text.color = Color.white;
+
+            return buttonObject.GetComponent<Button>();
+        }
     }
 }
