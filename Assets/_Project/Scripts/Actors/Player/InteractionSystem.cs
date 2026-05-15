@@ -1,6 +1,8 @@
 using Unity.Netcode;
 using UnityEngine;
 
+using DeadZone.Actors.UI;
+
 namespace DeadZone.Actors
 {
     /// <summary>
@@ -23,6 +25,16 @@ namespace DeadZone.Actors
         [Tooltip("Trigger Collider를 상호작용 후보에 포함할지 여부입니다.")]
         [SerializeField] private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Collide;
 
+        [Header("====상호작용 안내 메시지====")]
+        [Tooltip("상호작용 가능한 대상이 있을 때 HUD 안내 메시지를 표시합니다.")]
+        [SerializeField] private bool showPromptMessage = true;
+
+        [Tooltip("상호작용 대상 탐지 주기입니다. 너무 낮으면 매 프레임 탐지합니다.")]
+        [SerializeField, Min(0.02f)] private float promptRefreshInterval = 0.1f;
+
+        [Tooltip("상호작용 대상의 GetPromptText()가 비어 있을 때 표시할 기본 문구입니다.")]
+        [SerializeField] private string fallbackPromptText = "[F] 상호작용";
+
         [Header("====디버그====")]
         [Tooltip("상호작용 후보 선택 과정을 Console에 출력합니다.")]
         [SerializeField] private bool enableDebugLogs;
@@ -33,9 +45,36 @@ namespace DeadZone.Actors
         private NetworkObject playerNetworkObject;
         private Camera interactionCamera;
 
+        private IInteractable currentPromptInteractable;
+        private string currentPromptText;
+        private float nextPromptRefreshTime;
+
         private void Awake()
         {
             playerNetworkObject = GetComponentInParent<NetworkObject>();
+        }
+
+        private void Update()
+        {
+            if (!showPromptMessage)
+                return;
+
+            if (!CanProcessOwnerInteraction())
+            {
+                ClearInteractionPrompt();
+                return;
+            }
+
+            if (Time.time < nextPromptRefreshTime)
+                return;
+
+            nextPromptRefreshTime = Time.time + promptRefreshInterval;
+            UpdateInteractionPrompt();
+        }
+
+        private void OnDisable()
+        {
+            ClearInteractionPrompt();
         }
 
         /// <summary>
@@ -49,17 +88,8 @@ namespace DeadZone.Actors
 
         public void TryInteract()
         {
-            if (playerNetworkObject == null)
-            {
-                LogDebug("Player NetworkObject를 찾지 못해 상호작용을 중단합니다.");
+            if (!CanProcessOwnerInteraction())
                 return;
-            }
-
-            if (playerNetworkObject.IsSpawned && !playerNetworkObject.IsOwner)
-            {
-                LogDebug("Owner가 아닌 Player의 상호작용 입력은 무시합니다.");
-                return;
-            }
 
             if (!TryFindBestInteractable(
                     out IInteractable interactable,
@@ -81,6 +111,72 @@ namespace DeadZone.Actors
             }
 
             interactable.OnInteract(playerNetworkObject.OwnerClientId);
+
+            // 상호작용 직후 대상 상태가 바뀔 수 있으므로 다음 프롬프트 갱신을 빠르게 수행한다.
+            nextPromptRefreshTime = 0f;
+        }
+
+        private bool CanProcessOwnerInteraction()
+        {
+            if (playerNetworkObject == null)
+            {
+                LogDebug("Player NetworkObject를 찾지 못해 상호작용을 중단합니다.");
+                return false;
+            }
+
+            if (playerNetworkObject.IsSpawned && !playerNetworkObject.IsOwner)
+            {
+                LogDebug("Owner가 아닌 Player의 상호작용 입력은 무시합니다.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void UpdateInteractionPrompt()
+        {
+            if (!TryFindBestInteractable(
+                    out IInteractable interactable,
+                    out _,
+                    out _,
+                    out _))
+            {
+                ClearInteractionPrompt();
+                return;
+            }
+
+            if (interactable == null)
+            {
+                ClearInteractionPrompt();
+                return;
+            }
+
+            string promptText = interactable.GetPromptText();
+
+            if (string.IsNullOrWhiteSpace(promptText))
+                promptText = fallbackPromptText;
+
+            if (ReferenceEquals(currentPromptInteractable, interactable) &&
+                currentPromptText == promptText)
+            {
+                return;
+            }
+
+            currentPromptInteractable = interactable;
+            currentPromptText = promptText;
+
+            HudActionMessageUI.Instance?.ShowPersistentMessage(promptText);
+        }
+
+        private void ClearInteractionPrompt()
+        {
+            if (currentPromptInteractable == null && string.IsNullOrEmpty(currentPromptText))
+                return;
+
+            currentPromptInteractable = null;
+            currentPromptText = null;
+
+            HudActionMessageUI.Instance?.HideMessage();
         }
 
         private bool TryFindBestInteractable(
@@ -135,10 +231,9 @@ namespace DeadZone.Actors
 
                 bool fullCircle = interactAngle >= 359.9f;
                 float angle = 0f;
+
                 if (!fullCircle && toCandidate.sqrMagnitude > 0.0001f)
-                {
                     angle = Vector3.Angle(forward, toCandidate.normalized);
-                }
 
                 float halfAngle = fullCircle ? 180f : interactAngle * 0.5f;
                 if (!fullCircle && angle > halfAngle)
@@ -253,9 +348,7 @@ namespace DeadZone.Actors
             Vector3 point = candidateCollider.ClosestPoint(origin);
 
             if ((point - origin).sqrMagnitude < 0.0001f)
-            {
                 point = candidateCollider.bounds.center;
-            }
 
             return point;
         }
