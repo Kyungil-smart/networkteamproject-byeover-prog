@@ -44,7 +44,7 @@ MonoBehaviour:
     fadeSeconds: 0
   hgFire:
     cueId: 20
-    displayName: "HG \uBC1C\uC0AC"
+    displayName: "HG \uAD8C\uCD1D \uBC1C\uC0AC"
     group: 0
     clips:
     - {fileID: 8300000, guid: bc8c3727d81b340f685d13c544c0662c, type: 3}
@@ -59,7 +59,7 @@ MonoBehaviour:
     fadeSeconds: 0
   hgReload:
     cueId: 21
-    displayName: "HG \uC7A5\uC804"
+    displayName: "HG \uAD8C\uCD1D \uC7A5\uC804"
     group: 0
     clips:
     - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
@@ -74,7 +74,7 @@ MonoBehaviour:
     fadeSeconds: 0
   srDragFire:
     cueId: 30
-    displayName: "SR \uB4DC\uB77C\uADF8\uC18C\uCD1D \uBC1C\uC0AC"
+    displayName: "SR \uC800\uACA9\uC18C\uCD1D \uBC1C\uC0AC"
     group: 0
     clips:
     - {fileID: 8300000, guid: 78174f5aab0e44190ad3ba5cd6047dc0, type: 3}
@@ -89,7 +89,7 @@ MonoBehaviour:
     fadeSeconds: 0
   srDragReload:
     cueId: 31
-    displayName: "SR \uB4DC\uB77C\uADF8\uC18C\uCD1D \uC7A5\uC804"
+    displayName: "SR \uC800\uACA9\uC18C\uCD1D \uC7A5\uC804"
     group: 0
     clips:
     - {fileID: 8300000, guid: a4475960903154554b44af35f83ca639, type: 3}
@@ -164,6 +164,36 @@ MonoBehaviour:
     minDistance: 1
     maxDistance: 20
     fadeSeconds: 0
+  enemyAttack:
+    cueId: 60
+    displayName: "\uC77C\uBC18 \uC801 \uACF5\uACA9"
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: fc4c1ca26a3264a259dfa43a61a2f70e, type: 3}
+    baseVolume: 1.2
+    individualVolume: 1
+    use3D: 1
+    loop: 0
+    minPitch: 0.96
+    maxPitch: 1.04
+    minDistance: 3
+    maxDistance: 45
+    fadeSeconds: 0
+  bossAttack:
+    cueId: 61
+    displayName: "\uBCF4\uC2A4 \uACF5\uACA9"
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 60c74ef6462654a18b4395702acc58bd, type: 3}
+    baseVolume: 1.5
+    individualVolume: 1.1
+    use3D: 1
+    loop: 0
+    minPitch: 0.96
+    maxPitch: 1.04
+    minDistance: 5
+    maxDistance: 60
+    fadeSeconds: 0
   playerFootstep:
     cueId: 100
     displayName: "\uD50C\uB808\uC774\uC5B4 \uBC1C\uAC78\uC74C"
@@ -172,7 +202,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 3376c0b6a8c5f4b539dbbf44b0698d59, type: 3}
     - {fileID: 8300000, guid: d1d3cb96244b84eb8bb9acd2272505ce, type: 3}
     - {fileID: 8300000, guid: c8ad05c7ac4804d67a9aba9617b6abcc, type: 3}
-    baseVolume: 1.5
+    baseVolume: 1.8
     individualVolume: 2
     use3D: 1
     loop: 0
@@ -188,14 +218,14 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 60953bced690f4547915eb0fd4d17594, type: 3}
     - {fileID: 8300000, guid: 5fd86be7bb6f6d247b15ea19b13caa43, type: 3}
-    baseVolume: 0.8
-    individualVolume: 1
+    baseVolume: 1.4
+    individualVolume: 1.4
     use3D: 1
     loop: 0
     minPitch: 0.92
     maxPitch: 1.08
-    minDistance: 2
-    maxDistance: 20
+    minDistance: 4
+    maxDistance: 35
     fadeSeconds: 0
   enemyAlert:
     cueId: 102
@@ -203,8 +233,8 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: 7e492ad07b6d548eea10ccbd1962e88f, type: 3}
-    baseVolume: 1
-    individualVolume: 1
+    baseVolume: 1.5
+    individualVolume: 1.4
     use3D: 1
     loop: 0
     minPitch: 0.98
@@ -217,9 +247,9 @@ MonoBehaviour:
     displayName: "\uD50C\uB808\uC774\uC5B4 \uBD80\uC0C1"
     group: 0
     clips:
-    - {fileID: 8300000, guid: ff21818b61f0cff4c81476b49670231e, type: 3}
-    baseVolume: 1
-    individualVolume: 1
+    - {fileID: 8300000, guid: de3f240f243668a41be4436ad635d01f, type: 3}
+    baseVolume: 1.5
+    individualVolume: 1.4
     use3D: 0
     loop: 0
     minPitch: 0.98
@@ -233,8 +263,8 @@ MonoBehaviour:
     group: 0
     clips:
     - {fileID: 8300000, guid: 92eb18dca6674154980d37823d0a644c, type: 3}
-    baseVolume: 1
-    individualVolume: 1
+    baseVolume: 1.5
+    individualVolume: 1.4
     use3D: 0
     loop: 1
     minPitch: 0.98
@@ -244,7 +274,7 @@ MonoBehaviour:
     fadeSeconds: 0
   loot1:
     cueId: 200
-    displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC1"
+    displayName: "\uD30C\uBC0D \uC0C1\uC790 \uC5F4\uAE30"
     group: 0
     clips:
     - {fileID: 8300000, guid: 0403d002424bff34481036a144d37281, type: 3}
@@ -259,7 +289,7 @@ MonoBehaviour:
     fadeSeconds: 0
   loot2:
     cueId: 201
-    displayName: "\uD30C\uBC0D \uC0AC\uC6B4\uB4DC2"
+    displayName: "\uD30C\uBC0D \uC544\uC774\uD15C \uD68D\uB4DD"
     group: 0
     clips:
     - {fileID: 8300000, guid: dcabc9bcc2a8340ada5729e569aebd48, type: 3}
@@ -293,7 +323,7 @@ MonoBehaviour:
     group: 1
     clips:
     - {fileID: 8300000, guid: d3aef59892a432d4eb6d69dd70136385, type: 3}
-    baseVolume: 1
+    baseVolume: 0.6
     individualVolume: 1
     use3D: 0
     loop: 1
@@ -308,7 +338,7 @@ MonoBehaviour:
     group: 1
     clips:
     - {fileID: 8300000, guid: 85d7db0ad86d7354eadd9e8636fc692d, type: 3}
-    baseVolume: 1
+    baseVolume: 0.45
     individualVolume: 1
     use3D: 0
     loop: 1
@@ -323,7 +353,7 @@ MonoBehaviour:
     group: 1
     clips:
     - {fileID: 8300000, guid: 9d8080bd8b85eca40bef850c0478b497, type: 3}
-    baseVolume: 1
+    baseVolume: 0.45
     individualVolume: 1
     use3D: 0
     loop: 1
@@ -338,7 +368,7 @@ MonoBehaviour:
     group: 1
     clips:
     - {fileID: 8300000, guid: a31a9eb8c785f6d49a9c9a9c2027fe71, type: 3}
-    baseVolume: 1
+    baseVolume: 0.6
     individualVolume: 1
     use3D: 0
     loop: 1

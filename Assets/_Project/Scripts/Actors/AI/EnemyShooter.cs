@@ -1,5 +1,6 @@
 using DeadZone.Core;
 using DeadZone.Systems;
+using DeadZone.Systems.Audio;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -158,8 +159,44 @@ namespace DeadZone.Actors
             });
 
             animHandler?.TriggerFire();
+            PlayAttackAudio(so);
             FireProjectile(spreadDir, so);
             UpdateBurstTiming(so);
+        }
+
+        private void PlayAttackAudio(EnemyStatsSO so)
+        {
+            if (so == null || muzzle == null)
+            {
+                return;
+            }
+
+            AudioCueId cueId = so.isBoss ? AudioCueId.BossAttack : AudioCueId.EnemyAttack;
+
+            if (IsSpawned)
+            {
+                PlayAttackAudioClientRpc(cueId, muzzle.position);
+                return;
+            }
+
+            PublishAttackAudio(cueId, muzzle.position);
+        }
+
+        [ClientRpc]
+        private void PlayAttackAudioClientRpc(AudioCueId cueId, Vector3 position)
+        {
+            PublishAttackAudio(cueId, position);
+        }
+
+        private static void PublishAttackAudio(AudioCueId cueId, Vector3 position)
+        {
+            EventBus.Publish(new AudioPlayRequestedEvent
+            {
+                cueId = cueId,
+                position = position,
+                use3D = true,
+                volumeMultiplier = 1f
+            });
         }
 
         private void CacheMuzzleVelocity()

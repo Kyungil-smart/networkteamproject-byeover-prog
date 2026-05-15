@@ -150,6 +150,7 @@ namespace DeadZone.Core
         public ulong clientId;
         public FixedString64Bytes itemId;
         public int amount;
+        public bool suppressAudio;
     }
 
     public struct ItemAddedEvent : IGameEvent

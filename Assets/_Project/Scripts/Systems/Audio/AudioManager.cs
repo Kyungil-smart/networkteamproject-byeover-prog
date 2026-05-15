@@ -303,7 +303,10 @@ namespace DeadZone.Systems.Audio
             if (!playLootSoundFromEvent)
                 return;
 
-            Play(UnityEngine.Random.value < 0.5f ? AudioCueId.Loot1 : AudioCueId.Loot2);
+            if (e.suppressAudio)
+                return;
+
+            Play(AudioCueId.Loot2);
         }
 
         private void OnPlayerHpChanged(PlayerHpChangedEvent e)
