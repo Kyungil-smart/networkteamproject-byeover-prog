@@ -924,13 +924,13 @@ MonoBehaviour:
   projectileVelocityMultiplier: 0.45
   maxProjectileVelocity: 280
   maxProjectileRange: 70
-  shotgunProjectileCount: 12
-  shotgunSpreadAngle: 24
-  shotgunPelletAngleJitter: 2
-  shotgunEffectiveRange: 6
-  shotgunMaxRange: 12
-  shotgunMinDamageMultiplier: 0.15
-  shotgunTotalDamageMultiplier: 0.55
+  shotgunProjectileCount: 8
+  shotgunSpreadAngle: 14
+  shotgunPelletAngleJitter: 1.5
+  shotgunEffectiveRange: 7
+  shotgunMaxRange: 18
+  shotgunMinDamageMultiplier: 0.45
+  shotgunTotalDamageMultiplier: 1.35
   projectileVisualMaxLifetime: 0.35
   autoEquipWeaponVisual: 1
   weaponHolder: {fileID: 0}

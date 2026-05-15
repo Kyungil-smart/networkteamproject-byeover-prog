@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -37,6 +38,8 @@ namespace DeadZone.Actors
         /// </summary>
         public bool IsDead => CurrentHP.Value <= 0;
 
+        private bool deathPresentationApplied;
+
         /// <summary>
         /// IDamageable 호환용 플레이어 여부입니다. 적은 항상 false입니다.
         /// </summary>
@@ -47,6 +50,8 @@ namespace DeadZone.Actors
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            CurrentHP.OnValueChanged += HandleCurrentHpChanged;
+
             if (IsServer && statsSO != null)
             {
                 CurrentHP.Value = statsSO.maxHP;
@@ -54,6 +59,20 @@ namespace DeadZone.Actors
                     ? statsSO.defaultArmor.maxDurability
                     : 0f;
             }
+
+            if (CurrentHP.Value <= 0f)
+                ApplyDeathPresentation();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            CurrentHP.OnValueChanged -= HandleCurrentHpChanged;
+        }
+
+        private void HandleCurrentHpChanged(float previousValue, float currentValue)
+        {
+            if (currentValue <= 0f)
+                ApplyDeathPresentation();
         }
 
         /// <summary>
@@ -94,6 +113,9 @@ namespace DeadZone.Actors
 
         private void Die(ulong attackerClientId)
         {
+            ApplyDeathPresentationClientRpc();
+            ApplyDeathPresentation();
+
             // 1. EnemyKilledEvent 발행 (QuestManager, KillFeedUI 등이 구독)
             EventBus.Publish(new EnemyKilledEvent
             {
@@ -128,12 +150,56 @@ namespace DeadZone.Actors
             }
 
             bool isSceneObject = NetworkObject.IsSceneObject.HasValue && NetworkObject.IsSceneObject.Value;
-            NetworkObject.Despawn(destroy: !isSceneObject);
-
             if (isSceneObject)
             {
                 gameObject.SetActive(false);
+                return;
             }
+
+            NetworkObject.Despawn(true);
+        }
+
+        [ClientRpc]
+        private void ApplyDeathPresentationClientRpc()
+        {
+            ApplyDeathPresentation();
+        }
+
+        private void ApplyDeathPresentation()
+        {
+            if (deathPresentationApplied)
+                return;
+
+            deathPresentationApplied = true;
+
+            EnemyAI enemyAI = GetComponent<EnemyAI>();
+            if (enemyAI != null)
+                enemyAI.enabled = false;
+
+            EnemyVision enemyVision = GetComponent<EnemyVision>();
+            if (enemyVision != null)
+                enemyVision.enabled = false;
+
+            EnemyShooter enemyShooter = GetComponent<EnemyShooter>();
+            if (enemyShooter != null)
+                enemyShooter.enabled = false;
+
+            NavMeshAgent navMeshAgent = GetComponent<NavMeshAgent>();
+            if (navMeshAgent != null && navMeshAgent.enabled)
+            {
+                if (navMeshAgent.isOnNavMesh)
+                    navMeshAgent.isStopped = true;
+
+                navMeshAgent.enabled = false;
+            }
+
+            Collider[] colliders = GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+                colliders[i].enabled = false;
+
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+                renderers[i].enabled = false;
         }
 
         private void SpawnCorpse()

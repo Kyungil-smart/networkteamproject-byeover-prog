@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_Revolver
   displayName: "\uB9AC\uBCFC\uBC84"
-  description: "- \uAD8C\uCD1D \uCE58\uACE4 \uAC15\uB825\uD55C \uAD8C\uCD1D\n- \uB4F1\uAE09:
-    \uD76C\uADC0\n\n- \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 48\n2. \uACF5\uACA9 \uC18D\uB3C4:
-    3\n3. \uD0C4\uCC3D \uD06C\uAE30: 6"
+  description: "리볼버\n- 등급: 희귀\n\n- 특징\n1. 데미지: 46\n2. 공격 속도: 2\n3. 탄창 크기: 6"
   icon: {fileID: 21300000, guid: c4959d0216dab9f49a01df0cfe93565d, type: 3}
   category: 0
   rarity: 1
@@ -27,16 +25,16 @@ MonoBehaviour:
   baseSellPrice: 5000
   worldPrefab: {fileID: 4472785970730570612, guid: d79637b713c4faf458fbb204ada90310, type: 3}
   weaponCategory: 2
-  damage: 48
-  fireRate: 3
+  damage: 46
+  fireRate: 2
   magSize: 6
-  engageRange: {x: 0, y: 35}
+  engageRange: {x: 0, y: 38}
   ammoType: 2
   availableModes: 00
-  muzzleVelocity: 90
+  muzzleVelocity: 95
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.2
-  spreadAngle: {x: 1, y: 5}
-  spreadRecovery: 10
+  spreadAngle: {x: 0.8, y: 4.5}
+  spreadRecovery: 9
   maxDurability: 100

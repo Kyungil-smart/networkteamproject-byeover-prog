@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_Glock17
   displayName: "\uAE00\uB77D-17"
-  description: "- \uC624\uC2A4\uB9AC\uD2B8\uC544\uC0B0 \uAD8C\uCD1D\n- \uB4F1\uAE09:
-    \uC77C\uBC18\n\n- \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 20\n2. \uACF5\uACA9 \uC18D\uB3C4: 
-    8\n3. \uD0C4\uCC3D \uD06C\uAE30: 17"
+  description: "글락-17\n- 등급: 일반\n\n- 특징\n1. 데미지: 22\n2. 공격 속도: 6\n3. 탄창 크기: 17"
   icon: {fileID: 21300000, guid: c4d424852110bf54d8842e78aac02c54, type: 3}
   category: 0
   rarity: 0
@@ -27,16 +25,16 @@ MonoBehaviour:
   baseSellPrice: 1500
   worldPrefab: {fileID: 7906145240554887812, guid: 627055ce2b9d7694bb6f23ad66e27c1e, type: 3}
   weaponCategory: 2
-  damage: 20
-  fireRate: 8
+  damage: 22
+  fireRate: 6
   magSize: 17
-  engageRange: {x: 0, y: 30}
+  engageRange: {x: 0, y: 32}
   ammoType: 2
   availableModes: 00
-  muzzleVelocity: 70
+  muzzleVelocity: 85
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.15
-  spreadAngle: {x: 1, y: 4}
-  spreadRecovery: 12
+  spreadAngle: {x: 0.9, y: 4.2}
+  spreadRecovery: 11
   maxDurability: 100

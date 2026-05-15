@@ -972,9 +972,27 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 32768
   maxRange: 600
-  shotgunProjectileCount: 25
-  shotgunSpreadAngle: 120
-  shotgunPelletAngleJitter: 3
+  muzzleObstructionMask:
+    serializedVersion: 2
+    m_Bits: 128
+  projectileVelocityMultiplier: 0.45
+  maxProjectileVelocity: 280
+  maxProjectileRange: 70
+  shotgunProjectileCount: 8
+  shotgunSpreadAngle: 14
+  shotgunPelletAngleJitter: 1.5
+  shotgunEffectiveRange: 7
+  shotgunMaxRange: 18
+  shotgunMinDamageMultiplier: 0.45
+  shotgunTotalDamageMultiplier: 1.35
+  projectileVisualMaxLifetime: 0.35
+  autoEquipWeaponVisual: 1
+  weaponHolder: {fileID: 0}
+  weaponHolderName: WeaponHolder
+  weaponMuzzlePointName: MuzzlePoint
+  weaponVisualPositionOffset: {x: 0, y: 0, z: 0}
+  weaponVisualRotationOffset: {x: 0, y: 0, z: 0}
+  weaponVisualScale: {x: 1, y: 1, z: 1}
 --- !u!114 &3096256922150323826
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_B90
   displayName: B90
-  description: "- \uBCA8\uAE30\uC5D0 \uD22D\uC218\uBD80\uB300 \uCD1D\n- \uB4F1\uAE09:
-    \uB808\uC5B4\n\n- \uD2B9\uC9D5\n1. \uB370\uBBF8\uC9C0: 72\n2. \uACF5\uACA9 \uC18D\uB3C4:
-    3.5\n3. \uD0C4\uCC3D \uD06C\uAE30: 7"
+  description: "B90 SMG\n- 등급: 레어\n\n- 특징\n1. 데미지: 24\n2. 공격 속도: 12\n3. 탄창 크기: 50"
   icon: {fileID: 21300000, guid: d15a2bc233cf8ef40b20adcefe6cc03a, type: 3}
   category: 0
   rarity: 2
@@ -26,17 +24,17 @@ MonoBehaviour:
   weightKg: 0.1
   baseSellPrice: 18000
   worldPrefab: {fileID: 8113820685814017770, guid: 98dbc7269c7474d4ba9aa60c3c4b5afc, type: 3}
-  weaponCategory: 4
-  damage: 72
-  fireRate: 3.5
-  magSize: 7
-  engageRange: {x: 0, y: 30}
-  ammoType: 4
-  availableModes: 00
-  muzzleVelocity: 80
+  weaponCategory: 1
+  damage: 24
+  fireRate: 12
+  magSize: 50
+  engageRange: {x: 0, y: 55}
+  ammoType: 1
+  availableModes: 0100
+  muzzleVelocity: 105
   projectilePrefab: {fileID: 7265609946348786657, guid: 3e340619f1fcd614988a31cafa074723, type: 3}
   muzzleFlashOffset: 0.2
   adsTransitionTime: 0.25
-  spreadAngle: {x: 2.2, y: 8.5}
-  spreadRecovery: 7
+  spreadAngle: {x: 0.5, y: 3.4}
+  spreadRecovery: 12
   maxDurability: 100
