@@ -23,7 +23,7 @@ namespace DeadZone.Actors
         [SerializeField] private LayerMask environmentMask;
 
         [Tooltip("탄 판정 보정 반경입니다. 0이면 기존 Raycast처럼 동작합니다.")]
-        [SerializeField, Min(0f)] private float collisionRadius = 0.14f;
+        [SerializeField, Min(0f)] private float collisionRadius = 0.08f;
 
         private ProjectileData data;
         private Vector3 direction;
