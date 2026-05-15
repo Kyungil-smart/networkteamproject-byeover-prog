@@ -421,7 +421,10 @@ namespace DeadZone.Systems
 
             PlayerHousingSaveSyncer saveSyncer = progress.GetComponent<PlayerHousingSaveSyncer>();
             if (saveSyncer != null)
+            {
                 saveSyncer.RequestSaveFromServer("CommStation 시설 업그레이드");
+                saveSyncer.RequestLobbyInventorySaveFromServer("CommStation 시설 업그레이드 재료 소비");
+            }
         }
 
         private bool CanApplyUpgradeLevel()
@@ -451,19 +454,7 @@ namespace DeadZone.Systems
 
         private bool TryGetRequesterInventory(ulong requesterClientId, out IInventory inventory)
         {
-            inventory = null;
-
-            if (NetworkManager.Singleton == null)
-                return false;
-
-            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(requesterClientId, out NetworkClient client))
-                return false;
-
-            if (client.PlayerObject == null)
-                return false;
-
-            inventory = client.PlayerObject.GetComponent<IInventory>();
-            return inventory != null;
+            return HousingInventoryResolver.TryGetRequesterInventory(requesterClientId, out inventory, out _);
         }
 
         private void LogWarning(string message)

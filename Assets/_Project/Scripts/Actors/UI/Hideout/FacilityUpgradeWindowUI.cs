@@ -349,6 +349,13 @@ namespace DeadZone.Actors.UI.Hideout
             inventory = null;
             localHousingProgress = null;
 
+            if (HousingInventoryResolver.TryCreateLobbySavedInventory(out IInventory savedInventory))
+            {
+                inventory = savedInventory;
+                inventoryBehaviour = null;
+                DebugLog("로비 저장 인벤토리/보관함 재료 연결 완료");
+            }
+
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 ulong localClientId = NetworkManager.Singleton.LocalClientId;
@@ -367,7 +374,7 @@ namespace DeadZone.Actors.UI.Hideout
                         if (playerInventory == null)
                             playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
 
-                        if (playerInventory != null)
+                        if (playerInventory != null && inventory == null)
                         {
                             inventory = playerInventory;
                             inventoryBehaviour = playerInventory as MonoBehaviour;
@@ -384,7 +391,7 @@ namespace DeadZone.Actors.UI.Hideout
                 }
             }
 
-            if (inventoryBehaviour != null)
+            if (inventory == null && inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
                 {
