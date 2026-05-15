@@ -12,46 +12,83 @@ namespace DeadZone.Actors
     /// </summary>
     public class ReviveSystem : NetworkBehaviour
     {
-        [Header("Revive")]
+        [Header("부활 진행 설정")]
+        [Tooltip("부활을 완료하는 데 필요한 시간입니다. 값이 클수록 더 오래 홀드해야 합니다. 단위: 초")]
         [SerializeField] private float reviveDuration = 5f;
-        [SerializeField] private float reviveRange = 1.5f;
-        [SerializeField] private float movementCancelDistance = 0.25f;
-        [SerializeField] private LayerMask reviveTargetMask = ~0;
+
+        [Tooltip("부활 가능한 최대 거리입니다. " +
+                 "구조자와 Knocked 대상 사이의 거리가 이 값보다 멀면 부활을 시작하거나 유지할 수 없습니다. 단위: 미터")]
+        [SerializeField] private float reviveRange = 2f;
+
+        [Tooltip("부활 시작 후 구조자가 움직일 수 있는 최대 거리입니다. " +
+                 "이 값보다 많이 이동하면 서버에서 부활을 중단합니다. 단위: 미터")]
+        [SerializeField] private float movementCancelDistance = 0.75f;
+
+        [Header("부활 대상 탐색")]
+        [Tooltip("부활 대상으로 탐색할 레이어입니다. 기본값은 Player 레이어(10)이며, " +
+                 "대상 Player의 Collider 또는 CharacterController가 이 레이어에 포함되어야 합니다.")]
+        [SerializeField] private LayerMask reviveTargetMask = 1 << 10;
+
+        [Tooltip("부활 대상 탐색 Raycast의 시작 위치와 방향 기준입니다. " +
+                 "비워두면 이 오브젝트의 Transform을 사용합니다.")]
         [SerializeField] private Transform raycastOrigin;
+
+        [Header("부활 이벤트 동기화")]
+        [Tooltip("부활 진행도 이벤트를 클라이언트에 보내는 최소 간격입니다. " +
+                 "값이 낮을수록 UI 반응은 부드럽지만 네트워크 이벤트 빈도가 증가합니다. 단위: 초")]
+        [SerializeField, Min(0.02f)] private float progressEventInterval = 0.1f;
 
         public NetworkVariable<float> Progress = new(0f);
         public NetworkVariable<ulong> CurrentTargetClientId = new(ulong.MaxValue);
 
+        private PlayerHealthSystem reviverHealth;
         private NetworkObject serverTargetObj;
         private Vector3 serverReviveStartPosition;
+        private float nextProgressEventTime;
 
         public bool IsReviving => CurrentTargetClientId.Value != ulong.MaxValue;
+
+        private void Awake()
+        {
+            reviverHealth = GetComponent<PlayerHealthSystem>();
+        }
 
         public void StartHold()
         {
             if (!IsOwner) return;
+            if (IsReviving) return;
+            if (!CanReviverAttemptRevive()) return;
+
             BeginReviveServerRpc();
         }
 
         public void StopHold()
         {
             if (!IsOwner) return;
+
             CancelReviveServerRpc();
+        }
+
+        public bool HasReviveCandidate()
+        {
+            if (!IsOwner || IsReviving || !CanReviverAttemptRevive())
+                return false;
+
+            return TryFindReviveTarget(out _);
         }
 
         [ServerRpc]
         private void BeginReviveServerRpc(ServerRpcParams rpc = default)
         {
             ulong reviverId = rpc.Receive.SenderClientId;
-
-            var origin = raycastOrigin != null ? raycastOrigin : transform;
-            if (!Physics.Raycast(origin.position, origin.forward, out RaycastHit hit, reviveRange, reviveTargetMask))
+            if (reviverId != OwnerClientId)
                 return;
 
-            var targetObj = hit.collider.GetComponentInParent<NetworkObject>();
-            if (targetObj == null) return;
-            var targetHealth = targetObj.GetComponent<IRevivable>();
-            if (targetHealth == null || !targetHealth.CanBeRevived) return;
+            if (!CanReviverAttemptRevive())
+                return;
+
+            if (!TryFindReviveTarget(out NetworkObject targetObj))
+                return;
 
             BeginReviveTargetOnServer(targetObj, reviverId);
         }
@@ -64,30 +101,27 @@ namespace DeadZone.Actors
             if (reviverId != OwnerClientId)
                 return false;
 
+            if (!CanReviverAttemptRevive())
+                return false;
+
             var targetHealth = targetObj.GetComponent<IRevivable>();
             if (targetHealth == null || !targetHealth.CanBeRevived)
                 return false;
 
-            float dist = Vector3.Distance(transform.position, targetObj.transform.position);
-            if (dist > reviveRange + 0.5f)
+            if (!IsWithinReviveRange(targetObj))
                 return false;
 
             if (IsReviving)
-                EndOnServer(ReviveResult.Cancelled, reviverId);
+                return serverTargetObj == targetObj;
 
             serverTargetObj = targetObj;
             serverReviveStartPosition = transform.position;
+            nextProgressEventTime = 0f;
             CurrentTargetClientId.Value = targetObj.OwnerClientId;
             Progress.Value = 0f;
 
             targetHealth.OnReviveBegin(reviverId);
-
-            EventBus.Publish(new ReviveStartedEvent
-            {
-                reviverClientId = reviverId,
-                targetClientId = targetObj.OwnerClientId,
-                duration = reviveDuration,
-            });
+            PublishReviveStarted(reviverId, targetObj.OwnerClientId);
 
             return true;
         }
@@ -95,13 +129,23 @@ namespace DeadZone.Actors
         [ServerRpc]
         private void CancelReviveServerRpc(ServerRpcParams rpc = default)
         {
-            EndOnServer(ReviveResult.Cancelled, rpc.Receive.SenderClientId);
+            ulong senderClientId = rpc.Receive.SenderClientId;
+            if (senderClientId != OwnerClientId)
+                return;
+
+            EndOnServer(ReviveResult.Cancelled, senderClientId);
         }
 
         private void Update()
         {
             if (!IsServer) return;
             if (!IsReviving || serverTargetObj == null) return;
+
+            if (!CanReviverAttemptRevive())
+            {
+                EndOnServer(ReviveResult.Interrupted, OwnerClientId);
+                return;
+            }
 
             var targetHealth = serverTargetObj.GetComponent<IRevivable>();
             if (targetHealth == null || !targetHealth.CanBeRevived)
@@ -116,21 +160,18 @@ namespace DeadZone.Actors
                 return;
             }
 
-            float dist = Vector3.Distance(transform.position, serverTargetObj.transform.position);
-            if (dist > reviveRange + 0.5f)
+            if (!IsWithinReviveRange(serverTargetObj))
             {
                 EndOnServer(ReviveResult.Interrupted, OwnerClientId);
                 return;
             }
 
             Progress.Value = Mathf.Min(1f, Progress.Value + Time.deltaTime / reviveDuration);
-
-            EventBus.Publish(new ReviveProgressEvent
+            if (Time.time >= nextProgressEventTime || Progress.Value >= 1f)
             {
-                reviverClientId = OwnerClientId,
-                targetClientId = serverTargetObj.OwnerClientId,
-                progress01 = Progress.Value,
-            });
+                PublishReviveProgress(OwnerClientId, serverTargetObj.OwnerClientId, Progress.Value);
+                nextProgressEventTime = Time.time + progressEventInterval;
+            }
 
             if (Progress.Value >= 1f)
             {
@@ -155,11 +196,172 @@ namespace DeadZone.Actors
             CurrentTargetClientId.Value = ulong.MaxValue;
             Progress.Value = 0f;
             serverTargetObj = null;
+            nextProgressEventTime = 0f;
+
+            PublishReviveEnded(reviverId, targetId, result);
+        }
+
+        private bool CanReviverAttemptRevive()
+        {
+            if (reviverHealth == null)
+                reviverHealth = GetComponent<PlayerHealthSystem>();
+
+            return reviverHealth != null &&
+                   reviverHealth.IsAlive &&
+                   !reviverHealth.IsKnocked &&
+                   !reviverHealth.IsDead;
+        }
+
+        private bool TryFindReviveTarget(out NetworkObject targetObj)
+        {
+            targetObj = null;
+
+            Transform origin = raycastOrigin != null ? raycastOrigin : transform;
+            if (Physics.Raycast(
+                    origin.position,
+                    origin.forward,
+                    out RaycastHit hit,
+                    reviveRange,
+                    reviveTargetMask,
+                    QueryTriggerInteraction.Collide) &&
+                TryResolveRevivableTarget(hit.collider, out targetObj))
+            {
+                return true;
+            }
+
+            Collider[] candidates = Physics.OverlapSphere(
+                transform.position,
+                reviveRange,
+                reviveTargetMask,
+                QueryTriggerInteraction.Collide);
+
+            float bestSqrDistance = float.MaxValue;
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                Collider candidate = candidates[i];
+                if (!TryResolveRevivableTarget(candidate, out NetworkObject candidateObj))
+                    continue;
+
+                float sqrDistance = (candidateObj.transform.position - transform.position).sqrMagnitude;
+                if (sqrDistance >= bestSqrDistance)
+                    continue;
+
+                bestSqrDistance = sqrDistance;
+                targetObj = candidateObj;
+            }
+
+            return targetObj != null;
+        }
+
+        private bool TryResolveRevivableTarget(Collider candidate, out NetworkObject targetObj)
+        {
+            targetObj = null;
+
+            if (candidate == null)
+                return false;
+
+            NetworkObject candidateObj = candidate.GetComponentInParent<NetworkObject>();
+            if (candidateObj == null ||
+                candidateObj == NetworkObject ||
+                candidateObj.OwnerClientId == OwnerClientId)
+            {
+                return false;
+            }
+
+            IRevivable targetHealth = candidateObj.GetComponent<IRevivable>();
+            if (targetHealth == null || !targetHealth.CanBeRevived)
+                return false;
+
+            if (!IsWithinReviveRange(candidateObj))
+                return false;
+
+            targetObj = candidateObj;
+            return true;
+        }
+
+        private bool IsWithinReviveRange(NetworkObject targetObj)
+        {
+            if (targetObj == null)
+                return false;
+
+            float sqrDistance = (targetObj.transform.position - transform.position).sqrMagnitude;
+            return sqrDistance <= reviveRange * reviveRange;
+        }
+
+        private void PublishReviveStarted(ulong reviverClientId, ulong targetClientId)
+        {
+            EventBus.Publish(new ReviveStartedEvent
+            {
+                reviverClientId = reviverClientId,
+                targetClientId = targetClientId,
+                duration = reviveDuration,
+            });
+
+            PublishReviveStartedClientRpc(reviverClientId, targetClientId, reviveDuration);
+        }
+
+        private void PublishReviveProgress(ulong reviverClientId, ulong targetClientId, float progress01)
+        {
+            EventBus.Publish(new ReviveProgressEvent
+            {
+                reviverClientId = reviverClientId,
+                targetClientId = targetClientId,
+                progress01 = progress01,
+            });
+
+            PublishReviveProgressClientRpc(reviverClientId, targetClientId, progress01);
+        }
+
+        private void PublishReviveEnded(ulong reviverClientId, ulong targetClientId, ReviveResult result)
+        {
+            EventBus.Publish(new ReviveEndedEvent
+            {
+                reviverClientId = reviverClientId,
+                targetClientId = targetClientId,
+                result = result,
+            });
+
+            PublishReviveEndedClientRpc(reviverClientId, targetClientId, result);
+        }
+
+        [ClientRpc]
+        private void PublishReviveStartedClientRpc(ulong reviverClientId, ulong targetClientId, float duration)
+        {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new ReviveStartedEvent
+            {
+                reviverClientId = reviverClientId,
+                targetClientId = targetClientId,
+                duration = duration,
+            });
+        }
+
+        [ClientRpc]
+        private void PublishReviveProgressClientRpc(ulong reviverClientId, ulong targetClientId, float progress01)
+        {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new ReviveProgressEvent
+            {
+                reviverClientId = reviverClientId,
+                targetClientId = targetClientId,
+                progress01 = progress01,
+            });
+        }
+
+        [ClientRpc]
+        private void PublishReviveEndedClientRpc(ulong reviverClientId, ulong targetClientId, ReviveResult result)
+        {
+            if (IsServer)
+                return;
 
             EventBus.Publish(new ReviveEndedEvent
             {
-                reviverClientId = reviverId,
-                targetClientId = targetId,
+                reviverClientId = reviverClientId,
+                targetClientId = targetClientId,
                 result = result,
             });
         }
