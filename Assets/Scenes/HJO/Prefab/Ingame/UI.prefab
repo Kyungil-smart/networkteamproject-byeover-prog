@@ -8593,6 +8593,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.WorldMapController
   worldMapUI: {fileID: 1440545663562764343}
   areaRoot: {fileID: 5710082908257983895}
+  playerMarkerRoot: {fileID: 0}
+  playerMarkerMapRect: {fileID: 0}
+  playerMarkerPrefab: {fileID: 0}
   toggleMapAction: {fileID: -6730974232848942845, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   closeMapAction: {fileID: -6730974232848942845, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   closeWithEscape: 1
@@ -22376,8 +22379,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 855.79, y: -472.78}
-  m_SizeDelta: {x: 175, y: 50}
+  m_AnchoredPosition: {x: 872.21, y: -460.44}
+  m_SizeDelta: {x: 175, y: 123.5581}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &828967748552906601
 CanvasRenderer:
