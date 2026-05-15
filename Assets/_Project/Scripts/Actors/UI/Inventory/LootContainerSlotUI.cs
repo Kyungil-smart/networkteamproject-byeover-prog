@@ -85,6 +85,12 @@ namespace DeadZone.Actors.UI
                     return true;
                 }
 
+                if (Container != null && target.SlotKind == InventorySlotKind.QuickSlot)
+                {
+                    Container.RequestTakeSlotToPlayerQuickSlot(sourceIndex, target.SlotIndex);
+                    return true;
+                }
+
                 Container.RequestTakeSlotToPlayer(sourceIndex);
                 return true;
             }

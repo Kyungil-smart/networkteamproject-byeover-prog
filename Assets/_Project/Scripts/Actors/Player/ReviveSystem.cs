@@ -13,8 +13,9 @@ namespace DeadZone.Actors
     public class ReviveSystem : NetworkBehaviour
     {
         [Header("Revive")]
-        [SerializeField] private float reviveDuration = 6f;
+        [SerializeField] private float reviveDuration = 5f;
         [SerializeField] private float reviveRange = 1.5f;
+        [SerializeField] private float movementCancelDistance = 0.25f;
         [SerializeField] private LayerMask reviveTargetMask = ~0;
         [SerializeField] private Transform raycastOrigin;
 
@@ -22,6 +23,7 @@ namespace DeadZone.Actors
         public NetworkVariable<ulong> CurrentTargetClientId = new(ulong.MaxValue);
 
         private NetworkObject serverTargetObj;
+        private Vector3 serverReviveStartPosition;
 
         public bool IsReviving => CurrentTargetClientId.Value != ulong.MaxValue;
 
@@ -51,7 +53,30 @@ namespace DeadZone.Actors
             var targetHealth = targetObj.GetComponent<IRevivable>();
             if (targetHealth == null || !targetHealth.CanBeRevived) return;
 
+            BeginReviveTargetOnServer(targetObj, reviverId);
+        }
+
+        public bool BeginReviveTargetOnServer(NetworkObject targetObj, ulong reviverId)
+        {
+            if (!IsServer || targetObj == null || targetObj == NetworkObject)
+                return false;
+
+            if (reviverId != OwnerClientId)
+                return false;
+
+            var targetHealth = targetObj.GetComponent<IRevivable>();
+            if (targetHealth == null || !targetHealth.CanBeRevived)
+                return false;
+
+            float dist = Vector3.Distance(transform.position, targetObj.transform.position);
+            if (dist > reviveRange + 0.5f)
+                return false;
+
+            if (IsReviving)
+                EndOnServer(ReviveResult.Cancelled, reviverId);
+
             serverTargetObj = targetObj;
+            serverReviveStartPosition = transform.position;
             CurrentTargetClientId.Value = targetObj.OwnerClientId;
             Progress.Value = 0f;
 
@@ -63,6 +88,8 @@ namespace DeadZone.Actors
                 targetClientId = targetObj.OwnerClientId,
                 duration = reviveDuration,
             });
+
+            return true;
         }
 
         [ServerRpc]
@@ -78,6 +105,12 @@ namespace DeadZone.Actors
 
             var targetHealth = serverTargetObj.GetComponent<IRevivable>();
             if (targetHealth == null || !targetHealth.CanBeRevived)
+            {
+                EndOnServer(ReviveResult.Interrupted, OwnerClientId);
+                return;
+            }
+
+            if (Vector3.Distance(transform.position, serverReviveStartPosition) > movementCancelDistance)
             {
                 EndOnServer(ReviveResult.Interrupted, OwnerClientId);
                 return;

@@ -135,7 +135,8 @@ namespace DeadZone.Actors
                 QuickSlotData slot = QuickSlots[i];
                 string itemId = slot.itemId.ToString();
 
-                if (string.IsNullOrWhiteSpace(itemId) || slot.stackCount <= 0)
+                int availableCount = GetItemCount(itemId);
+                if (string.IsNullOrWhiteSpace(itemId) || slot.stackCount <= 0 || availableCount <= 0)
                     continue;
 
                 snapshot.Add(new QuickSlotSaveData
@@ -143,7 +144,7 @@ namespace DeadZone.Actors
                     itemId = itemId,
                     instanceId = $"{itemId}_quickslot_{slot.slotIndex}",
                     slotIndex = slot.slotIndex,
-                    stackCount = slot.stackCount,
+                    stackCount = Mathf.Min(slot.stackCount, availableCount),
                     currentDurability = slot.currentDurability,
                     currentAmmo = slot.currentAmmo
                 });
@@ -204,11 +205,15 @@ namespace DeadZone.Actors
                 if (!IsQuickSlotItem(item))
                     continue;
 
+                int availableCount = GetItemCount(savedItem.itemId);
+                if (availableCount <= 0)
+                    continue;
+
                 SetQuickSlot(new QuickSlotData
                 {
                     slotIndex = (byte)Mathf.Clamp(savedItem.slotIndex, 0, QUICK_SLOT_COUNT - 1),
                     itemId = savedItem.itemId,
-                    stackCount = (ushort)Mathf.Clamp(savedItem.stackCount, 1, ushort.MaxValue),
+                    stackCount = (ushort)Mathf.Clamp(savedItem.stackCount, 1, availableCount),
                     currentDurability = Mathf.Max(0f, savedItem.currentDurability),
                     currentAmmo = (ushort)Mathf.Clamp(savedItem.currentAmmo, 0, ushort.MaxValue)
                 });
@@ -344,16 +349,14 @@ namespace DeadZone.Actors
             if (QuickSlots == null || string.IsNullOrWhiteSpace(itemId) || count <= 0)
                 return false;
 
-            int total = 0;
-
             for (int i = 0; i < QuickSlots.Count; i++)
             {
                 QuickSlotData slot = QuickSlots[i];
                 if (slot.itemId.ToString() == itemId)
-                    total += slot.stackCount;
+                    return HasItem(itemId, count);
             }
 
-            return total >= count;
+            return false;
         }
 
         public bool ConsumeItem(string itemId, int count)
@@ -548,6 +551,27 @@ namespace DeadZone.Actors
                 TryMoveQuickSlotToInventory(quickSlotIndex, preferredGridX, preferredGridY);
         }
 
+        public bool TryAssignQuickSlotShortcutOnServer(ItemDataSO item, ItemSlotData sourceSlot, byte quickSlotIndex)
+        {
+            if (!IsServer || item == null || quickSlotIndex >= QUICK_SLOT_COUNT || !IsQuickSlotItem(item))
+                return false;
+
+            int availableCount = GetItemCount(item.itemID);
+            if (availableCount <= 0)
+                return false;
+
+            SetQuickSlot(new QuickSlotData
+            {
+                slotIndex = quickSlotIndex,
+                itemId = item.itemID,
+                stackCount = (ushort)Mathf.Clamp(Mathf.Min(sourceSlot.stackCount, availableCount), 1, ushort.MaxValue),
+                currentDurability = Mathf.Max(0f, sourceSlot.currentDurability),
+                currentAmmo = sourceSlot.currentAmmo
+            });
+
+            return true;
+        }
+
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void MoveEquipmentSlotToInventoryRpc(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY, RpcParams rpcParams = default)
         {
@@ -652,15 +676,6 @@ namespace DeadZone.Actors
             if (!IsQuickSlotItem(sourceItem))
                 return false;
 
-            bool hasExistingQuickSlot = TryGetQuickSlot(quickSlotIndex, out QuickSlotData existingQuickSlot);
-            ItemDataSO existingItem = hasExistingQuickSlot ? ResolveItem(existingQuickSlot.itemId.ToString()) : null;
-
-            if (!TryRemoveSlotAt(gridX, gridY, out _))
-                return false;
-
-            if (hasExistingQuickSlot)
-                ClearQuickSlot(quickSlotIndex);
-
             SetQuickSlot(new QuickSlotData
             {
                 slotIndex = quickSlotIndex,
@@ -670,14 +685,7 @@ namespace DeadZone.Actors
                 currentAmmo = sourceSlot.currentAmmo
             });
 
-            if (!hasExistingQuickSlot)
-                return true;
-
-            if (TryAddQuickSlotItemAt(existingItem, existingQuickSlot, gridX, gridY))
-                return true;
-
-            Debug.LogError($"[GridInventory] Failed to place swapped quickslot item into inventory. itemId={existingItem.itemID}", this);
-            return false;
+            return true;
         }
 
         private bool TryMoveQuickSlotToInventory(byte quickSlotIndex, byte preferredGridX, byte preferredGridY)
@@ -685,25 +693,8 @@ namespace DeadZone.Actors
             if (!IsServer || !TryGetQuickSlot(quickSlotIndex, out QuickSlotData quickSlot))
                 return false;
 
-            ItemDataSO item = ResolveItem(quickSlot.itemId.ToString());
-            if (item == null)
-                return false;
-
-            bool hasPreferredPosition = preferredGridX != byte.MaxValue && preferredGridY != byte.MaxValue;
-            bool canAdd = hasPreferredPosition
-                ? CanAddQuickSlotItemAt(item, quickSlot, preferredGridX, preferredGridY)
-                : CanAddItemSlot(item, ToItemSlotData(quickSlot));
-
-            if (!canAdd)
-                return false;
-
             ClearQuickSlot(quickSlotIndex);
-
-            bool added = hasPreferredPosition
-                ? TryAddQuickSlotItemAt(item, quickSlot, preferredGridX, preferredGridY)
-                : TryAddItemSlot(item, ToItemSlotData(quickSlot));
-
-            return added;
+            return true;
         }
 
         private bool TryUseQuickSlot(byte quickSlotIndex)
@@ -711,7 +702,14 @@ namespace DeadZone.Actors
             if (!IsServer || !TryGetQuickSlot(quickSlotIndex, out QuickSlotData quickSlot))
                 return false;
 
-            return TryUseMedicalItem(quickSlot.itemId.ToString());
+            string itemId = quickSlot.itemId.ToString();
+            if (!HasItem(itemId, 1))
+            {
+                ClearQuickSlot(quickSlotIndex);
+                return false;
+            }
+
+            return TryUseMedicalItem(itemId);
         }
 
         private bool TryMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
@@ -1343,11 +1341,7 @@ namespace DeadZone.Actors
             bool hasInventoryItem = HasItem(itemId, 1) ||
                                     (!string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
                                      HasItem(itemData.itemID, 1));
-            bool hasQuickSlotItem = HasQuickSlotItem(itemId, 1) ||
-                                    (!string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal) &&
-                                     HasQuickSlotItem(itemData.itemID, 1));
-
-            if (!hasInventoryItem && !hasQuickSlotItem)
+            if (!hasInventoryItem)
             {
                 Debug.LogWarning($"[GridInventory] 사용할 의료 아이템이 인벤토리에 없습니다. itemId={itemData.itemID}", this);
                 return false;
@@ -1358,15 +1352,6 @@ namespace DeadZone.Actors
                 !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
             {
                 consumed = ConsumeItem(itemData.itemID, 1);
-            }
-
-            if (!consumed)
-                consumed = TryConsumeQuickSlotItem(itemId, 1);
-
-            if (!consumed &&
-                !string.Equals(itemId, itemData.itemID, System.StringComparison.Ordinal))
-            {
-                consumed = TryConsumeQuickSlotItem(itemData.itemID, 1);
             }
 
             if (!consumed)

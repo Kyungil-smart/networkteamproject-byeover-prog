@@ -16,11 +16,13 @@ namespace DeadZone.Actors
     public class ExtractionZone : NetworkBehaviour, IInteractable
     {
         [SerializeField] private string extractionId = "Truck";
-        [SerializeField] private float extractionTime = 7f;
+        [SerializeField] private float extractionTime = 10f;
+        [SerializeField] private bool requireAllExpectedPlayersInZone = true;
         [SerializeField] private RaidClearCoordinator raidClearCoordinator;
 
         private readonly HashSet<ulong> clientsInZone = new();
         private readonly Dictionary<ulong, float> extractionTimersByClientId = new();
+        private readonly List<ulong> expectedClientBuffer = new();
 
         private void Reset()
         {
@@ -45,7 +47,7 @@ namespace DeadZone.Actors
 
             ulong clientId = netObj.OwnerClientId;
             clientsInZone.Remove(clientId);
-            CancelExtraction(clientId);
+            CancelExtractionForParty();
         }
 
         public void OnInteract(ulong clientId)
@@ -72,24 +74,34 @@ namespace DeadZone.Actors
             var keys = new List<ulong>(extractionTimersByClientId.Keys);
             foreach (var cid in keys)
             {
+                if (!extractionTimersByClientId.ContainsKey(cid))
+                    continue;
+
                 if (!clientsInZone.Contains(cid))
                 {
-                    CancelExtraction(cid);
+                    CancelExtractionForParty();
                     continue;
                 }
 
                 extractionTimersByClientId[cid] += Time.deltaTime;
                 if (extractionTimersByClientId[cid] >= extractionTime)
                 {
-                    EventBus.Publish(new ExtractionCompletedEvent
+                    var completedClientIds = new List<ulong>(extractionTimersByClientId.Keys);
+                    for (int i = 0; i < completedClientIds.Count; i++)
                     {
-                        clientId = cid,
-                        extractionId = extractionId,
-                    });
-                    PublishExtractionCompletedClientRpc(cid, new FixedString64Bytes(extractionId));
-                    extractionTimersByClientId.Remove(cid);
+                        ulong completedClientId = completedClientIds[i];
+                        EventBus.Publish(new ExtractionCompletedEvent
+                        {
+                            clientId = completedClientId,
+                            extractionId = extractionId,
+                        });
+                        PublishExtractionCompletedClientRpc(completedClientId, new FixedString64Bytes(extractionId));
+                    }
+
+                    extractionTimersByClientId.Clear();
                     if (!TryRequestRaidClear(cid))
                         Core.ServiceLocator.Get<NetworkGameManager>()?.ReturnToHideoutServerRpc();
+                    break;
                 }
             }
         }
@@ -123,14 +135,63 @@ namespace DeadZone.Actors
             if (extractionTimersByClientId.ContainsKey(clientId))
                 return true;
 
-            extractionTimersByClientId[clientId] = 0f;
-            EventBus.Publish(new ExtractionStartedEvent
+            if (!TryGetExtractionParticipants(clientId, expectedClientBuffer))
+                return false;
+
+            for (int i = 0; i < expectedClientBuffer.Count; i++)
             {
-                clientId = clientId,
-                extractionId = extractionId,
-                countdownSeconds = extractionTime,
-            });
-            PublishExtractionStartedClientRpc(clientId, new FixedString64Bytes(extractionId), extractionTime);
+                ulong participantId = expectedClientBuffer[i];
+                extractionTimersByClientId[participantId] = 0f;
+                EventBus.Publish(new ExtractionStartedEvent
+                {
+                    clientId = participantId,
+                    extractionId = extractionId,
+                    countdownSeconds = extractionTime,
+                });
+                PublishExtractionStartedClientRpc(participantId, new FixedString64Bytes(extractionId), extractionTime);
+            }
+
+            return true;
+        }
+
+        private bool TryGetExtractionParticipants(ulong requestingClientId, List<ulong> participants)
+        {
+            participants.Clear();
+
+            if (!requireAllExpectedPlayersInZone)
+            {
+                participants.Add(requestingClientId);
+                return true;
+            }
+
+            GameSessionManager gameSessionManager = Core.ServiceLocator.Get<GameSessionManager>();
+            gameSessionManager?.GetExpectedClientIdOrder(participants);
+
+            if (participants.Count == 0)
+                participants.Add(requestingClientId);
+
+            for (int i = participants.Count - 1; i >= 0; i--)
+            {
+                ulong clientId = participants[i];
+                NetworkManager networkManager = NetworkManager.Singleton;
+                if (networkManager != null && !networkManager.ConnectedClients.ContainsKey(clientId))
+                    participants.RemoveAt(i);
+            }
+
+            if (participants.Count == 0)
+                participants.Add(requestingClientId);
+
+            for (int i = 0; i < participants.Count; i++)
+            {
+                if (!clientsInZone.Contains(participants[i]))
+                {
+                    Debug.Log(
+                        $"[ExtractionZone] Extraction waits for all party members. requester={requestingClientId}, missing={participants[i]}, extractionId={extractionId}",
+                        this);
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -145,6 +206,16 @@ namespace DeadZone.Actors
                 extractionId = extractionId,
             });
             PublishExtractionCanceledClientRpc(clientId, new FixedString64Bytes(extractionId));
+        }
+
+        private void CancelExtractionForParty()
+        {
+            if (!IsServer || extractionTimersByClientId.Count == 0)
+                return;
+
+            var clientIds = new List<ulong>(extractionTimersByClientId.Keys);
+            for (int i = 0; i < clientIds.Count; i++)
+                CancelExtraction(clientIds[i]);
         }
 
         private bool TryRequestRaidClear(ulong clientId)
