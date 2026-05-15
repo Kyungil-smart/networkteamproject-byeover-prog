@@ -70,6 +70,7 @@ namespace DeadZone.Actors.UI
         private bool gridInventorySubscribed;
         private EquipmentSlots subscribedEquipmentSlots;
         private bool equipmentSlotsSubscribed;
+        private bool raidQuickSlotLoadoutApplied;
 
         [BoxGroup("ItemDataSO 테스트")]
         [Tooltip("랜덤 아이템 배치 테스트에 사용할 ItemDataSO 목록입니다.")]
@@ -164,7 +165,6 @@ namespace DeadZone.Actors.UI
             SubscribeEquipmentSlots();
             RefreshGridInventorySlots();
             RefreshEquipmentSlotViews();
-            DeadZone.Systems.Raid.RaidLoadoutTransferService.ApplyLocalQuickSlotsToUi();
             RefreshQuickSlotsFromInventory();
         }
 
@@ -875,6 +875,9 @@ namespace DeadZone.Actors.UI
 
         private void ApplyRaidQuickSlotLoadoutIfAvailable()
         {
+            if (raidQuickSlotLoadoutApplied)
+                return;
+
             if (!RaidLoadoutTransferService.TryGetQuickSlotItemsForLocalClient(out IReadOnlyList<QuickSlotSaveData> quickSlotItems))
                 return;
 
@@ -902,6 +905,7 @@ namespace DeadZone.Actors.UI
                 SetQuickSlotsByIndex(quickSlots, Mathf.Max(0, savedItem.slotIndex), itemData, Mathf.Max(1, savedItem.stackCount));
             }
 
+            raidQuickSlotLoadoutApplied = true;
             RefreshQuickSlotsFromInventory();
         }
 

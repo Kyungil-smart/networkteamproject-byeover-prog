@@ -1,5 +1,6 @@
 using DeadZone.Core;
 using DeadZone.Actors;
+using DeadZone.Systems.Raid;
 using DeadZone.Systems.Save;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
@@ -619,6 +620,13 @@ namespace DeadZone.Actors.UI
             if (slotKind == InventorySlotKind.QuickSlot)
                 return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
 
+            if (source.slotKind == InventorySlotKind.Bag &&
+                TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetEquipmentSlot) &&
+                TryRequestInventorySlotEquipToEquipment(source, targetEquipmentSlot))
+            {
+                return true;
+            }
+
             if (!CanAccept(sourceItem))
             {
                 Debug.LogWarning($"[InventorySlotUI] {name} 슬롯에는 {sourceItem.displayName} 아이템을 넣을 수 없습니다. slotKind={slotKind}, itemType={sourceItem.GetType().Name}", this);
@@ -759,16 +767,33 @@ namespace DeadZone.Actors.UI
             LobbyInventoryStateUiBridge bridge =
                 FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
 
-            if (bridge == null)
-                return;
+            if (bridge != null)
+            {
+                bridge.CaptureChangedItemSlots(changedSlots);
+                bridge.CaptureChangedEquipmentSlots(changedSlots);
 
-            bridge.CaptureChangedItemSlots(changedSlots);
-            bridge.CaptureChangedEquipmentSlots(changedSlots);
+                LobbySaveService saveService =
+                    FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
 
-            LobbySaveService saveService =
-                FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+                saveService?.SaveCurrentStateToLocalJson("Inventory UI drop snapshot");
+            }
 
-            saveService?.SaveCurrentStateToLocalJson("Inventory UI drop snapshot");
+            RaidLoadoutTransferService.CaptureLocalQuickSlotsFromUi();
+        }
+
+        private static bool TryRequestInventorySlotEquipToEquipment(InventorySlotUI source, EquipmentTargetSlot targetSlot)
+        {
+            if (source == null || targetSlot == EquipmentTargetSlot.None)
+                return false;
+
+            GridInventory inventory = ResolveOwnerGridInventory();
+            if (inventory == null || !inventory.IsSpawned || !inventory.IsOwner)
+                return false;
+
+            byte gridX = (byte)(Mathf.Max(0, source.slotIndex) % GridInventory.BASE_WIDTH);
+            byte gridY = (byte)(Mathf.Max(0, source.slotIndex) / GridInventory.BASE_WIDTH);
+            inventory.RequestEquipInventorySlotToEquipment(gridX, gridY, targetSlot);
+            return true;
         }
 
         private static bool TrySyncEquipmentSlotAfterDrop(InventorySlotUI slot, ItemDataSO nextItem)

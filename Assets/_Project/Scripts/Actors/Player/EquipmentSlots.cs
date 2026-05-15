@@ -688,13 +688,36 @@ namespace DeadZone.Actors
             if (!IsServer || !CanEquipItemToSlot(item, targetSlot) || !IsEquipmentSlotEmpty(targetSlot))
                 return false;
 
+            return TryEquipItemToEmptySlotInternal(item, targetSlot, 0f, 0);
+        }
+
+        public bool TryEquipItemToEmptySlot(ItemDataSO item, EquipmentTargetSlot targetSlot, ItemSlotData sourceSlot)
+        {
+            if (!IsServer || !CanEquipItemToSlot(item, targetSlot) || !IsEquipmentSlotEmpty(targetSlot))
+                return false;
+
+            return TryEquipItemToEmptySlotInternal(
+                item,
+                targetSlot,
+                sourceSlot.currentDurability,
+                sourceSlot.currentAmmo);
+        }
+
+        private bool TryEquipItemToEmptySlotInternal(
+            ItemDataSO item,
+            EquipmentTargetSlot targetSlot,
+            float sourceDurability,
+            int sourceAmmo)
+        {
             FixedString64Bytes itemId = new(item.itemID);
 
             switch (targetSlot)
             {
                 case EquipmentTargetSlot.Head:
                     HeadSlotId.Value = itemId;
-                    HelmetDurability.Value = item is HelmetDataSO helmet ? helmet.maxDurability : 0f;
+                    HelmetDurability.Value = item is HelmetDataSO helmet
+                        ? ResolveEquippedDurability(sourceDurability, helmet.maxDurability)
+                        : 0f;
                     return true;
 
                 case EquipmentTargetSlot.Backpack:
@@ -703,19 +726,21 @@ namespace DeadZone.Actors
 
                 case EquipmentTargetSlot.Armor:
                     TorsoSlotId.Value = itemId;
-                    ArmorDurability.Value = item is ArmorDataSO armor ? armor.maxDurability : 0f;
+                    ArmorDurability.Value = item is ArmorDataSO armor
+                        ? ResolveEquippedDurability(sourceDurability, armor.maxDurability)
+                        : 0f;
                     return true;
 
                 case EquipmentTargetSlot.Primary1:
-                    UpdateSlot(WeaponSlot.Primary1, item.itemID, CreateInitialWeaponState(item));
+                    UpdateSlot(WeaponSlot.Primary1, item.itemID, CreateInitialWeaponState(item, sourceAmmo));
                     return true;
 
                 case EquipmentTargetSlot.Primary2:
-                    UpdateSlot(WeaponSlot.Primary2, item.itemID, CreateInitialWeaponState(item));
+                    UpdateSlot(WeaponSlot.Primary2, item.itemID, CreateInitialWeaponState(item, sourceAmmo));
                     return true;
 
                 case EquipmentTargetSlot.Secondary:
-                    UpdateSlot(WeaponSlot.Secondary, item.itemID, CreateInitialWeaponState(item));
+                    UpdateSlot(WeaponSlot.Secondary, item.itemID, CreateInitialWeaponState(item, sourceAmmo));
                     return true;
 
                 case EquipmentTargetSlot.Melee:
@@ -811,11 +836,48 @@ namespace DeadZone.Actors
             return item is WeaponDataSO weapon && weapon.weaponCategory == WeaponCategory.Melee;
         }
 
-        private static WeaponState CreateInitialWeaponState(ItemDataSO item)
+        private WeaponState CreateInitialWeaponState(ItemDataSO item, int currentAmmo = 0)
         {
-            return item is WeaponDataSO weapon
-                ? new WeaponState { loadedAmmoId = "", currentAmmo = 0 }
-                : default;
+            if (item is not WeaponDataSO weapon)
+                return default;
+
+            int ammoCount = Mathf.Clamp(currentAmmo, 0, weapon.magSize);
+            return new WeaponState
+            {
+                loadedAmmoId = ammoCount > 0 ? ResolveDefaultAmmoId(weapon.ammoType) : "",
+                currentAmmo = ammoCount
+            };
+        }
+
+        private static float ResolveEquippedDurability(float sourceDurability, float maxDurability)
+        {
+            if (maxDurability <= 0f)
+                return 0f;
+
+            return sourceDurability > 0f
+                ? Mathf.Clamp(sourceDurability, 0f, maxDurability)
+                : maxDurability;
+        }
+
+        private FixedString64Bytes ResolveDefaultAmmoId(AmmoType ammoType)
+        {
+            string ammoId = ammoType switch
+            {
+                AmmoType.AR => "Ammo_AR_BP",
+                AmmoType.SMG => "Ammo_SMG_BP",
+                AmmoType.Handgun => "Ammo_Handgun_BP",
+                AmmoType.Sniper => "Ammo_Sniper_BP",
+                AmmoType.Shotgun => "Ammo_SG_BP",
+                _ => string.Empty
+            };
+
+            if (string.IsNullOrWhiteSpace(ammoId))
+                return "";
+
+            AmmoDataSO ammo = itemDb?.GetById<AmmoDataSO>(ammoId);
+            return ammo != null && ammo.caliber == ammoType
+                ? new FixedString64Bytes(ammo.itemID)
+                : "";
         }
 
         private bool TryClearWeaponSlotForDrop(WeaponSlot weaponSlot, out string itemId)

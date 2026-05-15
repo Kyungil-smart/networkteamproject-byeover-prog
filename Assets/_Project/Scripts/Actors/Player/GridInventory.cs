@@ -400,6 +400,21 @@ namespace DeadZone.Actors
             return TryMoveEquipmentSlotToInventory(targetSlot, byte.MaxValue, byte.MaxValue);
         }
 
+        public void RequestEquipInventorySlotToEquipment(byte gridX, byte gridY, EquipmentTargetSlot targetSlot)
+        {
+            if (targetSlot == EquipmentTargetSlot.None)
+                return;
+
+            if (IsSpawned)
+            {
+                EquipInventorySlotToEquipmentRpc(gridX, gridY, targetSlot);
+                return;
+            }
+
+            if (IsServer)
+                TryEquipInventorySlotToEquipment(gridX, gridY, targetSlot);
+        }
+
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void MoveEquipmentSlotToInventoryRpc(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY, RpcParams rpcParams = default)
         {
@@ -407,6 +422,97 @@ namespace DeadZone.Actors
                 return;
 
             TryMoveEquipmentSlotToInventory(targetSlot, preferredGridX, preferredGridY);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void EquipInventorySlotToEquipmentRpc(byte gridX, byte gridY, EquipmentTargetSlot targetSlot, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
+                return;
+
+            TryEquipInventorySlotToEquipment(gridX, gridY, targetSlot);
+        }
+
+        private bool TryEquipInventorySlotToEquipment(byte gridX, byte gridY, EquipmentTargetSlot targetSlot)
+        {
+            if (!IsServer || targetSlot == EquipmentTargetSlot.None)
+                return false;
+
+            equipment ??= GetComponent<EquipmentSlots>();
+            if (equipment == null)
+                return false;
+
+            if (!TryGetSlotIndexAt(gridX, gridY, out int sourceIndex, out ItemSlotData sourceSlot))
+                return false;
+
+            ItemDataSO sourceItem = ResolveItem(sourceSlot.itemId.ToString());
+            if (sourceItem == null || !equipment.CanEquipItemToSlot(sourceItem, targetSlot))
+                return false;
+
+            if (!equipment.IsEquipmentSlotEmpty(targetSlot) &&
+                !CanMoveEquipmentSlotToInventoryAfterRemovingSource(targetSlot, sourceIndex))
+            {
+                Debug.LogWarning($"[GridInventory] Cannot equip inventory item because current equipment has no inventory space. targetSlot={targetSlot}, itemId={sourceItem.itemID}", this);
+                return false;
+            }
+
+            ServerGrid.RemoveAt(sourceIndex);
+            EventBus.Publish(new ItemRemovedEvent
+            {
+                clientId = OwnerClientId,
+                itemId = sourceSlot.itemId
+            });
+
+            if (!equipment.IsEquipmentSlotEmpty(targetSlot) &&
+                !TryMoveEquipmentSlotToInventory(targetSlot, byte.MaxValue, byte.MaxValue))
+            {
+                RestoreInventorySlot(sourceSlot);
+                return false;
+            }
+
+            if (equipment.TryEquipItemToEmptySlot(sourceItem, targetSlot, sourceSlot))
+                return true;
+
+            RestoreInventorySlot(sourceSlot);
+            return false;
+        }
+
+        private bool CanMoveEquipmentSlotToInventoryAfterRemovingSource(EquipmentTargetSlot targetSlot, int sourceIndex)
+        {
+            if (equipment == null)
+                return false;
+
+            if (!TryGetEquipmentItemId(targetSlot, out string equippedItemId))
+                return true;
+
+            ItemDataSO equippedItem = ResolveItem(equippedItemId);
+            if (equippedItem == null)
+                return false;
+
+            if (!TryBuildEquipmentInventorySlot(targetSlot, equippedItem, out ItemSlotData equippedSlot))
+                return false;
+
+            List<ItemSlotData> simulatedSlots = new(ServerGrid.Count);
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                if (i != sourceIndex)
+                    simulatedSlots.Add(ServerGrid[i]);
+            }
+
+            return TryFindPlacement(simulatedSlots, equippedItem, Mathf.Max(1, equippedSlot.stackCount), out _);
+        }
+
+        private void RestoreInventorySlot(ItemSlotData slot)
+        {
+            if (!IsServer || string.IsNullOrWhiteSpace(slot.itemId.ToString()))
+                return;
+
+            ServerGrid.Add(slot);
+            EventBus.Publish(new ItemAddedEvent
+            {
+                clientId = OwnerClientId,
+                itemId = slot.itemId
+            });
         }
 
         private bool TryMoveEquipmentSlotToInventory(EquipmentTargetSlot targetSlot, byte preferredGridX, byte preferredGridY)
@@ -567,6 +673,28 @@ namespace DeadZone.Actors
                     itemId = slot.itemId
                 });
 
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetSlotIndexAt(byte gridX, byte gridY, out int index, out ItemSlotData foundSlot)
+        {
+            index = -1;
+            foundSlot = default;
+
+            if (ServerGrid == null)
+                return false;
+
+            for (int i = 0; i < ServerGrid.Count; i++)
+            {
+                ItemSlotData slot = ServerGrid[i];
+                if (slot.gridX != gridX || slot.gridY != gridY)
+                    continue;
+
+                index = i;
+                foundSlot = slot;
                 return true;
             }
 

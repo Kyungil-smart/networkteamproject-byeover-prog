@@ -425,7 +425,8 @@ namespace DeadZone.Actors
                     return;
             }
 
-            if (!equipmentSlots.TryEquipItemToEmptySlot(itemData, targetSlot))
+            ItemSlotData itemSlot = CreateInventorySlotData(itemData, sourceSlot);
+            if (!equipmentSlots.TryEquipItemToEmptySlot(itemData, targetSlot, itemSlot))
                 return;
 
             if (sourceSlot.amount <= 1)

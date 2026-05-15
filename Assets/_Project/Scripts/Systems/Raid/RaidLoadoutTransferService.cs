@@ -215,6 +215,20 @@ namespace DeadZone.Systems.Raid
                 : 0;
         }
 
+        public static bool CaptureLocalQuickSlotsFromUi()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return false;
+
+            if (!loadoutsByClientId.TryGetValue(networkManager.LocalClientId, out RaidLoadoutSaveData loadout))
+                return false;
+
+            loadout.quickSlotItems = CaptureCurrentQuickSlotSnapshot();
+            loadoutsByClientId[networkManager.LocalClientId] = loadout;
+            return true;
+        }
+
         private static RaidLoadoutSaveData CreateEmptyLoadout(ulong clientId)
         {
             return new RaidLoadoutSaveData
