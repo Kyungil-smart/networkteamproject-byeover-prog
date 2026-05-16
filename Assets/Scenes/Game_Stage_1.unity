@@ -4596,7 +4596,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.ExtractionZone
   ShowTopMostFoldoutHeaderGroup: 1
   extractionId: Truck
-  extractionTime: 10
+  extractionTime: 5
   requireAllExpectedPlayersInZone: 1
   raidClearCoordinator: {fileID: 439961240}
   extractionUI: {fileID: 1496990079}
@@ -8097,6 +8097,71 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
   renderers: []
+--- !u!1 &730010000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 730010001}
+  - component: {fileID: 730010002}
+  m_Layer: 0
+  m_Name: '[ControlGuidePanelUI]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &730010001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 730010000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &730010002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 730010000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f62409bd7bcb704a9d5b1600154b693, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.UI.ControlGuidePanelUI
+  controlGuidePanel: {fileID: 0}
+  controlGuideImage: {fileID: 0}
+  helpHintText: {fileID: 0}
+  toggleKey: 22
+  hidePanelOnStart: 1
+  autoCreateUiWhenMissing: 1
+  guideSpriteResourcePath: "UI/ControlGuide/\uC870\uC791\uBC95"
+  guideSpriteOverride: {fileID: 21300000, guid: 7a1f8d4c6b9e4a2da2f319d045c8b721, type: 3}
+  helpHintAnchor: {x: 1, y: 1}
+  helpHintPivot: {x: 1, y: 1}
+  helpHintAnchoredPosition: {x: -310, y: -12}
+  helpHintSize: {x: 180, y: 44}
+  helpHintMessage: "\uC870\uC791\uBC95 = H"
+  helpHintFontSize: 28
+  helpHintColor: {r: 1, g: 0.86, b: 0.27, a: 1}
+  guideImageAnchor: {x: 0.5, y: 0.5}
+  guideImagePivot: {x: 0.5, y: 0.5}
+  guideImageAnchoredPosition: {x: 0, y: 0}
+  guideImageSize: {x: 1672, y: 941}
+  guideImageScale: 0.92
+  dimBackgroundAlpha: 0.62
 --- !u!114 &738015204
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28479,3 +28544,4 @@ SceneRoots:
   - {fileID: 15527012}
   - {fileID: 1421958248}
   - {fileID: 396228423}
+  - {fileID: 730010001}
