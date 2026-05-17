@@ -102,9 +102,51 @@ namespace DeadZone.Network
             if (destroyPersistentLobbyObjectOnDespawn)
             {
                 destroyPersistentLobbyObjectOnDespawn = false;
+                Scene activeScene = SceneManager.GetActiveScene();
+                if (string.Equals(activeScene.name, "Lobby", System.StringComparison.Ordinal) &&
+                    !HasLobbyNetworkObjectInScene(activeScene, gameObject))
+                {
+                    SceneManager.MoveGameObjectToScene(gameObject, activeScene);
+                    Debug.Log("[NetworkGameManager] Keep lobby network object after despawn because active scene is Lobby.", this);
+                    return;
+                }
+
                 Debug.Log("[NetworkGameManager] Destroy persistent lobby network object after despawn.", this);
                 Destroy(gameObject);
             }
+        }
+
+        private static bool HasLobbyNetworkObjectInScene(Scene scene, GameObject ignoredObject)
+        {
+            NetworkLobbyState[] lobbyStates = FindObjectsByType<NetworkLobbyState>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < lobbyStates.Length; i++)
+            {
+                NetworkLobbyState lobbyState = lobbyStates[i];
+                if (lobbyState != null &&
+                    lobbyState.gameObject != ignoredObject &&
+                    lobbyState.gameObject.scene.handle == scene.handle)
+                {
+                    return true;
+                }
+            }
+
+            LobbyRaidStartController[] raidStartControllers = FindObjectsByType<LobbyRaidStartController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < raidStartControllers.Length; i++)
+            {
+                LobbyRaidStartController raidStartController = raidStartControllers[i];
+                if (raidStartController != null &&
+                    raidStartController.gameObject != ignoredObject &&
+                    raidStartController.gameObject.scene.handle == scene.handle)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static SceneEventProgressStatus LoadSceneWithLoading(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
@@ -118,6 +160,13 @@ namespace DeadZone.Network
                 return manager.LoadNetworkSceneWithLoading(sceneName, mode);
 
             NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager != null && networkManager.IsListening && !networkManager.IsServer)
+            {
+                Debug.LogWarning($"[Loading] Client cannot start network scene load directly. Waiting for server. scene={sceneName}");
+                LoadingScreenService.ShowForNetworkLoadOrFallback(sceneName);
+                return SceneEventProgressStatus.SceneEventInProgress;
+            }
+
             if (networkManager == null || networkManager.SceneManager == null)
             {
                 Debug.LogWarning($"[Loading] NetworkManager or SceneManager missing. Show fallback only. scene={sceneName}");
@@ -127,6 +176,51 @@ namespace DeadZone.Network
 
             LoadingScreenService.ShowForNetworkLoadOrFallback(sceneName);
             return networkManager.SceneManager.LoadScene(sceneName, mode);
+        }
+
+        public static void RequestReturnToLobbyAfterRaid(string lobbySceneName)
+        {
+            string targetScene = string.IsNullOrWhiteSpace(lobbySceneName) ? "Lobby" : lobbySceneName;
+            NetworkGameManager manager = ServiceLocator.Get<NetworkGameManager>();
+
+            if (manager == null)
+                manager = FindFirstObjectByType<NetworkGameManager>();
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            Debug.Log(
+                $"[PartySession] ReturnToLobbyAfterRaid start. scene={targetScene}, " +
+                $"IsHost={networkManager != null && networkManager.IsHost}, IsServer={networkManager != null && networkManager.IsServer}, " +
+                $"IsClient={networkManager != null && networkManager.IsClient}, IsListening={networkManager != null && networkManager.IsListening}");
+
+            RaidResultData.ClearLocalResult();
+
+            if (manager != null && manager.IsSpawned)
+            {
+                if (manager.IsServer)
+                {
+                    manager.LoadNetworkSceneWithLoading(targetScene, LoadSceneMode.Single);
+                    Debug.Log($"[PartySession] ReturnToLobbyAfterRaid complete. requestedBy=Server, scene={targetScene}");
+                    return;
+                }
+
+                if (manager.IsClient)
+                {
+                    LoadingScreenService.ShowForNetworkLoadOrFallback(targetScene);
+                    manager.RequestReturnToLobbyAfterRaidServerRpc(targetScene);
+                    Debug.Log($"[PartySession] ReturnToLobbyAfterRaid requested. requestedBy=Client, scene={targetScene}");
+                    return;
+                }
+            }
+
+            if (networkManager != null && networkManager.IsListening)
+            {
+                Debug.LogWarning("[PartySession] ReturnToLobbyAfterRaid failed. NetworkGameManager is not available while network is active.");
+                LoadingScreenService.Instance?.HideAsync();
+                return;
+            }
+
+            LoadingScreenService.LoadSceneOrFallback(targetScene, LoadSceneMode.Single, "Lobby");
+            Debug.Log($"[PartySession] ReturnToLobbyAfterRaid complete. mode=Offline, scene={targetScene}");
         }
 
         public SceneEventProgressStatus LoadNetworkSceneWithLoading(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
@@ -150,6 +244,16 @@ namespace DeadZone.Network
             }
 
             return status;
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void RequestReturnToLobbyAfterRaidServerRpc(string lobbySceneName, RpcParams rpcParams = default)
+        {
+            if (!IsServer)
+                return;
+
+            Debug.Log($"[PartySession] ReturnToLobbyAfterRaid request received. sender={rpcParams.Receive.SenderClientId}, scene={lobbySceneName}");
+            LoadNetworkSceneWithLoading(string.IsNullOrWhiteSpace(lobbySceneName) ? "Lobby" : lobbySceneName, LoadSceneMode.Single);
         }
 
         private void Update()
@@ -476,16 +580,7 @@ namespace DeadZone.Network
 
         private void TryDisconnectTerminalPartySession(string sceneName)
         {
-            if (!IsServer)
-                return;
-
-            if (!IsTerminalSessionScene(sceneName))
-                return;
-
-            if (terminalSessionDisconnectRoutine != null)
-                StopCoroutine(terminalSessionDisconnectRoutine);
-
-            terminalSessionDisconnectRoutine = StartCoroutine(DisconnectTerminalPartySession(sceneName));
+            Debug.Log($"[PartySession] Keep party session after network scene load. scene={sceneName}");
         }
 
         private IEnumerator DisconnectTerminalPartySession(string sceneName)
@@ -524,7 +619,7 @@ namespace DeadZone.Network
 
             yield return new WaitForSecondsRealtime(TerminalSessionDisconnectHostDelaySeconds);
 
-            SessionManager.DisconnectActiveSession($"RaidEnded:{sceneName}");
+            Debug.Log($"[PartySession] Terminal scene reached without leaving party. scene={sceneName}");
             terminalSessionDisconnectRoutine = null;
         }
 
@@ -533,7 +628,7 @@ namespace DeadZone.Network
             string sceneName,
             ClientRpcParams clientRpcParams = default)
         {
-            SessionManager.DisconnectActiveSession($"RaidEnded:{sceneName}");
+            Debug.Log($"[PartySession] Terminal scene reached on client without leaving party. scene={sceneName}");
         }
 
         private static bool IsTerminalSessionScene(string sceneName)

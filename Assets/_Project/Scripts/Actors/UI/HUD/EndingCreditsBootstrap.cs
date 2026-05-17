@@ -123,8 +123,7 @@ namespace DeadZone.Actors.UI
                 return;
 
             returnRequested = true;
-            SessionManager.DisconnectActiveSession("EndingReturnToLobby");
-            LoadingScreenService.LoadSceneOrFallback(LobbySceneName);
+            NetworkGameManager.RequestReturnToLobbyAfterRaid(LobbySceneName);
         }
 
         private static void EnsureCamera()

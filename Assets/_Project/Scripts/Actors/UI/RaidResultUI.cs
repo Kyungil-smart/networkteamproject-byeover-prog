@@ -139,12 +139,7 @@ namespace DeadZone.Actors.UI
 
         private void GoLobby()
         {
-            SessionManager.DisconnectActiveSession("RaidResultReturnToLobby");
-
-            LoadingScreenService.LoadSceneOrFallback(
-                NormalizeLobbySceneName(lobbySceneName),
-                LoadSceneMode.Single,
-                DefaultLobbySceneName);
+            NetworkGameManager.RequestReturnToLobbyAfterRaid(NormalizeLobbySceneName(lobbySceneName));
         }
 
         private static string NormalizeLobbySceneName(string sceneName)

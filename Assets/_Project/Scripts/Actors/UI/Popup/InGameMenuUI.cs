@@ -151,17 +151,8 @@ namespace DeadZone.Actors.UI
             string targetScene = NormalizeLobbySceneName(lobbySceneName);
             Debug.Log($"[InGameMenu] ExitToLobby confirmed. targetScene={targetScene}", this);
 
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            {
-                SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
-                if (sessionManager != null)
-                    sessionManager.Disconnect("ExitToLobby");
-                else
-                    NetworkManager.Singleton.Shutdown();
-            }
-
             Time.timeScale = 1f;
-            LoadingScreenService.LoadSceneOrFallback(targetScene, LoadSceneMode.Single, DefaultLobbySceneName);
+            NetworkGameManager.RequestReturnToLobbyAfterRaid(targetScene);
         }
 
         public void CancelExitToLobby()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -58,11 +59,13 @@ namespace DeadZone.Network
             ClearStaleRuntimePartySessionOnGameStart();
             ServiceLocator.Register(this);
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            RegisterNetworkCallbacks();
         }
 
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            UnregisterNetworkCallbacks();
             ServiceLocator.Unregister(this);
         }
 
@@ -99,7 +102,9 @@ namespace DeadZone.Network
                 return false;
             }
 
+            Debug.Log("[PartySession] CreateParty start. mode=LocalHost", this);
             bool started = networkManager.StartHost();
+            LogNetworkState(networkManager, $"StartHost result={started}");
             if (started)
             {
                 currentPartyId = "LocalHost";
@@ -112,7 +117,9 @@ namespace DeadZone.Network
         public bool StartClient()
         {
             if (NetworkManager.Singleton == null) return false;
+            Debug.Log("[PartySession] JoinParty start. mode=LocalClient", this);
             bool started = NetworkManager.Singleton.StartClient();
+            LogNetworkState(NetworkManager.Singleton, $"StartClient result={started}");
             if (started)
                 currentPartyId = "LocalClient";
 
@@ -178,7 +185,9 @@ namespace DeadZone.Network
                 return string.Empty;
             }
 
-            if (!await PrepareNetworkManagerForNewSessionAsync(networkManager, "StartHostWithRelay"))
+            Debug.Log($"[PartySession] CreateParty start. maxPlayers={maxPlayers}", this);
+
+            if (!await EnsureNetworkFullyStoppedAsync("CreateParty", true))
                 return string.Empty;
 
             await DestroyStaleLobbyNetworkObjectsBeforeStartAsync();
@@ -202,6 +211,7 @@ namespace DeadZone.Network
             }
 
             bool ok = networkManager.StartHost();
+            LogNetworkState(networkManager, $"StartHost result={ok}");
             if (!ok)
             {
                 Debug.LogError("[SessionManager] Relay 설정 후 StartHost 실패");
@@ -210,6 +220,7 @@ namespace DeadZone.Network
 
             currentPartyId = joinCode;
             Debug.Log($"[PartySession] Create party. partyId={currentPartyId}, hostClientId={NetworkManager.ServerClientId}", this);
+            Debug.Log($"[PartySession] CreateParty success. partyId={currentPartyId}, hostClientId={NetworkManager.ServerClientId}", this);
 
             EventBus.Publish(new RelayAllocationCreatedEvent
             {
@@ -234,7 +245,9 @@ namespace DeadZone.Network
                 return false;
             }
 
-            if (!await PrepareNetworkManagerForNewSessionAsync(networkManager, "StartClientWithRelay"))
+            Debug.Log($"[PartySession] JoinParty start. joinCode={joinCode}", this);
+
+            if (!await EnsureNetworkFullyStoppedAsync("JoinParty", true))
                 return false;
 
             await DestroyStaleLobbyNetworkObjectsBeforeStartAsync();
@@ -255,6 +268,7 @@ namespace DeadZone.Network
             }
 
             bool ok = networkManager.StartClient();
+            LogNetworkState(networkManager, $"StartClient result={ok}");
             if (!ok)
             {
                 Debug.LogError("[SessionManager] Relay 설정 후 StartClient 실패");
@@ -264,6 +278,7 @@ namespace DeadZone.Network
             currentPartyId = joinCode;
 
             EventBus.Publish(new RelayJoinedEvent { joinCode = joinCode });
+            Debug.Log($"[PartySession] JoinParty success. partyId={currentPartyId}", this);
             return true;
         }
 
@@ -319,10 +334,12 @@ namespace DeadZone.Network
 
         private void DisconnectInternal(string reason)
         {
+            Debug.Log($"[PartySession] LeaveParty start. reason={reason}", this);
             NetworkManager networkManager = NetworkManager.Singleton;
             if (networkManager == null)
             {
                 ClearLocalPartyCache();
+                Debug.Log($"[PartySession] LeaveParty complete. reason={reason}", this);
                 return;
             }
 
@@ -345,6 +362,7 @@ namespace DeadZone.Network
 
             currentPartyId = string.Empty;
             ClearLocalPartyCache();
+            Debug.Log($"[PartySession] LeaveParty complete. reason={reason}", this);
         }
 
         private static void ClearLocalPartyCache()
@@ -366,39 +384,29 @@ namespace DeadZone.Network
             bool keepPartySession = IsNetworkManagerActive(networkManager);
             Debug.Log($"[PartySession] Scene changed. keep party session={keepPartySession}. scene={scene.name}", this);
 
-            if (ShouldDisconnectPartySessionAfterRaidReturn(scene.name, previousSceneName, networkManager))
-                Disconnect("RaidReturnToLobby");
-
             previousSceneName = scene.name;
         }
 
-        private static bool ShouldDisconnectPartySessionAfterRaidReturn(
-            string currentSceneName,
-            string previousSceneName,
-            NetworkManager networkManager)
+        public async Task<bool> EnsureNetworkFullyStoppedAsync(string reason, bool clearPartyCache)
         {
+            NetworkManager networkManager = NetworkManager.Singleton;
             if (!IsNetworkManagerActive(networkManager))
-                return false;
+            {
+                bool alreadyInactive = await WaitForNetworkManagerInactiveAsync(networkManager);
+                if (!alreadyInactive)
+                {
+                    Debug.LogWarning($"[PartySession] NetworkManager shutdown is still in progress. reason={reason}");
+                    return false;
+                }
 
-            if (!string.Equals(currentSceneName, "Lobby", StringComparison.Ordinal))
-                return false;
+                if (clearPartyCache)
+                {
+                    currentPartyId = string.Empty;
+                    ClearLocalPartyCache();
+                }
 
-            return IsRaidTerminalScene(previousSceneName);
-        }
-
-        private static bool IsRaidTerminalScene(string sceneName)
-        {
-            return string.Equals(sceneName, "Game_Stage_1", StringComparison.Ordinal)
-                || string.Equals(sceneName, "Game_Stage_2", StringComparison.Ordinal)
-                || string.Equals(sceneName, "RaidResult", StringComparison.Ordinal)
-                || string.Equals(sceneName, "HJO_RaidResult", StringComparison.Ordinal)
-                || string.Equals(sceneName, "Ending", StringComparison.Ordinal);
-        }
-
-        private static async Task<bool> PrepareNetworkManagerForNewSessionAsync(NetworkManager networkManager, string reason)
-        {
-            if (!IsNetworkManagerActive(networkManager))
                 return true;
+            }
 
             ForceShutdownNetworkManager(networkManager, reason);
             bool inactive = await WaitForNetworkManagerInactiveAsync(networkManager);
@@ -408,6 +416,13 @@ namespace DeadZone.Network
                 return false;
             }
 
+            if (clearPartyCache)
+            {
+                currentPartyId = string.Empty;
+                ClearLocalPartyCache();
+            }
+
+            Debug.Log($"[PartySession] NetworkManager Shutdown complete. reason={reason}", this);
             return true;
         }
 
@@ -417,61 +432,85 @@ namespace DeadZone.Network
             if (!string.Equals(activeScene.name, "Lobby", StringComparison.Ordinal))
                 return;
 
-            NetworkLobbyState[] lobbyStates = UnityEngine.Object.FindObjectsByType<NetworkLobbyState>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            List<GameObject> staleObjects = new();
 
-            if (lobbyStates == null || lobbyStates.Length <= 1)
+            AddStaleLobbyNetworkObjects(
+                staleObjects,
+                activeScene,
+                UnityEngine.Object.FindObjectsByType<NetworkLobbyState>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None));
+
+            AddStaleLobbyNetworkObjects(
+                staleObjects,
+                activeScene,
+                UnityEngine.Object.FindObjectsByType<LobbyRaidStartController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None));
+
+            if (staleObjects.Count <= 0)
                 return;
 
-            NetworkLobbyState activeSceneState = null;
-            for (int i = 0; i < lobbyStates.Length; i++)
+            for (int i = 0; i < staleObjects.Count; i++)
             {
-                NetworkLobbyState state = lobbyStates[i];
-                if (state == null)
-                    continue;
-
-                if (state.gameObject.scene.handle == activeScene.handle)
-                {
-                    activeSceneState = state;
-                    break;
-                }
-            }
-
-            if (activeSceneState == null)
-                return;
-
-            int destroyedCount = 0;
-            for (int i = 0; i < lobbyStates.Length; i++)
-            {
-                NetworkLobbyState state = lobbyStates[i];
-                if (state == null || state == activeSceneState)
+                GameObject staleObject = staleObjects[i];
+                if (staleObject == null)
                     continue;
 
                 Debug.LogWarning(
-                    $"[PartySession] Destroy stale LobbyNetworkState before starting a new room. " +
-                    $"Scene={state.gameObject.scene.name}, Object={state.name}");
+                    $"[PartySession] Destroy stale lobby network object before starting a new room. " +
+                    $"Scene={staleObject.scene.name}, Object={staleObject.name}");
 
-                UnityEngine.Object.Destroy(state.gameObject);
-                destroyedCount++;
+                UnityEngine.Object.Destroy(staleObject);
             }
-
-            if (destroyedCount <= 0)
-                return;
 
             for (int i = 0; i < StaleLobbyObjectDestroyWaitFrames; i++)
             {
                 await Task.Yield();
 
-                NetworkLobbyState[] remainingStates = UnityEngine.Object.FindObjectsByType<NetworkLobbyState>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-
-                if (remainingStates == null || remainingStates.Length <= 1)
+                if (!HasStaleLobbyNetworkObjects(activeScene))
                     return;
             }
 
-            Debug.LogWarning("[PartySession] Stale LobbyNetworkState objects still exist after destroy wait. StartHost/StartClient may fail.");
+            Debug.LogWarning("[PartySession] Stale lobby network objects still exist after destroy wait. StartHost/StartClient may fail.");
+        }
+
+        private static void AddStaleLobbyNetworkObjects<T>(List<GameObject> staleObjects, Scene activeScene, T[] candidates)
+            where T : Component
+        {
+            if (staleObjects == null || candidates == null)
+                return;
+
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                T candidate = candidates[i];
+                if (candidate == null || candidate.gameObject == null)
+                    continue;
+
+                if (candidate.gameObject.scene.handle == activeScene.handle)
+                    continue;
+
+                if (!staleObjects.Contains(candidate.gameObject))
+                    staleObjects.Add(candidate.gameObject);
+            }
+        }
+
+        private static bool HasStaleLobbyNetworkObjects(Scene activeScene)
+        {
+            List<GameObject> staleObjects = new();
+            AddStaleLobbyNetworkObjects(
+                staleObjects,
+                activeScene,
+                UnityEngine.Object.FindObjectsByType<NetworkLobbyState>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None));
+            AddStaleLobbyNetworkObjects(
+                staleObjects,
+                activeScene,
+                UnityEngine.Object.FindObjectsByType<LobbyRaidStartController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None));
+            return staleObjects.Count > 0;
         }
 
         private static async Task<bool> WaitForNetworkManagerInactiveAsync(NetworkManager networkManager)
@@ -497,7 +536,8 @@ namespace DeadZone.Network
             if (!IsNetworkManagerActive(networkManager))
                 return;
 
-            Debug.Log($"[PartySession] Shutdown NetworkManager. reason={reason}");
+            Debug.Log($"[PartySession] NetworkManager Shutdown start. reason={reason}");
+            LogNetworkState(networkManager, "Before Shutdown");
             networkManager.Shutdown();
         }
 
@@ -505,9 +545,56 @@ namespace DeadZone.Network
         {
             return networkManager != null
                 && (networkManager.IsListening
+                    || networkManager.ShutdownInProgress
                     || networkManager.IsHost
                     || networkManager.IsServer
                     || networkManager.IsClient);
+        }
+
+        private void RegisterNetworkCallbacks()
+        {
+            if (NetworkManager.Singleton == null)
+                return;
+
+            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnected;
+            NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnected;
+        }
+
+        private void UnregisterNetworkCallbacks()
+        {
+            if (NetworkManager.Singleton == null)
+                return;
+
+            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnected;
+        }
+
+        private void HandleClientConnected(ulong clientId)
+        {
+            Debug.Log($"[PartySession] OnClientConnectedCallback clientId={clientId}", this);
+            LogNetworkState(NetworkManager.Singleton, "OnClientConnectedCallback");
+        }
+
+        private void HandleClientDisconnected(ulong clientId)
+        {
+            Debug.Log($"[PartySession] OnClientDisconnectCallback clientId={clientId}", this);
+            LogNetworkState(NetworkManager.Singleton, "OnClientDisconnectCallback");
+        }
+
+        private static void LogNetworkState(NetworkManager networkManager, string context)
+        {
+            if (networkManager == null)
+            {
+                Debug.Log($"[PartySession] {context}. NetworkManager=null");
+                return;
+            }
+
+            Debug.Log(
+                $"[PartySession] {context}. " +
+                $"IsHost={networkManager.IsHost}, IsServer={networkManager.IsServer}, IsClient={networkManager.IsClient}, " +
+                $"IsListening={networkManager.IsListening}, LocalClientId={networkManager.LocalClientId}");
         }
     }
 }

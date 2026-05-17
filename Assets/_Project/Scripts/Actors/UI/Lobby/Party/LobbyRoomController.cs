@@ -322,10 +322,13 @@ namespace DeadZone.Actors.UI
             SetRoomState(RoomUiState.ShuttingDown);
             ShowStatus("방 연결을 종료하는 중입니다...");
             
-            sessionManager.Disconnect();
-            
-            if (shutdownRetryDelaySec > 0f)
-                await Task.Delay(TimeSpan.FromSeconds(shutdownRetryDelaySec));
+            bool stopped = await sessionManager.EnsureNetworkFullyStoppedAsync("ManualLeave", true);
+            if (!stopped)
+            {
+                SetRoomState(RoomUiState.Idle);
+                ShowStatus("방 연결이 아직 종료되지 않았습니다. 잠시 후 다시 시도해주세요.");
+                return;
+            }
 
             currentJoinCode = string.Empty;
             SetJoinCodeText(emptyJoinCodeText);
@@ -397,6 +400,7 @@ namespace DeadZone.Actors.UI
             if (isServer)
             {
                 SetRoomState(RoomUiState.HostRoom);
+                hasCreatedOrJoinedRoomInThisScene = true;
                 Debug.Log("[LobbyPartyUI] Restored party UI from active network session. role=Server, Slot_Party=Visible", this);
                 ShowStatus("네트워크 파티 상태를 복구했습니다. 현재 서버로 연결 중입니다.");
                 return;
@@ -405,6 +409,7 @@ namespace DeadZone.Actors.UI
             if (isClient)
             {
                 SetRoomState(RoomUiState.ClientRoom);
+                hasCreatedOrJoinedRoomInThisScene = true;
                 Debug.Log("[LobbyPartyUI] Restored party UI from active network session. role=Client, Slot_Party=Visible", this);
                 ShowStatus("네트워크 파티 상태를 복구했습니다. 현재 파티에 참가 중입니다.");
                 return;
@@ -416,10 +421,7 @@ namespace DeadZone.Actors.UI
 
         private bool IsRestoredLobbySessionStale()
         {
-            if (hasCreatedOrJoinedRoomInThisScene)
-                return false;
-
-            return string.Equals(SceneManager.GetActiveScene().name, "Lobby", StringComparison.Ordinal);
+            return false;
         }
 
         private async Task CleanupRestoredLobbySessionAsync()
@@ -431,8 +433,17 @@ namespace DeadZone.Actors.UI
             SetRoomState(RoomUiState.ShuttingDown);
             ShowStatus("이전 방 연결을 정리하는 중입니다...");
 
-            SessionManager.DisconnectActiveSession("RestoreStaleLobbySession");
-            await WaitForNetworkSessionShutdownAsync();
+            SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
+            if (sessionManager == null)
+                sessionManager = FindFirstObjectByType<SessionManager>(FindObjectsInactive.Include);
+
+            if (sessionManager != null)
+                await sessionManager.EnsureNetworkFullyStoppedAsync("RestoreStaleLobbySession", true);
+            else
+            {
+                SessionManager.DisconnectActiveSession("RestoreStaleLobbySession");
+                await WaitForNetworkSessionShutdownAsync();
+            }
 
             if (!IsNetworkSessionActive())
             {
@@ -454,8 +465,17 @@ namespace DeadZone.Actors.UI
             SetRoomState(RoomUiState.ShuttingDown);
             ShowStatus("이전 방 연결을 정리하는 중입니다...");
 
-            SessionManager.DisconnectActiveSession(reason);
-            await WaitForNetworkSessionShutdownAsync();
+            SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
+            if (sessionManager == null)
+                sessionManager = FindFirstObjectByType<SessionManager>(FindObjectsInactive.Include);
+
+            if (sessionManager != null)
+                await sessionManager.EnsureNetworkFullyStoppedAsync(reason, true);
+            else
+            {
+                SessionManager.DisconnectActiveSession(reason);
+                await WaitForNetworkSessionShutdownAsync();
+            }
 
             if (!IsNetworkSessionActive())
             {
