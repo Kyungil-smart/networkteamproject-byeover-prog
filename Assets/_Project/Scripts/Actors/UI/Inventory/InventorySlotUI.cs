@@ -111,6 +111,7 @@ namespace DeadZone.Actors.UI
         private static GameObject dragIconObject;
         private static RectTransform dragIconRect;
         private static Canvas dragCanvas;
+        private static Camera dragEventCamera;
         private static InventorySlotUI draggingSlot;
 
         private bool isLocked;
@@ -130,6 +131,7 @@ namespace DeadZone.Actors.UI
             AutoBindReferences();
             ConfigureSlotKind();
             NormalizeQuickSlotIndexFromHierarchy();
+            NormalizeBagSlotIndexFromHierarchy();
         }
 
         public string GetEquipmentSaveSlotId()
@@ -153,6 +155,7 @@ namespace DeadZone.Actors.UI
             AutoBindReferences();
             ConfigureSlotKind();
             NormalizeQuickSlotIndexFromHierarchy();
+            NormalizeBagSlotIndexFromHierarchy();
             EnsureRaycastTarget();
         }
 
@@ -182,6 +185,11 @@ namespace DeadZone.Actors.UI
 
             AutoBindReferences();
             ConfigureSlotKind();
+            if (index < 0)
+            {
+                NormalizeQuickSlotIndexFromHierarchy();
+                NormalizeBagSlotIndexFromHierarchy();
+            }
             EnsureRaycastTarget();
         }
 
@@ -200,6 +208,11 @@ namespace DeadZone.Actors.UI
                 ownerInventoryUI = inventoryUI;
 
             AutoBindReferences();
+            if (index < 0)
+            {
+                NormalizeQuickSlotIndexFromHierarchy();
+                NormalizeBagSlotIndexFromHierarchy();
+            }
             EnsureRaycastTarget();
         }
 
@@ -647,24 +660,35 @@ namespace DeadZone.Actors.UI
 
             ItemDataSO sourceItem = source.CurrentItemData;
             int sourceCount = source.CurrentStackCount;
+            bool canUseGridInventoryRequest = CanUseGridInventoryRequest(source);
 
-            if (source.slotKind == InventorySlotKind.QuickSlot && slotKind != InventorySlotKind.QuickSlot)
+            if (slotKind == InventorySlotKind.QuickSlot)
+                return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
+
+            if (canUseGridInventoryRequest &&
+                source.slotKind == InventorySlotKind.QuickSlot &&
+                slotKind == InventorySlotKind.Bag &&
+                TryRequestQuickSlotMoveToInventory(source.slotIndex, slotIndex))
+            {
+                return true;
+            }
+
+            if (source.slotKind == InventorySlotKind.QuickSlot && slotKind != InventorySlotKind.Bag)
             {
                 Debug.Log("[InventorySlotUI] Quick slot shortcuts cannot be moved into item containers. Clear or replace the shortcut instead.", this);
                 return false;
             }
 
-            if (slotKind == InventorySlotKind.QuickSlot)
-                return TryAssignQuickSlotShortcut(source, sourceItem, sourceCount);
-
-            if (source.slotKind == InventorySlotKind.Bag &&
+            if (canUseGridInventoryRequest &&
+                source.slotKind == InventorySlotKind.Bag &&
                 slotKind == InventorySlotKind.Bag &&
                 TryRequestInventorySlotMove(source.slotIndex, slotIndex))
             {
                 return true;
             }
 
-            if (source.slotKind == InventorySlotKind.Bag &&
+            if (canUseGridInventoryRequest &&
+                source.slotKind == InventorySlotKind.Bag &&
                 TryGetEquipmentTargetSlot(out EquipmentTargetSlot targetEquipmentSlot) &&
                 TryRequestInventorySlotEquipToEquipment(source, targetEquipmentSlot))
             {
@@ -679,21 +703,24 @@ namespace DeadZone.Actors.UI
 
             if (!HasItem)
             {
-                if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot emptyTargetEquipmentSlot) &&
+                if (canUseGridInventoryRequest &&
+                    TryGetEquipmentTargetSlot(out EquipmentTargetSlot emptyTargetEquipmentSlot) &&
                     source.slotKind == InventorySlotKind.Bag &&
                     TryRequestInventoryMoveToEquipment(source.slotIndex, emptyTargetEquipmentSlot))
                 {
                     return true;
                 }
 
-                if (slotKind == InventorySlotKind.Bag &&
+                if (canUseGridInventoryRequest &&
+                    slotKind == InventorySlotKind.Bag &&
                     source.TryGetEquipmentTargetSlot(out EquipmentTargetSlot sourceEquipmentSlot) &&
                     TryRequestEquipmentMoveToInventory(sourceEquipmentSlot, slotIndex))
                 {
                     return true;
                 }
 
-                if (slotKind == InventorySlotKind.Bag &&
+                if (canUseGridInventoryRequest &&
+                    slotKind == InventorySlotKind.Bag &&
                     source.slotKind == InventorySlotKind.QuickSlot &&
                     TryRequestQuickSlotMoveToInventory(source.slotIndex, slotIndex))
                 {
@@ -715,7 +742,8 @@ namespace DeadZone.Actors.UI
             ItemDataSO targetItem = CurrentItemData;
             int targetCount = CurrentStackCount;
 
-            if (TryGetEquipmentTargetSlot(out EquipmentTargetSlot occupiedTargetEquipmentSlot) &&
+            if (canUseGridInventoryRequest &&
+                TryGetEquipmentTargetSlot(out EquipmentTargetSlot occupiedTargetEquipmentSlot) &&
                 source.slotKind == InventorySlotKind.Bag &&
                 TryRequestInventoryMoveToEquipment(source.slotIndex, occupiedTargetEquipmentSlot))
             {
@@ -759,6 +787,14 @@ namespace DeadZone.Actors.UI
             source.SetItem(targetItem, targetCount);
             CaptureLobbyInventoryStateIfPresent(this, source);
             return true;
+        }
+
+        private bool CanUseGridInventoryRequest(InventorySlotUI source)
+        {
+            if (source == null)
+                return false;
+
+            return !IsLobbyInventorySlot() && !source.IsLobbyInventorySlot();
         }
 
         private static bool TryRequestEquipmentMoveToInventory(EquipmentTargetSlot sourceEquipmentSlot, int targetSlotIndex)
@@ -820,6 +856,7 @@ namespace DeadZone.Actors.UI
                 return false;
 
             if (source.slotKind == InventorySlotKind.Bag &&
+                CanUseGridInventoryRequest(source) &&
                 TryRequestAssignQuickSlot(source.slotIndex, slotIndex))
             {
                 return true;
@@ -827,7 +864,8 @@ namespace DeadZone.Actors.UI
 
             if (source.slotKind == InventorySlotKind.QuickSlot)
             {
-                if (TryRequestSwapQuickSlots(source.slotIndex, slotIndex))
+                if (CanUseGridInventoryRequest(source) &&
+                    TryRequestSwapQuickSlots(source.slotIndex, slotIndex))
                     return true;
 
                 ItemDataSO targetItem = CurrentItemData;
@@ -1280,7 +1318,7 @@ namespace DeadZone.Actors.UI
             int index = 0;
             foreach (Transform child in parent)
             {
-                if (child == null || child.GetComponent<RectTransform>() == null)
+                if (child == null || !child.gameObject.activeSelf || child.GetComponent<RectTransform>() == null)
                     continue;
 
                 if (child == transform)
@@ -1292,6 +1330,50 @@ namespace DeadZone.Actors.UI
                 if (child.GetComponent<InventorySlotUI>() != null || child.GetComponent<UnityEngine.UI.Image>() != null)
                     index++;
             }
+        }
+
+        private void NormalizeBagSlotIndexFromHierarchy()
+        {
+            if (slotKind != InventorySlotKind.Bag)
+                return;
+
+            Transform parent = transform.parent;
+            if (parent == null || !IsLikelyBagSlotParent(parent))
+                return;
+
+            int index = 0;
+            foreach (Transform child in parent)
+            {
+                if (child == null || !child.gameObject.activeSelf || child.GetComponent<RectTransform>() == null)
+                    continue;
+
+                InventorySlotUI childSlot = child.GetComponent<InventorySlotUI>();
+                if (childSlot == null)
+                    continue;
+
+                if (child == transform)
+                {
+                    slotIndex = index;
+                    return;
+                }
+
+                index++;
+            }
+        }
+
+        private static bool IsLikelyBagSlotParent(Transform parent)
+        {
+            if (parent == null)
+                return false;
+
+            if (parent.GetComponent<GridLayoutGroup>() != null)
+                return true;
+
+            string path = GetHierarchyPath(parent).ToLowerInvariant();
+            return path.Contains("playerinventory") ||
+                   path.Contains("playerbag") ||
+                   path.Contains("stash") ||
+                   (path.Contains("inventory") && path.Contains("content"));
         }
 
         private void AutoBindReferences()
@@ -1386,16 +1468,25 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            dragCanvas = GetComponentInParent<Canvas>();
+            Canvas parentCanvas = GetComponentInParent<Canvas>();
+            dragCanvas = parentCanvas != null && parentCanvas.rootCanvas != null
+                ? parentCanvas.rootCanvas
+                : parentCanvas;
             if (dragCanvas == null)
                 return;
 
+            dragEventCamera = eventData.pressEventCamera;
             dragIconObject = new GameObject("Drag_ItemIcon", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
             dragIconObject.transform.SetParent(dragCanvas.transform, false);
             dragIconObject.transform.SetAsLastSibling();
 
             dragIconRect = dragIconObject.GetComponent<RectTransform>();
-            dragIconRect.sizeDelta = (transform as RectTransform)?.rect.size ?? new Vector2(64f, 64f);
+            dragIconRect.anchorMin = new Vector2(0.5f, 0.5f);
+            dragIconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            dragIconRect.pivot = new Vector2(0.5f, 0.5f);
+            dragIconRect.sizeDelta = (iconImage.transform as RectTransform)?.rect.size
+                                     ?? (transform as RectTransform)?.rect.size
+                                     ?? new Vector2(64f, 64f);
 
             CanvasGroup canvasGroup = dragIconObject.GetComponent<CanvasGroup>();
             canvasGroup.blocksRaycasts = false;
@@ -1443,9 +1534,14 @@ namespace DeadZone.Actors.UI
             if (dragIconRect == null || dragCanvas == null)
                 return;
 
-            RectTransform canvasRect = dragCanvas.transform as RectTransform;
-            Camera eventCamera = dragCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : dragCanvas.worldCamera;
+            if (dragCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                dragIconRect.position = screenPosition;
+                return;
+            }
 
+            RectTransform canvasRect = dragCanvas.transform as RectTransform;
+            Camera eventCamera = dragCanvas.worldCamera != null ? dragCanvas.worldCamera : dragEventCamera;
             if (canvasRect != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPosition, eventCamera, out Vector2 localPoint))
                 dragIconRect.anchoredPosition = localPoint;
         }
@@ -1458,6 +1554,7 @@ namespace DeadZone.Actors.UI
             dragIconObject = null;
             dragIconRect = null;
             dragCanvas = null;
+            dragEventCamera = null;
         }
 
         private void SetIcon(Sprite icon)

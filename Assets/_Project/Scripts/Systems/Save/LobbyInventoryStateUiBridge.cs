@@ -258,7 +258,8 @@ namespace DeadZone.Systems.Save
                     ResolveItemList(containerId, inventoryItems, stashItems, quickSlotItems);
 
                 int gridWidth = GetGridWidth(containerId);
-                int slotIndex = Mathf.Max(0, slot.SlotIndex);
+                if (!TryResolveSaveSlotIndex(slot, containerId, out int slotIndex))
+                    continue;
 
                 RemoveItemAtSlot(targetItems, slotIndex, gridWidth);
 
@@ -419,6 +420,7 @@ namespace DeadZone.Systems.Save
                 slots = root.GetComponentsInChildren<InventorySlotUI>(true);
 
             HashSet<int> usedQuickSlotIndexes = isQuickSlotContainer ? new HashSet<int>() : null;
+            HashSet<int> usedItemSlotIndexes = isQuickSlotContainer ? null : new HashSet<int>();
             for (int i = 0; i < slots.Length; i++)
             {
                 InventorySlotUI slot = slots[i];
@@ -444,6 +446,11 @@ namespace DeadZone.Systems.Save
                 {
                     slotIndex = ResolveQuickSlotIndex(slot, usedQuickSlotIndexes);
                     usedQuickSlotIndexes.Add(slotIndex);
+                }
+                else if (!TryResolveSaveSlotIndex(slot, containerId, out slotIndex) ||
+                         !usedItemSlotIndexes.Add(slotIndex))
+                {
+                    continue;
                 }
 
                 items.Add(new ItemSaveDTO
@@ -819,7 +826,7 @@ namespace DeadZone.Systems.Save
                 string containerId)
             {
                 InventorySlotUI[] slots = GetSlots(root);
-                ClearSlots(slots);
+                ClearSlots(slots, containerId);
                 int gridWidth = GetGridWidth(containerId);
 
                 if (slots.Length == 0 || items == null)
@@ -832,7 +839,7 @@ namespace DeadZone.Systems.Save
                         continue;
 
                     int slotIndex = ToLinearSlotIndex(item.x, item.y, gridWidth);
-                    InventorySlotUI slot = FindSlotByIndex(slots, slotIndex);
+                    InventorySlotUI slot = FindSlotByIndex(slots, slotIndex, containerId);
                     if (slot == null)
                     {
                         Debug.LogWarning(
@@ -1021,16 +1028,75 @@ namespace DeadZone.Systems.Save
                 }
             }
 
-            private static InventorySlotUI FindSlotByIndex(InventorySlotUI[] slots, int slotIndex)
+            private static void ClearSlots(InventorySlotUI[] slots, string containerId)
             {
                 for (int i = 0; i < slots.Length; i++)
                 {
                     InventorySlotUI slot = slots[i];
-                    if (slot != null && slot.SlotIndex == slotIndex)
+                    if (slot == null)
+                        continue;
+
+                    slot.PrepareForSaveSnapshot();
+                    if (IsSlotKindForContainer(slot, containerId))
+                        slot.ClearItem();
+                }
+            }
+
+            private static InventorySlotUI FindSlotByIndex(InventorySlotUI[] slots, int slotIndex, string containerId)
+            {
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    InventorySlotUI slot = slots[i];
+                    if (slot == null)
+                        continue;
+
+                    slot.PrepareForSaveSnapshot();
+                    if (IsSlotKindForContainer(slot, containerId) && slot.SlotIndex == slotIndex)
                         return slot;
                 }
 
                 return null;
+            }
+
+            private static bool TryResolveSaveSlotIndex(InventorySlotUI slot, string containerId, out int slotIndex)
+            {
+                slotIndex = -1;
+
+                if (slot == null)
+                    return false;
+
+                int index = slot.SlotIndex;
+                if (index < 0)
+                    return false;
+
+                int maxSlotCount = GetMaxSlotCount(containerId);
+                if (maxSlotCount > 0 && index >= maxSlotCount)
+                    return false;
+
+                slotIndex = index;
+                return true;
+            }
+
+            private static bool IsSlotKindForContainer(InventorySlotUI slot, string containerId)
+            {
+                if (slot == null)
+                    return false;
+
+                if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                    return slot.SlotKind == InventorySlotKind.QuickSlot;
+
+                return slot.SlotKind == InventorySlotKind.Bag;
+            }
+
+            private static int GetMaxSlotCount(string containerId)
+            {
+                if (string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase))
+                    return QuickSlotGridWidth;
+
+                if (string.Equals(containerId, StashContainerId, StringComparison.OrdinalIgnoreCase))
+                    return 150;
+
+                return 40;
             }
 
         private static int GetGridWidth(string containerId)
