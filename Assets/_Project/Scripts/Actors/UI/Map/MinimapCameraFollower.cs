@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 namespace DeadZone.Actors.UI
 {
@@ -23,6 +24,7 @@ namespace DeadZone.Actors.UI
 
         [Header("레이어")]
         [SerializeField] private string markerLayerName = "Minimap";
+        [SerializeField] private LayerMask hiddenFromMapLayers = 1 << 9;
         [SerializeField] private bool hideMarkerLayerFromOtherCameras = true;
 
         private static readonly Quaternion TopDownRotation = Quaternion.Euler(90f, 0f, 0f);
@@ -161,20 +163,39 @@ namespace DeadZone.Actors.UI
                 return;
 
             int markerMask = 1 << markerLayer;
-            minimapCamera.cullingMask |= markerMask;
-
-            if (!hideMarkerLayerFromOtherCameras)
-                return;
 
             Camera[] cameras = Camera.allCameras;
             for (int i = 0; i < cameras.Length; i++)
             {
                 Camera camera = cameras[i];
-                if (camera == null || camera == minimapCamera)
+                if (camera == null)
                     continue;
 
-                camera.cullingMask &= ~markerMask;
+                if (ShouldShowMarkerLayer(camera))
+                {
+                    camera.cullingMask &= ~hiddenFromMapLayers.value;
+                    camera.cullingMask |= markerMask;
+                }
+                else if (hideMarkerLayerFromOtherCameras)
+                {
+                    camera.cullingMask &= ~markerMask;
+                }
             }
+        }
+
+        private bool ShouldShowMarkerLayer(Camera camera)
+        {
+            if (camera == null)
+                return false;
+
+            if (camera == minimapCamera)
+                return true;
+
+            string cameraName = camera.name;
+
+            return cameraName.IndexOf("Minimap", StringComparison.OrdinalIgnoreCase) >= 0
+                   || cameraName.IndexOf("WorldMap", StringComparison.OrdinalIgnoreCase) >= 0
+                   || cameraName.IndexOf("Worldmap", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void TryFindLocalPlayer()

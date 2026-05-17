@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using System;
 
 using DeadZone.Actors.Player;
 
@@ -18,6 +19,7 @@ namespace DeadZone.Actors.UI
 
         [Header("레이어")]
         [SerializeField] private string markerLayerName = "Minimap";
+        [SerializeField] private LayerMask hiddenFromMapLayers = 1 << 9;
 
         private PlayerTeamIdentity teamIdentity;
 
@@ -93,17 +95,35 @@ namespace DeadZone.Actors.UI
 
             int markerMask = 1 << markerLayer;
             Camera[] cameras = Camera.allCameras;
+
             for (int i = 0; i < cameras.Length; i++)
             {
                 Camera camera = cameras[i];
                 if (camera == null)
                     continue;
 
-                if (camera.name.Contains("Minimap"))
+                if (ShouldShowMarkerLayer(camera))
+                {
+                    camera.cullingMask &= ~hiddenFromMapLayers.value;
                     camera.cullingMask |= markerMask;
+                }
                 else
+                {
                     camera.cullingMask &= ~markerMask;
+                }
             }
+        }
+
+        private bool ShouldShowMarkerLayer(Camera camera)
+        {
+            if (camera == null)
+                return false;
+
+            string cameraName = camera.name;
+
+            return cameraName.IndexOf("Minimap", StringComparison.OrdinalIgnoreCase) >= 0
+                   || cameraName.IndexOf("WorldMap", StringComparison.OrdinalIgnoreCase) >= 0
+                   || cameraName.IndexOf("Worldmap", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void SetLayerRecursively(GameObject targetObject, int layer)

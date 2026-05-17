@@ -1801,6 +1801,9 @@ MonoBehaviour:
   teammateColor: {r: 0, g: 1, b: 1, a: 1}
   rotateWithPlayer: 1
   markerLayerName: Minimap
+  hiddenFromMapLayers:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!1 &1136982649051480
 GameObject:
   m_ObjectHideFlags: 0
