@@ -57,6 +57,8 @@ namespace DeadZone.Actors
         private int burstCount;
         private float muzzleVelocity;
 
+        public Transform CurrentMuzzle => muzzle;
+
         private void Awake()
         {
             stats = GetComponent<EnemyStats>();
@@ -87,6 +89,7 @@ namespace DeadZone.Actors
         {
             if (muzzlePoint == null)
             {
+                Debug.LogWarning("[EnemyShooter] null MuzzlePoint가 전달되어 기존 muzzle을 유지합니다.", this);
                 return;
             }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using DeadZone.Core;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -48,7 +49,10 @@ namespace DeadZone.Actors
         [SerializeField] private float maxSpeedForNormalize = 0f;
 
         [Header("무기 타입")]
-        [Tooltip("WeaponType 파라미터 값 (Animator 상태에 맞게 설정)")]
+        [Tooltip("체크하면 EnemyStatsSO.defaultWeapon.weaponCategory를 기준으로 WeaponType 파라미터를 자동 설정합니다. 데이터가 없으면 아래 수동 값을 사용합니다.")]
+        [SerializeField] private bool useDefaultWeaponCategory = true;
+
+        [Tooltip("WeaponType 파라미터 수동 fallback 값입니다. 자동 설정에 필요한 EnemyStatsSO 또는 defaultWeapon이 비어 있을 때 사용합니다.")]
         [SerializeField] private int weaponTypeIndex = 0;
 
         // ───────── 내부 상태 ─────────
@@ -96,7 +100,8 @@ namespace DeadZone.Actors
             if (_animator != null)
             {
                 // WeaponType은 Animator Controller에서 Int 파라미터이므로 SetInteger를 사용한다.
-                _animator.SetInteger(HashWeaponType, weaponTypeIndex);
+                int resolvedWeaponTypeIndex = ResolveWeaponTypeIndex();
+                _animator.SetInteger(HashWeaponType, resolvedWeaponTypeIndex);
                 _aimLayerIndex = _animator.GetLayerIndex("Aim Layer");
             }
         }
@@ -158,6 +163,51 @@ namespace DeadZone.Actors
         {
             if (_animator == null) return;
             _animator.SetTrigger(HashHit);
+        }
+
+        private int ResolveWeaponTypeIndex()
+        {
+            if (!useDefaultWeaponCategory)
+            {
+                return weaponTypeIndex;
+            }
+
+            WeaponDataSO defaultWeapon = _stats != null && _stats.StatsSO != null
+                ? _stats.StatsSO.defaultWeapon
+                : null;
+
+            if (defaultWeapon == null)
+            {
+                Debug.LogWarning("[EnemyAnimHandler] EnemyStatsSO.defaultWeapon이 비어 있어 수동 WeaponType 값을 사용합니다.", this);
+                return weaponTypeIndex;
+            }
+
+            return ResolveWeaponTypeIndex(defaultWeapon);
+        }
+
+        private int ResolveWeaponTypeIndex(WeaponDataSO weaponData)
+        {
+            // Animator의 WeaponType 숫자 계약은 PlayerWeaponAnimationType과 맞춰 둔다.
+            // Enemy Animator Controller는 후속 작업에서 이 값을 기준으로 Handgun/RifleLike 분기를 추가할 수 있다.
+            switch (weaponData.weaponCategory)
+            {
+                case WeaponCategory.AR:
+                case WeaponCategory.SMG:
+                case WeaponCategory.Sniper:
+                case WeaponCategory.Shotgun:
+                    return (int)PlayerWeaponAnimationType.RifleLike;
+
+                case WeaponCategory.Handgun:
+                    return (int)PlayerWeaponAnimationType.Handgun;
+
+                case WeaponCategory.Melee:
+                    Debug.LogWarning($"[EnemyAnimHandler] {weaponData.name}은 Melee 계열입니다. Enemy 총기 애니메이션 분류 대상이 아니므로 수동 WeaponType 값을 사용합니다.", this);
+                    return weaponTypeIndex;
+
+                default:
+                    Debug.LogWarning($"[EnemyAnimHandler] {weaponData.name}의 무기 카테고리({weaponData.weaponCategory})를 분류할 수 없어 수동 WeaponType 값을 사용합니다.", this);
+                    return weaponTypeIndex;
+            }
         }
 
         // ───────── 히트 플래시 API ─────────
