@@ -6804,8 +6804,7 @@ MonoBehaviour:
   testItemPool:
   - {fileID: 11400000, guid: 1d05c31559f77644fb7b4e21c193249f, type: 2}
   - {fileID: 11400000, guid: 30b82f924b95c3f49bba2215d733358d, type: 2}
-  - {fileID: 11400000, guid: 11023541100b3244cb6247a3d14e872b, type: 2}
-  - {fileID: 11400000, guid: 4f0cafcfb6b8c384fbf5690c1a34acc9, type: 2}
+- {fileID: 11400000, guid: 4f0cafcfb6b8c384fbf5690c1a34acc9, type: 2}
   - {fileID: 11400000, guid: 049f9d86dbb4fb543aa0c70caae66882, type: 2}
   - {fileID: 11400000, guid: e3f5ac4f5c4ca6e44bf805ab44c7e5ec, type: 2}
   - {fileID: 11400000, guid: aaa1156877681054582b63c7b4a9f285, type: 2}

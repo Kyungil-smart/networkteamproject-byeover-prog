@@ -56,7 +56,7 @@ namespace DeadZone.EditorTools
 
             EditorUtility.DisplayDialog(
                 "DeadZone Item Generator v3",
-                $"파밍팀 자산 생성 완료 (총 56종)\n\n" +
+                $"파밍팀 자산 생성 완료 (총 55종)\n\n" +
                 $"신규 생성: {created}개\n" +
                 $"기존 스킵: {skipped}개\n\n" +
                 $"제외 항목 (무기팀 담당):\n" +
@@ -154,11 +154,11 @@ namespace DeadZone.EditorTools
             };
         }
 
-        // ----------- 56종 정의 (ItemIconPrompts v1.0 - 무기 9 - 탄약 3) -----------
+        // ----------- 55종 정의 (ItemIconPrompts v1.0 - 무기 9 - 탄약 3 - 현금 제외) -----------
 
         private static readonly ItemDef[] ALL_ITEMS = new[]
         {
-            // ========== Common (16개 = 20 - 무기 2 - 탄약 1 - DuctTape USDollars 유지) ==========
+            // ========== Common (15개 = 20 - 무기 2 - 탄약 1 - 현금 제외) ==========
             Mk("Bolt",             "볼트",          ItemCategory.Material, RarityTier.Common, new Vector2Int(1,1), 30, 0.05f, 30),
             Mk("MetalScrap",       "금속 조각",      ItemCategory.Material, RarityTier.Common, new Vector2Int(1,1), 20, 0.3f,  50),
             Mk("WoodScrap",        "나무 조각",      ItemCategory.Material, RarityTier.Common, new Vector2Int(1,1), 20, 0.2f,  40),
@@ -170,7 +170,6 @@ namespace DeadZone.EditorTools
             Mk("Bandage",          "붕대",          ItemCategory.Med,      RarityTier.Common, new Vector2Int(1,1), 5,  0.1f,  150),
             Mk("DuctTape",         "덕 테이프",      ItemCategory.Material, RarityTier.Common, new Vector2Int(1,1), 10, 0.2f,  120),
             Mk("BrokenLCD",        "부서진 LCD",    ItemCategory.Valuable, RarityTier.Common, new Vector2Int(1,2), 1,  1.5f,  600,  valuable:true),
-            Mk("USDollars",        "현금/달러",      ItemCategory.Valuable, RarityTier.Common, new Vector2Int(1,1), 50, 0.01f, 100),
             Mk("HardDiskDrive",    "하드디스크",     ItemCategory.Valuable, RarityTier.Common, new Vector2Int(1,1), 1,  0.4f,  800,  valuable:true),
             Mk("Armor_C1",         "1 클래스 아머",  ItemCategory.Armor,    RarityTier.Common, new Vector2Int(2,3), 1,  1.5f,  1000),
             Mk("Armor_C2",         "2 클래스 아머",  ItemCategory.Armor,    RarityTier.Common, new Vector2Int(2,3), 1,  2.5f,  2500),

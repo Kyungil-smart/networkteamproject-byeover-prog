@@ -22,7 +22,7 @@ MonoBehaviour:
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 0.1
-  baseSellPrice: 2000
+  baseSellPrice: 1000
   worldPrefab: {fileID: 875094782670523779, guid: 3db3adde0c190674993972710e255606, type: 3}
   weaponCategory: 4
   damage: 84

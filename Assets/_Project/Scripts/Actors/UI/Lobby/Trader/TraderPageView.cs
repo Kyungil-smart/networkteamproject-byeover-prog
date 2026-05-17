@@ -20,6 +20,8 @@ namespace DeadZone.Actors.UI
 
     public sealed class TraderPageView : MonoBehaviour
     {
+        private const int AmmoTradeBundleAmount = 30;
+
 #if ODIN_INSPECTOR
         [Sirenix.OdinInspector.Title("상세 화면 참조")]
 #else
@@ -376,14 +378,15 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
+            int sellAmount = GetTradeAmount(entry.item);
             IInventory inventory = ResolveInventoryTarget();
-            if (inventory != null && !inventory.ConsumeItem(entry.item.itemID, 1))
+            if (inventory != null && !inventory.ConsumeItem(entry.item.itemID, sellAmount))
             {
                 Debug.LogWarning("[TraderPageView] IInventory.ConsumeItem(string itemId, int count) 호출이 실패했습니다. 로비 시스템 보관함에서 아이템을 제거하는 API가 필요합니다.", this);
             }
 
             testPurchasedEntries.RemoveAt(entryIndex);
-            int sellPrice = CalculateSellPrice(entry);
+            int sellPrice = CalculateSellPrice(entry.item);
             EarnTestCurrency(sellPrice);
             SaveLobbyAfterTestTrade();
 
@@ -431,7 +434,12 @@ namespace DeadZone.Actors.UI
 
         private static int GetPurchaseAmount(ItemDataSO item)
         {
-            return item is AmmoDataSO ? 30 : 1;
+            return GetTradeAmount(item);
+        }
+
+        private static int GetTradeAmount(ItemDataSO item)
+        {
+            return item is AmmoDataSO ? AmmoTradeBundleAmount : 1;
         }
 
         private IInventory ResolveInventoryTarget()
@@ -464,14 +472,15 @@ namespace DeadZone.Actors.UI
             if (inventory == null)
                 return false;
 
-            if (!inventory.ConsumeItem(entry.item.itemID, 1))
+            int sellAmount = GetTradeAmount(entry.item);
+            if (!inventory.ConsumeItem(entry.item.itemID, sellAmount))
                 return false;
 
             int entryIndex = FindPurchasedEntryIndex(entry);
             if (entryIndex >= 0)
                 testPurchasedEntries.RemoveAt(entryIndex);
 
-            int sellPrice = Mathf.Max(0, entry.basePrice);
+            int sellPrice = CalculateSellPrice(entry.item);
             EarnTestCurrency(sellPrice);
             SaveLobbyAfterTestTrade();
 
@@ -495,6 +504,7 @@ namespace DeadZone.Actors.UI
             if (stashItems == null || stashItems.Count == 0)
                 return entries;
 
+            HashSet<string> addedAmmoItemIds = new();
             for (int i = 0; i < stashItems.Count; i++)
             {
                 ItemSaveDTO savedItem = stashItems[i];
@@ -504,6 +514,12 @@ namespace DeadZone.Actors.UI
                 ItemDataSO item = itemDatabase.GetById(savedItem.itemId);
                 if (item == null)
                     continue;
+
+                if (item is AmmoDataSO)
+                {
+                    if (!addedAmmoItemIds.Add(item.itemID) || resolvedStashGridUI.GetItemCount(item.itemID) < AmmoTradeBundleAmount)
+                        continue;
+                }
 
                 entries.Add(new TraderEntry
                 {
