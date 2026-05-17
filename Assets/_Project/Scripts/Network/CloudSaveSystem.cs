@@ -934,10 +934,11 @@ namespace DeadZone.Network
 
         private void CollectFacilities()
         {
-            if (TryCollectPlayerHousingProgress())
-                return;
+            bool collectedFacilityState = false;
+            collectedFacilityState |= TryCollectLobbyFacilityState();
+            collectedFacilityState |= TryCollectPlayerHousingProgress();
 
-            if (TryCollectLobbyFacilityState())
+            if (collectedFacilityState)
             {
                 MirrorFacilitiesToLobbySave();
                 return;

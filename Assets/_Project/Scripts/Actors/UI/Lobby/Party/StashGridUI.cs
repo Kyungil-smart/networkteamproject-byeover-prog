@@ -189,6 +189,13 @@ namespace DeadZone.Actors.UI
             RefreshUpgradePopup();
         }
 
+        public void RefreshSavedLevelAndSlots()
+        {
+            ApplySavedStashLevel();
+            RefreshSlots();
+            RefreshUpgradePopup();
+        }
+
         public void RefreshSlots()
         {
             AutoBindReferences();
