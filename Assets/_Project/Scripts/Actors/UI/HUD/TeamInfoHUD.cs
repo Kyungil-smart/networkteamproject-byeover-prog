@@ -37,8 +37,10 @@ namespace DeadZone.Actors.UI
         private readonly Dictionary<ulong, TeamHpSlotUI> clientIdToSlot = new();
 
         private readonly Dictionary<ulong, PlayerHealthSystem> clientIdToHealth = new();
+        private readonly Dictionary<ulong, float> clientIdToBleedoutTotal = new();
 
         private readonly List<Action> maxHpUnsubscribers = new();
+        private readonly List<Action> bleedoutUnsubscribers = new();
 
         private readonly List<Action> teamColorUnsubscribers = new();
 
@@ -62,6 +64,9 @@ namespace DeadZone.Actors.UI
         {
             loggedMissingSlots = false;
             EventBus.Subscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
+            EventBus.Subscribe<PlayerKnockedEvent>(OnPlayerKnocked);
+            EventBus.Subscribe<PlayerKnockedHpChangedEvent>(OnPlayerKnockedHpChanged);
+            EventBus.Subscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
             RegisterNetworkCallbacks();
             StartCoroutine(RebuildAfterFrames());
             StartCoroutine(RebuildWhileNetworkBooting());
@@ -71,10 +76,30 @@ namespace DeadZone.Actors.UI
         {
             StopAllCoroutines();
             EventBus.Unsubscribe<PlayerHpChangedEvent>(OnPlayerHpChanged);
+            EventBus.Unsubscribe<PlayerKnockedEvent>(OnPlayerKnocked);
+            EventBus.Unsubscribe<PlayerKnockedHpChangedEvent>(OnPlayerKnockedHpChanged);
+            EventBus.Unsubscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
             UnregisterNetworkCallbacks();
             ClearMaxHpSubscriptions();
+            ClearBleedoutSubscriptions();
             ClearTeamColorSubscriptions();
             ClearAllSlots();
+            clientIdToBleedoutTotal.Clear();
+        }
+
+        private void Update()
+        {
+            foreach (KeyValuePair<ulong, TeamHpSlotUI> pair in clientIdToSlot)
+            {
+                if (!clientIdToHealth.TryGetValue(pair.Key, out PlayerHealthSystem health) ||
+                    health == null ||
+                    !health.IsKnocked)
+                {
+                    continue;
+                }
+
+                RefreshSlotForHealth(pair.Key, pair.Value, health);
+            }
         }
 
         private IEnumerator RebuildAfterFrames()
@@ -140,8 +165,34 @@ namespace DeadZone.Actors.UI
                     return;
             }
 
-            float maxForClient = ResolveMaxHpForClient(e.clientId);
-            slot.SetHp(e.newValue, maxForClient);
+            if (clientIdToHealth.TryGetValue(e.clientId, out PlayerHealthSystem health) &&
+                health != null &&
+                health.IsKnocked)
+            {
+                RefreshSlotForHealth(e.clientId, slot, health);
+                return;
+            }
+
+            slot.SetHp(e.newValue, ResolveMaxHpForClient(e.clientId));
+        }
+
+        private void OnPlayerKnocked(PlayerKnockedEvent e)
+        {
+            clientIdToBleedoutTotal[e.victimClientId] = Mathf.Max(1f, e.bleedoutSeconds);
+            RefreshSlotForClient(e.victimClientId);
+        }
+
+        private void OnPlayerKnockedHpChanged(PlayerKnockedHpChangedEvent e)
+        {
+            RefreshSlotForClient(e.clientId);
+        }
+
+        private void OnPlayerStateChanged(PlayerStateChangedEvent e)
+        {
+            if (e.newState != PlayerState.Knocked)
+                clientIdToBleedoutTotal.Remove(e.clientId);
+
+            RefreshSlotForClient(e.clientId);
         }
 
         [Button("팀 슬롯 재구성(에디터)")]
@@ -157,6 +208,7 @@ namespace DeadZone.Actors.UI
         {
             EnsureTeamSlotsPopulatedFromHierarchy();
             ClearMaxHpSubscriptions();
+            ClearBleedoutSubscriptions();
             ClearTeamColorSubscriptions();
             ClearAllSlots();
             clientIdToSlot.Clear();
@@ -416,7 +468,7 @@ namespace DeadZone.Actors.UI
 
             if (health != null)
             {
-                hp = health.CurrentHP.Value;
+                hp = health.IsKnocked ? health.BleedoutRemaining.Value : health.CurrentHP.Value;
                 maxForClient = ResolveMaxHpForHealth(health);
             }
             else
@@ -425,8 +477,61 @@ namespace DeadZone.Actors.UI
             }
 
             slot.Bind(teammate.ClientId, color, hp, maxForClient);
+
+            if (health != null && health.IsKnocked)
+                RefreshSlotForHealth(teammate.ClientId, slot, health);
+
             RegisterMaxHpSubscription(health, slot);
+            RegisterBleedoutSubscription(health, slot);
             RegisterTeamColorSubscription(teammate, slot);
+        }
+
+        private void RefreshSlotForClient(ulong clientId)
+        {
+            if (!clientIdToSlot.TryGetValue(clientId, out TeamHpSlotUI slot))
+            {
+                RebuildTeamRoster();
+
+                if (!clientIdToSlot.TryGetValue(clientId, out slot))
+                    return;
+            }
+
+            if (!clientIdToHealth.TryGetValue(clientId, out PlayerHealthSystem health) || health == null)
+                return;
+
+            RefreshSlotForHealth(clientId, slot, health);
+        }
+
+        private void RefreshSlotForHealth(ulong clientId, TeamHpSlotUI slot, PlayerHealthSystem health)
+        {
+            if (slot == null || health == null)
+                return;
+
+            if (health.IsKnocked)
+            {
+                float remaining = Mathf.Max(0f, health.BleedoutRemaining.Value);
+                float total = ResolveBleedoutTotal(clientId, remaining);
+                slot.SetKnocked(remaining, total);
+                return;
+            }
+
+            if (health.IsDead)
+            {
+                slot.SetHp(0f, ResolveMaxHpForHealth(health));
+                return;
+            }
+
+            slot.SetHp(health.CurrentHP.Value, ResolveMaxHpForHealth(health));
+        }
+
+        private float ResolveBleedoutTotal(ulong clientId, float remaining)
+        {
+            if (clientIdToBleedoutTotal.TryGetValue(clientId, out float total) && total > 0f)
+                return total;
+
+            total = Mathf.Max(1f, remaining);
+            clientIdToBleedoutTotal[clientId] = total;
+            return total;
         }
 
         private float ResolveMaxHpForClient(ulong clientId)
@@ -458,8 +563,7 @@ namespace DeadZone.Actors.UI
                 if (slot == null)
                     return;
 
-                float m = Mathf.Max(1f, newMax);
-                slot.SetHp(health.CurrentHP.Value, m);
+                RefreshSlotForHealth(health.OwnerClientId, slot, health);
             }
 
             health.ReplicatedMaxHp.OnValueChanged += OnMaxHpChanged;
@@ -476,6 +580,35 @@ namespace DeadZone.Actors.UI
                 maxHpUnsubscribers[i]?.Invoke();
 
             maxHpUnsubscribers.Clear();
+        }
+
+        private void RegisterBleedoutSubscription(PlayerHealthSystem health, TeamHpSlotUI slot)
+        {
+            if (health == null || !health.IsSpawned || slot == null)
+                return;
+
+            void OnBleedoutChanged(float _, float __)
+            {
+                if (slot == null)
+                    return;
+
+                RefreshSlotForHealth(health.OwnerClientId, slot, health);
+            }
+
+            health.BleedoutRemaining.OnValueChanged += OnBleedoutChanged;
+            bleedoutUnsubscribers.Add(() =>
+            {
+                if (health != null)
+                    health.BleedoutRemaining.OnValueChanged -= OnBleedoutChanged;
+            });
+        }
+
+        private void ClearBleedoutSubscriptions()
+        {
+            for (int i = 0; i < bleedoutUnsubscribers.Count; i++)
+                bleedoutUnsubscribers[i]?.Invoke();
+
+            bleedoutUnsubscribers.Clear();
         }
 
         private void RegisterTeamColorSubscription(TeamPlayerEntry teammate, TeamHpSlotUI slot)

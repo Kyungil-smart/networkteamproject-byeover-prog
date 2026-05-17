@@ -10742,7 +10742,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5492ec89afa669648bd0d6e53e931cbb, type: 3}
+  m_Sprite: {fileID: 21300000, guid: f81bc69b0b73fdd4f900f931865a8353, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11516,6 +11516,7 @@ MonoBehaviour:
   hpFill: {fileID: 1414739287043467254}
   teamIcon: {fileID: 3204807592963694639}
   hpValueText: {fileID: 1348688783737136924}
+  knockedHpColor: {r: 1, g: 0.45, b: 0.2, a: 1}
 --- !u!1 &5111308906544299473
 GameObject:
   m_ObjectHideFlags: 0
@@ -16675,7 +16676,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5492ec89afa669648bd0d6e53e931cbb, type: 3}
+  m_Sprite: {fileID: 21300000, guid: f81bc69b0b73fdd4f900f931865a8353, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -20480,6 +20481,7 @@ MonoBehaviour:
   hpFill: {fileID: 2309423307761249974}
   teamIcon: {fileID: 5227918943036460762}
   hpValueText: {fileID: 2045935156374136101}
+  knockedHpColor: {r: 1, g: 0.45, b: 0.2, a: 1}
 --- !u!1 &7969104437618942233
 GameObject:
   m_ObjectHideFlags: 0
@@ -21415,7 +21417,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5492ec89afa669648bd0d6e53e931cbb, type: 3}
+  m_Sprite: {fileID: 21300000, guid: f81bc69b0b73fdd4f900f931865a8353, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -24079,6 +24081,7 @@ MonoBehaviour:
   hpFill: {fileID: 1663581001379119348}
   teamIcon: {fileID: 3151844013532747752}
   hpValueText: {fileID: 684884980144874249}
+  knockedHpColor: {r: 1, g: 0.45, b: 0.2, a: 1}
 --- !u!1 &9099416480290094648
 GameObject:
   m_ObjectHideFlags: 0
