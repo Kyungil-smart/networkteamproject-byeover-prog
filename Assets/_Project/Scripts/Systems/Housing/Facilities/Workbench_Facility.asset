@@ -20,16 +20,16 @@ MonoBehaviour:
   - level: 2
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 0ad2af112dd8ad94192784a3dadaf54d, type: 2}
-      amount: 5
+      amount: 2
     - item: {fileID: 11400000, guid: b0f7fba7e4e87a74c91f5c3d0cbd5f44, type: 2}
-      amount: 5
+      amount: 2
     effectDescription: "\uD76C\uADC0 \uB4F1\uAE09\uAE4C\uC9C0 \uC81C\uC791 \uAC00\uB2A5"
   - level: 3
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 0ad2af112dd8ad94192784a3dadaf54d, type: 2}
-      amount: 10
+      amount: 5
     - item: {fileID: 11400000, guid: b0f7fba7e4e87a74c91f5c3d0cbd5f44, type: 2}
-      amount: 10
+      amount: 5
     - item: {fileID: 11400000, guid: b225481d750ccc04b803ebb051064af7, type: 2}
       amount: 1
     effectDescription: "\uB808\uC5B4 \uB4F1\uAE09\uAE4C\uC9C0 \uC81C\uC791 \uAC00\uB2A5"
@@ -40,6 +40,6 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: cd4e61cb257052b40ada50b9154659af, type: 2}
       amount: 1
     - item: {fileID: 11400000, guid: 62bfb5be1f6350342aac4c5a39528dd9, type: 2}
-      amount: 4
+      amount: 2
     effectDescription: "F2 / \uB4DC\uB77C\uADF8 \uC18C\uCD1D / 6 \uD074\uB798\uC2A4
       \uC544\uBA38 \uC81C\uC791 \uAC00\uB2A5"

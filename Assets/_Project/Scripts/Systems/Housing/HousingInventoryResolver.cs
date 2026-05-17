@@ -21,7 +21,7 @@ namespace DeadZone.Systems.Housing
             inventory = null;
             failReason = string.Empty;
 
-            if (TryGetLobbyInventory(out inventory, out _))
+            if (NetworkManager.Singleton == null && TryGetLobbyInventory(out inventory, out _))
                 return true;
 
             if (NetworkManager.Singleton == null)

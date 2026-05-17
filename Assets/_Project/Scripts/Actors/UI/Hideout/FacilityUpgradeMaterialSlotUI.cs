@@ -6,7 +6,7 @@ using DeadZone.Core;
 
 namespace DeadZone.Actors.UI.Hideout
 {
-    // ¾÷±×·¹ÀÌµå¿¡ ÇÊ¿äÇÑ Àç·á ÇÏ³ªÀÇ ¾ÆÀÌÄÜ, ÀÌ¸§, º¸À¯/ÇÊ¿ä ¼ö·®À» Ç¥½Ã
+    // ì—…ê·¸ë ˆì´ë“œì— í•„ìš”í•œ ì¬ë£Œ í•˜ë‚˜ì˜ ì•„ì´ì½˜, ì´ë¦„, ë³´ìœ /í•„ìš” ìˆ˜ëŸ‰ì„ í‘œì‹œ
     [DisallowMultipleComponent]
     public sealed class FacilityUpgradeMaterialSlotUI : MonoBehaviour
     {
@@ -20,7 +20,7 @@ namespace DeadZone.Actors.UI.Hideout
         [SerializeField]
         private TMP_Text amountText;
 
-        [Header("»ö»ó")]
+        [Header("ìƒ‰ìƒ")]
         [SerializeField]
         private Color enoughColor = Color.white;
 
@@ -44,7 +44,9 @@ namespace DeadZone.Actors.UI.Hideout
             }
 
             if (itemNameText != null)
-                itemNameText.text = item.itemID;
+                itemNameText.text = !string.IsNullOrWhiteSpace(item.displayName)
+                    ? item.displayName
+                    : item.itemID;
 
             if (amountText != null)
             {
