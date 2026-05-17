@@ -26,6 +26,7 @@ namespace DeadZone.Network
     {
         private const int NetworkShutdownPollMilliseconds = 50;
         private const int NetworkShutdownTimeoutMilliseconds = 2500;
+        private const int StaleLobbyObjectDestroyWaitFrames = 8;
 
         private static readonly string[] PartySessionPlayerPrefsKeys =
         {
@@ -455,8 +456,22 @@ namespace DeadZone.Network
                 destroyedCount++;
             }
 
-            if (destroyedCount > 0)
+            if (destroyedCount <= 0)
+                return;
+
+            for (int i = 0; i < StaleLobbyObjectDestroyWaitFrames; i++)
+            {
                 await Task.Yield();
+
+                NetworkLobbyState[] remainingStates = UnityEngine.Object.FindObjectsByType<NetworkLobbyState>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+                if (remainingStates == null || remainingStates.Length <= 1)
+                    return;
+            }
+
+            Debug.LogWarning("[PartySession] Stale LobbyNetworkState objects still exist after destroy wait. StartHost/StartClient may fail.");
         }
 
         private static async Task<bool> WaitForNetworkManagerInactiveAsync(NetworkManager networkManager)

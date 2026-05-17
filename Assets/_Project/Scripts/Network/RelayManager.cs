@@ -28,13 +28,15 @@ namespace DeadZone.Network
         [SerializeField] private string relayRegion = null;  // null이면 가장 가까운 리전 자동 선택
 
         private bool isUnityServicesReady;
+        private Task initializationTask;
 
         public bool IsReady => isUnityServicesReady;
 
         private async void Awake()
         {
             ServiceLocator.Register(this);
-            await InitializeUnityServicesAsync();
+            initializationTask = InitializeUnityServicesAsync();
+            await initializationTask;
         }
 
         private void OnDestroy()
@@ -50,13 +52,8 @@ namespace DeadZone.Network
         {
             try
             {
-                if (UnityServices.State == ServicesInitializationState.Initialized)
-                {
-                    isUnityServicesReady = true;
-                    return;
-                }
-
-                await UnityServices.InitializeAsync();
+                if (UnityServices.State != ServicesInitializationState.Initialized)
+                    await UnityServices.InitializeAsync();
 
                 if (!AuthenticationService.Instance.IsSignedIn)
                 {
@@ -73,17 +70,37 @@ namespace DeadZone.Network
             }
         }
 
+        private async Task<bool> EnsureUnityServicesReadyAsync(string operationName)
+        {
+            if (isUnityServicesReady)
+                return true;
+
+            if (initializationTask == null || initializationTask.IsCompleted)
+                initializationTask = InitializeUnityServicesAsync();
+
+            await initializationTask;
+
+            if (isUnityServicesReady)
+                return true;
+
+            initializationTask = InitializeUnityServicesAsync();
+            await initializationTask;
+
+            if (isUnityServicesReady)
+                return true;
+
+            Debug.LogError($"[RelayManager] Unity Services is not ready. operation={operationName}");
+            return false;
+        }
+
         /// <summary>
         /// 호스트가 호출한다. Relay Allocation을 생성한다.
         /// </summary>
         /// <param name="maxPlayers">최대 플레이어 수 (호스트 포함). Relay 내부에서는 maxPlayers-1을 사용.</param>
         public async Task<Allocation> CreateAllocationAsync(int maxPlayers)
         {
-            if (!isUnityServicesReady)
-            {
-                Debug.LogError("[RelayManager] Unity Services가 준비되지 않았다");
+            if (!await EnsureUnityServicesReadyAsync(nameof(CreateAllocationAsync)))
                 return null;
-            }
 
             try
             {
@@ -122,11 +139,9 @@ namespace DeadZone.Network
         /// </summary>
         public async Task<JoinAllocation> JoinAllocationAsync(string joinCode)
         {
-            if (!isUnityServicesReady)
-            {
-                Debug.LogError("[RelayManager] Unity Services가 준비되지 않았다");
+            if (!await EnsureUnityServicesReadyAsync(nameof(JoinAllocationAsync)))
                 return null;
-            }
+
             if (string.IsNullOrEmpty(joinCode)) return null;
 
             try

@@ -112,9 +112,17 @@ namespace DeadZone.Actors.UI.Lobby
                 return;
 
             if (canClaimReward)
+            {
+                canClaimReward = false;
+                if (acceptButton != null)
+                    acceptButton.interactable = false;
+
                 onClaimRewardClicked?.Invoke(currentQuest);
+            }
             else
+            {
                 onAcceptClicked?.Invoke(currentQuest);
+            }
         }
 
         private static string BuildObjectivesText(QuestDataSO quest, string progressText)
