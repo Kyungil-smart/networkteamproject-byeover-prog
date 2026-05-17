@@ -166,7 +166,8 @@ namespace DeadZone.Systems
             if (candidate is not MedicalItemDataSO)
                 return false;
 
-            if (loggedLegacyMedicalAliases.Add(itemID))
+            if (!string.Equals(itemID, candidate.itemID, System.StringComparison.OrdinalIgnoreCase) &&
+                loggedLegacyMedicalAliases.Add(itemID))
             {
                 Debug.LogWarning(
                     $"[ItemDB] Legacy medical itemID '{itemID}' resolved to '{candidate.itemID}'. " +

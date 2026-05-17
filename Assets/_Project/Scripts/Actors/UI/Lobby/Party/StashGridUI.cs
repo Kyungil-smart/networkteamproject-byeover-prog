@@ -1022,8 +1022,23 @@ namespace DeadZone.Actors.UI
         {
             AutoBindUpgradeReferences();
 
+            int resolvedLevel = stashLevel;
+            bool hasResolvedLevel = false;
+
             if (TryGetSavedStashLevel(out int savedLevel))
-                stashLevel = Mathf.Clamp(savedLevel, 1, MaxStashLevel);
+            {
+                resolvedLevel = Mathf.Max(resolvedLevel, savedLevel);
+                hasResolvedLevel = true;
+            }
+
+            if (TryGetCloudStashLevel(out int cloudLevel))
+            {
+                resolvedLevel = Mathf.Max(resolvedLevel, cloudLevel);
+                hasResolvedLevel = true;
+            }
+
+            if (hasResolvedLevel)
+                stashLevel = Mathf.Clamp(resolvedLevel, 1, MaxStashLevel);
         }
 
         private bool TryGetSavedStashLevel(out int level)
@@ -1036,7 +1051,7 @@ namespace DeadZone.Actors.UI
             for (int i = 0; i < facilityState.Facilities.Count; i++)
             {
                 FacilitySaveDTO facility = facilityState.Facilities[i];
-                if (facility == null || !string.Equals(facility.facilityId, "Stash", System.StringComparison.OrdinalIgnoreCase))
+                if (facility == null || NormalizeFacilityId(facility.facilityId) != "stash")
                     continue;
 
                 level = Mathf.Clamp(facility.level, 1, MaxStashLevel);
@@ -1044,6 +1059,47 @@ namespace DeadZone.Actors.UI
             }
 
             return false;
+        }
+
+        private static bool TryGetCloudStashLevel(out int level)
+        {
+            level = 1;
+
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData || cloudSaveSystem.CurrentData == null)
+                return false;
+
+            bool found = false;
+            PlayerCloudData currentData = cloudSaveSystem.CurrentData;
+
+            if (currentData.facilities != null && currentData.facilities.stash > 0)
+            {
+                level = Mathf.Max(level, currentData.facilities.stash);
+                found = true;
+            }
+
+            if (currentData.lobbySave?.facilities != null)
+            {
+                for (int i = 0; i < currentData.lobbySave.facilities.Count; i++)
+                {
+                    LobbyFacilityCloudData facility = currentData.lobbySave.facilities[i];
+                    if (facility == null || NormalizeFacilityId(facility.facilityId) != "stash")
+                        continue;
+
+                    level = Mathf.Max(level, facility.level);
+                    found = true;
+                }
+            }
+
+            level = Mathf.Clamp(level, 1, MaxStashLevel);
+            return found;
+        }
+
+        private static string NormalizeFacilityId(string facilityId)
+        {
+            return string.IsNullOrWhiteSpace(facilityId)
+                ? string.Empty
+                : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
         }
 
         private int GetCurrentCredits()
@@ -1413,6 +1469,7 @@ namespace DeadZone.Actors.UI
 
         private void ApplyCloudStash(IReadOnlyList<StashSlot> cloudSlots)
         {
+            ApplySavedStashLevel();
             RefreshSlots();
 
             if (cloudSlots == null || cloudSlots.Count == 0)
@@ -1426,7 +1483,7 @@ namespace DeadZone.Actors.UI
             IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
             if (itemDatabase == null && cloudStashItemDatabase == null)
             {
-                Debug.LogWarning("[StashGridUI] Cloud Save 蹂닿??⑥쓣 ?곸슜?????놁뒿?덈떎. IItemDatabase ?쒕퉬???먮뒗 蹂댁“ ItemDatabaseSO媛 ?꾩슂?⑸땲??", this);
+                Debug.LogWarning("[StashGridUI] Cloud Save stash could not be applied. IItemDatabase service or fallback ItemDatabaseSO is required.", this);
                 return;
             }
 
@@ -1441,14 +1498,14 @@ namespace DeadZone.Actors.UI
                 ItemDataSO itemData = ResolveCloudStashItemData(cloudSlot.itemId, itemDatabase);
                 if (itemData == null)
                 {
-                    Debug.LogWarning($"[StashGridUI] Cloud Save 蹂닿????꾩씠?쒖쓣 李얠쓣 ???놁뒿?덈떎. ItemId={cloudSlot.itemId}", this);
+                    Debug.LogWarning($"[StashGridUI] Cloud Save stash item could not be resolved. ItemId={cloudSlot.itemId}", this);
                     continue;
                 }
 
                 InventorySlotUI targetSlot = FindSlotForCloudSlot(cloudSlot);
                 if (targetSlot == null)
                 {
-                    Debug.LogWarning($"[StashGridUI] Cloud Save 蹂닿????щ’??遺議깊빀?덈떎. ItemId={cloudSlot.itemId}", this);
+                    Debug.LogWarning($"[StashGridUI] Cloud Save stash has no available visible slot. ItemId={cloudSlot.itemId}, StashLevel={stashLevel}, ActiveSlots={activeSlotCount}, TotalSlots={slots.Count}", this);
                     continue;
                 }
 
