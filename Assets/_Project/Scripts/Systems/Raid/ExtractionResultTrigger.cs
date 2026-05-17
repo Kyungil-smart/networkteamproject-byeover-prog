@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using Unity.Netcode;
 
 using DeadZone.Actors.UI;
 using DeadZone.Core;
@@ -7,6 +9,9 @@ using DeadZone.Systems.Raid;
 
 namespace DeadZone.Actors.Extraction
 {
+    /// <summary>
+    /// 레이드 결과 또는 엔딩 씬으로 이동하는 탈출 트리거를 제어한다.
+    /// </summary>
     public class ExtractionResultTrigger : MonoBehaviour
     {
         [Header("탈출 설정")]
@@ -15,10 +20,20 @@ namespace DeadZone.Actors.Extraction
         [SerializeField] private string playerTag = "Player";
         [SerializeField] private string requiredUnlockZoneId;
 
+        [Header("보스 처치 잠금")]
+        [Tooltip("비워두면 보스 처치 조건을 사용하지 않습니다. EnemyStatsSO.enemyId와 동일해야 합니다.")]
+        [SerializeField] private string requiredEnemyKillId;
+        [Tooltip("requiredEnemyKillId가 지정된 경우 필요한 처치 수입니다.")]
+        [SerializeField, Min(0)] private int requiredEnemyKillCount;
+
+        [Header("씬 로드")]
+        [SerializeField] private bool useNetworkSceneLoadWhenAvailable = true;
+
         [Header("디버그")]
         [SerializeField] private float currentStayTime;
         [SerializeField] private bool isPlayerInside;
         [SerializeField] private bool isCompleted;
+        [SerializeField] private int currentEnemyKillCount;
 
         private Collider triggerCollider;
         private bool unlockedByRuntimeEvent;
@@ -31,12 +46,14 @@ namespace DeadZone.Actors.Extraction
         private void OnEnable()
         {
             EventBus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
+            EventBus.Subscribe<EnemyKilledEvent>(OnEnemyKilled);
             RefreshUnlockState();
         }
 
         private void OnDisable()
         {
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
+            EventBus.Unsubscribe<EnemyKilledEvent>(OnEnemyKilled);
         }
 
         private void Start()
@@ -60,8 +77,14 @@ namespace DeadZone.Actors.Extraction
             if (!IsUnlocked() || !other.CompareTag(playerTag))
                 return;
 
+            if (!CanLocalInstanceCompleteExtraction())
+                return;
+
             isPlayerInside = true;
             currentStayTime = 0f;
+
+            if (requiredStayTime <= 0f)
+                CompleteExtraction();
         }
 
         private void OnTriggerExit(Collider other)
@@ -78,26 +101,30 @@ namespace DeadZone.Actors.Extraction
             if (!IsUnlocked())
                 return;
 
+            if (!CanLocalInstanceCompleteExtraction())
+                return;
+
             isCompleted = true;
 
             RaidSessionTracker tracker = RaidSessionTracker.Instance;
-            if (tracker == null)
+            if (tracker != null)
             {
-                Debug.LogError("[ExtractionResultTrigger] RaidSessionTracker가 씬에 없습니다.");
-                return;
+                tracker.StopTracking();
+
+                RaidResultData.SetSurvived(
+                    tracker.MapName,
+                    tracker.KillCount,
+                    tracker.AcquiredDollar,
+                    tracker.SurvivalTime,
+                    tracker.GetLootResults()
+                );
+            }
+            else
+            {
+                Debug.LogWarning("[ExtractionResultTrigger] RaidSessionTracker가 씬에 없어 결과 데이터 갱신 없이 씬을 전환합니다.", this);
             }
 
-            tracker.StopTracking();
-
-            RaidResultData.SetSurvived(
-                tracker.MapName,
-                tracker.KillCount,
-                tracker.AcquiredDollar,
-                tracker.SurvivalTime,
-                tracker.GetLootResults()
-            );
-
-            LoadingScreenService.LoadSceneOrFallback(resultSceneName);
+            LoadResultScene();
         }
 
         private void OnQuestCompleted(QuestCompletedEvent e)
@@ -109,6 +136,21 @@ namespace DeadZone.Actors.Extraction
                 return;
 
             unlockedByRuntimeEvent = true;
+            RefreshUnlockState();
+        }
+
+        private void OnEnemyKilled(EnemyKilledEvent e)
+        {
+            if (string.IsNullOrWhiteSpace(requiredEnemyKillId))
+                return;
+
+            if (e.enemyId.ToString() != requiredEnemyKillId)
+                return;
+
+            if (requiredEnemyKillCount <= 0)
+                return;
+
+            currentEnemyKillCount = Mathf.Min(requiredEnemyKillCount, currentEnemyKillCount + 1);
             RefreshUnlockState();
         }
 
@@ -130,6 +172,9 @@ namespace DeadZone.Actors.Extraction
 
         private bool IsUnlocked()
         {
+            if (!HasRequiredEnemyKills())
+                return false;
+
             if (string.IsNullOrWhiteSpace(requiredUnlockZoneId))
                 return true;
 
@@ -142,6 +187,40 @@ namespace DeadZone.Actors.Extraction
 
             return cloudSaveSystem?.CurrentData?.progress?.unlockedZones != null &&
                    cloudSaveSystem.CurrentData.progress.unlockedZones.Contains(requiredUnlockZoneId);
+        }
+
+        private bool HasRequiredEnemyKills()
+        {
+            if (string.IsNullOrWhiteSpace(requiredEnemyKillId))
+                return true;
+
+            return requiredEnemyKillCount <= 0 || currentEnemyKillCount >= requiredEnemyKillCount;
+        }
+
+        private bool CanLocalInstanceCompleteExtraction()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            return networkManager == null || !networkManager.IsListening || networkManager.IsServer;
+        }
+
+        private void LoadResultScene()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            bool shouldUseNetworkSceneLoad =
+                useNetworkSceneLoadWhenAvailable &&
+                networkManager != null &&
+                networkManager.IsListening &&
+                networkManager.IsServer &&
+                networkManager.SceneManager != null;
+
+            if (shouldUseNetworkSceneLoad)
+            {
+                LoadingScreenService.ShowForNetworkLoadOrFallback(resultSceneName);
+                networkManager.SceneManager.LoadScene(resultSceneName, LoadSceneMode.Single);
+                return;
+            }
+
+            LoadingScreenService.LoadSceneOrFallback(resultSceneName);
         }
     }
 }

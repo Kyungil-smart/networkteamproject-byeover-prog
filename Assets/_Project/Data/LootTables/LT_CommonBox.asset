@@ -70,10 +70,7 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 06de74b2da5cac74baf30c5d94611b14, type: 2}
     weight: 177
     countRange: {x: 1, y: 3}
-  - item: {fileID: 11400000, guid: 11023541100b3244cb6247a3d14e872b, type: 2}
-    weight: 177
-    countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
+- item: {fileID: 11400000, guid: 8baaeab60e91fa747bda63e33c0c6c38, type: 2}
     weight: 177
     countRange: {x: 1, y: 3}
   - item: {fileID: 11400000, guid: 44f55d7db18c7ad4da174c32c294e107, type: 2}
@@ -112,10 +109,7 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 970105b3dd014ad4eb953ed9df7fd60a, type: 2}
     weight: 177
     countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: 5fd2cb0a4571c1243b6bab12dd0c1e7a, type: 2}
-    weight: 177
-    countRange: {x: 1, y: 1}
-  - item: {fileID: 11400000, guid: d887afca23280a142ba7c0a138497431, type: 2}
+- item: {fileID: 11400000, guid: d887afca23280a142ba7c0a138497431, type: 2}
     weight: 177
     countRange: {x: 30, y: 60}
   - item: {fileID: 11400000, guid: 6749d3919a2aaae4ea56f8fcac906f89, type: 2}
@@ -286,10 +280,7 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 53b776413527f5a4b90d3c14a18df2ca, type: 2}
     weight: 6
     countRange: {x: 1, y: 3}
-  - item: {fileID: 11400000, guid: 900402ba7020a11468fc67a08b870065, type: 2}
-    weight: 6
-    countRange: {x: 8, y: 15}
-  - item: {fileID: 11400000, guid: b27355a7c7d86b443ac6eec0ae31c705, type: 2}
+- item: {fileID: 11400000, guid: b27355a7c7d86b443ac6eec0ae31c705, type: 2}
     weight: 6
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 46751e855dab8bb4b9b8d29778e3b3a2, type: 2}
