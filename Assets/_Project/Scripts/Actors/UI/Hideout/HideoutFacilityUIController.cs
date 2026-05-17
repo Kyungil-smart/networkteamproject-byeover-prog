@@ -2,6 +2,8 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
+using DeadZone.Network;
+
 namespace DeadZone.Actors.UI.Hideout
 {
     // 은신처 시설 UI 흐름을 관리
@@ -200,7 +202,7 @@ namespace DeadZone.Actors.UI.Hideout
                     return;
                 }
 
-                NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+                NetworkGameManager.LoadSceneWithLoading(lobbySceneName, LoadSceneMode.Single);
                 return;
             }
 
