@@ -11,8 +11,8 @@ using DeadZone.Systems.Housing;
 
 namespace DeadZone.Actors.UI.Hideout
 {
-    // 시설 업그레이드 한 줄 UI
-    // 플레이어별 현재 시설 레벨을 기준으로 완료/잠김/업그레이드 가능 상태를 표시
+    // 시설 업그레이드 한 줄 UI입니다.
+    // 플레이어의 현재 시설 레벨을 기준으로 완료/잠김/업그레이드 가능 상태를 표시합니다.
     [DisallowMultipleComponent]
     public sealed class FacilityUpgradeRowUI : MonoBehaviour
     {
@@ -54,6 +54,18 @@ namespace DeadZone.Actors.UI.Hideout
         [Tooltip("아직 업그레이드가 완료되지 않아 비활성 상태로 표시할 레벨 텍스트 색상입니다.")]
         [SerializeField]
         private Color inactiveLevelTextColor = Color.gray;
+
+        [Tooltip("재료가 모두 있어 지금 업그레이드 가능한 레벨 텍스트 색상입니다.")]
+        [SerializeField]
+        private Color upgradeReadyLevelTextColor = Color.white;
+
+        [Tooltip("지금 업그레이드 가능한 버튼 글씨 색상입니다.")]
+        [SerializeField]
+        private Color upgradeReadyButtonTextColor = Color.white;
+
+        [Tooltip("잠김, 완료, 재료 부족 상태의 버튼 글씨 색상입니다.")]
+        [SerializeField]
+        private Color inactiveButtonTextColor = new Color(0.55f, 0.65f, 0.75f);
 
         private readonly List<FacilityUpgradeMaterialSlotUI> spawnedSlots = new();
 
@@ -99,19 +111,26 @@ namespace DeadZone.Actors.UI.Hideout
             bool hasMaterials = HasAllMaterials(levelData, inventory);
             bool canUpgrade = !alreadyReached && isTargetLevel && hasMaterials;
 
-            RefreshLevelText(targetLevel, alreadyReached);
-            SetMaterials(levelData, inventory);
+            RefreshLevelText(targetLevel, alreadyReached, canUpgrade);
+            SetMaterials(levelData, inventory, !isTargetLevel);
             RefreshUpgradeButton(alreadyReached, isTargetLevel, hasMaterials, canUpgrade);
             RefreshStateMarks(alreadyReached, isTargetLevel);
         }
 
-        private void RefreshLevelText(int targetLevel, bool alreadyReached)
+        private void RefreshLevelText(int targetLevel, bool alreadyReached, bool canUpgrade)
         {
             if (levelText == null)
                 return;
 
             levelText.text = $"LV{targetLevel}";
-            levelText.color = alreadyReached ? activeLevelTextColor : inactiveLevelTextColor;
+            levelText.color = canUpgrade
+                ? upgradeReadyLevelTextColor
+                : alreadyReached
+                    ? activeLevelTextColor
+                    : inactiveLevelTextColor;
+            levelText.fontStyle = canUpgrade || alreadyReached
+                ? FontStyles.Bold
+                : FontStyles.Normal;
             levelText.gameObject.SetActive(true);
         }
 
@@ -121,6 +140,8 @@ namespace DeadZone.Actors.UI.Hideout
             bool hasMaterials,
             bool canUpgrade)
         {
+            bool isLocked = !alreadyReached && !isTargetLevel;
+
             if (upgradeButton != null)
                 upgradeButton.interactable = canUpgrade;
 
@@ -129,12 +150,14 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (alreadyReached)
                 upgradeButtonText.text = "완료";
-            else if (!isTargetLevel)
+            else if (isLocked)
                 upgradeButtonText.text = "잠김";
             else if (!hasMaterials)
                 upgradeButtonText.text = "재료 부족";
             else
                 upgradeButtonText.text = "업그레이드";
+            upgradeButtonText.color = canUpgrade ? upgradeReadyButtonTextColor : inactiveButtonTextColor;
+            upgradeButtonText.fontStyle = canUpgrade ? FontStyles.Bold : FontStyles.Normal;
         }
 
         private void RefreshStateMarks(bool alreadyReached, bool isTargetLevel)
@@ -176,7 +199,7 @@ namespace DeadZone.Actors.UI.Hideout
             return true;
         }
 
-        private void SetMaterials(FacilityLevel levelData, IInventory inventory)
+        private void SetMaterials(FacilityLevel levelData, IInventory inventory, bool forceInactive)
         {
             ClearSlots();
 
@@ -197,7 +220,7 @@ namespace DeadZone.Actors.UI.Hideout
                     ? inventory.GetItemCount(requirement.item.itemID)
                     : 0;
 
-                slot.Set(requirement.item, ownedAmount, requiredAmount);
+                slot.Set(requirement.item, ownedAmount, requiredAmount, forceInactive);
             }
         }
 
