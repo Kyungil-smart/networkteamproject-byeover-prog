@@ -777,7 +777,7 @@ MonoBehaviour:
   knockedMaxHP: 100
   bleedoutSeconds: 60
   bleedoutDamagePerSecond: 1.5
-  reviveHpAmount: 30
+  reviveHpAmount: 20
   corpsePrefab: {fileID: 0}
   CurrentHP:
     UpdateTraits:
