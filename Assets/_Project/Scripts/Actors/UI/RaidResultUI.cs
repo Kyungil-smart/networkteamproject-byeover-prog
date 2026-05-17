@@ -18,7 +18,6 @@ namespace DeadZone.Actors.UI
         [SerializeField] private TMP_Text textSurvival;
         [SerializeField] private TMP_Text textMapName;
         [SerializeField] private TMP_Text textKillCount;
-        [SerializeField] private TMP_Text textDollar;
         [SerializeField] private TMP_Text textSurvivalTime;
 
         [Header("생존 - 획득 아이템")]
@@ -91,9 +90,6 @@ namespace DeadZone.Actors.UI
 
             if (textKillCount != null)
                 textKillCount.text = RaidResultData.KillCount.ToString();
-
-            if (textDollar != null)
-                textDollar.text = $"+{RaidResultData.Dollar:N0}";
 
             if (textSurvivalTime != null)
                 textSurvivalTime.text = RaidResultData.FormatTime(RaidResultData.SurvivalTime);

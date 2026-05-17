@@ -71,6 +71,8 @@ namespace DeadZone.Actors
         public bool IsKnocked => State.Value == PlayerState.Knocked;
         public bool IsDead => State.Value == PlayerState.Dead;
         public bool CanBeRevived => IsKnocked && !IsDead && KnockedHP.Value > 0f && BleedoutRemaining.Value > 0f;
+        public bool IsBeingRevived => isBeingRevived;
+        public ulong CurrentReviverClientId => reviverClientId;
         public float ReviveHpAmount => reviveHpAmount;
 
         private bool isBeingRevived;

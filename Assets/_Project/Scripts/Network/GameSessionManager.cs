@@ -1,7 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
+using DeadZone.Actors;
 using DeadZone.Core;
+using DeadZone.Systems;
+using DeadZone.Systems.Raid;
 
 using Unity.Netcode;
 using UnityEngine;
@@ -20,6 +24,9 @@ namespace DeadZone.Network
         [Header("==== 디버그 ====")]
         [Tooltip("로드 추적 시작, 개별 Client LoadComplete 수신, 전원 로드 완료 로그를 출력합니다.")]
         [SerializeField] private bool logDebug;
+
+        [Header("==== 레이드 결과 ====")]
+        [SerializeField] private string raidResultSceneName = "RaidResult";
 
         private readonly NetworkVariable<int> expectedCount = new(
             0,
@@ -47,6 +54,9 @@ namespace DeadZone.Network
         private bool isTracking;
         private bool subscribedToSceneEvents;
         private bool isRegisteredToServiceLocator;
+        private bool isRaidActive;
+        private bool isRaidResultFinalized;
+        private float raidStartedAt;
 
         public NetworkVariable<int> ExpectedCount => expectedCount;
         public NetworkVariable<int> LoadedCount => loadedCount;
@@ -76,6 +86,7 @@ namespace DeadZone.Network
             {
                 ResetTrackingState();
                 SubscribeSceneEvents();
+                SubscribeRaidEvents();
             }
 
             LogDebug($"네트워크 Spawn 완료. 서버={IsServer}, 클라이언트={IsClient}, Spawn상태={IsSpawned}");
@@ -84,7 +95,10 @@ namespace DeadZone.Network
         public override void OnNetworkDespawn()
         {
             if (IsServer)
+            {
                 UnsubscribeSceneEvents();
+                UnsubscribeRaidEvents();
+            }
 
             UnregisterFromServiceLocator();
 
@@ -97,6 +111,7 @@ namespace DeadZone.Network
                 instance = null;
 
             UnsubscribeSceneEvents();
+            UnsubscribeRaidEvents();
             UnregisterFromServiceLocator();
             base.OnDestroy();
         }
@@ -160,6 +175,7 @@ namespace DeadZone.Network
             expectedCount.Value = expectedClientIds.Count;
             loadedCount.Value = 0;
             isAllClientsLoaded.Value = false;
+            TryBeginRaidResultTracking(sceneName);
 
             reason = "로드 완료 추적을 시작했습니다.";
 
@@ -195,6 +211,27 @@ namespace DeadZone.Network
 
             for (int i = 0; i < expectedClientIdOrder.Count; i++)
                 destination.Add(expectedClientIdOrder[i]);
+        }
+
+        public void CaptureRaidStartInventorySnapshot(ulong clientId, GameObject playerObject)
+        {
+            if (!IsServer || !isRaidActive || isRaidResultFinalized)
+                return;
+
+            RaidResultData.CaptureStartInventorySnapshot(clientId, playerObject);
+        }
+
+        public bool TryCompleteRaidByExtraction(IReadOnlyList<ulong> extractedClientIds)
+        {
+            if (!IsServer || !isRaidActive || isRaidResultFinalized)
+                return false;
+
+            if (extractedClientIds == null || extractedClientIds.Count == 0)
+                return false;
+
+            RaidResultData.MarkPlayersExtracted(extractedClientIds, GetRaidElapsedSeconds());
+            FinalizeRaidResultsAndLoadScene("Extraction");
+            return true;
         }
 
         private void HandleLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
@@ -262,6 +299,182 @@ namespace DeadZone.Network
             expectedClientIds.Clear();
             loadedClientIds.Clear();
             expectedClientIdOrder.Clear();
+        }
+
+        private void TryBeginRaidResultTracking(string sceneName)
+        {
+            if (!IsServer)
+                return;
+
+            if (!IsRaidScene(sceneName))
+            {
+                isRaidActive = false;
+                isRaidResultFinalized = false;
+                return;
+            }
+
+            isRaidActive = true;
+            isRaidResultFinalized = false;
+            raidStartedAt = Time.time;
+
+            RaidResultData.BeginRaid(sceneName, expectedClientIdOrder);
+            LogDebug($"레이드 결과 추적 시작. Scene={sceneName}, Clients={FormatClientIds(expectedClientIdOrder)}");
+        }
+
+        private void SubscribeRaidEvents()
+        {
+            EventBus.Subscribe<EnemyKilledEvent>(OnEnemyKilled);
+            EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
+        }
+
+        private void UnsubscribeRaidEvents()
+        {
+            EventBus.Unsubscribe<EnemyKilledEvent>(OnEnemyKilled);
+            EventBus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
+        }
+
+        private void OnEnemyKilled(EnemyKilledEvent e)
+        {
+            if (!IsServer || !isRaidActive || isRaidResultFinalized)
+                return;
+
+            if (e.attackerClientId == DamageSystem.AI_SHOOTER_ID)
+                return;
+
+            RaidResultData.AddKillForPlayer(e.attackerClientId);
+        }
+
+        private void OnPlayerDied(PlayerDiedEvent e)
+        {
+            if (!IsServer || !isRaidActive || isRaidResultFinalized)
+                return;
+
+            RaidResultData.MarkPlayerDead(e.victimClientId, GetRaidElapsedSeconds());
+
+            if (AreAllExpectedPlayersDead())
+                FinalizeRaidResultsAndLoadScene("AllDead");
+        }
+
+        private bool AreAllExpectedPlayersDead()
+        {
+            if (!IsServer || expectedClientIdOrder.Count == 0)
+                return false;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return false;
+
+            for (int i = 0; i < expectedClientIdOrder.Count; i++)
+            {
+                ulong clientId = expectedClientIdOrder[i];
+                if (!networkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient client) ||
+                    client.PlayerObject == null)
+                {
+                    continue;
+                }
+
+                PlayerHealthSystem health = client.PlayerObject.GetComponent<PlayerHealthSystem>();
+                if (health == null || !health.IsDead)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void FinalizeRaidResultsAndLoadScene(string reason)
+        {
+            if (!IsServer || isRaidResultFinalized)
+                return;
+
+            isRaidResultFinalized = true;
+            SendRaidResultsToClients();
+            StartCoroutine(LoadRaidResultSceneNextFrame(reason));
+        }
+
+        private void SendRaidResultsToClients()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+                return;
+
+            for (int i = 0; i < expectedClientIdOrder.Count; i++)
+            {
+                ulong clientId = expectedClientIdOrder[i];
+                GameObject playerObject = null;
+
+                if (networkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient client) &&
+                    client.PlayerObject != null)
+                {
+                    playerObject = client.PlayerObject.gameObject;
+                }
+
+                RaidPlayerResult result = RaidResultData.BuildResultForPlayer(clientId, targetSceneName, playerObject);
+                string json = RaidResultData.ToJson(result);
+
+                if (clientId == NetworkManager.LocalClientId)
+                    RaidResultData.SetLocalResult(result);
+
+                ReceiveRaidResultClientRpc(
+                    json,
+                    new ClientRpcParams
+                    {
+                        Send = new ClientRpcSendParams
+                        {
+                            TargetClientIds = new[] { clientId }
+                        }
+                    });
+            }
+        }
+
+        [ClientRpc]
+        private void ReceiveRaidResultClientRpc(string resultJson, ClientRpcParams rpcParams = default)
+        {
+            RaidResultData.SetLocalResultFromJson(resultJson);
+        }
+
+        private void LoadRaidResultScene(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(raidResultSceneName))
+            {
+                Debug.LogWarning("[GameSessionManager] RaidResult 씬 이름이 비어 있어 결과 씬으로 이동할 수 없습니다.", this);
+                return;
+            }
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.SceneManager == null)
+            {
+                Debug.LogWarning("[GameSessionManager] NetworkSceneManager를 찾을 수 없어 RaidResult 씬 이동을 시작하지 못했습니다.", this);
+                return;
+            }
+
+            CancelLoadTracking($"RaidResult 전환: {reason}");
+
+            SceneEventProgressStatus status = networkManager.SceneManager.LoadScene(raidResultSceneName, LoadSceneMode.Single);
+            if (status != SceneEventProgressStatus.Started)
+            {
+                Debug.LogWarning($"[GameSessionManager] RaidResult 씬 로드 요청 실패. Scene={raidResultSceneName}, Status={status}", this);
+                return;
+            }
+
+            isRaidActive = false;
+            LogDebug($"RaidResult 씬 로드 요청. Scene={raidResultSceneName}, Reason={reason}");
+        }
+
+        private IEnumerator LoadRaidResultSceneNextFrame(string reason)
+        {
+            yield return null;
+            LoadRaidResultScene(reason);
+        }
+
+        private float GetRaidElapsedSeconds()
+        {
+            return Mathf.Max(0f, Time.time - raidStartedAt);
+        }
+
+        private static bool IsRaidScene(string sceneName)
+        {
+            return string.Equals(sceneName, "Game_Stage_1", StringComparison.Ordinal) ||
+                   string.Equals(sceneName, "Game_Stage_2", StringComparison.Ordinal);
         }
 
         private void SubscribeSceneEvents()
