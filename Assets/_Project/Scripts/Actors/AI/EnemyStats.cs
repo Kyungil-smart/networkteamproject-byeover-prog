@@ -54,7 +54,7 @@ namespace DeadZone.Actors
 
             if (IsServer && statsSO != null)
             {
-                CurrentHP.Value = CalculateScaledMaxHP(statsSO.maxHP);
+                CurrentHP.Value = statsSO.maxHP;
                 CurrentArmorDurability.Value = statsSO.defaultArmor != null
                     ? statsSO.defaultArmor.maxDurability
                     : 0f;
@@ -251,23 +251,6 @@ namespace DeadZone.Actors
             }
         }
 
-        private static float CalculateScaledMaxHP(float baseMaxHP)
-        {
-            int playerCount = 1;
-            NetworkManager networkManager = NetworkManager.Singleton;
-            if (networkManager != null && networkManager.IsListening)
-            {
-                if (networkManager.ConnectedClientsIds != null && networkManager.ConnectedClientsIds.Count > 0)
-                    playerCount = networkManager.ConnectedClientsIds.Count;
-                else if (networkManager.ConnectedClients != null && networkManager.ConnectedClients.Count > 0)
-                    playerCount = networkManager.ConnectedClients.Count;
-            }
-
-            playerCount = Mathf.Clamp(playerCount, 1, 4);
-            float multiplier = playerCount <= 1 ? 1f : 1f + playerCount * 0.25f;
-            return Mathf.Max(1f, baseMaxHP * multiplier);
-        }
-
         // ───────── IArmored ─────────
 
         /// <summary>
@@ -306,7 +289,8 @@ namespace DeadZone.Actors
         /// <param name="amount">감소시킬 내구도입니다.</param>
         public void DamageArmorDurability(float amount)
         {
-            // 내구도 시스템은 폐기되어 방어구 내구도 감소를 더 이상 적용하지 않습니다.
+            if (!IsServer) return;
+            CurrentArmorDurability.Value = Mathf.Max(0f, CurrentArmorDurability.Value - amount);
         }
     }
 }

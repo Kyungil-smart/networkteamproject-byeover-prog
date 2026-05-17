@@ -765,13 +765,25 @@ namespace DeadZone.Systems.Raid
                 index++;
             }
 
-            foreach (InventorySlotUI slot in quickSlotPanel.GetComponentsInChildren<InventorySlotUI>(true))
+            if (slots.Count == 0)
             {
-                if (slot == null || slots.Contains(slot))
-                    continue;
+                HashSet<int> usedSlotIndexes = new();
+                foreach (InventorySlotUI slot in quickSlotPanel.GetComponentsInChildren<InventorySlotUI>(true))
+                {
+                    if (slot == null)
+                        continue;
 
-                slot.PrepareDropSlotAsKind(tooltip, InventorySlotKind.QuickSlot);
-                slots.Add(slot);
+                    slot.PrepareForSaveSnapshot();
+                    if (slot.SlotKind != InventorySlotKind.QuickSlot ||
+                        slot.SlotIndex < 0 ||
+                        slot.SlotIndex >= GridInventory.QUICK_SLOT_COUNT ||
+                        !usedSlotIndexes.Add(slot.SlotIndex))
+                    {
+                        continue;
+                    }
+
+                    slots.Add(slot);
+                }
             }
 
             slots.Sort((left, right) => left.SlotIndex.CompareTo(right.SlotIndex));
