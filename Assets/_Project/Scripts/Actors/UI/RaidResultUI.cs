@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using DeadZone.Network;
 using DeadZone.Systems.Raid;
 
 namespace DeadZone.Actors.UI
@@ -138,6 +139,8 @@ namespace DeadZone.Actors.UI
 
         private void GoLobby()
         {
+            SessionManager.DisconnectActiveSession("RaidResultReturnToLobby");
+
             LoadingScreenService.LoadSceneOrFallback(
                 NormalizeLobbySceneName(lobbySceneName),
                 LoadSceneMode.Single,

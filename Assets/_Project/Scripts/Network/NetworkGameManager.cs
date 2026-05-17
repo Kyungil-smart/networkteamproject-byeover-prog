@@ -17,6 +17,17 @@ namespace DeadZone.Network
     /// </summary>
     public class NetworkGameManager : NetworkBehaviour
     {
+        private const float TerminalSessionDisconnectClientDelaySeconds = 0.1f;
+        private const float TerminalSessionDisconnectHostDelaySeconds = 0.25f;
+
+        private static readonly string[] TerminalSessionSceneNames =
+        {
+            "RaidResult",
+            "HJO_RaidResult",
+            "Ending",
+            "Lobby"
+        };
+
         public NetworkVariable<float> RaidTimeRemaining = new(0f);
 
         [Header("Loading")]
@@ -26,12 +37,14 @@ namespace DeadZone.Network
         [SerializeField, Min(1f)] private float networkLoadingTimeoutSeconds = 8f;
 
         private readonly Dictionary<ulong, bool> sceneReadyClients = new();
+        private readonly List<ulong> terminalSessionDisconnectTargets = new();
 
         private bool isNetworkLoading;
         private string loadingSceneName;
         private float loadingStartedAt;
         private Coroutine hideLoadingRoutine;
         private Coroutine localReadyRoutine;
+        private Coroutine terminalSessionDisconnectRoutine;
 
         public override void OnNetworkSpawn()
         {
@@ -65,6 +78,12 @@ namespace DeadZone.Network
             {
                 StopCoroutine(localReadyRoutine);
                 localReadyRoutine = null;
+            }
+
+            if (terminalSessionDisconnectRoutine != null)
+            {
+                StopCoroutine(terminalSessionDisconnectRoutine);
+                terminalSessionDisconnectRoutine = null;
             }
 
             if (hideLoadingRoutine != null)
@@ -150,6 +169,7 @@ namespace DeadZone.Network
             Debug.LogWarning($"[Loading] Timeout. Force hide loading UI. scene={sceneName}, elapsed={elapsed:0.00}");
 
             HideLoadingClientRpc(sceneName);
+            TryDisconnectTerminalPartySession(sceneName);
             ClearNetworkLoadingState();
         }
 
@@ -419,6 +439,7 @@ namespace DeadZone.Network
             Debug.Log($"[Loading] Hide loading. scene={sceneName}");
 
             HideLoadingClientRpc(sceneName);
+            TryDisconnectTerminalPartySession(sceneName);
             ClearNetworkLoadingState();
         }
 
@@ -439,6 +460,82 @@ namespace DeadZone.Network
                 StopCoroutine(localReadyRoutine);
                 localReadyRoutine = null;
             }
+        }
+
+        private void TryDisconnectTerminalPartySession(string sceneName)
+        {
+            if (!IsServer)
+                return;
+
+            if (!IsTerminalSessionScene(sceneName))
+                return;
+
+            if (terminalSessionDisconnectRoutine != null)
+                StopCoroutine(terminalSessionDisconnectRoutine);
+
+            terminalSessionDisconnectRoutine = StartCoroutine(DisconnectTerminalPartySession(sceneName));
+        }
+
+        private IEnumerator DisconnectTerminalPartySession(string sceneName)
+        {
+            yield return new WaitForSecondsRealtime(TerminalSessionDisconnectClientDelaySeconds);
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || !networkManager.IsListening)
+            {
+                terminalSessionDisconnectRoutine = null;
+                yield break;
+            }
+
+            terminalSessionDisconnectTargets.Clear();
+
+            foreach (ulong clientId in networkManager.ConnectedClientsIds)
+            {
+                if (clientId == networkManager.LocalClientId)
+                    continue;
+
+                terminalSessionDisconnectTargets.Add(clientId);
+            }
+
+            if (terminalSessionDisconnectTargets.Count > 0)
+            {
+                DisconnectTerminalPartySessionClientRpc(
+                    sceneName,
+                    new ClientRpcParams
+                    {
+                        Send = new ClientRpcSendParams
+                        {
+                            TargetClientIds = terminalSessionDisconnectTargets.ToArray()
+                        }
+                    });
+            }
+
+            yield return new WaitForSecondsRealtime(TerminalSessionDisconnectHostDelaySeconds);
+
+            SessionManager.DisconnectActiveSession($"RaidEnded:{sceneName}");
+            terminalSessionDisconnectRoutine = null;
+        }
+
+        [ClientRpc]
+        private void DisconnectTerminalPartySessionClientRpc(
+            string sceneName,
+            ClientRpcParams clientRpcParams = default)
+        {
+            SessionManager.DisconnectActiveSession($"RaidEnded:{sceneName}");
+        }
+
+        private static bool IsTerminalSessionScene(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+                return false;
+
+            for (int i = 0; i < TerminalSessionSceneNames.Length; i++)
+            {
+                if (string.Equals(sceneName, TerminalSessionSceneNames[i], System.StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
         }
 
         private void OnRaidTimeExpired()

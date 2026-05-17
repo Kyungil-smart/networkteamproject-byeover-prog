@@ -129,6 +129,32 @@ namespace DeadZone.Network
             DisconnectInternal(reason);
         }
 
+        public static void DisconnectActiveSession(string reason)
+        {
+            string disconnectReason = string.IsNullOrWhiteSpace(reason)
+                ? "SessionCleanup"
+                : reason;
+
+            SessionManager sessionManager = ServiceLocator.Get<SessionManager>();
+            if (sessionManager == null)
+                sessionManager = UnityEngine.Object.FindFirstObjectByType<SessionManager>(FindObjectsInactive.Include);
+
+            if (sessionManager != null)
+            {
+                sessionManager.Disconnect(disconnectReason);
+                return;
+            }
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager != null && networkManager.IsListening)
+            {
+                Debug.Log($"[PartySession] Disconnect active network session. reason={disconnectReason}");
+                networkManager.Shutdown();
+            }
+
+            ClearLocalPartyCache();
+        }
+
         // =================================================================
         // RELAY - itch.io 배포용. NAT 터널링으로 포트포워딩 불필요
         // =================================================================

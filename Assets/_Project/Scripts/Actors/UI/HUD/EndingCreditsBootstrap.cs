@@ -4,6 +4,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+using DeadZone.Network;
+
 namespace DeadZone.Actors.UI
 {
     public sealed class EndingCreditsBootstrap : MonoBehaviour
@@ -121,6 +123,7 @@ namespace DeadZone.Actors.UI
                 return;
 
             returnRequested = true;
+            SessionManager.DisconnectActiveSession("EndingReturnToLobby");
             LoadingScreenService.LoadSceneOrFallback(LobbySceneName);
         }
 
