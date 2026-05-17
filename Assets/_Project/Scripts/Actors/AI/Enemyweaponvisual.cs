@@ -397,7 +397,7 @@ namespace DeadZone.Actors
         /// </summary>
         private void RegisterSpawnedWeaponRenderers()
         {
-            if (weaponRenderersRegistered || spawnedWeapon == null || GetComponentInParent<EnemyStats>() != null)
+            if (weaponRenderersRegistered || spawnedWeapon == null)
                 return;
 
             if (spawnedWeaponRenderers == null)

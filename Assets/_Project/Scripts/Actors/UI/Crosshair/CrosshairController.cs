@@ -98,14 +98,14 @@ namespace DeadZone.Actors.UI
 #else
         [Header("ADS 표시 설정")]
 #endif
-        [SerializeField] private bool hideWhenAds = true;
+        [SerializeField] private bool hideWhenAds = false;
 
 #if ODIN_INSPECTOR
         [PropertyRange(0f, 1f)]
 #else
         [Range(0f, 1f)]
 #endif
-        [SerializeField] private float adsAlpha = 0.2f;
+        [SerializeField] private float adsAlpha = 1f;
 
         [SerializeField] private bool subscribeCriticalHitAsHitMarker = true;
 

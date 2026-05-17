@@ -277,12 +277,6 @@ namespace DeadZone.Actors
                 if (targetRenderer == null)
                     continue;
 
-                if (IsEnemyOwnedRenderer(targetRenderer))
-                {
-                    ClearVisionMaskRendererProperties(targetRenderer);
-                    continue;
-                }
-
                 visionMaskRenderers.Add(targetRenderer);
                 ApplyVisionMaskRendererProperties(targetRenderer);
             }
@@ -462,12 +456,6 @@ namespace DeadZone.Actors
             if (targetRenderer == null)
                 return;
 
-            if (IsEnemyOwnedRenderer(targetRenderer))
-            {
-                ClearVisionMaskRendererProperties(targetRenderer);
-                return;
-            }
-
             visionMaskRendererPropertyBlock ??= new MaterialPropertyBlock();
             targetRenderer.GetPropertyBlock(visionMaskRendererPropertyBlock);
             visionMaskRendererPropertyBlock.SetFloat(UseVisionMaskVisibilityId, enableVisionMaskVisibility ? 1f : 0f);
@@ -489,12 +477,6 @@ namespace DeadZone.Actors
             targetRenderer.GetPropertyBlock(visionMaskRendererPropertyBlock);
             visionMaskRendererPropertyBlock.SetFloat(UseVisionMaskVisibilityId, 0f);
             targetRenderer.SetPropertyBlock(visionMaskRendererPropertyBlock);
-        }
-
-        private static bool IsEnemyOwnedRenderer(Renderer targetRenderer)
-        {
-            return targetRenderer != null &&
-                   targetRenderer.GetComponentInParent<EnemyStats>() != null;
         }
 
         /// <summary>

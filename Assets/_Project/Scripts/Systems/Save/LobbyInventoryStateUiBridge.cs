@@ -410,7 +410,15 @@ namespace DeadZone.Systems.Save
             if (root == null)
                 return items;
 
-            InventorySlotUI[] slots = root.GetComponentsInChildren<InventorySlotUI>(true);
+            bool isQuickSlotContainer = string.Equals(containerId, QuickSlotContainerId, StringComparison.OrdinalIgnoreCase);
+            InventorySlotUI[] slots = isQuickSlotContainer
+                ? GetDirectQuickSlotSlots(root)
+                : root.GetComponentsInChildren<InventorySlotUI>(true);
+
+            if (isQuickSlotContainer && slots.Length == 0)
+                slots = root.GetComponentsInChildren<InventorySlotUI>(true);
+
+            HashSet<int> usedQuickSlotIndexes = isQuickSlotContainer ? new HashSet<int>() : null;
             for (int i = 0; i < slots.Length; i++)
             {
                 InventorySlotUI slot = slots[i];
@@ -427,6 +435,12 @@ namespace DeadZone.Systems.Save
                 {
                     continue;
                 }
+
+                if (isQuickSlotContainer && slot.SlotKind != InventorySlotKind.QuickSlot)
+                    continue;
+
+                if (isQuickSlotContainer && !usedQuickSlotIndexes.Add(Mathf.Clamp(slot.SlotIndex, 0, QuickSlotGridWidth - 1)))
+                    continue;
 
                 items.Add(new ItemSaveDTO
                 {
@@ -449,13 +463,42 @@ namespace DeadZone.Systems.Save
             HashSet<InventorySlotUI> visitedSlots = new();
 
             if (root != null)
-                AddQuickSlotItems(items, root.GetComponentsInChildren<InventorySlotUI>(true), visitedSlots);
+                AddQuickSlotItems(items, GetDirectQuickSlotSlots(root), visitedSlots);
+
+            if (items.Count > 0)
+                return items;
 
             InventorySlotUI[] allSlots =
                 FindObjectsByType<InventorySlotUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             AddQuickSlotItems(items, allSlots, visitedSlots);
 
             return items;
+        }
+
+        private static InventorySlotUI[] GetDirectQuickSlotSlots(Transform root)
+        {
+            if (root == null)
+                return System.Array.Empty<InventorySlotUI>();
+
+            ItemTooltipUI tooltip = UnityEngine.Object.FindFirstObjectByType<ItemTooltipUI>(FindObjectsInactive.Include);
+            List<InventorySlotUI> slots = new();
+            int index = 0;
+
+            foreach (Transform child in root)
+            {
+                if (child == null || child.GetComponent<RectTransform>() == null)
+                    continue;
+
+                InventorySlotUI slot = child.GetComponent<InventorySlotUI>();
+                if (slot == null)
+                    continue;
+
+                slot.PrepareDropSlotAsKind(tooltip, InventorySlotKind.QuickSlot, index);
+                slots.Add(slot);
+                index++;
+            }
+
+            return slots.ToArray();
         }
 
         private static void AddQuickSlotItems(
@@ -902,7 +945,9 @@ namespace DeadZone.Systems.Save
                 List<InventorySlotUI> quickSlots = new();
                 HashSet<InventorySlotUI> visited = new();
 
-                AddQuickSlotsForApply(quickSlots, visited, GetSlots(root));
+                AddQuickSlotsForApply(quickSlots, visited, GetDirectQuickSlotSlots(root));
+                if (quickSlots.Count > 0)
+                    return quickSlots.ToArray();
 
                 InventorySlotUI[] allSlots =
                     FindObjectsByType<InventorySlotUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -937,11 +982,15 @@ namespace DeadZone.Systems.Save
                 if (slots == null || itemData == null)
                     return;
 
+                int normalizedSlotIndex = Mathf.Clamp(slotIndex, 0, QuickSlotGridWidth - 1);
                 for (int i = 0; i < slots.Length; i++)
                 {
                     InventorySlotUI slot = slots[i];
-                    if (slot != null && slot.SlotIndex == slotIndex)
+                    if (slot != null && slot.SlotIndex == normalizedSlotIndex)
+                    {
                         slot.SetItem(itemData, stackCount);
+                        return;
+                    }
                 }
             }
 
@@ -1188,7 +1237,10 @@ namespace DeadZone.Systems.Save
                 if (root == null)
                     return;
 
-                InventorySlotUI[] slots = root.GetComponentsInChildren<InventorySlotUI>(true);
+                InventorySlotUI[] slots = GetDirectQuickSlotSlots(root);
+                if (slots.Length == 0)
+                    slots = root.GetComponentsInChildren<InventorySlotUI>(true);
+
                 for (int i = 0; i < slots.Length; i++)
                 {
                     if (slots[i] != null)

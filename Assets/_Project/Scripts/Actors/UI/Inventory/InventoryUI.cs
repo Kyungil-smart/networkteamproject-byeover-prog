@@ -157,16 +157,16 @@ namespace DeadZone.Actors.UI
             ResolveTooltipUI();
             EnsureDropSlots();
             AssignTooltipToSlots();
-            ApplyRaidQuickSlotLoadoutIfAvailable();
-            RefreshBagSlots();
 
             if (autoBindOwnerGridInventory)
                 BindOwnerGridInventoryIfNeeded();
 
+            ApplyRaidQuickSlotLoadoutIfAvailable();
+            RefreshBagSlots();
+
             SubscribeEquipmentSlots();
             RefreshGridInventorySlots();
             RefreshEquipmentSlotViews();
-            DeadZone.Systems.Raid.RaidLoadoutTransferService.ApplyLocalQuickSlotsToUi();
             RefreshQuickSlotViews();
         }
 
@@ -825,7 +825,7 @@ namespace DeadZone.Actors.UI
 
             foreach (InventorySlotUI slot in panel.GetComponentsInChildren<InventorySlotUI>(true))
             {
-                if (slot != null)
+                if (slot != null && slot.transform.parent == panel)
                     slot.PrepareDropSlotAsKind(itemTooltipUI, InventorySlotKind.QuickSlot, inventoryUI: this);
             }
         }
@@ -894,6 +894,16 @@ namespace DeadZone.Actors.UI
             if (raidQuickSlotLoadoutApplied)
                 return;
 
+            if (boundGridInventory == null && autoBindOwnerGridInventory)
+                BindOwnerGridInventoryIfNeeded();
+
+            if (boundGridInventory != null && boundGridInventory.QuickSlots != null)
+            {
+                raidQuickSlotLoadoutApplied = true;
+                RefreshQuickSlotViews();
+                return;
+            }
+
             if (!RaidLoadoutTransferService.TryGetQuickSlotItemsForLocalClient(out IReadOnlyList<QuickSlotSaveData> quickSlotItems))
                 return;
 
@@ -922,6 +932,7 @@ namespace DeadZone.Actors.UI
             }
 
             RefreshQuickSlotViews();
+            raidQuickSlotLoadoutApplied = true;
         }
 
         private void RefreshQuickSlotViews()
@@ -981,19 +992,57 @@ namespace DeadZone.Actors.UI
         private List<InventorySlotUI> GetQuickSlotDisplaySlots()
         {
             List<InventorySlotUI> slots = new();
-            HashSet<InventorySlotUI> visited = new();
 
+            Transform quickSlotPanel = inventoryRoot != null
+                ? FindChildByName(inventoryRoot.transform, "QuickSlotPanel")
+                : null;
+
+            AddDirectQuickSlotDisplaySlots(quickSlotPanel, slots);
+            if (slots.Count > 0)
+                return slots;
+
+            HashSet<int> usedSlotIndexes = new();
             foreach (InventorySlotUI slot in GetAllKnownSlots())
             {
-                if (slot == null || !visited.Add(slot))
+                if (slot == null)
                     continue;
 
                 slot.PrepareForSaveSnapshot();
-                if (slot.SlotKind == InventorySlotKind.QuickSlot)
+                if (slot.SlotKind == InventorySlotKind.QuickSlot &&
+                    slot.SlotIndex >= 0 &&
+                    slot.SlotIndex < GridInventory.QUICK_SLOT_COUNT &&
+                    usedSlotIndexes.Add(slot.SlotIndex))
+                {
                     slots.Add(slot);
+                }
             }
 
+            slots.Sort((left, right) => left.SlotIndex.CompareTo(right.SlotIndex));
             return slots;
+        }
+
+        private void AddDirectQuickSlotDisplaySlots(Transform quickSlotPanel, List<InventorySlotUI> slots)
+        {
+            if (quickSlotPanel == null || slots == null)
+                return;
+
+            int index = 0;
+            foreach (Transform child in quickSlotPanel)
+            {
+                if (child == null || child.GetComponent<RectTransform>() == null)
+                    continue;
+
+                if (!IsDropSlotCandidate(child, quickSlotPanel))
+                    continue;
+
+                InventorySlotUI slot = child.GetComponent<InventorySlotUI>();
+                if (slot == null)
+                    continue;
+
+                slot.PrepareDropSlotAsKind(itemTooltipUI, InventorySlotKind.QuickSlot, index, this);
+                slots.Add(slot);
+                index++;
+            }
         }
 
         private static void SetQuickSlotsByIndex(List<InventorySlotUI> slots, int slotIndex, ItemDataSO itemData, int stackCount, string sourceItemId)
@@ -1001,11 +1050,15 @@ namespace DeadZone.Actors.UI
             if (slots == null || itemData == null)
                 return;
 
+            int normalizedSlotIndex = Mathf.Clamp(slotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1);
             for (int i = 0; i < slots.Count; i++)
             {
                 InventorySlotUI slot = slots[i];
-                if (slot != null && slot.SlotIndex == slotIndex)
+                if (slot != null && slot.SlotIndex == normalizedSlotIndex)
+                {
                     slot.SetItem(itemData, stackCount, sourceItemId);
+                    return;
+                }
             }
         }
 

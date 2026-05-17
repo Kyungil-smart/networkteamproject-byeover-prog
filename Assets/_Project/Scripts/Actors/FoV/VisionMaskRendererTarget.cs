@@ -57,9 +57,6 @@ namespace DeadZone.Actors
             if (isRegistered)
                 return;
 
-            if (GetComponentInParent<EnemyStats>() != null)
-                return;
-
             ResolveRenderersIfNeeded();
 
             if (renderers == null || renderers.Length == 0)

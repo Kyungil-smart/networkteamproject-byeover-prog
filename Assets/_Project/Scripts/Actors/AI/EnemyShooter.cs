@@ -37,7 +37,7 @@ namespace DeadZone.Actors
         [SerializeField] private float maxEnemyEffectiveRange = 24f;
 
         [Tooltip("무기 SO 탄속에 곱할 적 전용 탄속 배율입니다.")]
-        [SerializeField, Range(0.05f, 1f)] private float enemyMuzzleVelocityMultiplier = 0.42f;
+        [SerializeField, Range(0.05f, 1f)] private float enemyMuzzleVelocityMultiplier = 0.35f;
 
         [Tooltip("적 투사체에 적용할 최대 탄속입니다.")]
         [SerializeField] private float maxEnemyMuzzleVelocity = 300f;

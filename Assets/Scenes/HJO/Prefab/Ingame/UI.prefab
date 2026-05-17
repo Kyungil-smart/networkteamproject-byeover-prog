@@ -8840,8 +8840,8 @@ MonoBehaviour:
   maxSpread: 80
   spreadPerShot: 15
   recoverSpeed: 20
-  hideWhenAds: 1
-  adsAlpha: 0.2
+  hideWhenAds: 0
+  adsAlpha: 1
   subscribeCriticalHitAsHitMarker: 1
 --- !u!1 &3615686991013780085
 GameObject:
