@@ -15,7 +15,9 @@ MonoBehaviour:
   itemID: Shovel
   displayName: "\uC0BD"
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: \uAC74\uC124\uC5C5\uC790\uAC00
-    \uB193\uACE0\uAC04 \uC0BD"
+    \uB193\uACE0\uAC04 \uC0BD\n- \uD2B8\uB808\uC774\uB354\uC5D0 \uD314 \uC218\uB294
+    \uC788\uC9C0\uB9CC, \uD070\uAC12\uC740 \uAE30\uB300\uD558\uAE30 \uC5B4\uB824\uC6B8
+    \uAC83 \uAC19\uB2E4."
   icon: {fileID: 21300000, guid: 4cc8ffe548c0f2245bd0936deb0881ee, type: 3}
   category: 9
   rarity: 1
