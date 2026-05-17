@@ -20,23 +20,23 @@ MonoBehaviour:
   - level: 2
     upgradeMaterials:
     - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
-      amount: 5
+      amount: 2
     - item: {fileID: 11400000, guid: ae53ef8d4d0ad924db3a8746d034c4e6, type: 2}
-      amount: 5
+      amount: 2
     effectDescription: "\uBCF4\uAD00\uD568 \uD06C\uAE30 10 x 8 / \uCD1D 80\uCE78"
   - level: 3
     upgradeMaterials:
     - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
-      amount: 10
+      amount: 5
     - item: {fileID: 11400000, guid: ae53ef8d4d0ad924db3a8746d034c4e6, type: 2}
-      amount: 15
+      amount: 7
     effectDescription: "\uBCF4\uAD00\uD568 \uD06C\uAE30 12 x 9 / \uCD1D 108\uCE78"
   - level: 4
     upgradeMaterials:
     - item: {fileID: 11400000, guid: b73311fabc5478849a63616d10ff5935, type: 2}
-      amount: 20
-    - item: {fileID: 11400000, guid: ae53ef8d4d0ad924db3a8746d034c4e6, type: 2}
-      amount: 20
-    - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
       amount: 10
+    - item: {fileID: 11400000, guid: ae53ef8d4d0ad924db3a8746d034c4e6, type: 2}
+      amount: 10
+    - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
+      amount: 5
     effectDescription: "\uBCF4\uAD00\uD568 \uD06C\uAE30 14 x 10 / \uCD1D 140\uCE78"

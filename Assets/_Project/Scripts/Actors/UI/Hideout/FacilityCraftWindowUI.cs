@@ -181,7 +181,7 @@ namespace DeadZone.Actors.UI.Hideout
                 return;
             }
 
-            if (!RequestCraftToCurrentFacility(recipe.recipeID))
+            if (!RequestCraftToCurrentFacility(recipe))
             {
                 SetMessage("제작 컨트롤러가 연결되어 있지 않습니다.");
                 return;
@@ -191,7 +191,7 @@ namespace DeadZone.Actors.UI.Hideout
                 ? recipe.result.displayName
                 : recipe.recipeID;
 
-            SetMessage($"{resultName} 제작을 서버에 요청했습니다.");
+            SetMessage($"{resultName} 제작이 완료되어 인벤토리에 넣었습니다.");
             DebugLog($"제작 요청: {recipe.recipeID}");
         }
 
@@ -243,10 +243,15 @@ namespace DeadZone.Actors.UI.Hideout
             SetMessage(evt.reason);
         }
 
-        private bool RequestCraftToCurrentFacility(string recipeID)
+        private bool RequestCraftToCurrentFacility(RecipeSO recipe)
         {
             if (currentFacility == null)
                 return false;
+
+            if (recipe == null)
+                return false;
+
+            string recipeID = recipe.recipeID;
 
             WorkbenchCraftingController workbenchController =
                 currentFacility.GetComponent<WorkbenchCraftingController>();
@@ -272,7 +277,153 @@ namespace DeadZone.Actors.UI.Hideout
                 return true;
             }
 
-            return false;
+            return TryCraftWithoutSceneController(recipe);
+        }
+
+        private bool TryCraftWithoutSceneController(RecipeSO recipe)
+        {
+            if (recipe == null || inventory == null)
+                return false;
+
+            if (!HasAllIngredients(recipe))
+            {
+                SetMessage("제작 재료가 부족합니다.");
+                return true;
+            }
+
+            List<ItemRequirement> consumedIngredients = new();
+
+            if (!ConsumeAllIngredients(recipe, consumedIngredients))
+            {
+                RestoreIngredients(consumedIngredients);
+                SetMessage("제작 재료 소모에 실패했습니다.");
+                return true;
+            }
+
+            int resultCount = Mathf.Max(1, recipe.resultCount);
+            int addedCount = 0;
+
+            for (int i = 0; i < resultCount; i++)
+            {
+                if (inventory.TryAddItem(recipe.result, 1))
+                {
+                    addedCount++;
+                    continue;
+                }
+
+                RemoveAddedCraftResult(recipe, addedCount);
+                RestoreIngredients(consumedIngredients);
+                SetMessage("제작 결과 아이템을 인벤토리에 넣지 못했습니다. 재료를 되돌렸습니다.");
+                return true;
+            }
+
+            SaveCraftInventorySnapshot(recipe);
+
+            EventBus.Publish(new HousingCraftResultEvent
+            {
+                facilityName = currentFacility != null ? currentFacility.name : currentFacilityView.ToString(),
+                recipeId = recipe.recipeID,
+                resultItemId = recipe.result.itemID,
+                resultCount = resultCount,
+                success = true,
+                reason = "제작 성공"
+            });
+
+            return true;
+        }
+
+        private bool HasAllIngredients(RecipeSO recipe)
+        {
+            if (recipe == null || inventory == null)
+                return false;
+
+            if (recipe.ingredients == null || recipe.ingredients.Count == 0)
+                return true;
+
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                ItemRequirement ingredient = recipe.ingredients[i];
+
+                if (ingredient.item == null || string.IsNullOrWhiteSpace(ingredient.item.itemID))
+                    return false;
+
+                int amount = Mathf.Max(1, ingredient.amount);
+
+                if (!inventory.HasItem(ingredient.item.itemID, amount))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool ConsumeAllIngredients(RecipeSO recipe, List<ItemRequirement> consumedIngredients)
+        {
+            if (recipe == null || inventory == null || consumedIngredients == null)
+                return false;
+
+            if (recipe.ingredients == null || recipe.ingredients.Count == 0)
+                return true;
+
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                ItemRequirement ingredient = recipe.ingredients[i];
+
+                if (ingredient.item == null || string.IsNullOrWhiteSpace(ingredient.item.itemID))
+                    return false;
+
+                int amount = Mathf.Max(1, ingredient.amount);
+
+                if (!inventory.ConsumeItem(ingredient.item.itemID, amount))
+                    return false;
+
+                consumedIngredients.Add(new ItemRequirement
+                {
+                    item = ingredient.item,
+                    amount = amount
+                });
+            }
+
+            return true;
+        }
+
+        private void RestoreIngredients(List<ItemRequirement> consumedIngredients)
+        {
+            if (inventory == null || consumedIngredients == null)
+                return;
+
+            for (int i = 0; i < consumedIngredients.Count; i++)
+            {
+                ItemRequirement ingredient = consumedIngredients[i];
+
+                if (ingredient.item == null)
+                    continue;
+
+                inventory.TryAddItem(ingredient.item, Mathf.Max(1, ingredient.amount));
+            }
+        }
+
+        private void RemoveAddedCraftResult(RecipeSO recipe, int addedCount)
+        {
+            if (inventory == null || recipe == null || recipe.result == null)
+                return;
+
+            if (addedCount <= 0 || string.IsNullOrWhiteSpace(recipe.result.itemID))
+                return;
+
+            inventory.ConsumeItem(recipe.result.itemID, addedCount);
+        }
+
+        private void SaveCraftInventorySnapshot(RecipeSO recipe)
+        {
+            if (localHousingProgress == null)
+                return;
+
+            PlayerHousingSaveSyncer saveSyncer = localHousingProgress.GetComponent<PlayerHousingSaveSyncer>();
+
+            if (saveSyncer == null)
+                return;
+
+            saveSyncer.RequestLobbyInventorySaveFromServer($"Housing craft inventory snapshot: {recipe.recipeID}");
         }
 
         private bool IsRecipeValid(RecipeSO recipe)
@@ -344,7 +495,7 @@ namespace DeadZone.Actors.UI.Hideout
                         if (playerInventory == null)
                             playerInventory = localClient.PlayerObject.GetComponentInChildren<IInventory>(true);
 
-                        if (inventory == null && playerInventory != null)
+                        if (playerInventory != null)
                         {
                             inventory = playerInventory;
                             inventoryBehaviour = playerInventory as MonoBehaviour;
