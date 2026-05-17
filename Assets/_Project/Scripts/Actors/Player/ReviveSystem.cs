@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -41,8 +42,12 @@ namespace DeadZone.Actors
         [Header("부활 상호작용 UI")]
         [SerializeField] private string revivePromptText = "[F] 팀원 살리기";
 
+        [SerializeField] private string occupiedRevivePromptText = "다른 팀원이 구조 중입니다";
+
         public NetworkVariable<float> Progress = new(0f);
         public NetworkVariable<ulong> CurrentTargetClientId = new(ulong.MaxValue);
+
+        private static readonly Dictionary<ulong, ulong> ActiveReviversByTargetClientId = new();
 
         private PlayerHealthSystem reviverHealth;
         private PlayerStatsUI playerStatsUI;
@@ -50,12 +55,26 @@ namespace DeadZone.Actors
         private Vector3 serverReviveStartPosition;
         private float nextProgressEventTime;
         private bool isShowingRevivePrompt;
+        private string currentRevivePromptText;
 
         public bool IsReviving => CurrentTargetClientId.Value != ulong.MaxValue;
 
         private void Awake()
         {
             reviverHealth = GetComponent<PlayerHealthSystem>();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            EventBus.Subscribe<ReviveStartedEvent>(OnReviveStarted);
+            EventBus.Subscribe<ReviveEndedEvent>(OnReviveEnded);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            EventBus.Unsubscribe<ReviveStartedEvent>(OnReviveStarted);
+            EventBus.Unsubscribe<ReviveEndedEvent>(OnReviveEnded);
+            HideRevivePrompt();
         }
 
         private void OnDisable()
@@ -68,6 +87,8 @@ namespace DeadZone.Actors
             if (!IsOwner) return;
             if (IsReviving) return;
             if (!CanReviverAttemptRevive()) return;
+            if (!TryFindReviveTarget(out NetworkObject targetObj)) return;
+            if (IsTargetBeingRevivedByOther(targetObj)) return;
 
             HideRevivePrompt();
             BeginReviveServerRpc();
@@ -117,6 +138,9 @@ namespace DeadZone.Actors
 
             var targetHealth = targetObj.GetComponent<IRevivable>();
             if (targetHealth == null || !targetHealth.CanBeRevived)
+                return false;
+
+            if (targetHealth.IsBeingRevived && targetHealth.CurrentReviverClientId != reviverId)
                 return false;
 
             if (!IsWithinReviveRange(targetObj))
@@ -230,27 +254,36 @@ namespace DeadZone.Actors
             if (!IsOwner)
                 return;
 
-            bool shouldShow = !IsReviving && CanReviverAttemptRevive() && TryFindReviveTarget(out _);
-            if (shouldShow)
+            if (IsReviving || !CanReviverAttemptRevive() || !TryFindReviveTarget(out NetworkObject targetObj))
             {
-                ShowRevivePrompt();
+                HideRevivePrompt();
+                return;
+            }
+
+            if (IsTargetBeingRevivedByOther(targetObj))
+            {
+                ShowRevivePrompt(occupiedRevivePromptText);
             }
             else
             {
-                HideRevivePrompt();
+                ShowRevivePrompt(revivePromptText);
             }
         }
 
-        private void ShowRevivePrompt()
+        private void ShowRevivePrompt(string promptText)
         {
+            if (isShowingRevivePrompt && currentRevivePromptText == promptText)
+                return;
+
             if (playerStatsUI == null)
                 playerStatsUI = ResolvePlayerStatsUI();
 
             if (playerStatsUI == null)
                 return;
 
-            playerStatsUI.ShowRevivePrompt(revivePromptText);
+            playerStatsUI.ShowRevivePrompt(promptText);
             isShowingRevivePrompt = true;
+            currentRevivePromptText = promptText;
         }
 
         private void HideRevivePrompt()
@@ -263,6 +296,7 @@ namespace DeadZone.Actors
 
             playerStatsUI?.HideRevivePrompt();
             isShowingRevivePrompt = false;
+            currentRevivePromptText = string.Empty;
         }
 
         private PlayerStatsUI ResolvePlayerStatsUI()
@@ -348,6 +382,37 @@ namespace DeadZone.Actors
 
             float sqrDistance = (targetObj.transform.position - transform.position).sqrMagnitude;
             return sqrDistance <= reviveRange * reviveRange;
+        }
+
+        private bool IsTargetBeingRevivedByOther(NetworkObject targetObj)
+        {
+            if (targetObj == null)
+                return false;
+
+            if (ActiveReviversByTargetClientId.TryGetValue(targetObj.OwnerClientId, out ulong activeReviverClientId) &&
+                activeReviverClientId != OwnerClientId)
+            {
+                return true;
+            }
+
+            IRevivable targetHealth = targetObj.GetComponent<IRevivable>();
+            return targetHealth != null &&
+                   targetHealth.IsBeingRevived &&
+                   targetHealth.CurrentReviverClientId != OwnerClientId;
+        }
+
+        private void OnReviveStarted(ReviveStartedEvent e)
+        {
+            ActiveReviversByTargetClientId[e.targetClientId] = e.reviverClientId;
+        }
+
+        private void OnReviveEnded(ReviveEndedEvent e)
+        {
+            if (ActiveReviversByTargetClientId.TryGetValue(e.targetClientId, out ulong activeReviverClientId) &&
+                activeReviverClientId == e.reviverClientId)
+            {
+                ActiveReviversByTargetClientId.Remove(e.targetClientId);
+            }
         }
 
         private void PublishReviveStarted(ulong reviverClientId, ulong targetClientId)

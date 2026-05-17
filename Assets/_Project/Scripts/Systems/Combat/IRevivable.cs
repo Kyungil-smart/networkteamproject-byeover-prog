@@ -8,6 +8,8 @@
     {
         bool IsKnocked { get; }
         bool CanBeRevived { get; }
+        bool IsBeingRevived { get; }
+        ulong CurrentReviverClientId { get; }
         float ReviveHpAmount { get; }
         void OnReviveBegin(ulong reviverClientId);
         void OnReviveCancel();
