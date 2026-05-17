@@ -10,20 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
-  m_Name: Q3_1_SawmillBoss
+  m_Name: Q6_제재소 보스 처치
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
-  questID: Q3-1
+  questID: Q6
   questName: "제재소 보스 처치"
-  description: "제재소에 있는 보스를 처치 하십시오."
+  description: "제재소에 있는 두 명의 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_Sawmill
     requiredCount: 1
     location: "제재소"
-  rewards:
-  - type: 1
-    itemID: Ammo_AR_AP
-    amount: 120
-  unlockZoneID: 
-  prerequisiteQuestID: Q2
-  isSideQuest: 1
+  - type: 0
+    targetID: Boss_S2_01
+    requiredCount: 1
+    location: "제재소"
+  rewards: []
+  unlockZoneID: Ending
+  prerequisiteQuestID: Q5
+  isSideQuest: 0
