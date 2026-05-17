@@ -139,6 +139,7 @@ namespace DeadZone.Actors
 
             currentContext.Tick(moveInput, lookDirection, lookScreenPosition);
             currentContext.OnFireInput(firePressedThisFrame, fireHeld, lookScreenPosition);
+            ProcessSpectatorKeyboardInput();
 
             firePressedThisFrame = false;
         }
@@ -218,6 +219,22 @@ namespace DeadZone.Actors
         {
             moveInput = inputActions.Player.Move.ReadValue<Vector2>();
             lookScreenPosition = inputActions.Player.Look.ReadValue<Vector2>();
+        }
+
+        private void ProcessSpectatorKeyboardInput()
+        {
+            if (health == null || !health.IsDead)
+                return;
+
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            if (keyboard.qKey.wasPressedThisFrame)
+                currentContext?.OnSpectatorPrev();
+
+            if (keyboard.eKey.wasPressedThisFrame)
+                currentContext?.OnSpectatorNext();
         }
 
         private void OnPlayerStateChanged(PlayerState oldState, PlayerState newState)

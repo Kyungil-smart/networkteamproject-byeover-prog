@@ -73,6 +73,7 @@ namespace DeadZone.Actors
         private Camera[] childCameras;
         private AudioListener[] childAudioListeners;
         private bool isLocalOwnerCamera;
+        private Transform ownerFollowTarget;
         private float currentLookAheadDistance;
         private Vector3 lastValidLookDirection = Vector3.forward;
 
@@ -82,6 +83,8 @@ namespace DeadZone.Actors
 
             if (followTarget == null)
                 followTarget = transform;
+
+            ownerFollowTarget = followTarget;
 
             if (inputController == null)
                 inputController = GetComponent<PlayerInputController>();
@@ -162,6 +165,38 @@ namespace DeadZone.Actors
 
             SetCameraActive(false, "OnDestroy");
             base.OnDestroy();
+        }
+
+        /// <summary>
+        /// 로컬 Owner 카메라의 추적 대상만 바꾼다.
+        /// 다른 플레이어의 Camera/AudioListener를 켜지 않기 위해 관전도 이 API를 통해 기존 카메라를 재사용한다.
+        /// </summary>
+        public void SetFollowTarget(Transform target)
+        {
+            followTarget = target != null ? target : ResolveOwnerFollowTarget();
+
+            if (isLocalOwnerCamera)
+                ApplyCameraTransform();
+        }
+
+        /// <summary>
+        /// 관전 종료 또는 생존 복귀 시 원래 Owner 플레이어 추적 대상으로 되돌린다.
+        /// </summary>
+        public void ResetFollowTargetToOwner()
+        {
+            followTarget = ResolveOwnerFollowTarget();
+
+            if (isLocalOwnerCamera)
+                ApplyCameraTransform();
+        }
+
+        private Transform ResolveOwnerFollowTarget()
+        {
+            if (ownerFollowTarget != null)
+                return ownerFollowTarget;
+
+            ownerFollowTarget = transform;
+            return ownerFollowTarget;
         }
 
         /// <summary>

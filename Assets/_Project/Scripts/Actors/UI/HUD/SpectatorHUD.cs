@@ -3,6 +3,7 @@ using Sirenix.OdinInspector;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 using DeadZone.Core;
 
@@ -13,7 +14,7 @@ using DeadZone.Core;
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// 관전 대상 이름 + Q/E/Tab 키 힌트 표시
+    /// 관전 대상 이름 + Q/E 키 힌트 표시
     /// 로컬 플레이어가 Dead 상태일 때 HUDManager가 활성화
     /// </summary>
     public class SpectatorHUD : MonoBehaviour
@@ -27,17 +28,18 @@ namespace DeadZone.Actors
 
         // 설정값
         [BoxGroup("설정")]
-        [Tooltip("자유 카메라 모드일 때 표시할 문구")]
-        [SerializeField] private string freeCameraLabel = "자유 카메라";
+        [Tooltip("관전 가능한 팀원이 없을 때 표시할 문구")]
+        [FormerlySerializedAs("freeCameraLabel")]
+        [SerializeField] private string noTargetLabel = "관전 가능한 팀원 없음";
 
         [BoxGroup("설정")]
-        [Tooltip("팀원 관전 시 표시할 형식입니다. {0}에는 clientId가 들어갑니다.")]
-        [SerializeField] private string spectatingFormat = "관전중: Player {0}";
+        [Tooltip("팀원 관전 시 표시할 형식입니다. {0}=clientId, {1}=상태")]
+        [SerializeField] private string spectatingFormat = "관전중: Player {0} ({1})";
 
         [BoxGroup("설정")]
         [Tooltip("조작 키 힌트. 로컬라이징/키바인딩 변경 시 여기만 수정")]
         [MultiLineProperty(2), SerializeField]
-        private string keyHintsLabel = "[Q/E] 팀원 전환   [Tab] 자유 카메라";
+        private string keyHintsLabel = "[Q/E] 팀원 전환";
 
         // Feel 피드백
         [FoldoutGroup("피드백")]
@@ -45,8 +47,9 @@ namespace DeadZone.Actors
         [SerializeField] private MMF_Player onTeammateTargetFeedback;
 
         [FoldoutGroup("피드백")]
-        [Tooltip("자유 카메라로 전환 시 재생")]
-        [SerializeField] private MMF_Player onFreeCameraFeedback;
+        [Tooltip("관전 가능한 팀원이 없을 때 재생")]
+        [FormerlySerializedAs("onFreeCameraFeedback")]
+        [SerializeField] private MMF_Player onNoTargetFeedback;
 
         [FoldoutGroup("피드백")]
         [Tooltip("관전 시작(사망 진입 후 첫 대상 설정) 시 1회 재생")]
@@ -56,13 +59,15 @@ namespace DeadZone.Actors
         [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private ulong currentTargetClientId;// 현재 관전 중인 대상 ID
         [TitleGroup("디버그")]
+        [ShowInInspector, ReadOnly] private PlayerState currentTargetState = PlayerState.Dead;// 현재 관전 대상 상태
+        [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool hasStartedSpectating;// 관전 시작 여부 (첫 진입 구분용)
 
         // 컴포넌트 활성화 시 EventBus 구독 + 키 힌트 초기화
         private void OnEnable()
         {
             EventBus.Subscribe<SpectatorTargetChangedEvent>(OnTargetChanged);
-            if (keyHintsText != null) keyHintsText.text = keyHintsLabel;
+            if (keyHintsText != null) keyHintsText.text = BuildKeyHintsLabel();
 
             // Dead -> Revive -> Dead 재진입 시 첫 진입으로 다시 처리되도록 리셋
             hasStartedSpectating = false;
@@ -83,13 +88,13 @@ namespace DeadZone.Actors
             Debug.Log($"[SpectatorHUD] SpectatorTargetChanged spectator={e.spectatorClientId}, target={e.newTargetClientId}", this);
 
             currentTargetClientId = e.newTargetClientId;
+            currentTargetState = e.targetState;
 
-            // ulong.MaxValue는 '자유 카메라 모드'를 의미하는 약속값
             if (targetNameText != null)
             {
-                targetNameText.text = e.newTargetClientId == ulong.MaxValue
-                    ? freeCameraLabel
-                    : string.Format(spectatingFormat, e.newTargetClientId);
+                targetNameText.text = e.hasTarget
+                    ? BuildSpectatingLabel(e.newTargetClientId, e.targetState)
+                    : noTargetLabel;
             }
 
             // 관전 첫 진입은 다른 피드백 사용 (전환과 구분)
@@ -100,10 +105,33 @@ namespace DeadZone.Actors
                 return;
             }
 
-            if (e.newTargetClientId == ulong.MaxValue)
-                UIFeedbackTester.Play(onFreeCameraFeedback, this, "자유 카메라");
+            if (!e.hasTarget)
+                UIFeedbackTester.Play(onNoTargetFeedback, this, "관전 대상 없음");
             else
                 UIFeedbackTester.Play(onTeammateTargetFeedback, this, "팀원 관전 전환");
+        }
+
+        private string BuildSpectatingLabel(ulong targetClientId, PlayerState targetState)
+        {
+            if (string.IsNullOrEmpty(spectatingFormat))
+                spectatingFormat = "관전중: Player {0} ({1})";
+
+            string stateLabel = targetState == PlayerState.Knocked ? "Knocked" : "Alive";
+
+            return spectatingFormat.Contains("{1}")
+                ? string.Format(spectatingFormat, targetClientId, stateLabel)
+                : $"{string.Format(spectatingFormat, targetClientId)} ({stateLabel})";
+        }
+
+        private string BuildKeyHintsLabel()
+        {
+            if (string.IsNullOrEmpty(keyHintsLabel))
+                return "[Q/E] 팀원 전환";
+
+            return keyHintsLabel
+                .Replace("   [Tab] 자유 카메라", string.Empty)
+                .Replace("[Tab] 자유 카메라", string.Empty)
+                .Trim();
         }
 
         // 에디터 전용 테스트 버튼
@@ -117,8 +145,8 @@ namespace DeadZone.Actors
         private void TestTeammateSwitch() => UIFeedbackTester.Play(onTeammateTargetFeedback, this, "팀원 관전 전환");
 
         [TitleGroup("디버그")]
-        [Button("자유 카메라 피드백")]
-        private void TestFreeCamera() => UIFeedbackTester.Play(onFreeCameraFeedback, this, "자유 카메라");
+        [Button("관전 대상 없음 피드백")]
+        private void TestNoTarget() => UIFeedbackTester.Play(onNoTargetFeedback, this, "관전 대상 없음");
 #endif
     }
 }

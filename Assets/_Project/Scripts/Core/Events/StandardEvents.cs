@@ -417,6 +417,8 @@ namespace DeadZone.Core
     {
         public ulong spectatorClientId;
         public ulong newTargetClientId;
+        public bool hasTarget;
+        public PlayerState targetState;
     }
 
     //테스트
