@@ -28,6 +28,8 @@ namespace DeadZone.Actors.Extraction
 
         [Header("씬 로드")]
         [SerializeField] private bool useNetworkSceneLoadWhenAvailable = true;
+        [SerializeField] private bool useExistingExtractionUI = true;
+        [SerializeField] private string extractionUIDisplayName = "Ending";
 
         [Header("디버그")]
         [SerializeField] private float currentStayTime;
@@ -37,6 +39,8 @@ namespace DeadZone.Actors.Extraction
 
         private Collider triggerCollider;
         private bool unlockedByRuntimeEvent;
+        private ExtractionUI extractionUI;
+        private bool extractionUIVisible;
 
         private void Awake()
         {
@@ -67,6 +71,7 @@ namespace DeadZone.Actors.Extraction
                 return;
 
             currentStayTime += Time.deltaTime;
+            UpdateExtractionUI();
 
             if (currentStayTime >= requiredStayTime)
                 CompleteExtraction();
@@ -82,6 +87,7 @@ namespace DeadZone.Actors.Extraction
 
             isPlayerInside = true;
             currentStayTime = 0f;
+            ShowExtractionUI();
 
             if (requiredStayTime <= 0f)
                 CompleteExtraction();
@@ -94,6 +100,7 @@ namespace DeadZone.Actors.Extraction
 
             isPlayerInside = false;
             currentStayTime = 0f;
+            HideExtractionUI();
         }
 
         private void CompleteExtraction()
@@ -105,6 +112,7 @@ namespace DeadZone.Actors.Extraction
                 return;
 
             isCompleted = true;
+            HideExtractionUI();
 
             RaidSessionTracker tracker = RaidSessionTracker.Instance;
             if (tracker != null)
@@ -167,6 +175,7 @@ namespace DeadZone.Actors.Extraction
             {
                 isPlayerInside = false;
                 currentStayTime = 0f;
+                HideExtractionUI();
             }
         }
 
@@ -221,6 +230,55 @@ namespace DeadZone.Actors.Extraction
             }
 
             LoadingScreenService.LoadSceneOrFallback(resultSceneName);
+        }
+
+        private void ShowExtractionUI()
+        {
+            if (!useExistingExtractionUI)
+                return;
+
+            ExtractionUI ui = ResolveExtractionUI();
+            if (ui == null)
+            {
+                Debug.LogWarning("[ExtractionResultTrigger] ExtractionUI를 찾지 못해 엔딩 탈출 진행 UI를 표시하지 못했습니다.", this);
+                return;
+            }
+
+            if (!ui.gameObject.activeSelf)
+                ui.gameObject.SetActive(true);
+
+            extractionUIVisible = true;
+            ui.Show(extractionUIDisplayName, Mathf.Max(0f, requiredStayTime));
+        }
+
+        private void UpdateExtractionUI()
+        {
+            if (!extractionUIVisible)
+                return;
+
+            ExtractionUI ui = ResolveExtractionUI();
+            if (ui != null)
+                ui.UpdateProgress(currentStayTime, Mathf.Max(0f, requiredStayTime));
+        }
+
+        private void HideExtractionUI()
+        {
+            if (!extractionUIVisible)
+                return;
+
+            extractionUIVisible = false;
+
+            ExtractionUI ui = ResolveExtractionUI();
+            if (ui != null)
+                ui.Hide();
+        }
+
+        private ExtractionUI ResolveExtractionUI()
+        {
+            if (extractionUI == null)
+                extractionUI = FindFirstObjectByType<ExtractionUI>(FindObjectsInactive.Include);
+
+            return extractionUI;
         }
     }
 }
