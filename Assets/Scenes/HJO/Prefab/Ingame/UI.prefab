@@ -4281,8 +4281,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 811.3528, y: 184.35657}
-  m_SizeDelta: {x: -1622.6997, y: -979.714}
+  m_AnchoredPosition: {x: 811.3528, y: 177.21}
+  m_SizeDelta: {x: -1622.6997, y: -965.42}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &30211946224218010
 Canvas:
@@ -8392,8 +8392,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00005877, y: -7.639}
-  m_SizeDelta: {x: 297.3, y: 85.008}
+  m_AnchoredPosition: {x: -0.00005877, y: -18.363}
+  m_SizeDelta: {x: 297.3, y: 77.853}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4834665905912031822
 CanvasRenderer:
@@ -11517,6 +11517,7 @@ MonoBehaviour:
   teamIcon: {fileID: 3204807592963694639}
   hpValueText: {fileID: 1348688783737136924}
   knockedHpColor: {r: 1, g: 0.45, b: 0.2, a: 1}
+  normalHpColor: {r: 0.78, g: 0.08, b: 0.05, a: 1}
 --- !u!1 &5111308906544299473
 GameObject:
   m_ObjectHideFlags: 0
@@ -13936,8 +13937,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00086486, y: -0.00024223}
-  m_SizeDelta: {x: 297.3, y: 85.008}
+  m_AnchoredPosition: {x: -0.00086486, y: 0.00017977}
+  m_SizeDelta: {x: 297.3, y: 77.853}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6996169776935509093
 CanvasRenderer:
@@ -13994,8 +13995,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 15
-  m_fontSizeBase: 15
+  m_fontSize: 22
+  m_fontSizeBase: 22
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -20278,8 +20279,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.3119, y: 0.0030326843}
-  m_SizeDelta: {x: 294.68, y: 15.273}
+  m_AnchoredPosition: {x: -1.3119, y: 0.000053883}
+  m_SizeDelta: {x: 294.68, y: 36.726}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8555540981007315886
 CanvasRenderer:
@@ -20336,8 +20337,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 15
-  m_fontSizeBase: 15
+  m_fontSize: 25
+  m_fontSizeBase: 25
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -20482,6 +20483,7 @@ MonoBehaviour:
   teamIcon: {fileID: 5227918943036460762}
   hpValueText: {fileID: 2045935156374136101}
   knockedHpColor: {r: 1, g: 0.45, b: 0.2, a: 1}
+  normalHpColor: {r: 0.78, g: 0.08, b: 0.05, a: 1}
 --- !u!1 &7969104437618942233
 GameObject:
   m_ObjectHideFlags: 0
@@ -20592,8 +20594,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00029254, y: 42.504}
-  m_SizeDelta: {x: 297.3, y: 15.2776}
+  m_AnchoredPosition: {x: 0.00019574, y: 38.927}
+  m_SizeDelta: {x: 297.3, y: 36.7263}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1955450404395439076
 CanvasRenderer:
@@ -24082,6 +24084,7 @@ MonoBehaviour:
   teamIcon: {fileID: 3151844013532747752}
   hpValueText: {fileID: 684884980144874249}
   knockedHpColor: {r: 1, g: 0.45, b: 0.2, a: 1}
+  normalHpColor: {r: 0.78, g: 0.08, b: 0.05, a: 1}
 --- !u!1 &9099416480290094648
 GameObject:
   m_ObjectHideFlags: 0
