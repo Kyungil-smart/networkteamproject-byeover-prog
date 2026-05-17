@@ -209,6 +209,13 @@ namespace DeadZone.Actors
                 currentIndex = -1;
                 spectatorTargets.Clear();
                 playerCameraController?.ResetFollowTargetToOwner();
+                EventBus.Publish(new SpectatorTargetChangedEvent
+                {
+                    spectatorClientId = OwnerClientId,
+                    newTargetClientId = ulong.MaxValue,
+                    hasTarget = false,
+                    targetState = PlayerState.Alive,
+                });
             }
         }
 

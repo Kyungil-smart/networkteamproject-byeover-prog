@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "C5 \uC544\uBA38"
   description: "- \uB4F1\uAE09: \uB808\uC5B4\n\n- \uC5ED\uD560 \uBC0F \uD2B9\uC9D5\n1.
     \uD749\uBD80 + \uBCF5\uBD80 + \uC5B4\uAE68 \uBCF4\uD638\n2. \uB0B4\uAD6C\uB3C4:
-    250\n3. \uC774\uC18D \uD328\uB110\uD2F0: -14%"
+    125\n3. \uC774\uC18D \uD328\uB110\uD2F0: -14%"
   icon: {fileID: 21300000, guid: 792a67ac3c674474d9fed268b3eda4ce, type: 3}
   category: 2
   rarity: 2
@@ -26,8 +26,8 @@ MonoBehaviour:
   weightKg: 0
   baseSellPrice: 8750
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
-  armorClass: 5
-  maxDurability: 250
+  armorClass: 3
+  maxDurability: 125
   moveSpeedPenalty: -0.14
-  blockChance: 0.3
+  blockChance: 0.15
   protectedParts: 01

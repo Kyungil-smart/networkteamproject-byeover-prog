@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -110,6 +111,7 @@ namespace DeadZone.Actors
             EventBus.Subscribe<OwnerPlayerRootUnregisteredEvent>(OnOwnerPlayerRootUnregistered);
             EventBus.Subscribe<VisionMaskRenderersRegisteredEvent>(OnVisionMaskRenderersRegistered);
             EventBus.Subscribe<VisionMaskRenderersUnregisteredEvent>(OnVisionMaskRenderersUnregistered);
+            EventBus.Subscribe<SpectatorTargetChangedEvent>(OnSpectatorTargetChanged);
 
             ConfigureVisionMaskRenderingBounds();
         }
@@ -122,6 +124,7 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<OwnerPlayerRootUnregisteredEvent>(OnOwnerPlayerRootUnregistered);
             EventBus.Unsubscribe<VisionMaskRenderersRegisteredEvent>(OnVisionMaskRenderersRegistered);
             EventBus.Unsubscribe<VisionMaskRenderersUnregisteredEvent>(OnVisionMaskRenderersUnregistered);
+            EventBus.Unsubscribe<SpectatorTargetChangedEvent>(OnSpectatorTargetChanged);
 
             ClearVisionMaskRendererProperties();
             visionMaskRenderers.Clear();
@@ -240,6 +243,23 @@ namespace DeadZone.Actors
         private void OnVisionMaskRenderersUnregistered(VisionMaskRenderersUnregisteredEvent e)
         {
             UnregisterVisionMaskRenderers(e.renderers);
+        }
+
+        private void OnSpectatorTargetChanged(SpectatorTargetChangedEvent e)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || e.spectatorClientId != networkManager.LocalClientId)
+                return;
+
+            if (!e.hasTarget)
+            {
+                target = ownerPlayerRoot;
+                return;
+            }
+
+            Transform spectatorTargetRoot = FindPlayerRootByClientId(e.newTargetClientId);
+            if (spectatorTargetRoot != null)
+                target = spectatorTargetRoot;
         }
 
         /// <summary>
@@ -510,6 +530,21 @@ namespace DeadZone.Actors
             foreach (Transform playerRoot in fovMeshesByPlayerRoot.Keys)
             {
                 if (playerRoot != null && playerRoot != removedTarget)
+                    return playerRoot;
+            }
+
+            return null;
+        }
+
+        private Transform FindPlayerRootByClientId(ulong clientId)
+        {
+            foreach (Transform playerRoot in fovMeshesByPlayerRoot.Keys)
+            {
+                if (playerRoot == null)
+                    continue;
+
+                NetworkObject networkObject = playerRoot.GetComponent<NetworkObject>();
+                if (networkObject != null && networkObject.OwnerClientId == clientId)
                     return playerRoot;
             }
 
