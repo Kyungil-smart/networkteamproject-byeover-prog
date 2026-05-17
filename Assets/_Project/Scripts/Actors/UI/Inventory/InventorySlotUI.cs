@@ -129,6 +129,7 @@ namespace DeadZone.Actors.UI
         {
             AutoBindReferences();
             ConfigureSlotKind();
+            NormalizeQuickSlotIndexFromHierarchy();
         }
 
         public string GetEquipmentSaveSlotId()
@@ -151,12 +152,14 @@ namespace DeadZone.Actors.UI
         {
             AutoBindReferences();
             ConfigureSlotKind();
+            NormalizeQuickSlotIndexFromHierarchy();
             EnsureRaycastTarget();
         }
 
         private void OnValidate()
         {
             ConfigureSlotKind();
+            NormalizeQuickSlotIndexFromHierarchy();
         }
 
         public void Initialize(int index)
@@ -1263,6 +1266,32 @@ namespace DeadZone.Actors.UI
             }
 
             slotKind = InventorySlotKind.Bag;
+        }
+
+        private void NormalizeQuickSlotIndexFromHierarchy()
+        {
+            if (slotKind != InventorySlotKind.QuickSlot)
+                return;
+
+            Transform parent = transform.parent;
+            if (parent == null || !parent.name.ToLowerInvariant().Contains("quickslotpanel"))
+                return;
+
+            int index = 0;
+            foreach (Transform child in parent)
+            {
+                if (child == null || child.GetComponent<RectTransform>() == null)
+                    continue;
+
+                if (child == transform)
+                {
+                    slotIndex = index;
+                    return;
+                }
+
+                if (child.GetComponent<InventorySlotUI>() != null || child.GetComponent<UnityEngine.UI.Image>() != null)
+                    index++;
+            }
         }
 
         private void AutoBindReferences()

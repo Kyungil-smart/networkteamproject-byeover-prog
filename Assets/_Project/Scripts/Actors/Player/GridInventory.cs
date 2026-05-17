@@ -193,6 +193,7 @@ namespace DeadZone.Actors
             EnsureItemDatabase();
 
             int importedCount = 0;
+            HashSet<int> assignedSlotIndexes = new();
 
             for (int i = 0; i < snapshot.Count; i++)
             {
@@ -204,9 +205,12 @@ namespace DeadZone.Actors
                 if (!IsQuickSlotItem(item))
                     continue;
 
+                int slotIndex = ResolveQuickSlotIndex(savedItem.slotIndex, assignedSlotIndexes);
+                assignedSlotIndexes.Add(slotIndex);
+
                 SetQuickSlot(new QuickSlotData
                 {
-                    slotIndex = (byte)Mathf.Clamp(savedItem.slotIndex, 0, QUICK_SLOT_COUNT - 1),
+                    slotIndex = (byte)slotIndex,
                     itemId = savedItem.itemId,
                     stackCount = (ushort)Mathf.Clamp(savedItem.stackCount, 1, ushort.MaxValue),
                     currentDurability = Mathf.Max(0f, savedItem.currentDurability),
@@ -217,6 +221,21 @@ namespace DeadZone.Actors
             }
 
             return importedCount;
+        }
+
+        private static int ResolveQuickSlotIndex(int requestedIndex, HashSet<int> assignedSlotIndexes)
+        {
+            int normalizedIndex = Mathf.Clamp(requestedIndex, 0, QUICK_SLOT_COUNT - 1);
+            if (assignedSlotIndexes == null || !assignedSlotIndexes.Contains(normalizedIndex))
+                return normalizedIndex;
+
+            for (int i = 0; i < QUICK_SLOT_COUNT; i++)
+            {
+                if (!assignedSlotIndexes.Contains(i))
+                    return i;
+            }
+
+            return normalizedIndex;
         }
 
         /// <summary>

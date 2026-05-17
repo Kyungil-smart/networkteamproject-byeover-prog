@@ -676,6 +676,7 @@ namespace DeadZone.Systems.Raid
         {
             List<QuickSlotSaveData> snapshot = new();
             InventorySlotUI[] quickSlots = ResolveQuickSlotSlots();
+            HashSet<int> assignedSlotIndexes = new();
 
             for (int i = 0; i < quickSlots.Length; i++)
             {
@@ -683,11 +684,14 @@ namespace DeadZone.Systems.Raid
                 if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
                     continue;
 
+                int slotIndex = ResolveQuickSlotIndex(slot.SlotIndex, assignedSlotIndexes);
+                assignedSlotIndexes.Add(slotIndex);
+
                 snapshot.Add(new QuickSlotSaveData
                 {
                     itemId = slot.CurrentItemData.itemID,
-                    instanceId = $"{slot.CurrentItemData.itemID}_quickslot_{slot.SlotIndex}",
-                    slotIndex = Mathf.Clamp(slot.SlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1),
+                    instanceId = $"{slot.CurrentItemData.itemID}_quickslot_{slotIndex}",
+                    slotIndex = slotIndex,
                     stackCount = Mathf.Max(1, slot.CurrentStackCount),
                     currentDurability = 0f,
                     currentAmmo = 0
@@ -717,6 +721,7 @@ namespace DeadZone.Systems.Raid
             }
 
             int applied = 0;
+            HashSet<int> assignedSlotIndexes = new();
 
             for (int i = 0; i < quickSlotItems.Count; i++)
             {
@@ -724,7 +729,8 @@ namespace DeadZone.Systems.Raid
                 if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
                     continue;
 
-                int slotIndex = Mathf.Clamp(savedItem.slotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1);
+                int slotIndex = ResolveQuickSlotIndex(savedItem.slotIndex, assignedSlotIndexes);
+                assignedSlotIndexes.Add(slotIndex);
                 InventorySlotUI slot = FindQuickSlotByIndex(quickSlots, slotIndex);
                 ItemDataSO itemData = itemDatabase.GetById(savedItem.itemId);
 
@@ -859,13 +865,14 @@ namespace DeadZone.Systems.Raid
             for (int i = 0; i < quickSlotItems.Count; i++)
             {
                 ItemSaveDTO quickSlotItem = quickSlotItems[i];
-                int slotIndex = Mathf.Clamp(quickSlotItem?.x ?? -1, 0, GridInventory.QUICK_SLOT_COUNT - 1);
                 if (quickSlotItem == null ||
-                    string.IsNullOrWhiteSpace(quickSlotItem.itemId) ||
-                    !assignedSlotIndexes.Add(slotIndex))
+                    string.IsNullOrWhiteSpace(quickSlotItem.itemId))
                 {
                     continue;
                 }
+
+                int slotIndex = ResolveQuickSlotIndex(quickSlotItem.x, assignedSlotIndexes);
+                assignedSlotIndexes.Add(slotIndex);
 
                 result.Add(new ItemSaveDTO
                 {
@@ -882,6 +889,21 @@ namespace DeadZone.Systems.Raid
             }
 
             return result;
+        }
+
+        private static int ResolveQuickSlotIndex(int requestedIndex, HashSet<int> assignedSlotIndexes)
+        {
+            int normalizedIndex = Mathf.Clamp(requestedIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1);
+            if (assignedSlotIndexes == null || !assignedSlotIndexes.Contains(normalizedIndex))
+                return normalizedIndex;
+
+            for (int i = 0; i < GridInventory.QUICK_SLOT_COUNT; i++)
+            {
+                if (!assignedSlotIndexes.Contains(i))
+                    return i;
+            }
+
+            return normalizedIndex;
         }
 
         private static int ResolveGridX(ItemSaveDTO item)

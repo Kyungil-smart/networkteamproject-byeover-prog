@@ -439,16 +439,20 @@ namespace DeadZone.Systems.Save
                 if (isQuickSlotContainer && slot.SlotKind != InventorySlotKind.QuickSlot)
                     continue;
 
-                if (isQuickSlotContainer && !usedQuickSlotIndexes.Add(Mathf.Clamp(slot.SlotIndex, 0, QuickSlotGridWidth - 1)))
-                    continue;
+                int slotIndex = slot.SlotIndex;
+                if (isQuickSlotContainer)
+                {
+                    slotIndex = ResolveQuickSlotIndex(slot, usedQuickSlotIndexes);
+                    usedQuickSlotIndexes.Add(slotIndex);
+                }
 
                 items.Add(new ItemSaveDTO
                 {
                     itemId = slot.CurrentItemData.itemID,
                     instanceId = string.Empty,
                     containerId = containerId,
-                    x = ToGridX(slot.SlotIndex, gridWidth),
-                    y = ToGridY(slot.SlotIndex, gridWidth),
+                    x = ToGridX(slotIndex, gridWidth),
+                    y = ToGridY(slotIndex, gridWidth),
                     rotated = false,
                     stackCount = slot.CurrentStackCount
                 });
