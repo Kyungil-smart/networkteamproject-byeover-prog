@@ -6,6 +6,7 @@ using TMPro;
 using Unity.Netcode;
 
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 using DeadZone.Core;
@@ -15,6 +16,9 @@ namespace DeadZone.Actors.UI
 {
     public class LobbyRoomController : MonoBehaviour
     {
+        private const int ShutdownPollMilliseconds = 100;
+        private const float MinimumShutdownWaitSeconds = 2.5f;
+
         public static event Action PartyRoomVisibilityChanged;
         public static bool IsPartyRoomVisible { get; private set; }
 
@@ -81,6 +85,8 @@ namespace DeadZone.Actors.UI
 
         private RoomUiState currentState = RoomUiState.Idle;
         private string currentJoinCode = string.Empty;
+        private bool hasCreatedOrJoinedRoomInThisScene;
+        private bool staleSessionCleanupInProgress;
 
         private void Awake()
         {
@@ -96,6 +102,17 @@ namespace DeadZone.Actors.UI
         }
         
         private void OnDisable() => UnbindButtons();
+
+        private void Update()
+        {
+            if (currentState is not (RoomUiState.HostRoom or RoomUiState.ClientRoom or RoomUiState.ShuttingDown))
+                return;
+
+            if (IsNetworkSessionActive())
+                return;
+
+            ResetRoomUiAfterSessionEnded("NetworkSessionEnded");
+        }
 
         private void BindButtons()
         {
@@ -208,12 +225,10 @@ namespace DeadZone.Actors.UI
 
         private async Task CreateRoomAsync()
         {
-            if (!TryGetSessionManager(out var sessionManager)) return;
-            if (IsNetworkSessionActive())
-            {
-                ShowStatus("이미 네트워크 세션에 연결되어 있습니다.");
+            if (!await ClearStaleNetworkSessionBeforeNewRoomAsync("CreateRoom"))
                 return;
-            }
+
+            if (!TryGetSessionManager(out var sessionManager)) return;
             
             Debug.Log($"[Party] CreateParty called. userId={GetCurrentUserId()}", this);
             SetRoomState(RoomUiState.Busy);
@@ -237,6 +252,7 @@ namespace DeadZone.Actors.UI
 
                 SetJoinCodeText(currentJoinCode);
                 SetJoinPopupVisible(false);
+                hasCreatedOrJoinedRoomInThisScene = true;
                 SetRoomState(RoomUiState.HostRoom);
 
                 ShowStatus("방 생성 완료. 초대 코드를 공유하세요.");
@@ -254,12 +270,10 @@ namespace DeadZone.Actors.UI
 
         private async Task JoinRoomAsync()
         {
-            if (!TryGetSessionManager(out var sessionManager)) return;
-            if (IsNetworkSessionActive())
-            {
-                ShowStatus("이미 네트워크 세션에 연결되어 있습니다.");
+            if (!await ClearStaleNetworkSessionBeforeNewRoomAsync("JoinRoom"))
                 return;
-            }
+
+            if (!TryGetSessionManager(out var sessionManager)) return;
 
             string joinCode = GetTrimmedJoinCode();
 
@@ -288,6 +302,7 @@ namespace DeadZone.Actors.UI
                 
                 if (closeJoinPopupOnJoinSuccess) SetJoinPopupVisible(false);
                 
+                hasCreatedOrJoinedRoomInThisScene = true;
                 SetRoomState(RoomUiState.ClientRoom);
                 ShowStatus("방 참가 완료.");
             }
@@ -316,6 +331,7 @@ namespace DeadZone.Actors.UI
             SetJoinCodeText(emptyJoinCodeText);
             SetJoinPopupVisible(false);
             PartyPlayerColorCache.Clear();
+            hasCreatedOrJoinedRoomInThisScene = false;
             SetRoomState(RoomUiState.Idle);
             
             ShowStatus("방 연결을 종료했습니다.");
@@ -372,6 +388,12 @@ namespace DeadZone.Actors.UI
             bool isServer = isListening && networkManager.IsServer;
             bool isClient = isListening && networkManager.IsClient;
 
+            if ((isServer || isClient) && IsRestoredLobbySessionStale())
+            {
+                _ = CleanupRestoredLobbySessionAsync();
+                return;
+            }
+
             if (isServer)
             {
                 SetRoomState(RoomUiState.HostRoom);
@@ -390,6 +412,87 @@ namespace DeadZone.Actors.UI
 
             SetRoomState(RoomUiState.Idle);
             Debug.Log("[LobbyPartyUI] No active network session found. Slot_Party=Hidden", this);
+        }
+
+        private bool IsRestoredLobbySessionStale()
+        {
+            if (hasCreatedOrJoinedRoomInThisScene)
+                return false;
+
+            return string.Equals(SceneManager.GetActiveScene().name, "Lobby", StringComparison.Ordinal);
+        }
+
+        private async Task CleanupRestoredLobbySessionAsync()
+        {
+            if (staleSessionCleanupInProgress)
+                return;
+
+            staleSessionCleanupInProgress = true;
+            SetRoomState(RoomUiState.ShuttingDown);
+            ShowStatus("이전 방 연결을 정리하는 중입니다...");
+
+            SessionManager.DisconnectActiveSession("RestoreStaleLobbySession");
+            await WaitForNetworkSessionShutdownAsync();
+
+            if (!IsNetworkSessionActive())
+            {
+                ResetRoomUiAfterSessionEnded("RestoreStaleLobbySession");
+                staleSessionCleanupInProgress = false;
+                return;
+            }
+
+            SetRoomState(RoomUiState.Idle);
+            ShowStatus("이전 방 연결이 아직 종료되지 않았습니다. 잠시 후 다시 시도해주세요.");
+            staleSessionCleanupInProgress = false;
+        }
+
+        private async Task<bool> ClearStaleNetworkSessionBeforeNewRoomAsync(string reason)
+        {
+            if (!IsNetworkSessionActive())
+                return true;
+
+            SetRoomState(RoomUiState.ShuttingDown);
+            ShowStatus("이전 방 연결을 정리하는 중입니다...");
+
+            SessionManager.DisconnectActiveSession(reason);
+            await WaitForNetworkSessionShutdownAsync();
+
+            if (!IsNetworkSessionActive())
+            {
+                ResetRoomUiAfterSessionEnded(reason);
+                return true;
+            }
+
+            SetRoomState(RoomUiState.Idle);
+            ShowStatus("이전 방 연결이 아직 종료되지 않았습니다. 잠시 후 다시 시도해주세요.");
+            return false;
+        }
+
+        private async Task WaitForNetworkSessionShutdownAsync()
+        {
+            float timeoutSeconds = Mathf.Max(shutdownRetryDelaySec, MinimumShutdownWaitSeconds);
+            int maxPollCount = Mathf.Max(1, Mathf.CeilToInt(timeoutSeconds * 1000f / ShutdownPollMilliseconds));
+
+            for (int i = 0; i < maxPollCount; i++)
+            {
+                if (!IsNetworkSessionActive())
+                    return;
+
+                await Task.Delay(ShutdownPollMilliseconds);
+            }
+        }
+
+        private void ResetRoomUiAfterSessionEnded(string reason)
+        {
+            currentJoinCode = string.Empty;
+            SetJoinCodeText(emptyJoinCodeText);
+            SetJoinPopupVisible(false);
+            PartyPlayerColorCache.Clear();
+            hasCreatedOrJoinedRoomInThisScene = false;
+            staleSessionCleanupInProgress = false;
+            SetRoomState(RoomUiState.Idle);
+            ShowStatus("방을 만들거나 초대 코드로 참가할 수 있습니다.");
+            Debug.Log($"[LobbyRoomController] Room UI reset after session ended. reason={reason}", this);
         }
         
         private bool IsBusyState()

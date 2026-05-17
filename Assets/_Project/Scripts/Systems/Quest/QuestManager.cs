@@ -387,10 +387,22 @@ namespace DeadZone.Systems.Quests
             if (!questLookup.TryGetValue(questId, out QuestDataSO questData)) return false;
             if (!CanGrantRewards(clientId, questData)) return false;
 
-            GrantRewards(clientId, questData);
-
             PlayerQuestState state = GetPlayerState(clientId);
-            state.RewardClaimedQuestIds.Add(questId);
+            if (!state.RewardClaimedQuestIds.Add(questId))
+                return false;
+
+            try
+            {
+                GrantRewards(clientId, questData);
+            }
+            catch (System.Exception exception)
+            {
+                state.RewardClaimedQuestIds.Remove(questId);
+                Debug.LogError($"[QuestManager] Reward grant failed. questId={questId}, clientId={clientId}, error={exception}", this);
+                return false;
+            }
+
+            PersistQuestRewardClaim();
 
             EventBus.Publish(new QuestRewardClaimedEvent
             {
@@ -741,7 +753,6 @@ namespace DeadZone.Systems.Quests
             WalletSystem wallet = ResolveClientWallet(clientId);
             LobbyInventoryState lobbyInventoryState = ResolveLobbyInventoryState();
             IItemDatabase itemDatabase = ResolveItemDatabase();
-            bool changedLobbyInventory = false;
 
             foreach (QuestReward reward in questData.rewards)
             {
@@ -763,15 +774,11 @@ namespace DeadZone.Systems.Quests
                         if (itemData == null)
                             break;
 
-                        if (TryAddRewardToLobbyStashState(lobbyInventoryState, itemData, reward.amount))
-                            changedLobbyInventory = true;
+                        TryAddRewardToLobbyStashState(lobbyInventoryState, itemData, reward.amount);
 
                         break;
                 }
             }
-
-            if (changedLobbyInventory)
-                PersistLobbyInventoryReward();
         }
 
         private static LobbyInventoryState ResolveLobbyInventoryState()
@@ -1031,14 +1038,25 @@ namespace DeadZone.Systems.Quests
             return items;
         }
 
-        private static void PersistLobbyInventoryReward()
+        private static void PersistQuestRewardClaim()
         {
             LobbyInventoryStateUiBridge bridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
             bridge?.ApplyStateToUi();
 
             LobbySaveService saveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
-            saveService?.SaveCurrentStateToLocalJson("Quest reward claimed");
-            saveService?.SaveLobbyDataToCloud();
+            if (saveService != null)
+            {
+                saveService.SaveCurrentStateToLocalJson("Quest reward claimed");
+                saveService.SaveLobbyDataToCloud();
+                return;
+            }
+
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSaveSystem == null)
+                cloudSaveSystem = FindFirstObjectByType<CloudSaveSystem>(FindObjectsInactive.Include);
+
+            if (cloudSaveSystem != null)
+                _ = cloudSaveSystem.UploadAsync();
         }
 
         private static WalletSystem ResolveClientWallet(ulong clientId)

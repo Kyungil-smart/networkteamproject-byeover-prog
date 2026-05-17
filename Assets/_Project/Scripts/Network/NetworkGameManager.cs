@@ -45,9 +45,14 @@ namespace DeadZone.Network
         private Coroutine hideLoadingRoutine;
         private Coroutine localReadyRoutine;
         private Coroutine terminalSessionDisconnectRoutine;
+        private bool destroyPersistentLobbyObjectOnDespawn;
 
         public override void OnNetworkSpawn()
         {
+            destroyPersistentLobbyObjectOnDespawn =
+                TryGetComponent<NetworkLobbyState>(out _)
+                || TryGetComponent<LobbyRaidStartController>(out _);
+
             DontDestroyOnLoad(gameObject);
 
             Debug.Log($"[NetworkGameManager] OnNetworkSpawn. isServer={IsServer}, isClient={IsClient}, scene={gameObject.scene.name}");
@@ -93,6 +98,13 @@ namespace DeadZone.Network
             }
 
             ServiceLocator.Unregister<NetworkGameManager>();
+
+            if (destroyPersistentLobbyObjectOnDespawn)
+            {
+                destroyPersistentLobbyObjectOnDespawn = false;
+                Debug.Log("[NetworkGameManager] Destroy persistent lobby network object after despawn.", this);
+                Destroy(gameObject);
+            }
         }
 
         public static SceneEventProgressStatus LoadSceneWithLoading(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
