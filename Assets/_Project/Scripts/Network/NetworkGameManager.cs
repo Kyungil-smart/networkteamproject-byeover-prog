@@ -282,11 +282,27 @@ namespace DeadZone.Network
 
             string sceneName = loadingSceneName;
 
-            Debug.LogWarning($"[Loading] Timeout. Force hide loading UI. scene={sceneName}, elapsed={elapsed:0.00}");
+            Debug.LogWarning($"[Loading] Timeout. Force hide loading UI. scene={sceneName}, elapsed={elapsed:0.00}, readyStates={BuildReadyStateLog()}");
 
             HideLoadingClientRpc(sceneName);
             TryDisconnectTerminalPartySession(sceneName);
             ClearNetworkLoadingState();
+        }
+
+        private string BuildReadyStateLog()
+        {
+            if (NetworkManager.Singleton == null)
+                return "NetworkManager=null";
+
+            List<string> states = new List<string>();
+
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            {
+                bool ready = sceneReadyClients.TryGetValue(clientId, out bool value) && value;
+                states.Add($"{clientId}:{ready}");
+            }
+
+            return string.Join(",", states);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]

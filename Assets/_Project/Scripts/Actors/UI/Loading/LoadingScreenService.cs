@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Threading.Tasks;
 
 using TMPro;
@@ -43,6 +44,9 @@ namespace DeadZone.Actors.UI
         [SerializeField] private bool forceOverlayCanvas = true;
         [SerializeField] private int loadingCanvasSortOrder = 30000;
 
+        [Header("네트워크 로딩 안전장치")]
+        [SerializeField, Min(1f)] private float networkLoadLocalFallbackSeconds = 20f;
+
         [Header("로그")]
         [SerializeField] private bool logDebug;
 
@@ -50,7 +54,9 @@ namespace DeadZone.Actors.UI
 
         private bool isVisible;
         private bool isNetworkControlledLoading;
+        private string networkControlledSceneName = string.Empty;
         private float shownAtRealtime;
+        private Coroutine networkLoadFallbackRoutine;
 
         public static LoadingScreenService Instance => instance;
         public bool IsVisible => isVisible;
@@ -87,6 +93,7 @@ namespace DeadZone.Actors.UI
         {
             SceneManager.sceneLoaded -= HandleUnitySceneLoaded;
             EventBus.Unsubscribe<SceneChangedEvent>(HandleNetworkSceneChanged);
+            StopNetworkLoadFallback();
         }
 
         private void OnDestroy()
@@ -126,7 +133,9 @@ namespace DeadZone.Actors.UI
                 return;
 
             service.isNetworkControlledLoading = true;
+            service.networkControlledSceneName = sceneName;
             service.Show(sceneName);
+            service.StartNetworkLoadFallback(sceneName);
         }
 
         public void Show(string sceneName = null)
@@ -179,8 +188,10 @@ namespace DeadZone.Actors.UI
         public void HideImmediate()
         {
             isNetworkControlledLoading = false;
+            networkControlledSceneName = string.Empty;
             isVisible = false;
             SetProgress(1f);
+            StopNetworkLoadFallback();
 
             if (canvasGroup != null)
             {
@@ -207,6 +218,8 @@ namespace DeadZone.Actors.UI
                 return;
 
             isNetworkControlledLoading = false;
+            networkControlledSceneName = string.Empty;
+            StopNetworkLoadFallback();
             Show(resolvedSceneName);
 
             AsyncOperation operation = SceneManager.LoadSceneAsync(resolvedSceneName, mode);
@@ -334,6 +347,71 @@ namespace DeadZone.Actors.UI
                 return;
 
             _ = HideAsync();
+        }
+
+        private void StartNetworkLoadFallback(string sceneName)
+        {
+            StopNetworkLoadFallback();
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+                return;
+
+            networkLoadFallbackRoutine = StartCoroutine(NetworkLoadFallbackRoutine(sceneName));
+        }
+
+        private void StopNetworkLoadFallback()
+        {
+            if (networkLoadFallbackRoutine == null)
+                return;
+
+            StopCoroutine(networkLoadFallbackRoutine);
+            networkLoadFallbackRoutine = null;
+        }
+
+        private IEnumerator NetworkLoadFallbackRoutine(string sceneName)
+        {
+            float startedAt = Time.realtimeSinceStartup;
+
+            while (isVisible &&
+                   isNetworkControlledLoading &&
+                   string.Equals(networkControlledSceneName, sceneName, System.StringComparison.Ordinal))
+            {
+                string activeSceneName = SceneManager.GetActiveScene().name;
+
+                if (string.Equals(activeSceneName, sceneName, System.StringComparison.Ordinal))
+                {
+                    float elapsedVisible = Time.realtimeSinceStartup - shownAtRealtime;
+                    float remaining = minimumVisibleSeconds - elapsedVisible;
+
+                    if (remaining > 0f)
+                        yield return new WaitForSecondsRealtime(remaining);
+
+                    if (isVisible &&
+                        isNetworkControlledLoading &&
+                        string.Equals(networkControlledSceneName, sceneName, System.StringComparison.Ordinal) &&
+                        string.Equals(SceneManager.GetActiveScene().name, sceneName, System.StringComparison.Ordinal))
+                    {
+                        Debug.LogWarning($"[LoadingScreenService] Network loading fallback hide after local scene loaded. scene={sceneName}", this);
+                        _ = HideAsync();
+                    }
+
+                    networkLoadFallbackRoutine = null;
+                    yield break;
+                }
+
+                if (Time.realtimeSinceStartup - startedAt >= networkLoadLocalFallbackSeconds)
+                {
+                    Debug.LogWarning(
+                        $"[LoadingScreenService] Network loading fallback timeout before scene loaded. target={sceneName}, active={activeSceneName}",
+                        this);
+                    networkLoadFallbackRoutine = null;
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            networkLoadFallbackRoutine = null;
         }
 
         private static LoadingScreenService Resolve()
