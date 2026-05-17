@@ -243,8 +243,7 @@ namespace DeadZone.Actors.Extraction
 
             if (shouldUseNetworkSceneLoad)
             {
-                LoadingScreenService.ShowForNetworkLoadOrFallback(resultSceneName);
-                networkManager.SceneManager.LoadScene(resultSceneName, LoadSceneMode.Single);
+                NetworkGameManager.LoadSceneWithLoading(resultSceneName, LoadSceneMode.Single);
                 return;
             }
 

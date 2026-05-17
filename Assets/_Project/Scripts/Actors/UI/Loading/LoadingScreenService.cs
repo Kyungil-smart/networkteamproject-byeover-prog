@@ -36,9 +36,12 @@ namespace DeadZone.Actors.UI
         [SerializeField] private string progressFormat = "{0}%";
 
         [Header("표시 옵션")]
-        [SerializeField, Min(0f)] private float minimumVisibleSeconds = 0.35f;
-        [SerializeField] private bool hideOnUnitySceneLoaded = true;
-        [SerializeField] private bool hideOnNetworkSceneChanged = true;
+        [SerializeField, Min(0f)] private float minimumVisibleSeconds = 1.5f;
+        [SerializeField, Min(0f)] private float fadeDuration = 0.25f;
+        [SerializeField] private bool hideOnUnitySceneLoaded;
+        [SerializeField] private bool hideOnNetworkSceneChanged;
+        [SerializeField] private bool forceOverlayCanvas = true;
+        [SerializeField] private int loadingCanvasSortOrder = 30000;
 
         [Header("로그")]
         [SerializeField] private bool logDebug;
@@ -46,10 +49,12 @@ namespace DeadZone.Actors.UI
         private static LoadingScreenService instance;
 
         private bool isVisible;
+        private bool isNetworkControlledLoading;
         private float shownAtRealtime;
 
         public static LoadingScreenService Instance => instance;
         public bool IsVisible => isVisible;
+        public bool IsLoading => isVisible;
 
         private void Awake()
         {
@@ -117,17 +122,24 @@ namespace DeadZone.Actors.UI
         public static void ShowForNetworkLoadOrFallback(string sceneName)
         {
             LoadingScreenService service = Resolve();
-            service?.Show(sceneName);
+            if (service == null)
+                return;
+
+            service.isNetworkControlledLoading = true;
+            service.Show(sceneName);
         }
 
         public void Show(string sceneName = null)
         {
             EnsureLoadingRoot();
 
-            shownAtRealtime = Time.realtimeSinceStartup;
+            if (!isVisible)
+                shownAtRealtime = Time.realtimeSinceStartup;
+
             isVisible = true;
             SetRootActive(true);
             SetProgress(0f);
+            ConfigureLoadingCanvas();
 
             LoadingTipView tipView = loadingRoot != null
                 ? loadingRoot.GetComponentInChildren<LoadingTipView>(true)
@@ -158,11 +170,15 @@ namespace DeadZone.Actors.UI
             if (remaining > 0f)
                 await DelaySecondsRealtime(remaining);
 
+            if (fadeDuration > 0f)
+                await FadeCanvasGroupAsync(0f, fadeDuration);
+
             HideImmediate();
         }
 
         public void HideImmediate()
         {
+            isNetworkControlledLoading = false;
             isVisible = false;
             SetProgress(1f);
 
@@ -190,6 +206,7 @@ namespace DeadZone.Actors.UI
             if (!TryResolveLoadableScene(sceneName, null, out string resolvedSceneName))
                 return;
 
+            isNetworkControlledLoading = false;
             Show(resolvedSceneName);
 
             AsyncOperation operation = SceneManager.LoadSceneAsync(resolvedSceneName, mode);
@@ -259,6 +276,8 @@ namespace DeadZone.Actors.UI
 
             if (progressSlider == null && loadingRoot != null)
                 progressSlider = loadingRoot.GetComponentInChildren<Slider>(true);
+
+            ConfigureLoadingCanvas();
         }
 
         private void SetRootActive(bool active)
@@ -270,9 +289,31 @@ namespace DeadZone.Actors.UI
                 loadingRoot.SetActive(active);
         }
 
+        private void ConfigureLoadingCanvas()
+        {
+            if (!forceOverlayCanvas || loadingRoot == null)
+                return;
+
+            Canvas[] canvases = loadingRoot.GetComponentsInChildren<Canvas>(true);
+
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas canvas = canvases[i];
+                if (canvas == null)
+                    continue;
+
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = Mathf.Max(canvas.sortingOrder, loadingCanvasSortOrder);
+            }
+        }
+
         private void HandleUnitySceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (!hideOnUnitySceneLoaded)
+                return;
+
+            if (isNetworkControlledLoading)
                 return;
 
             if (!isVisible)
@@ -284,6 +325,9 @@ namespace DeadZone.Actors.UI
         private void HandleNetworkSceneChanged(SceneChangedEvent e)
         {
             if (!hideOnNetworkSceneChanged)
+                return;
+
+            if (isNetworkControlledLoading)
                 return;
 
             if (!isVisible)
@@ -382,6 +426,24 @@ namespace DeadZone.Actors.UI
 
             while (Time.realtimeSinceStartup < endTime)
                 await Task.Yield();
+        }
+
+        private async Task FadeCanvasGroupAsync(float targetAlpha, float duration)
+        {
+            if (canvasGroup == null)
+                return;
+
+            float startAlpha = canvasGroup.alpha;
+            float startTime = Time.realtimeSinceStartup;
+
+            while (Time.realtimeSinceStartup - startTime < duration)
+            {
+                float normalized = Mathf.Clamp01((Time.realtimeSinceStartup - startTime) / duration);
+                canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, normalized);
+                await Task.Yield();
+            }
+
+            canvasGroup.alpha = targetAlpha;
         }
     }
 }

@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Collections.Generic;
+
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,39 +19,138 @@ namespace DeadZone.Network
     {
         public NetworkVariable<float> RaidTimeRemaining = new(0f);
 
+        [Header("Loading")]
+        [SerializeField, Min(0f)] private float minimumLoadingTime = 1.5f;
+        [SerializeField, Min(0.1f)] private float localReadyTimeoutSeconds = 5f;
+        [SerializeField, Min(0)] private int localReadyDelayFrames = 2;
+        [SerializeField, Min(1f)] private float networkLoadingTimeoutSeconds = 8f;
+
+        private readonly Dictionary<ulong, bool> sceneReadyClients = new();
+
+        private bool isNetworkLoading;
+        private string loadingSceneName;
+        private float loadingStartedAt;
+        private Coroutine hideLoadingRoutine;
+        private Coroutine localReadyRoutine;
+
         public override void OnNetworkSpawn()
         {
-            ServiceLocator.Register(this);
+            DontDestroyOnLoad(gameObject);
 
-            if (IsServer)
+            Debug.Log($"[NetworkGameManager] OnNetworkSpawn. isServer={IsServer}, isClient={IsClient}, scene={gameObject.scene.name}");
+
+            ServiceLocator.Register(this);
+            SceneManager.sceneLoaded += OnLocalSceneLoaded;
+
+            if (IsServer && NetworkManager.Singleton != null)
             {
-                NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoadComplete;
+                if (NetworkManager.Singleton.SceneManager != null)
+                    NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoadComplete;
+
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
             }
         }
 
         public override void OnNetworkDespawn()
         {
             if (IsServer && NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
-            {
                 NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnSceneLoadComplete;
+
+            if (IsServer && NetworkManager.Singleton != null)
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+
+            SceneManager.sceneLoaded -= OnLocalSceneLoaded;
+
+            if (localReadyRoutine != null)
+            {
+                StopCoroutine(localReadyRoutine);
+                localReadyRoutine = null;
+            }
+
+            if (hideLoadingRoutine != null)
+            {
+                StopCoroutine(hideLoadingRoutine);
+                hideLoadingRoutine = null;
             }
 
             ServiceLocator.Unregister<NetworkGameManager>();
         }
 
+        public static SceneEventProgressStatus LoadSceneWithLoading(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
+        {
+            NetworkGameManager manager = ServiceLocator.Get<NetworkGameManager>();
+
+            if (manager == null)
+                manager = FindFirstObjectByType<NetworkGameManager>();
+
+            if (manager != null && manager.IsSpawned && manager.IsServer)
+                return manager.LoadNetworkSceneWithLoading(sceneName, mode);
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null || networkManager.SceneManager == null)
+            {
+                Debug.LogWarning($"[Loading] NetworkManager or SceneManager missing. Show fallback only. scene={sceneName}");
+                LoadingScreenService.ShowForNetworkLoadOrFallback(sceneName);
+                return SceneEventProgressStatus.SceneEventInProgress;
+            }
+
+            LoadingScreenService.ShowForNetworkLoadOrFallback(sceneName);
+            return networkManager.SceneManager.LoadScene(sceneName, mode);
+        }
+
+        public SceneEventProgressStatus LoadNetworkSceneWithLoading(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
+        {
+            if (!IsServer || NetworkManager.Singleton == null || NetworkManager.Singleton.SceneManager == null)
+            {
+                Debug.LogWarning($"[Loading] LoadNetworkSceneWithLoading blocked. isServer={IsServer}, scene={sceneName}");
+                return SceneEventProgressStatus.SceneEventInProgress;
+            }
+
+            BeginNetworkLoading(sceneName);
+
+            SceneEventProgressStatus status = NetworkManager.Singleton.SceneManager.LoadScene(sceneName, mode);
+
+            Debug.Log($"[Loading] LoadScene requested. scene={sceneName}, status={status}, clients={NetworkManager.Singleton.ConnectedClientsIds.Count}");
+
+            if (status != SceneEventProgressStatus.Started)
+            {
+                Debug.LogWarning($"[Loading] LoadScene did not start. Cancel network loading. scene={sceneName}, status={status}");
+                CancelNetworkLoading();
+            }
+
+            return status;
+        }
+
         private void Update()
         {
-            if (!IsServer) return;
+            if (!IsServer)
+                return;
+
+            if (isNetworkLoading)
+                TryForceHideLoadingOnTimeout();
 
             if (RaidTimeRemaining.Value > 0f)
             {
                 RaidTimeRemaining.Value = Mathf.Max(0f, RaidTimeRemaining.Value - Time.deltaTime);
 
                 if (RaidTimeRemaining.Value <= 0f)
-                {
                     OnRaidTimeExpired();
-                }
             }
+        }
+
+        private void TryForceHideLoadingOnTimeout()
+        {
+            float elapsed = Time.realtimeSinceStartup - loadingStartedAt;
+
+            if (elapsed < networkLoadingTimeoutSeconds)
+                return;
+
+            string sceneName = loadingSceneName;
+
+            Debug.LogWarning($"[Loading] Timeout. Force hide loading UI. scene={sceneName}, elapsed={elapsed:0.00}");
+
+            HideLoadingClientRpc(sceneName);
+            ClearNetworkLoadingState();
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -56,15 +158,287 @@ namespace DeadZone.Network
         {
             RaidLoadoutTransferService.SaveCurrentRaidLoadoutsForConnectedClients();
             RaidTimeRemaining.Value = 0f;
-            LoadingScreenService.ShowForNetworkLoadOrFallback("Hideout");
-            NetworkManager.Singleton.SceneManager.LoadScene("Hideout", LoadSceneMode.Single);
+            LoadNetworkSceneWithLoading("Hideout");
         }
 
         private void OnSceneLoadComplete(ulong clientId, string sceneName, LoadSceneMode mode)
         {
-            if (mode != LoadSceneMode.Single) return;
+            if (mode != LoadSceneMode.Single)
+                return;
 
             EventBus.Publish(new SceneChangedEvent { sceneName = sceneName });
+
+            Debug.Log($"[Loading] NGO load complete. clientId={clientId}, scene={sceneName}, loadingScene={loadingSceneName}, isNetworkLoading={isNetworkLoading}");
+
+            if (!IsServer || !isNetworkLoading)
+                return;
+
+            if (!string.Equals(sceneName, loadingSceneName, System.StringComparison.Ordinal))
+                return;
+
+            MarkClientReady(clientId, $"NGO load complete: {sceneName}");
+        }
+
+        private void BeginNetworkLoading(string sceneName)
+        {
+            isNetworkLoading = true;
+            loadingSceneName = sceneName;
+            loadingStartedAt = Time.realtimeSinceStartup;
+            sceneReadyClients.Clear();
+
+            if (hideLoadingRoutine != null)
+            {
+                StopCoroutine(hideLoadingRoutine);
+                hideLoadingRoutine = null;
+            }
+
+            if (localReadyRoutine != null)
+            {
+                StopCoroutine(localReadyRoutine);
+                localReadyRoutine = null;
+            }
+
+            if (NetworkManager.Singleton != null)
+            {
+                foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+                    sceneReadyClients[clientId] = false;
+            }
+
+            Debug.Log($"[Loading] Begin. scene={sceneName}, clients={sceneReadyClients.Count}");
+
+            ShowLoadingClientRpc(sceneName);
+        }
+
+        private void CancelNetworkLoading()
+        {
+            Debug.LogWarning($"[Loading] Cancel network loading. scene={loadingSceneName}");
+
+            LoadingScreenService service = LoadingScreenService.Instance;
+            if (service != null)
+                _ = service.HideAsync();
+
+            ClearNetworkLoadingState();
+        }
+
+        [ClientRpc]
+        private void ShowLoadingClientRpc(string sceneName)
+        {
+            loadingSceneName = sceneName;
+
+            Debug.Log($"[Loading] ShowLoadingClientRpc received. scene={sceneName}, activeScene={SceneManager.GetActiveScene().name}");
+
+            LoadingScreenService.ShowForNetworkLoadOrFallback(sceneName);
+
+            if (SceneManager.GetActiveScene().name == sceneName)
+                StartLocalReadyRoutine(sceneName);
+        }
+
+        [ClientRpc]
+        private void HideLoadingClientRpc(string sceneName)
+        {
+            Debug.Log($"[Loading] HideLoadingClientRpc received. rpcScene={sceneName}, localLoadingScene={loadingSceneName}");
+
+            if (!string.IsNullOrEmpty(sceneName) &&
+                !string.IsNullOrEmpty(loadingSceneName) &&
+                !string.Equals(sceneName, loadingSceneName, System.StringComparison.Ordinal))
+            {
+                Debug.LogWarning($"[Loading] Hide ignored by scene mismatch. rpcScene={sceneName}, localScene={loadingSceneName}");
+                return;
+            }
+
+            loadingSceneName = string.Empty;
+
+            LoadingScreenService service = LoadingScreenService.Instance;
+
+            if (service != null)
+            {
+                Debug.Log("[Loading] Call LoadingScreenService.HideAsync");
+                _ = service.HideAsync();
+            }
+            else
+            {
+                Debug.LogWarning("[Loading] LoadingScreenService.Instance is null.");
+            }
+        }
+
+        private void OnLocalSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            Debug.Log($"[Loading] Local scene loaded. scene={scene.name}, loadingScene={loadingSceneName}, isServer={IsServer}, isClient={IsClient}, isNetworkLoading={isNetworkLoading}");
+
+            if (string.IsNullOrEmpty(loadingSceneName))
+                return;
+
+            if (!string.Equals(scene.name, loadingSceneName, System.StringComparison.Ordinal))
+                return;
+
+            if (IsServer && isNetworkLoading && NetworkManager.Singleton != null)
+            {
+                ulong localClientId = NetworkManager.Singleton.LocalClientId;
+                MarkClientReady(localClientId, $"Local sceneLoaded: {scene.name}");
+
+                // 싱글/호스트 1인 테스트에서는 ready 동기화 대기 없이 직접 종료한다.
+                if (NetworkManager.Singleton.ConnectedClientsIds.Count <= 1)
+                {
+                    Debug.Log($"[Loading] Single/host local load complete. Hide loading directly. scene={scene.name}");
+
+                    StartHideLoadingRoutineIfNeeded();
+                    return;
+                }
+            }
+
+            StartLocalReadyRoutine(scene.name);
+        }
+
+        private void StartLocalReadyRoutine(string sceneName)
+        {
+            if (!IsClient)
+                return;
+
+            if (localReadyRoutine != null)
+                StopCoroutine(localReadyRoutine);
+
+            localReadyRoutine = StartCoroutine(NotifySceneReadyWhenLocalInitialized(sceneName));
+        }
+
+        private IEnumerator NotifySceneReadyWhenLocalInitialized(string sceneName)
+        {
+            for (int i = 0; i < localReadyDelayFrames; i++)
+                yield return null;
+
+            float startTime = Time.realtimeSinceStartup;
+
+            while (!IsLocalSceneInitialized() &&
+                   Time.realtimeSinceStartup - startTime < localReadyTimeoutSeconds)
+            {
+                yield return null;
+            }
+
+            Debug.Log($"[Loading] Local ready routine completed. scene={sceneName}, initialized={IsLocalSceneInitialized()}");
+
+            NotifySceneReadyServerRpc(sceneName);
+            localReadyRoutine = null;
+        }
+
+        private bool IsLocalSceneInitialized()
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+
+            if (networkManager == null || !networkManager.IsListening || !networkManager.IsClient)
+                return true;
+
+            if (networkManager.LocalClient == null)
+                return true;
+
+            return networkManager.LocalClient.PlayerObject != null;
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void NotifySceneReadyServerRpc(string sceneName, RpcParams rpcParams = default)
+        {
+            if (!IsServer || !isNetworkLoading)
+            {
+                Debug.Log($"[Loading] Ready ignored. isServer={IsServer}, isNetworkLoading={isNetworkLoading}, scene={sceneName}");
+                return;
+            }
+
+            if (!string.Equals(sceneName, loadingSceneName, System.StringComparison.Ordinal))
+            {
+                Debug.LogWarning($"[Loading] Ready ignored by scene mismatch. readyScene={sceneName}, loadingScene={loadingSceneName}");
+                return;
+            }
+
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            MarkClientReady(senderClientId, $"Client ready RPC: {sceneName}");
+        }
+
+        private void OnClientDisconnected(ulong clientId)
+        {
+            if (!IsServer || !isNetworkLoading)
+                return;
+
+            sceneReadyClients.Remove(clientId);
+            Debug.Log($"[Loading] Client disconnected during loading. clientId={clientId}");
+
+            TryHideLoadingWhenReady();
+        }
+
+        private void MarkClientReady(ulong clientId, string reason)
+        {
+            if (!IsServer || !isNetworkLoading)
+                return;
+
+            if (!sceneReadyClients.ContainsKey(clientId))
+                sceneReadyClients[clientId] = false;
+
+            sceneReadyClients[clientId] = true;
+
+            Debug.Log($"[Loading] Client marked ready. clientId={clientId}, scene={loadingSceneName}, reason={reason}");
+
+            TryHideLoadingWhenReady();
+        }
+
+        private void TryHideLoadingWhenReady()
+        {
+            if (!IsServer || !isNetworkLoading)
+                return;
+
+            if (NetworkManager.Singleton == null)
+                return;
+
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            {
+                bool ready = sceneReadyClients.TryGetValue(clientId, out bool value) && value;
+
+                Debug.Log($"[Loading] Ready check. clientId={clientId}, ready={ready}, scene={loadingSceneName}");
+
+                if (!ready)
+                    return;
+            }
+
+            StartHideLoadingRoutineIfNeeded();
+        }
+
+        private void StartHideLoadingRoutineIfNeeded()
+        {
+            if (hideLoadingRoutine != null)
+                return;
+
+            Debug.Log($"[Loading] All clients ready. Start hide routine. scene={loadingSceneName}");
+            hideLoadingRoutine = StartCoroutine(HideLoadingAfterMinimumTime());
+        }
+
+        private IEnumerator HideLoadingAfterMinimumTime()
+        {
+            float remaining = minimumLoadingTime - (Time.realtimeSinceStartup - loadingStartedAt);
+
+            if (remaining > 0f)
+                yield return new WaitForSecondsRealtime(remaining);
+
+            string sceneName = loadingSceneName;
+
+            Debug.Log($"[Loading] Hide loading. scene={sceneName}");
+
+            HideLoadingClientRpc(sceneName);
+            ClearNetworkLoadingState();
+        }
+
+        private void ClearNetworkLoadingState()
+        {
+            isNetworkLoading = false;
+            loadingSceneName = string.Empty;
+            sceneReadyClients.Clear();
+
+            if (hideLoadingRoutine != null)
+            {
+                StopCoroutine(hideLoadingRoutine);
+                hideLoadingRoutine = null;
+            }
+
+            if (localReadyRoutine != null)
+            {
+                StopCoroutine(localReadyRoutine);
+                localReadyRoutine = null;
+            }
         }
 
         private void OnRaidTimeExpired()

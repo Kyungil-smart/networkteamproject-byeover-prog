@@ -71,6 +71,12 @@ namespace DeadZone.Core
         public float loudness;
     }
 
+    public struct ADSStateChangedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public bool isAiming;
+    }
+
     // 장전 상태가 시작되거나 종료될 때 발행된다.
     public struct ReloadStateChangedEvent : IGameEvent
     {

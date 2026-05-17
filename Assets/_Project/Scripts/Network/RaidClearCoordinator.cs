@@ -424,7 +424,7 @@ namespace DeadZone.Network
             }
 
             SceneEventProgressStatus status =
-                networkManager.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+                NetworkGameManager.LoadSceneWithLoading(lobbySceneName, LoadSceneMode.Single);
 
             if (status != SceneEventProgressStatus.Started)
             {

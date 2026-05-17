@@ -110,6 +110,9 @@ namespace DeadZone.Actors
             CurrentHP.OnValueChanged += BroadcastHpChanged;
             KnockedHP.OnValueChanged += BroadcastKnockedHpChanged;
             State.OnValueChanged += BroadcastStateChanged;
+
+            BroadcastHpChanged(CurrentHP.Value, CurrentHP.Value);
+            BroadcastStateChanged(State.Value, State.Value);
         }
 
         public override void OnNetworkDespawn()
@@ -516,6 +519,21 @@ namespace DeadZone.Actors
                 oldState = oldState,
                 newState = newState,
             });
+
+            if (!IsServer && newState == PlayerState.Knocked)
+            {
+                float replicatedBleedoutSeconds = BleedoutRemaining.Value > 0f
+                    ? BleedoutRemaining.Value
+                    : bleedoutSeconds;
+
+                EventBus.Publish(new PlayerKnockedEvent
+                {
+                    victimClientId = OwnerClientId,
+                    attackerClientId = 0,
+                    position = transform.position,
+                    bleedoutSeconds = replicatedBleedoutSeconds,
+                });
+            }
         }
 
 #if UNITY_EDITOR
