@@ -62,6 +62,9 @@ namespace DeadZone.Actors
             if (isRegistered)
                 return;
 
+            if (GetComponentInParent<EnemyStats>() != null)
+                return;
+
             isRegistered = true;
             EventBus.Publish(new CameraCutoutTargetRegisteredEvent
             {

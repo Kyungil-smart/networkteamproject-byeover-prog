@@ -2218,13 +2218,20 @@ namespace DeadZone.Actors
 
             WeaponState weaponState = equipment.CurrentWeaponState;
             AmmoDataSO loadedAmmo = equipment.Lookup<AmmoDataSO>(weaponState.loadedAmmoId.ToString());
+            int currentAmmo = weaponState.currentAmmo;
+            if (currentAmmo > 0 && loadedAmmo == null)
+            {
+                weaponState.loadedAmmoId = "";
+                weaponState.currentAmmo = 0;
+                currentAmmo = 0;
+            }
 
             context = new ReloadContext
             {
                 weapon = weapon,
                 weaponState = weaponState,
                 loadedAmmo = loadedAmmo,
-                currentAmmo = weaponState.currentAmmo,
+                currentAmmo = currentAmmo,
                 maxAmmo = weapon.magSize
             };
 

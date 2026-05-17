@@ -3779,7 +3779,7 @@ GameObject:
   m_Component:
   - component: {fileID: 288036443}
   - component: {fileID: 288036444}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5865,7 +5865,7 @@ GameObject:
   m_Component:
   - component: {fileID: 467018498}
   - component: {fileID: 467018499}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6564,7 +6564,7 @@ GameObject:
   m_Component:
   - component: {fileID: 537049457}
   - component: {fileID: 537049458}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (8)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11526,7 +11526,7 @@ GameObject:
   m_Component:
   - component: {fileID: 909575337}
   - component: {fileID: 909575338}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (7)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -12610,7 +12610,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1001438473}
   - component: {fileID: 1001438474}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -13884,7 +13884,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1073131583}
   - component: {fileID: 1073131584}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (6)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19828,7 +19828,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1471435763}
   - component: {fileID: 1471435764}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25692,7 +25692,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1765177129}
   - component: {fileID: 1765177130}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (9)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -26694,7 +26694,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1872787742}
   - component: {fileID: 1872787743}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -28747,7 +28747,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2015038393}
   - component: {fileID: 2015038394}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall_01 (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -28901,7 +28901,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2026744730}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InvisibleWall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
