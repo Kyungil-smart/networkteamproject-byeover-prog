@@ -115,6 +115,10 @@ namespace DeadZone.Actors
         [ShowInInspector, ReadOnly] private float knockedBleedoutTotal;
 
         private float currentHpValue;
+        private KnockedHUD knockedHUD;
+        private PlayerState currentLocalState = PlayerState.Alive;
+        private bool reviverKnockedHudActive;
+        private float reviverReviveDuration;
         private Color lastAppliedHpColor;
         private bool hasAppliedHpColor;
 
@@ -133,6 +137,7 @@ namespace DeadZone.Actors
             EventBus.Subscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
             EventBus.Subscribe<PlayerKnockedEvent>(OnPlayerKnocked);
             EventBus.Subscribe<ReviveStartedEvent>(OnReviveStarted);
+            EventBus.Subscribe<ReviveProgressEvent>(OnReviveProgress);
             EventBus.Subscribe<ReviveEndedEvent>(OnReviveEnded);
         }
 
@@ -144,6 +149,7 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<PlayerStateChangedEvent>(OnPlayerStateChanged);
             EventBus.Unsubscribe<PlayerKnockedEvent>(OnPlayerKnocked);
             EventBus.Unsubscribe<ReviveStartedEvent>(OnReviveStarted);
+            EventBus.Unsubscribe<ReviveProgressEvent>(OnReviveProgress);
             EventBus.Unsubscribe<ReviveEndedEvent>(OnReviveEnded);
         }
 
@@ -362,6 +368,10 @@ namespace DeadZone.Actors
 
             Debug.Log($"[HUDManager] PlayerStateChanged {e.oldState} -> {e.newState}", this);
 
+            currentLocalState = e.newState;
+            if (reviverKnockedHudActive && e.newState != PlayerState.Alive)
+                HideReviverKnockedHud();
+
             if (alivePanel != null)     alivePanel.SetActive(e.newState != PlayerState.Dead);
             if (knockedPanel != null)   knockedPanel.SetActive(e.newState == PlayerState.Knocked);
             if (spectatorPanel != null) spectatorPanel.SetActive(e.newState == PlayerState.Dead);
@@ -401,14 +411,37 @@ namespace DeadZone.Actors
 
         private void OnReviveStarted(ReviveStartedEvent e)
         {
+            if (IsLocalClient(e.reviverClientId) && !IsLocalClient(e.targetClientId))
+            {
+                ShowReviverKnockedHud(e.duration);
+                return;
+            }
+
             if (!IsLocalClient(e.targetClientId)) return;
 
             Debug.Log($"[HUDManager] ReviveStarted target={e.targetClientId}, pause knocked HP bar", this);
             PauseKnockedHpBarForUI();
         }
 
+        private void OnReviveProgress(ReviveProgressEvent e)
+        {
+            if (!IsLocalClient(e.reviverClientId) || IsLocalClient(e.targetClientId))
+                return;
+
+            if (!reviverKnockedHudActive)
+                ShowReviverKnockedHud(reviverReviveDuration);
+
+            ResolveKnockedHUD()?.UpdateRevivingTargetForUI(e.progress01, reviverReviveDuration);
+        }
+
         private void OnReviveEnded(ReviveEndedEvent e)
         {
+            if (IsLocalClient(e.reviverClientId) && !IsLocalClient(e.targetClientId))
+            {
+                HideReviverKnockedHud();
+                return;
+            }
+
             if (!IsLocalClient(e.targetClientId)) return;
 
             Debug.Log($"[HUDManager] ReviveEnded target={e.targetClientId}, result={e.result}", this);
@@ -417,6 +450,43 @@ namespace DeadZone.Actors
                 ApplyAliveHpModeForUI();
             else
                 ResumeKnockedHpBarForUI();
+        }
+
+        private void ShowReviverKnockedHud(float duration)
+        {
+            reviverKnockedHudActive = true;
+            reviverReviveDuration = Mathf.Max(0.01f, duration);
+
+            if (knockedPanel != null)
+                knockedPanel.SetActive(true);
+
+            ResolveKnockedHUD()?.ShowRevivingTargetForUI(reviverReviveDuration);
+        }
+
+        private void HideReviverKnockedHud()
+        {
+            if (!reviverKnockedHudActive)
+                return;
+
+            reviverKnockedHudActive = false;
+            ResolveKnockedHUD()?.HideRevivingTargetForUI();
+
+            if (knockedPanel != null && currentLocalState != PlayerState.Knocked)
+                knockedPanel.SetActive(false);
+        }
+
+        private KnockedHUD ResolveKnockedHUD()
+        {
+            if (knockedHUD != null)
+                return knockedHUD;
+
+            if (knockedPanel != null)
+                knockedHUD = knockedPanel.GetComponentInChildren<KnockedHUD>(true);
+
+            if (knockedHUD == null)
+                knockedHUD = GetComponentInChildren<KnockedHUD>(true);
+
+            return knockedHUD;
         }
 
         /// <summary>
