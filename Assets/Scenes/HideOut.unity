@@ -6559,7 +6559,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7437155448410785300, guid: 6b515fb025512ac47b3f09b822bdf28d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 44.08
+      value: 44.079956
       objectReference: {fileID: 0}
     - target: {fileID: 7437155448410785300, guid: 6b515fb025512ac47b3f09b822bdf28d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -7461,7 +7461,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
