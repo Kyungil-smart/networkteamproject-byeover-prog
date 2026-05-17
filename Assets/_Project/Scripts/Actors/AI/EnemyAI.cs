@@ -159,6 +159,10 @@ namespace DeadZone.Actors
         [SerializeField, Min(0.01f)] private float alertIndicatorEndScale = 0.45f;
         [SerializeField, Min(0.1f)] private float alertIndicatorHeight = 1.8f;
 
+        [Header("무기 표시")]
+        [Tooltip("AI 상태에 따라 표시/숨김을 적용할 무기 비주얼입니다. 비워두면 자식에서 자동 검색합니다.")]
+        [SerializeField] private EnemyWeaponVisual enemyWeaponVisual;
+
         [Header("네트워크 상태")]
         [Tooltip("현재 AI 상태입니다. 서버가 값을 변경하고 클라이언트는 읽습니다.")]
         public NetworkVariable<AIState> State = new(AIState.Patrol);
@@ -204,6 +208,7 @@ namespace DeadZone.Actors
         private bool canPlayAlertSound = true;
         private Coroutine alertSoundCooldownRoutine;
         private Coroutine alertIndicatorRoutine;
+        private bool subscribedToStateChanges;
 
         private bool CanUseNetworkState => IsSpawned && NetworkObject != null && NetworkObject.IsSpawned;
         private AIState CurrentState => CanUseNetworkState ? State.Value : localState;
@@ -215,6 +220,7 @@ namespace DeadZone.Actors
             vision = GetComponent<EnemyVision>();
             shooter = GetComponent<EnemyShooter>();
             animHandler = GetComponent<EnemyAnimHandler>();
+            ResolveEnemyWeaponVisual();
             spawnPosition = transform.position;
             lastDestination = transform.position;
         }
@@ -224,16 +230,22 @@ namespace DeadZone.Actors
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            ResolveEnemyWeaponVisual();
+            SubscribeStateChanges();
+            localState = State.Value;
+            ApplyWeaponVisibilityForState(State.Value);
+
             if (!IsServer) return;
 
             ResolveSpawnPositionOnNavMesh();
             CacheSOData();
-            localState = State.Value;
             EnterPatrol();
         }
 
         public override void OnNetworkDespawn()
         {
+            UnsubscribeStateChanges();
+
             if (alertSoundCooldownRoutine != null)
             {
                 StopCoroutine(alertSoundCooldownRoutine);
@@ -251,6 +263,8 @@ namespace DeadZone.Actors
 
         private void Start()
         {
+            ResolveEnemyWeaponVisual();
+            ApplyWeaponVisibilityForState(CurrentState);
             ResolveAlertIndicator();
 
             if (!IsSpawned)
@@ -880,7 +894,11 @@ namespace DeadZone.Actors
 
         private void EnterState(AIState nextState)
         {
-            if (CurrentState == nextState) return;
+            if (CurrentState == nextState)
+            {
+                ApplyWeaponVisibilityForState(nextState);
+                return;
+            }
 
             if (CanUseNetworkState)
             {
@@ -891,8 +909,65 @@ namespace DeadZone.Actors
                 localState = nextState;
             }
 
+            ApplyWeaponVisibilityForState(nextState);
             stateEnterTime = Time.time;
             repathTimer = repathInterval;
+        }
+
+        private void SubscribeStateChanges()
+        {
+            if (subscribedToStateChanges)
+            {
+                return;
+            }
+
+            State.OnValueChanged += OnStateChanged;
+            subscribedToStateChanges = true;
+        }
+
+        private void UnsubscribeStateChanges()
+        {
+            if (!subscribedToStateChanges)
+            {
+                return;
+            }
+
+            State.OnValueChanged -= OnStateChanged;
+            subscribedToStateChanges = false;
+        }
+
+        private void OnStateChanged(AIState previousState, AIState nextState)
+        {
+            localState = nextState;
+            ApplyWeaponVisibilityForState(nextState);
+        }
+
+        private void ApplyWeaponVisibilityForState(AIState state)
+        {
+            ResolveEnemyWeaponVisual();
+            if (enemyWeaponVisual == null)
+            {
+                return;
+            }
+
+            enemyWeaponVisual.SetWeaponVisible(ShouldShowWeaponForState(state));
+        }
+
+        private static bool ShouldShowWeaponForState(AIState state)
+        {
+            return state == AIState.Chase ||
+                   state == AIState.Combat ||
+                   state == AIState.SearchCover;
+        }
+
+        private void ResolveEnemyWeaponVisual()
+        {
+            if (enemyWeaponVisual != null)
+            {
+                return;
+            }
+
+            enemyWeaponVisual = GetComponentInChildren<EnemyWeaponVisual>(true);
         }
 
         private void TryPlayAlertSound(Transform target)
