@@ -727,7 +727,7 @@ MonoBehaviour:
   worldOffset: {x: 0, y: 12, z: -8}
   lookAtOffset: {x: 0, y: 1, z: 0}
   defaultLookAheadDistance: 1.6
-  adsLookAheadDistance: 3
+  adsLookAheadDistance: 4.5
   defaultAdsTransitionTime: 0.2
   adsReleaseReturnTime: 0.1
   inputController: {fileID: 8480392820659206216}

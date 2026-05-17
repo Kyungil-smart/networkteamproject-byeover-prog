@@ -8,13 +8,16 @@ namespace DeadZone.Actors.UI
     public sealed class EndingCreditsBootstrap : MonoBehaviour
     {
         private const string EndingSceneName = "Ending";
+        private const string LobbySceneName = "Lobby";
         private const string RootName = "__EndingCredits";
         private const float ScrollSpeed = 70f;
+        private const float ReturnDelaySeconds = 2f;
 
         private static bool registered;
 
         private RectTransform contentRoot;
         private float endY;
+        private float finishedAt = -1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void RegisterSceneHook()
@@ -91,6 +94,15 @@ namespace DeadZone.Actors.UI
             Vector2 position = contentRoot.anchoredPosition;
             position.y = Mathf.Min(endY, position.y + ScrollSpeed * Time.deltaTime);
             contentRoot.anchoredPosition = position;
+
+            if (position.y < endY)
+                return;
+
+            if (finishedAt < 0f)
+                finishedAt = Time.time;
+
+            if (Time.time - finishedAt >= ReturnDelaySeconds)
+                LoadingScreenService.LoadSceneOrFallback(LobbySceneName);
         }
 
         private static void EnsureCamera()
@@ -116,7 +128,7 @@ namespace DeadZone.Actors.UI
         private static string BuildCreditsText()
         {
             return
-                "<size=78>플레이 해주셔서 감사합니다.</size>\n\n\n" +
+                "<size=86>플레이 해주셔서 감사합니다.</size>\n\n\n" +
                 "<size=46>개발팀</size>\n" +
                 "옥황상제의 노예들\n\n" +
                 "정승우\n" +

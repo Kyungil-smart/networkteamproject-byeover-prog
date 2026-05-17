@@ -42,9 +42,28 @@ namespace DeadZone.Actors.Extraction
         private ExtractionUI extractionUI;
         private bool extractionUIVisible;
 
+        public void ConfigureRuntime(
+            string resultScene,
+            float stayTime,
+            string unlockZoneId,
+            string enemyKillId,
+            int enemyKillCount,
+            string uiDisplayName)
+        {
+            if (!string.IsNullOrWhiteSpace(resultScene))
+                resultSceneName = resultScene;
+
+            requiredStayTime = Mathf.Max(0f, stayTime);
+            requiredUnlockZoneId = unlockZoneId ?? string.Empty;
+            requiredEnemyKillId = enemyKillId ?? string.Empty;
+            requiredEnemyKillCount = Mathf.Max(0, enemyKillCount);
+            extractionUIDisplayName = string.IsNullOrWhiteSpace(uiDisplayName) ? resultSceneName : uiDisplayName;
+            RefreshUnlockState();
+        }
+
         private void Awake()
         {
-            triggerCollider = GetComponent<Collider>();
+            triggerCollider = ResolveTriggerCollider();
         }
 
         private void OnEnable()
@@ -165,7 +184,7 @@ namespace DeadZone.Actors.Extraction
         private void RefreshUnlockState()
         {
             if (triggerCollider == null)
-                triggerCollider = GetComponent<Collider>();
+                triggerCollider = ResolveTriggerCollider();
 
             bool unlocked = IsUnlocked();
             if (triggerCollider != null)
@@ -279,6 +298,18 @@ namespace DeadZone.Actors.Extraction
                 extractionUI = FindFirstObjectByType<ExtractionUI>(FindObjectsInactive.Include);
 
             return extractionUI;
+        }
+
+        private Collider ResolveTriggerCollider()
+        {
+            Collider[] colliders = GetComponents<Collider>();
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null && colliders[i].isTrigger)
+                    return colliders[i];
+            }
+
+            return colliders.Length > 0 ? colliders[0] : null;
         }
     }
 }

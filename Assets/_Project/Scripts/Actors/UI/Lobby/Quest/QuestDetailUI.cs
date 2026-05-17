@@ -171,10 +171,7 @@ namespace DeadZone.Actors.UI.Lobby
 
         private static string ToObjectiveText(QuestObjectiveData objective)
         {
-            string target = string.IsNullOrWhiteSpace(objective.targetID)
-                ? "대상"
-                : objective.targetID;
-
+            string target = GetObjectiveTargetDisplayName(objective.targetID);
             string location = string.IsNullOrWhiteSpace(objective.location)
                 ? string.Empty
                 : $" / {objective.location}";
@@ -185,6 +182,27 @@ namespace DeadZone.Actors.UI.Lobby
                 ObjectiveType.Collect => $"{target} 수집 {objective.requiredCount}개{location}",
                 ObjectiveType.Reach => $"{target} 도달{location}",
                 _ => $"{target} {objective.requiredCount}회{location}"
+            };
+        }
+
+        private static string GetObjectiveTargetDisplayName(string targetID)
+        {
+            if (string.IsNullOrWhiteSpace(targetID))
+                return "대상";
+
+            return targetID switch
+            {
+                "Enemy_Any" => "아무 지역의 적",
+                "Enemy_Zone1_Any" => "아무 지역의 적",
+                "Boss_PowerPlant" => "발전 시설 보스",
+                "Boss_Warehouse" => "창고 지역 보스",
+                "Boss_MilitaryBase" => "군사 지역 보스",
+                "Boss_Forest_Sniper" => "숲 지역 보스",
+                "Boss_Sawmill" => "제재소 지역 보스",
+                "Boss_S2_01" => "제재소 지역 보스",
+                "Boss_Stage2_All" => "엔딩 지역 보스",
+                "Truck" => "Ending 지역",
+                _ => targetID
             };
         }
 
@@ -202,6 +220,7 @@ namespace DeadZone.Actors.UI.Lobby
                 QuestViewState.Available => "수락",
                 QuestViewState.Active => "진행 중",
                 QuestViewState.Completed => "보상 받기",
+                QuestViewState.Claimed => "수령 완료",
                 _ => "-"
             };
         }

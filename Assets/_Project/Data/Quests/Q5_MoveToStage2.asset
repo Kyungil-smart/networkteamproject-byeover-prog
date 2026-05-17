@@ -19,7 +19,7 @@ MonoBehaviour:
   - type: 2
     targetID: Truck
     requiredCount: 1
-    location: "Ending 지역"
+    location: "Ending"
   rewards: []
   unlockZoneID: 
   prerequisiteQuestID: Q6

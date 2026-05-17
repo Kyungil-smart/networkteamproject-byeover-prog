@@ -56,9 +56,9 @@ namespace DeadZone.Actors
 
         private Coroutine temporaryCapacityRoutine;
 
-        public bool IsOverHalf => CurrentCarryWeightKg >= MaxCarryWeightKg * 0.5f;
-        public bool IsOverLimit => CurrentCarryWeightKg > MaxCarryWeightKg;
-        public bool IsMovementBlocked => CurrentCarryWeightKg >= MaxCarryWeightKg;
+        public bool IsOverHalf => false;
+        public bool IsOverLimit => false;
+        public bool IsMovementBlocked => false;
 
         public override void OnNetworkSpawn()
         {
@@ -101,7 +101,7 @@ namespace DeadZone.Actors
             if (IsSpawned && !IsServer)
                 return;
 
-            float nextBonus = Mathf.Max(0f, bonusKg);
+            float nextBonus = 0f;
 
             if (Mathf.Approximately(housingCarryWeightBonusKg, nextBonus))
                 return;
@@ -140,7 +140,7 @@ namespace DeadZone.Actors
                 return;
 
             float previousCurrentWeightKg = currentCarryWeightKg;
-            float nextCurrentWeightKg = Mathf.Max(0f, weightKg);
+            float nextCurrentWeightKg = 0f;
 
             if (Mathf.Approximately(previousCurrentWeightKg, nextCurrentWeightKg))
                 return;
@@ -160,9 +160,14 @@ namespace DeadZone.Actors
                 return;
 
             if (temporaryCapacityRoutine != null)
+            {
                 StopCoroutine(temporaryCapacityRoutine);
+                temporaryCapacityRoutine = null;
+            }
 
-            temporaryCapacityRoutine = StartCoroutine(TemporaryCapacityRoutine(multiplierBonus, durationSeconds));
+            temporaryCapacityMultiplierBonus = 0f;
+            if (IsSpawned && IsServer)
+                ReplicatedMaxCarryWeightKg.Value = CalculateMaxCarryWeightKg();
         }
 
         private IEnumerator TemporaryCapacityRoutine(float multiplierBonus, float durationSeconds)
@@ -202,7 +207,7 @@ namespace DeadZone.Actors
 
         private float CalculateMaxCarryWeightKg()
         {
-            return Mathf.Max(1f, (baseMaxCarryWeightKg + housingCarryWeightBonusKg) * (1f + temporaryCapacityMultiplierBonus));
+            return Mathf.Max(1f, baseMaxCarryWeightKg);
         }
 
         private float ResolveVisibleMaxCarryWeightKg()
@@ -237,10 +242,8 @@ namespace DeadZone.Actors
                 oldMaxCarryWeightKg = oldMaxCarryWeightKg,
                 newMaxCarryWeightKg = newMaxCarryWeightKg,
                 housingCarryWeightBonusKg = housingCarryWeightBonusKg,
-                isOverWeight = newCurrentWeightKg > newMaxCarryWeightKg,
-                weightRatio = newMaxCarryWeightKg > 0f
-                    ? Mathf.Clamp01(newCurrentWeightKg / newMaxCarryWeightKg)
-                    : 0f
+                isOverWeight = false,
+                weightRatio = 0f
             });
         }
 

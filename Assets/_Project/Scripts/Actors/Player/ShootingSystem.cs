@@ -39,7 +39,7 @@ namespace DeadZone.Actors
         [SerializeField, Min(0.1f)] private float shotgunEffectiveRange = 7f;
         [SerializeField, Min(0.1f)] private float shotgunMaxRange = 18f;
         [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.45f;
-        [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.35f;
+        [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.45f;
 
         [Header("Projectile Visual")]
         [Tooltip("클라이언트에서 로컬로 재생하는 탄도 시각 효과의 최대 유지 시간입니다. 서버 판정 projectile 수명과는 별개입니다.")]

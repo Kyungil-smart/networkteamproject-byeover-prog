@@ -12,7 +12,7 @@ namespace DeadZone.Actors
     public class QuestTrackerUI : MonoBehaviour
     {
         private const ulong StandaloneClientId = 0;
-        private const string PendingExtractionMessage = "탈출 지점으로 돌아가서 탈출 하세요";
+        private const string PendingExtractionMessage = "탈출 지점으로 가서 탈출 하세요";
 
         [BoxGroup("참조")]
         [Required, SerializeField] private TMP_Text questNameText;
