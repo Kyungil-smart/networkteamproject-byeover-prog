@@ -138,6 +138,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -190,6 +194,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -867,6 +875,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -919,6 +931,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -1077,6 +1093,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -1129,6 +1149,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -1362,6 +1386,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3311,6 +3339,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3465,6 +3497,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3684,6 +3720,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3736,6 +3776,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3946,6 +3990,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3998,6 +4046,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4050,6 +4102,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4470,6 +4526,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4638,6 +4698,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4690,6 +4754,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5028,6 +5096,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5080,6 +5152,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5232,6 +5308,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -5484,6 +5564,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5718,6 +5802,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5770,6 +5858,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5822,6 +5914,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5927,6 +6023,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6345,6 +6445,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6626,6 +6730,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6997,6 +7105,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -7049,6 +7161,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -7101,6 +7217,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -7321,6 +7441,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8103,6 +8227,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8409,6 +8537,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8854,6 +8986,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8906,6 +9042,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8958,6 +9098,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -9093,6 +9237,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -9145,6 +9293,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -9291,6 +9443,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -10367,6 +10523,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -10575,6 +10735,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -10717,6 +10881,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -10787,6 +10955,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -10872,6 +11044,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11010,6 +11186,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11239,6 +11419,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11393,6 +11577,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11588,6 +11776,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -12141,6 +12333,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -12882,6 +13078,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13031,6 +13231,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13189,6 +13393,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13683,6 +13891,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13841,6 +14053,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13946,6 +14162,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14096,6 +14316,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14148,6 +14372,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14200,6 +14428,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14640,6 +14872,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -14786,6 +15022,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -15108,6 +15348,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -15410,6 +15654,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -15568,6 +15816,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -15914,6 +16166,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -16309,6 +16565,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -16803,6 +17063,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -17459,6 +17723,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -17511,6 +17779,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -17563,6 +17835,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -18023,6 +18299,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -18075,6 +18355,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -18459,6 +18743,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -18705,6 +18993,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19170,6 +19462,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19222,6 +19518,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -19274,6 +19574,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19424,6 +19728,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19983,6 +20291,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -21906,6 +22218,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -21958,6 +22274,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22010,6 +22330,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22156,6 +22480,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22474,6 +22802,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22526,6 +22858,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22684,6 +23020,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22736,6 +23076,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -22984,6 +23328,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -23036,6 +23384,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -23386,6 +23738,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24267,6 +24623,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24319,6 +24679,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24371,6 +24735,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24513,6 +24881,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24565,6 +24937,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25339,6 +25715,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25391,6 +25771,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25443,6 +25827,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25495,6 +25883,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25547,6 +25939,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26083,6 +26479,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26163,6 +26563,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26355,6 +26759,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26407,6 +26815,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26459,6 +26871,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26756,6 +27172,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26808,6 +27228,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27122,6 +27546,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27210,6 +27638,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27262,6 +27694,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27385,6 +27821,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27437,6 +27877,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27679,6 +28123,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27731,6 +28179,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28151,6 +28603,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28269,6 +28725,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28321,6 +28781,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28471,6 +28935,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28952,6 +29420,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29278,6 +29750,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29414,6 +29890,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29466,6 +29946,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -29616,6 +30100,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29668,6 +30156,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -30092,6 +30584,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
