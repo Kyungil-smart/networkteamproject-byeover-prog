@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
-  m_Name: Q3_WarehouseBoss
+  m_Name: Q3_창고 지역 보스 처치
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q3
   questName: "창고 지역 보스 처치"
@@ -21,6 +21,6 @@ MonoBehaviour:
     requiredCount: 1
     location: "창고 지역"
   rewards: []
-  unlockZoneID: MapA_Zone3
+  unlockZoneID: Stage3 Open
   prerequisiteQuestID: Q2
   isSideQuest: 0

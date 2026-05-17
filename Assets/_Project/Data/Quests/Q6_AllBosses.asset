@@ -10,17 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
-  m_Name: Q6_AllBosses
+  m_Name: 사용 안 함_이전 스테이지2 보스 퀘스트
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
-  questID: Q6
-  questName: "스테이지2 보스 전멸"
-  description: "스테이지2에 있는 모든 보스를 처치 하십시오."
+  questID: Legacy_Q6_AllBosses
+  questName: "사용 안 함"
+  description: "Stage2 미구현으로 현재 메인 퀘스트 체인에서 사용하지 않는 이전 퀘스트 데이터입니다."
   objectives:
   - type: 0
+    targetID: Boss_Sawmill
+    requiredCount: 1
+    location: "제재소"
+  - type: 0
     targetID: Boss_Stage2_All
-    requiredCount: 3
-    location: "스테이지2"
+    requiredCount: 1
+    location: "제재소"
   rewards: []
-  unlockZoneID: Ending_Boat
-  prerequisiteQuestID: Q5
-  isSideQuest: 0
+  unlockZoneID: 
+  prerequisiteQuestID: __DISABLED__
+  isSideQuest: 1

@@ -20,19 +20,19 @@ MonoBehaviour:
   - level: 2
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
-      amount: 5
+      amount: 2
     - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
-      amount: 5
+      amount: 2
     effectDescription: "\uACBD\uD5D8\uCE58 +10%, \uAC10\uC9C0 \uC800\uD56D +5%"
   - level: 3
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
-      amount: 10
+      amount: 5
     - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
-      amount: 15
+      amount: 7
     effectDescription: "\uACBD\uD5D8\uCE58 +20%, \uAC10\uC9C0 \uC800\uD56D +10%"
   - level: 4
     upgradeMaterials:
     - item: {fileID: 11400000, guid: cb6b5b34f20375442858ca5102758bb3, type: 2}
-      amount: 2
+      amount: 1
     effectDescription: "\uACBD\uD5D8\uCE58 +30%, \uAC10\uC9C0 \uC800\uD56D +15%"

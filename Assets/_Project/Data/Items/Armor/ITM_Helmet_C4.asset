@@ -24,5 +24,5 @@ MonoBehaviour:
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
   weightKg: 2.5
-  baseSellPrice: 12000
+  baseSellPrice: 6000
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}

@@ -20,16 +20,16 @@ MonoBehaviour:
   - level: 2
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
-      amount: 5
+      amount: 2
     - item: {fileID: 11400000, guid: 228f7cdc946b06042960e1f6445bde2e, type: 2}
-      amount: 5
+      amount: 2
     effectDescription: "\uCD5C\uB300 \uC2A4\uD0DC\uBBF8\uB108 +5"
   - level: 3
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
-      amount: 10
+      amount: 5
     - item: {fileID: 11400000, guid: 228f7cdc946b06042960e1f6445bde2e, type: 2}
-      amount: 15
+      amount: 7
     effectDescription: "\uCD5C\uB300 \uC2A4\uD0DC\uBBF8\uB108 +10"
   - level: 4
     upgradeMaterials:

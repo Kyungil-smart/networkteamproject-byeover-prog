@@ -354,7 +354,7 @@ namespace DeadZone.Actors
             }
 
             activeLocalPromptZone = null;
-            if (!TryRequestRaidClear(clientId))
+            if (!TryRequestRaidClear(clientId, completedClientIds))
                 Core.ServiceLocator.Get<NetworkGameManager>()?.ReturnToHideoutServerRpc();
 
             return true;
@@ -395,13 +395,13 @@ namespace DeadZone.Actors
             activeLocalPromptZone = null;
         }
 
-        private bool TryRequestRaidClear(ulong clientId)
+        private bool TryRequestRaidClear(ulong clientId, IReadOnlyList<ulong> completedClientIds)
         {
             if (raidClearCoordinator == null)
                 raidClearCoordinator = FindFirstObjectByType<RaidClearCoordinator>();
 
             return raidClearCoordinator != null &&
-                   raidClearCoordinator.TryRequestPartyClear(clientId);
+                   raidClearCoordinator.TryRequestPartyClear(clientId, completedClientIds);
         }
 
         private static bool IsLocalClient(ulong clientId)
