@@ -209,21 +209,21 @@ namespace DeadZone.Network
             string missingClientIds = string.Empty;
             int waitedMs = 0;
             while (waitedMs < RaidLoadoutSubmissionTimeoutMs &&
-                   !HaveAllConnectedClientLoadouts(out missingClientIds))
+                   !HaveAllConnectedClientRaidSubmissions(out missingClientIds))
             {
                 await Task.Delay(RaidLoadoutSubmissionPollMs);
                 waitedMs += RaidLoadoutSubmissionPollMs;
             }
 
-            if (!HaveAllConnectedClientLoadouts(out missingClientIds))
+            if (!HaveAllConnectedClientRaidSubmissions(out missingClientIds))
             {
                 Debug.LogWarning(
-                    $"[RaidLoadout] Timed out waiting for lobby loadout submissions. MissingClientIds={missingClientIds}",
+                    $"[RaidLoadout] Timed out waiting for lobby loadout/customize submissions. MissingClientIds={missingClientIds}",
                     this);
             }
         }
 
-        private bool HaveAllConnectedClientLoadouts(out string missingClientIds)
+        private bool HaveAllConnectedClientRaidSubmissions(out string missingClientIds)
         {
             missingClientIds = string.Empty;
 
@@ -234,8 +234,11 @@ namespace DeadZone.Network
             List<ulong> missing = null;
             foreach (ulong clientId in networkManager.ConnectedClientsIds)
             {
-                if (RaidLoadoutTransferService.HasLoadoutForClient(clientId))
+                if (RaidLoadoutTransferService.HasLoadoutForClient(clientId) &&
+                    LobbyPlayerCustomizeCache.HasCustomizeForClient(clientId))
+                {
                     continue;
+                }
 
                 missing ??= new List<ulong>();
                 missing.Add(clientId);

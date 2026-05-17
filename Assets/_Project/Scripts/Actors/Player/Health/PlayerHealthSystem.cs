@@ -70,7 +70,9 @@ namespace DeadZone.Actors
         public bool IsAlive => State.Value == PlayerState.Alive;
         public bool IsKnocked => State.Value == PlayerState.Knocked;
         public bool IsDead => State.Value == PlayerState.Dead;
-        public bool CanBeRevived => IsKnocked && KnockedHP.Value > 0;
+        public bool CanBeRevived => IsKnocked && !IsDead && KnockedHP.Value > 0f && BleedoutRemaining.Value > 0f;
+        public bool IsBeingRevived => isBeingRevived;
+        public ulong CurrentReviverClientId => reviverClientId;
         public float ReviveHpAmount => reviveHpAmount;
 
         private bool isBeingRevived;
@@ -383,6 +385,7 @@ namespace DeadZone.Actors
 
             isBeingRevived = true;
             this.reviverClientId = reviverClientId;
+            SetReviveMoveLockedClientRpc(true, BuildOwnerClientRpcParams());
         }
 
         public void OnReviveCancel()
@@ -392,20 +395,45 @@ namespace DeadZone.Actors
 
             isBeingRevived = false;
             reviverClientId = 0;
+            SetReviveMoveLockedClientRpc(false, BuildOwnerClientRpcParams());
         }
 
         public void OnReviveComplete(ulong reviverClientId)
         {
+            TryReviveFromKnocked(Mathf.RoundToInt(reviveHpAmount));
+        }
+
+        public bool TryReviveFromKnocked(int reviveHealth)
+        {
             if (!IsServer || !CanBeRevived)
-                return;
+                return false;
 
             isBeingRevived = false;
-            this.reviverClientId = 0;
+            reviverClientId = 0;
+            SetReviveMoveLockedClientRpc(false, BuildOwnerClientRpcParams());
 
-            CurrentHP.Value = Mathf.Min(MaxHP, reviveHpAmount);
+            CurrentHP.Value = Mathf.Clamp(reviveHealth, 1f, MaxHP);
             KnockedHP.Value = 0f;
             BleedoutRemaining.Value = 0f;
             State.Value = PlayerState.Alive;
+
+            return true;
+        }
+
+        private ClientRpcParams BuildOwnerClientRpcParams()
+        {
+            return new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { OwnerClientId } }
+            };
+        }
+
+        [ClientRpc]
+        private void SetReviveMoveLockedClientRpc(bool locked, ClientRpcParams rpcParams = default)
+        {
+            FPSController fps = GetComponent<FPSController>();
+            if (fps != null)
+                fps.SetMoveLocked(locked);
         }
 
         public Vector3 GetCorpsePosition()

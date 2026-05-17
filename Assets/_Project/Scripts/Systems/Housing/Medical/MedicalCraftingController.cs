@@ -44,6 +44,9 @@ namespace DeadZone.Systems.Housing
 
             if (!HousingInventoryResolver.IsNetworkReady(out string failReason))
             {
+                if (TryCraftWithLobbySave(recipeID))
+                    return;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (TryCraftOfflineForDebug(recipeID))
                     return;
@@ -53,6 +56,92 @@ namespace DeadZone.Systems.Housing
             }
 
             RequestCraftRpc(recipeID);
+        }
+
+        private bool TryCraftWithLobbySave(string recipeID)
+        {
+            if (!HousingInventoryResolver.TryGetLobbyInventory(out IInventory inventory, out _))
+                return false;
+
+            if (!TryFindRecipe(recipeID, out RecipeSO recipe))
+            {
+                FailCraft(recipeID, "?덉떆?쇰? 李얠? 紐삵뻽?듬땲??");
+                return true;
+            }
+
+            if (!IsRecipeValid(recipe))
+                return true;
+
+            int lobbyMedicalLevel = 1;
+            if (HousingInventoryResolver.TryGetLobbyFacilityLevel(FacilityType.Medical, out int savedLevel))
+                lobbyMedicalLevel = Mathf.Max(1, savedLevel);
+
+            int requiredLevel = Mathf.Max(1, recipe.requiredFacilityLevel);
+            if (lobbyMedicalLevel < requiredLevel)
+            {
+                FailCraft(recipeID, $"Medical Lv.{requiredLevel} is required. Current Lv.{lobbyMedicalLevel}");
+                return true;
+            }
+
+            int resultCount = Mathf.Max(1, recipe.resultCount);
+
+            if (inventory is HousingLobbyInventoryBridge lobbyInventoryBridge)
+            {
+                if (!lobbyInventoryBridge.TryCraftRecipeToStash(recipe, resultCount, out string failReason))
+                {
+                    FailCraft(recipe.recipeID, failReason);
+                    return true;
+                }
+            }
+            else
+            {
+                if (!HasAllIngredients(inventory, recipe))
+                {
+                    FailCraft(recipeID, "?쒖옉 ?щ즺媛 遺議깊빀?덈떎.");
+                    return true;
+                }
+
+                if (!CanAcceptCraftResult(inventory, recipe, resultCount))
+                {
+                    FailCraft(recipe.recipeID, "寃곌낵 ?꾩씠?쒖쓣 諛쏆쓣 ?몃깽?좊━ 怨듦컙??遺議깊빀?덈떎.");
+                    return true;
+                }
+
+                if (!ConsumeAllIngredients(inventory, recipe))
+                {
+                    FailCraft(recipeID, "?쒖옉 ?щ즺 ?뚮え???ㅽ뙣?덉뒿?덈떎.");
+                    return true;
+                }
+
+                if (!TryAddCraftResult(inventory, recipe, resultCount, out int addedCount))
+                {
+                    RemoveAddedCraftResult(inventory, recipe, addedCount);
+                    RestoreConsumedIngredients(inventory);
+                    FailCraft(recipeID, "寃곌낵 ?꾩씠??吏湲됱뿉 ?ㅽ뙣?덉뒿?덈떎. ?뚮え???щ즺瑜??섎룎?몄뒿?덈떎.");
+                    return true;
+                }
+
+                consumedIngredients.Clear();
+            }
+
+            EventBus.Publish(new HousingCraftResultEvent
+            {
+                facilityName = "Medical",
+                recipeId = recipe.recipeID,
+                resultItemId = recipe.result.itemID,
+                resultCount = resultCount,
+                success = true,
+                reason = "로비 보관함 제작 성공"
+            });
+
+            if (logCraftResult)
+            {
+                Debug.Log(
+                    $"[MedicalCraftingController] Lobby save medical craft succeeded. RecipeID={recipe.recipeID}, Result={recipe.result.itemID} x{resultCount}",
+                    this);
+            }
+
+            return true;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

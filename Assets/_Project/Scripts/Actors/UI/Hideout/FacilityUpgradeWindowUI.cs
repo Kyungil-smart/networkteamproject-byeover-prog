@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using TMPro;
@@ -254,6 +254,13 @@ namespace DeadZone.Actors.UI.Hideout
 
             if (!TryGetUpgradeController(out FacilityUpgradeController upgradeController))
             {
+                if (TryUpgradeWithoutSceneController(targetLevel, playerCurrentLevel))
+                {
+                    SetMessage($"LV{targetLevel} 업그레이드가 완료되었습니다.");
+                    Refresh();
+                    return;
+                }
+
                 Debug.LogWarning("[FacilityUpgradeWindowUI] FacilityUpgradeController가 연결되어 있지 않습니다.", this);
                 return;
             }
@@ -262,6 +269,165 @@ namespace DeadZone.Actors.UI.Hideout
 
             SetMessage($"LV{targetLevel} 업그레이드를 서버에 요청했습니다.");
             DebugLog($"LV{targetLevel} 업그레이드를 서버에 요청했습니다.");
+        }
+
+        private bool TryUpgradeWithoutSceneController(int targetLevel, int currentLevel)
+        {
+            if (currentFacility == null || inventory == null)
+                return false;
+
+            FacilityLevel targetLevelData = currentFacility.GetLevelData(targetLevel);
+
+            if (targetLevelData == null)
+            {
+                SetMessage($"LV{targetLevel} 업그레이드 데이터가 없습니다.");
+                return true;
+            }
+
+            if (!HasAllUpgradeMaterials(targetLevelData))
+            {
+                SetMessage($"LV{targetLevel} 업그레이드 재료가 부족합니다.");
+                return true;
+            }
+
+            List<ItemRequirement> consumedMaterials = new();
+
+            if (!ConsumeUpgradeMaterials(targetLevelData, consumedMaterials))
+            {
+                RestoreUpgradeMaterials(consumedMaterials);
+                SetMessage($"LV{targetLevel} 업그레이드 재료 소모에 실패했습니다.");
+                return true;
+            }
+
+            if (!ApplyUpgradeLevel(targetLevel))
+            {
+                RestoreUpgradeMaterials(consumedMaterials);
+                SetMessage($"LV{targetLevel} 적용에 실패했습니다. 재료를 되돌렸습니다.");
+                return true;
+            }
+
+            EventBus.Publish(new HousingUpgradeResultEvent
+            {
+                facilityName = currentFacility.name,
+                previousLevel = currentLevel,
+                currentLevel = targetLevel,
+                success = true,
+                reason = "업그레이드 성공"
+            });
+
+            EventBus.Publish(new FacilityUpgradedEvent
+            {
+                facilityType = currentFacility.Type,
+                newLevel = targetLevel
+            });
+
+            return true;
+        }
+
+        private bool HasAllUpgradeMaterials(FacilityLevel levelData)
+        {
+            if (levelData == null || inventory == null)
+                return false;
+
+            if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
+                return true;
+
+            for (int i = 0; i < levelData.upgradeMaterials.Count; i++)
+            {
+                ItemRequirement material = levelData.upgradeMaterials[i];
+
+                if (material.item == null || string.IsNullOrWhiteSpace(material.item.itemID))
+                    return false;
+
+                int amount = Mathf.Max(1, material.amount);
+
+                if (!inventory.HasItem(material.item.itemID, amount))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool ConsumeUpgradeMaterials(FacilityLevel levelData, List<ItemRequirement> consumedMaterials)
+        {
+            if (levelData == null || inventory == null || consumedMaterials == null)
+                return false;
+
+            if (levelData.upgradeMaterials == null || levelData.upgradeMaterials.Count == 0)
+                return true;
+
+            for (int i = 0; i < levelData.upgradeMaterials.Count; i++)
+            {
+                ItemRequirement material = levelData.upgradeMaterials[i];
+
+                if (material.item == null || string.IsNullOrWhiteSpace(material.item.itemID))
+                    return false;
+
+                int amount = Mathf.Max(1, material.amount);
+
+                if (!inventory.ConsumeItem(material.item.itemID, amount))
+                    return false;
+
+                consumedMaterials.Add(new ItemRequirement
+                {
+                    item = material.item,
+                    amount = amount
+                });
+            }
+
+            return true;
+        }
+
+        private void RestoreUpgradeMaterials(List<ItemRequirement> consumedMaterials)
+        {
+            if (inventory == null || consumedMaterials == null)
+                return;
+
+            for (int i = 0; i < consumedMaterials.Count; i++)
+            {
+                ItemRequirement material = consumedMaterials[i];
+
+                if (material.item == null)
+                    continue;
+
+                inventory.TryAddItem(material.item, Mathf.Max(1, material.amount));
+            }
+        }
+
+        private bool ApplyUpgradeLevel(int targetLevel)
+        {
+            if (currentFacility == null)
+                return false;
+
+            if (localHousingProgress != null)
+            {
+                if (!localHousingProgress.IsServer)
+                    return false;
+
+                if (!localHousingProgress.TrySetLevelFromServer(currentFacility.Type, targetLevel))
+                    return false;
+
+                PlayerHousingSaveSyncer saveSyncer = localHousingProgress.GetComponent<PlayerHousingSaveSyncer>();
+
+                if (saveSyncer != null)
+                {
+                    saveSyncer.RequestSaveFromServer($"{currentFacility.Type} facility upgrade");
+                    saveSyncer.RequestLobbyInventorySaveFromServer($"{currentFacility.Type} facility upgrade material consumption");
+                }
+
+                return true;
+            }
+
+            if (HousingInventoryResolver.TrySetLobbyFacilityLevel(
+                    currentFacility.Type,
+                    targetLevel,
+                    out string failReason))
+            {
+                return true;
+            }
+
+            SetMessage(failReason);
+            return false;
         }
 
         private void HandleUpgradeResult(HousingUpgradeResultEvent evt)
@@ -339,7 +505,12 @@ namespace DeadZone.Actors.UI.Hideout
                 ResolveLocalPlayerReferences();
 
             if (localHousingProgress == null)
+            {
+                if (HousingInventoryResolver.TryGetLobbyFacilityLevel(currentFacility.Type, out int lobbyFacilityLevel))
+                    return lobbyFacilityLevel;
+
                 return currentFacility.GetCurrentLevel();
+            }
 
             return localHousingProgress.GetLevel(currentFacility.Type);
         }
@@ -348,6 +519,15 @@ namespace DeadZone.Actors.UI.Hideout
         {
             inventory = null;
             localHousingProgress = null;
+
+            if (HousingInventoryResolver.TryGetLobbyInventory(
+                    out IInventory lobbyInventory,
+                    out MonoBehaviour lobbyInventoryBehaviour))
+            {
+                inventory = lobbyInventory;
+                inventoryBehaviour = lobbyInventoryBehaviour;
+                DebugLog($"로비 저장 인벤토리 연결 완료: {lobbyInventoryBehaviour.gameObject.name}");
+            }
 
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
@@ -378,13 +558,13 @@ namespace DeadZone.Actors.UI.Hideout
                         if (localHousingProgress != null)
                             DebugLog($"로컬 플레이어 하우징 진행도 연결 완료: {localHousingProgress.gameObject.name}");
 
-                        if (inventory != null || localHousingProgress != null)
+                        if (inventory != null && localHousingProgress != null)
                             return;
                     }
                 }
             }
 
-            if (inventoryBehaviour != null)
+            if (inventory == null && inventoryBehaviour != null)
             {
                 if (inventoryBehaviour is IInventory directInventory)
                 {
@@ -439,7 +619,12 @@ namespace DeadZone.Actors.UI.Hideout
             if (inventory == null)
                 Debug.LogWarning("[FacilityUpgradeWindowUI] 씬에서 IInventory 구현체를 찾지 못했습니다.", this);
 
-            if (localHousingProgress == null)
+            bool hasLobbyFacilityLevel =
+                currentFacility != null &&
+                HousingInventoryResolver.TryGetLobbyFacilityLevel(currentFacility.Type, out _);
+            bool networkIsListening = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+
+            if (localHousingProgress == null && networkIsListening && !hasLobbyFacilityLevel)
                 Debug.LogWarning("[FacilityUpgradeWindowUI] 씬에서 PlayerHousingProgress를 찾지 못했습니다.", this);
         }
 

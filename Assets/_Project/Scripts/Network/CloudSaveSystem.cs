@@ -445,6 +445,7 @@ namespace DeadZone.Network
                 LogSaveAudit("SaveLobbyDataAsync request", BuildLobbyDtoAuditSummary(lobbySaveDto));
 
                 CollectPersonalQuestProgress();
+                MergeLobbyDtoFacilitiesIntoCurrentData(lobbySaveDto);
                 ReplaceLobbyDtoFacilitiesFromCurrentData(lobbySaveDto);
 
                 LobbySaveCloudData nextLobbySave = ToLobbySaveCloudData(lobbySaveDto);
@@ -1980,6 +1981,25 @@ namespace DeadZone.Network
             AddLegacyFacility(dto, "Stash", currentData.facilities.stash);
             AddLegacyFacility(dto, "Kitchen", currentData.facilities.kitchen);
             AddLegacyFacility(dto, "Bed", currentData.facilities.bed);
+        }
+
+        private void MergeLobbyDtoFacilitiesIntoCurrentData(LobbySaveDTO dto)
+        {
+            if (dto?.facilities == null || dto.facilities.Count == 0)
+                return;
+
+            EnsureCloudDataContainers();
+            EnsureLobbySaveContainers();
+
+            for (int i = 0; i < dto.facilities.Count; i++)
+            {
+                FacilitySaveDTO facility = dto.facilities[i];
+                if (facility == null || string.IsNullOrWhiteSpace(facility.facilityId))
+                    continue;
+
+                ApplyFacilityToLegacyField(facility);
+                UpsertLobbyFacility(facility.facilityId, facility.level);
+            }
         }
 
         private void PreserveCurrentFacilityProgress(LobbySaveDTO dto)

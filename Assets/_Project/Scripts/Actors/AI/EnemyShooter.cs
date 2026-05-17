@@ -57,6 +57,8 @@ namespace DeadZone.Actors
         private int burstCount;
         private float muzzleVelocity;
 
+        public Transform CurrentMuzzle => muzzle;
+
         private void Awake()
         {
             stats = GetComponent<EnemyStats>();
@@ -87,6 +89,7 @@ namespace DeadZone.Actors
         {
             if (muzzlePoint == null)
             {
+                Debug.LogWarning("[EnemyShooter] null MuzzlePoint가 전달되어 기존 muzzle을 유지합니다.", this);
                 return;
             }
 
@@ -105,6 +108,11 @@ namespace DeadZone.Actors
             }
 
             if (target == null || stats == null || stats.StatsSO == null)
+            {
+                return;
+            }
+
+            if (!IsValidCombatTarget(target))
             {
                 return;
             }
@@ -285,7 +293,7 @@ namespace DeadZone.Actors
             float visualRange,
             float visualLifetime)
         {
-            if (IsServer)
+            if (IsServer && !IsClient)
             {
                 return;
             }
@@ -404,13 +412,33 @@ namespace DeadZone.Actors
             return target.position + Vector3.up;
         }
 
+        private static bool IsValidCombatTarget(Transform target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            PlayerHealthSystem health = target.GetComponentInParent<PlayerHealthSystem>();
+            return health != null && health.IsAlive;
+        }
+
         private bool CanShootTarget(Transform target, Vector3 aimPoint, float distance)
+        {
+            Vector3 direction = (aimPoint - muzzle.position).normalized;
+            if (!HasClearShotToTarget(target, direction, distance, hitMask))
+                return false;
+
+            return HasClearShotToTarget(target, direction, distance, ~0);
+        }
+
+        private bool HasClearShotToTarget(Transform target, Vector3 direction, float distance, LayerMask mask)
         {
             RaycastHit[] hits = Physics.RaycastAll(
                 muzzle.position,
-                (aimPoint - muzzle.position).normalized,
+                direction,
                 distance,
-                hitMask,
+                mask,
                 QueryTriggerInteraction.Ignore);
 
             if (hits == null || hits.Length == 0)

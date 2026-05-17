@@ -16,13 +16,13 @@ MonoBehaviour:
   tier: 5
   faction: 2
   isBoss: 1
-  enemyId: Boss_Stage2_All
+  enemyId: Boss_S2_01
   maxHP: 600
   defaultArmor: {fileID: 11400000, guid: 97a3fffd42429a946ad1c9a798af3847, type: 2}
   defaultWeapon: {fileID: 11400000, guid: 2fbf9be39f6fcc245894b4b70b10ade4, type: 2}
-  defaultAmmo: {fileID: 11400000, guid: 5a3b383a31ce9eb4d85c5a09f712b23d, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 6682fefcfde8e664a85942ba69578c43, type: 2}
   penetrationModifier: -1
-  damageMultiplier: 0.8
+  damageMultiplier: 0.75
   fireInterval: 0.5
   burstSize: 5
   burstRestDelay: 0.4

@@ -32,6 +32,7 @@ namespace DeadZone.Network
         [SerializeField] private bool logDebug = true;
 
         private readonly List<ulong> expectedClientIdsBuffer = new();
+        private readonly List<ulong> extractedClientIdsBuffer = new();
         private readonly Dictionary<ulong, bool> saveResultsByClientId = new();
         private readonly HashSet<ulong> receivedSaveResultClientIds = new();
 
@@ -48,6 +49,11 @@ namespace DeadZone.Network
         public bool HasClearHandled => hasHandledClear;
 
         public bool TryRequestPartyClear(ulong triggeringClientId)
+        {
+            return TryRequestPartyClear(triggeringClientId, null);
+        }
+
+        public bool TryRequestPartyClear(ulong triggeringClientId, IReadOnlyList<ulong> extractedClientIds)
         {
             if (!IsServer) return false;
             if (!IsSpawned) return false;
@@ -76,7 +82,8 @@ namespace DeadZone.Network
                 return true;
             }
 
-            PrepareSaveResultTracking(expectedClientIdsBuffer);
+            BuildExtractionClientIds(extractedClientIds, triggeringClientId);
+            PrepareSaveResultTracking(extractedClientIdsBuffer);
 
             LogDebug(
                 $"Map 1 Clear 감지. TriggerClientId={triggeringClientId}, " +
@@ -88,13 +95,13 @@ namespace DeadZone.Network
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = expectedClientIdsBuffer.ToArray()
+                        TargetClientIds = extractedClientIdsBuffer.ToArray()
                     }
                 });
 
             LogDebug(
                 $"Zone 저장 요청 전송. ZoneId={unlockZoneId}, " +
-                $"Targets={FormatClientIds(expectedClientIdsBuffer)}");
+                $"Targets={FormatClientIds(extractedClientIdsBuffer)}");
 
             StartSaveResultWait();
 
@@ -313,8 +320,11 @@ namespace DeadZone.Network
                     this);
             }
 
-            ResetGameSessionTracking();
-            RequestLobbyReturn();
+            if (!TryRequestRaidResultScene())
+            {
+                ResetGameSessionTracking();
+                RequestLobbyReturn();
+            }
         }
 
         private void BuildSaveResultSummary()
@@ -323,9 +333,9 @@ namespace DeadZone.Network
             failedClientIdsBuffer.Clear();
             missingClientIdsBuffer.Clear();
 
-            for (int i = 0; i < expectedClientIdsBuffer.Count; i++)
+            for (int i = 0; i < extractedClientIdsBuffer.Count; i++)
             {
-                ulong clientId = expectedClientIdsBuffer[i];
+                ulong clientId = extractedClientIdsBuffer[i];
 
                 if (!receivedSaveResultClientIds.Contains(clientId))
                 {
@@ -338,6 +348,60 @@ namespace DeadZone.Network
                 else
                     failedClientIdsBuffer.Add(clientId);
             }
+        }
+
+        private void BuildExtractionClientIds(IReadOnlyList<ulong> extractedClientIds, ulong fallbackClientId)
+        {
+            extractedClientIdsBuffer.Clear();
+
+            if (extractedClientIds != null)
+            {
+                for (int i = 0; i < extractedClientIds.Count; i++)
+                    AddExtractionClientId(extractedClientIds[i]);
+            }
+
+            if (extractedClientIdsBuffer.Count == 0)
+            {
+                for (int i = 0; i < expectedClientIdsBuffer.Count; i++)
+                {
+                    ulong clientId = expectedClientIdsBuffer[i];
+                    if (IsClientLiving(clientId))
+                        AddExtractionClientId(clientId);
+                }
+            }
+
+            if (extractedClientIdsBuffer.Count == 0)
+                AddExtractionClientId(fallbackClientId);
+        }
+
+        private void AddExtractionClientId(ulong clientId)
+        {
+            if (extractedClientIdsBuffer.Contains(clientId))
+                return;
+
+            extractedClientIdsBuffer.Add(clientId);
+        }
+
+        private bool TryRequestRaidResultScene()
+        {
+            if (!TryResolveGameSessionManager(out GameSessionManager gameSessionManager))
+                return false;
+
+            return gameSessionManager.TryCompleteRaidByExtraction(extractedClientIdsBuffer);
+        }
+
+        private static bool IsClientLiving(ulong clientId)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null ||
+                !networkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient client) ||
+                client.PlayerObject == null)
+            {
+                return true;
+            }
+
+            DeadZone.Actors.PlayerHealthSystem health = client.PlayerObject.GetComponent<DeadZone.Actors.PlayerHealthSystem>();
+            return health == null || !health.IsDead;
         }
 
         private void RequestLobbyReturn()

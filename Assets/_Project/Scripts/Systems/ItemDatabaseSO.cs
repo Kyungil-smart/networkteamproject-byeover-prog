@@ -23,11 +23,16 @@ namespace DeadZone.Systems
         private static readonly Dictionary<string, string> LegacyMedicalAliases = new()
         {
             { "ITM_Bandage", "Bandage" },
+            { "Bandage", "Bandage" },
             { "FirstAidKit", "ITM_FirstAidKit" },
             { "SlowHealSyringe", "ITM_SlowHealSyringe" },
+            { "ITM_SlowHealSyringe", "ITM_SlowHealSyringe" },
             { "AdvancedFirstAidKit", "ITM_AdvancedFirstAidKit" },
+            { "ITM_AdvancedFirstAidKit", "ITM_AdvancedFirstAidKit" },
             { "ITM_FastHealSyringe", "FastHealSyringe" },
-            { "ITM_WeightCapacitySyringe", "WeightCapacitySyringe" }
+            { "FastHealSyringe", "FastHealSyringe" },
+            { "ITM_WeightCapacitySyringe", "WeightCapacitySyringe" },
+            { "WeightCapacitySyringe", "WeightCapacitySyringe" }
         };
 
         private Dictionary<string, ItemDataSO> _cache;

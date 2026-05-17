@@ -113,7 +113,7 @@ namespace DeadZone.Actors
 
         private void UnlockZone(string zoneId, bool playEffect = true)
         {
-            if (!_lockLookup.TryGetValue(zoneId, out var entry))
+            if (!_lockLookup.TryGetValue(zoneId, out var entry) && !TryResolveZoneLockBySceneObjectName(zoneId, out entry))
             {
                 Debug.Log($"[ZoneUnlockSystem] No barrier mapped for zone: {zoneId}");
                 return;
@@ -141,13 +141,36 @@ namespace DeadZone.Actors
             UnlockZoneClientRpc(zoneId, playEffect);
         }
 
+        private static bool TryResolveZoneLockBySceneObjectName(string zoneId, out ZoneLockEntry entry)
+        {
+            entry = default;
+
+            if (string.IsNullOrWhiteSpace(zoneId))
+                return false;
+
+            GameObject barrier = GameObject.Find(zoneId);
+            if (barrier == null)
+                barrier = GameObject.Find(zoneId.Replace(' ', '_'));
+            if (barrier == null)
+                barrier = GameObject.Find(zoneId.Replace('_', ' '));
+            if (barrier == null)
+                return false;
+
+            entry = new ZoneLockEntry
+            {
+                zoneId = zoneId,
+                barriers = new[] { barrier }
+            };
+            return true;
+        }
+
         [ClientRpc]
         private void UnlockZoneClientRpc(string zoneId, bool playEffect)
         {
             // 서버가 이미 처리했으면 스킵
             if (IsServer) return;
 
-            if (!_lockLookup.TryGetValue(zoneId, out var entry)) return;
+            if (!_lockLookup.TryGetValue(zoneId, out var entry) && !TryResolveZoneLockBySceneObjectName(zoneId, out entry)) return;
             if (entry.barriers == null) return;
 
             foreach (var barrier in entry.barriers)

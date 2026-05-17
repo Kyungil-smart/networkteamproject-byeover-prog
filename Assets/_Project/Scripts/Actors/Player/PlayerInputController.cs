@@ -36,6 +36,7 @@ namespace DeadZone.Actors
         private PlayerHealthSystem health;
         private ShootingSystem shooting;
         private InteractionSystem interaction;
+        private ReviveSystem revive;
 
         private IPlayerInputContext currentContext;
         private IPlayerInputContext aliveCtx;
@@ -47,6 +48,7 @@ namespace DeadZone.Actors
         private Vector2 lookDirection = Vector2.up;
         private bool fireHeld;
         private bool firePressedThisFrame;
+        private bool reviveHoldStarted;
         private float lastInteractInputTime = -999f;
         private const float InteractInputGuardSeconds = 0.15f;
 
@@ -56,6 +58,7 @@ namespace DeadZone.Actors
             health = GetComponent<PlayerHealthSystem>();
             shooting = GetComponent<ShootingSystem>();
             interaction = GetComponentInChildren<InteractionSystem>();
+            revive = GetComponent<ReviveSystem>();
 
             aliveCtx = new AliveInputContext(
                 GetComponent<FPSController>(),
@@ -96,6 +99,8 @@ namespace DeadZone.Actors
 
         private void OnDisable()
         {
+            StopReviveHoldIfNeeded();
+
             if (inputActions != null)
             {
                 inputActions.Player.Disable();
@@ -134,6 +139,7 @@ namespace DeadZone.Actors
 
             currentContext.Tick(moveInput, lookDirection, lookScreenPosition);
             currentContext.OnFireInput(firePressedThisFrame, fireHeld, lookScreenPosition);
+            ProcessSpectatorKeyboardInput();
 
             firePressedThisFrame = false;
         }
@@ -203,6 +209,7 @@ namespace DeadZone.Actors
 
         private void ClearGameplayInputState()
         {
+            StopReviveHoldIfNeeded();
             ResetInputState();
             currentContext?.OnAim(false);
             currentContext?.OnSprint(false);
@@ -214,8 +221,27 @@ namespace DeadZone.Actors
             lookScreenPosition = inputActions.Player.Look.ReadValue<Vector2>();
         }
 
+        private void ProcessSpectatorKeyboardInput()
+        {
+            if (health == null || !health.IsDead)
+                return;
+
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            if (keyboard.qKey.wasPressedThisFrame)
+                currentContext?.OnSpectatorPrev();
+
+            if (keyboard.eKey.wasPressedThisFrame)
+                currentContext?.OnSpectatorNext();
+        }
+
         private void OnPlayerStateChanged(PlayerState oldState, PlayerState newState)
         {
+            if (newState != PlayerState.Alive)
+                StopReviveHoldIfNeeded();
+
             ApplyContextForState(newState);
         }
 
@@ -311,7 +337,27 @@ namespace DeadZone.Actors
 
         public void OnInteract(InputAction.CallbackContext context)
         {
-            if (!CanProcessInput || GameplayInputBlocker.IsBlocked || (!context.started && !context.performed))
+            if (!CanProcessInput || GameplayInputBlocker.IsBlocked)
+            {
+                if (context.canceled)
+                    StopReviveHoldIfNeeded();
+
+                return;
+            }
+
+            if (context.canceled)
+            {
+                StopReviveHoldIfNeeded();
+                return;
+            }
+
+            if (!context.started && !context.performed)
+                return;
+
+            if (context.started && TryStartReviveHold())
+                return;
+
+            if (reviveHoldStarted)
                 return;
 
             if (Time.unscaledTime - lastInteractInputTime < InteractInputGuardSeconds)
@@ -319,6 +365,28 @@ namespace DeadZone.Actors
 
             lastInteractInputTime = Time.unscaledTime;
             currentContext?.OnInteract();
+        }
+
+        private bool TryStartReviveHold()
+        {
+            if (health == null || !health.IsAlive)
+                return false;
+
+            if (revive == null || !revive.HasReviveCandidate())
+                return false;
+
+            reviveHoldStarted = true;
+            revive.StartHold();
+            return true;
+        }
+
+        private void StopReviveHoldIfNeeded()
+        {
+            if (!reviveHoldStarted)
+                return;
+
+            reviveHoldStarted = false;
+            revive?.StopHold();
         }
 
         public void OnRoll(InputAction.CallbackContext context)

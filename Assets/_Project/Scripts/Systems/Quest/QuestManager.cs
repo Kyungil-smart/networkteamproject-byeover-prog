@@ -7,6 +7,7 @@ using DeadZone.Actors;
 using DeadZone.Core;
 using DeadZone.Network;
 using DeadZone.Systems;
+using DeadZone.Systems.Save;
 
 namespace DeadZone.Systems.Quests
 {
@@ -22,6 +23,13 @@ namespace DeadZone.Systems.Quests
 
         private readonly Dictionary<ulong, PlayerQuestState> playerStates = new();
         private readonly Dictionary<string, QuestDataSO> questLookup = new();
+
+        private const string LobbyRewardContainerId = "stash";
+        private const int LobbyStashGridWidth = 10;
+        private const int LobbyStashLevel1Capacity = 50;
+        private const int LobbyStashLevel2Capacity = 70;
+        private const int LobbyStashLevel3Capacity = 90;
+        private const int LobbyStashLevel4Capacity = 110;
 
         private void Awake()
         {
@@ -146,7 +154,9 @@ namespace DeadZone.Systems.Quests
             if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData || cloudSaveSystem.CurrentData?.progress == null)
                 return;
 
-            RestorePlayerState(GetLocalClientIdForState(), cloudSaveSystem.CurrentData.progress);
+            ulong localClientId = GetLocalClientIdForState();
+            RestorePlayerState(localClientId, cloudSaveSystem.CurrentData.progress);
+            SubmitLocalQuestSnapshotToServerIfNeeded(localClientId);
         }
 
         public void RestorePlayerState(ulong clientId, ProgressData progress)
@@ -156,9 +166,6 @@ namespace DeadZone.Systems.Quests
             InitializeActiveQuestRuntimeProgress(state);
 
             Debug.Log($"[QuestManager] Restored client {clientId}: active={state.ActiveQuestIds.Count}, completed={state.CompletedQuestIds.Count}, rewardClaimed={state.RewardClaimedQuestIds.Count}");
-
-            if (state.ActiveQuestIds.Count == 0 && state.CompletedQuestIds.Count == 0)
-                AcceptQuest(clientId, "Q1");
 
             PublishQuestTrackerSnapshot(clientId);
         }
@@ -182,7 +189,6 @@ namespace DeadZone.Systems.Quests
             PublishQuestAccepted(clientId, questId);
 
             Debug.Log($"[QuestManager] Client {clientId} accepted {questId}");
-            TryAutoAcceptSideQuests(clientId);
             return true;
         }
 
@@ -196,6 +202,12 @@ namespace DeadZone.Systems.Quests
         {
             if (!CanWriteQuestState()) return;
 
+            foreach (ulong recipientClientId in ResolveSharedProgressRecipients(clientId, type, targetId))
+                ReportProgressForSingleClient(recipientClientId, type, targetId, amount);
+        }
+
+        private void ReportProgressForSingleClient(ulong clientId, ObjectiveType type, string targetId, int amount)
+        {
             PlayerQuestState state = GetPlayerState(clientId);
             List<string> activeSnapshot = new(state.ActiveQuestIds);
 
@@ -212,13 +224,107 @@ namespace DeadZone.Systems.Quests
                     int newCount = state.AddProgress(questId, targetId, amount, objective.requiredCount);
                     PublishQuestProgress(clientId, questId, targetId, type, newCount, objective.requiredCount);
 
-                    if (state.AreAllObjectivesComplete(questId) && !state.PendingCompletionIds.Contains(questId))
+                    if (!state.AreAllObjectivesComplete(questId))
+                        continue;
+
+                    if (ShouldCompleteImmediately(questId))
+                    {
+                        CompleteQuest(clientId, questId);
+                        continue;
+                    }
+
+                    if (!state.PendingCompletionIds.Contains(questId))
                     {
                         state.PendingCompletionIds.Add(questId);
                         PublishQuestPending(clientId, questId, targetId, type, newCount, objective.requiredCount);
                     }
                 }
             }
+        }
+
+        private List<ulong> ResolveSharedProgressRecipients(ulong sourceClientId, ObjectiveType type, string targetId)
+        {
+            List<ulong> recipients = new();
+            HashSet<ulong> seen = new();
+
+            foreach (KeyValuePair<ulong, PlayerQuestState> pair in playerStates)
+            {
+                if (!HasMatchingActiveObjective(pair.Value, type, targetId))
+                    continue;
+
+                if (seen.Add(pair.Key))
+                    recipients.Add(pair.Key);
+            }
+
+            PlayerQuestState sourceState = GetPlayerState(sourceClientId);
+            if (HasMatchingActiveObjective(sourceState, type, targetId) && seen.Add(sourceClientId))
+                recipients.Add(sourceClientId);
+
+            if (recipients.Count == 0)
+                recipients.Add(sourceClientId);
+
+            return recipients;
+        }
+
+        private bool HasMatchingActiveObjective(PlayerQuestState state, ObjectiveType type, string targetId)
+        {
+            if (state == null || string.IsNullOrWhiteSpace(targetId))
+                return false;
+
+            foreach (string questId in state.ActiveQuestIds)
+            {
+                if (!questLookup.TryGetValue(questId, out QuestDataSO questData) || questData.objectives == null)
+                    continue;
+
+                foreach (QuestObjectiveData objective in questData.objectives)
+                {
+                    if (objective.type == type && objective.targetID == targetId)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void SubmitLocalQuestSnapshotToServerIfNeeded(ulong localClientId)
+        {
+            if (!IsSpawned || IsServer || !HasNetworkSession())
+                return;
+
+            PlayerQuestState state = GetPlayerState(localClientId);
+            string snapshotJson = JsonUtility.ToJson(QuestStateSnapshot.FromState(state));
+            SubmitQuestStateSnapshotServerRpc(snapshotJson);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void SubmitQuestStateSnapshotServerRpc(string snapshotJson, RpcParams rpcParams = default)
+        {
+            if (!IsServer || string.IsNullOrWhiteSpace(snapshotJson))
+                return;
+
+            QuestStateSnapshot snapshot;
+            try
+            {
+                snapshot = JsonUtility.FromJson<QuestStateSnapshot>(snapshotJson);
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning($"[QuestManager] Client quest snapshot parse failed. clientId={rpcParams.Receive.SenderClientId}, error={exception.Message}", this);
+                return;
+            }
+
+            if (snapshot == null)
+                return;
+
+            ulong clientId = rpcParams.Receive.SenderClientId;
+            PlayerQuestState state = GetPlayerState(clientId);
+            snapshot.ApplyTo(state);
+            InitializeActiveQuestRuntimeProgress(state);
+            PublishQuestTrackerSnapshot(clientId);
+
+            Debug.Log(
+                $"[QuestManager] Client quest snapshot submitted. clientId={clientId}, active={state.ActiveQuestIds.Count}, completed={state.CompletedQuestIds.Count}, claimed={state.RewardClaimedQuestIds.Count}",
+                this);
         }
 
         public int GetObjectiveProgress(ulong clientId, string questId, string targetId)
@@ -326,6 +432,8 @@ namespace DeadZone.Systems.Quests
             if (!string.IsNullOrEmpty(questData.unlockZoneID))
                 state.UnlockedZones.Add(questData.unlockZoneID);
 
+            TryAutoClaimCompletedReward(clientId, questId);
+
             EventBus.Publish(new QuestCompletedEvent
             {
                 questId = new FixedString64Bytes(questId),
@@ -342,8 +450,28 @@ namespace DeadZone.Systems.Quests
             }
 
             Debug.Log($"[QuestManager] Client {clientId} completed {questId}");
-            TryAutoAcceptNextQuest(clientId, questId);
         }
+
+        private void TryAutoClaimCompletedReward(ulong clientId, string questId)
+        {
+            if (!ShouldAutoClaimReward(questId))
+                return;
+
+            if (!CanClaimReward(clientId, questId))
+                return;
+
+            if (!ClaimReward(clientId, questId))
+            {
+                Debug.LogWarning(
+                    $"[QuestManager] Quest completed, but reward could not be added immediately. questId={questId}, clientId={clientId}");
+            }
+        }
+
+        private static bool ShouldCompleteImmediately(string questId)
+            => string.Equals(questId, "Q7", System.StringComparison.OrdinalIgnoreCase);
+
+        private static bool ShouldAutoClaimReward(string questId)
+            => ShouldCompleteImmediately(questId);
 
         private void ConfirmRaidQuestCompletions(ulong clientId)
         {
@@ -367,6 +495,11 @@ namespace DeadZone.Systems.Quests
         private void OnExtractionCompleted(ExtractionCompletedEvent e)
         {
             if (!CanWriteQuestState()) return;
+
+            string extractionId = e.extractionId.ToString();
+            if (!string.IsNullOrEmpty(extractionId))
+                ReportProgress(e.clientId, ObjectiveType.Reach, extractionId, 1);
+
             ConfirmRaidQuestCompletions(e.clientId);
         }
 
@@ -385,6 +518,9 @@ namespace DeadZone.Systems.Quests
             string enemyId = e.enemyId.ToString();
             if (!string.IsNullOrEmpty(enemyId))
                 ReportProgress(e.attackerClientId, ObjectiveType.Kill, enemyId, 1);
+
+            if (enemyId != "Enemy_Any")
+                ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Enemy_Any", 1);
 
             if (!e.isBoss)
             {
@@ -410,40 +546,6 @@ namespace DeadZone.Systems.Quests
         {
             if (!CanWriteQuestState()) return;
             ReportProgress(e.clientId, ObjectiveType.Reach, e.zoneId.ToString(), 1);
-        }
-
-        private void TryAutoAcceptSideQuests(ulong clientId)
-        {
-            if (allQuests == null)
-                return;
-
-            PlayerQuestState state = GetPlayerState(clientId);
-            foreach (QuestDataSO quest in allQuests)
-            {
-                if (quest == null || !quest.isSideQuest) continue;
-                if (state.ActiveQuestIds.Contains(quest.questID)) continue;
-                if (state.CompletedQuestIds.Contains(quest.questID)) continue;
-                if (!string.IsNullOrEmpty(quest.prerequisiteQuestID) &&
-                    !state.CompletedQuestIds.Contains(quest.prerequisiteQuestID))
-                    continue;
-
-                AcceptQuest(clientId, quest.questID);
-            }
-        }
-
-        private void TryAutoAcceptNextQuest(ulong clientId, string completedQuestId)
-        {
-            if (allQuests == null)
-                return;
-
-            foreach (QuestDataSO quest in allQuests)
-            {
-                if (quest == null || quest.isSideQuest) continue;
-                if (quest.prerequisiteQuestID != completedQuestId) continue;
-
-                AcceptQuest(clientId, quest.questID);
-                break;
-            }
         }
 
         private void InitializeActiveQuestRuntimeProgress(PlayerQuestState state)
@@ -591,9 +693,13 @@ namespace DeadZone.Systems.Quests
             if (questData.rewards == null)
                 return true;
 
-            GridInventory inventory = ResolveClientInventory(clientId);
             WalletSystem wallet = ResolveClientWallet(clientId);
+            LobbyInventoryState lobbyInventoryState = ResolveLobbyInventoryState();
             IItemDatabase itemDatabase = ResolveItemDatabase();
+
+            List<ItemSaveDTO> simulatedStashItems = lobbyInventoryState != null
+                ? CloneLobbyItems(lobbyInventoryState.StashItems)
+                : null;
 
             foreach (QuestReward reward in questData.rewards)
             {
@@ -608,11 +714,11 @@ namespace DeadZone.Systems.Quests
                     continue;
                 }
 
-                if (inventory == null || itemDatabase == null)
+                if (lobbyInventoryState == null || itemDatabase == null)
                     return false;
 
-                ItemDataSO itemData = itemDatabase.GetById(reward.itemID);
-                if (itemData == null || !inventory.CanAddItem(itemData, reward.amount))
+                ItemDataSO lobbyItemData = itemDatabase.GetById(reward.itemID);
+                if (!TryAddRewardToLobbyStashItems(simulatedStashItems, lobbyInventoryState, lobbyItemData, reward.amount))
                     return false;
             }
 
@@ -625,8 +731,9 @@ namespace DeadZone.Systems.Quests
                 return;
 
             WalletSystem wallet = ResolveClientWallet(clientId);
-            GridInventory inventory = ResolveClientInventory(clientId);
+            LobbyInventoryState lobbyInventoryState = ResolveLobbyInventoryState();
             IItemDatabase itemDatabase = ResolveItemDatabase();
+            bool changedLobbyInventory = false;
 
             foreach (QuestReward reward in questData.rewards)
             {
@@ -645,11 +752,285 @@ namespace DeadZone.Systems.Quests
                     case RewardType.Item:
                     case RewardType.FacilityMaterial:
                         ItemDataSO itemData = itemDatabase?.GetById(reward.itemID);
-                        if (itemData != null)
-                            inventory?.TryAddItem(itemData, reward.amount);
+                        if (itemData == null)
+                            break;
+
+                        if (TryAddRewardToLobbyStashState(lobbyInventoryState, itemData, reward.amount))
+                            changedLobbyInventory = true;
+
                         break;
                 }
             }
+
+            if (changedLobbyInventory)
+                PersistLobbyInventoryReward();
+        }
+
+        private static LobbyInventoryState ResolveLobbyInventoryState()
+        {
+            LobbyInventoryState inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            if (inventoryState != null)
+                return inventoryState;
+
+            return ServiceLocator.Get<LobbyInventoryState>();
+        }
+
+        private static bool TryAddRewardToLobbyStashState(LobbyInventoryState lobbyInventoryState, ItemDataSO itemData, int amount)
+        {
+            if (lobbyInventoryState == null || itemData == null || amount <= 0)
+                return false;
+
+            List<ItemSaveDTO> items = CloneLobbyItems(lobbyInventoryState.StashItems);
+            if (!TryAddRewardToLobbyStashItems(items, lobbyInventoryState, itemData, amount))
+                return false;
+
+            lobbyInventoryState.SetStashItems(items);
+            return true;
+        }
+
+        private static bool TryAddRewardToLobbyStashItems(
+            List<ItemSaveDTO> items,
+            LobbyInventoryState lobbyInventoryState,
+            ItemDataSO itemData,
+            int amount)
+        {
+            if (items == null || lobbyInventoryState == null || itemData == null || amount <= 0)
+                return false;
+
+            int remaining = amount;
+            int maxStack = Mathf.Max(1, itemData.maxStackSize);
+
+            if (maxStack > 1 && IsPlainStackReward(itemData))
+            {
+                for (int i = 0; i < items.Count && remaining > 0; i++)
+                {
+                    ItemSaveDTO item = items[i];
+                    if (item == null ||
+                        !string.Equals(item.itemId, itemData.itemID, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    int available = maxStack - Mathf.Max(0, item.stackCount);
+                    if (available <= 0)
+                        continue;
+
+                    int addCount = Mathf.Min(available, remaining);
+                    item.stackCount += addCount;
+
+                    remaining -= addCount;
+                }
+            }
+
+            int capacity = GetLobbyStashCapacity();
+            while (remaining > 0)
+            {
+                int stackCount = Mathf.Min(maxStack, remaining);
+                if (!TryFindLobbyStashPlacement(items, itemData, capacity, out int slotIndex))
+                    return false;
+
+                items.Add(CreateLobbyRewardItem(itemData, slotIndex, stackCount));
+
+                remaining -= stackCount;
+            }
+
+            return true;
+        }
+
+        private static bool IsPlainStackReward(ItemDataSO itemData)
+            => itemData != null &&
+               itemData.maxStackSize > 1 &&
+               itemData is not WeaponDataSO &&
+               itemData is not ArmorDataSO &&
+               itemData is not HelmetDataSO &&
+               itemData is not BackpackDataSO;
+
+        private static ItemSaveDTO CreateLobbyRewardItem(ItemDataSO itemData, int slotIndex, int stackCount)
+        {
+            return new ItemSaveDTO
+            {
+                itemId = itemData.itemID,
+                instanceId = $"{LobbyRewardContainerId}_{slotIndex}_{itemData.itemID}",
+                containerId = LobbyRewardContainerId,
+                x = slotIndex % LobbyStashGridWidth,
+                y = slotIndex / LobbyStashGridWidth,
+                rotated = false,
+                stackCount = Mathf.Clamp(stackCount, 1, Mathf.Max(1, itemData.maxStackSize)),
+                currentDurability = GetDefaultRewardDurability(itemData),
+                currentAmmo = GetDefaultRewardAmmo(itemData)
+            };
+        }
+
+        private static float GetDefaultRewardDurability(ItemDataSO itemData)
+        {
+            return itemData switch
+            {
+                WeaponDataSO weaponData => Mathf.Max(0f, weaponData.maxDurability),
+                ArmorDataSO armorData => Mathf.Max(0f, armorData.maxDurability),
+                HelmetDataSO helmetData => Mathf.Max(0f, helmetData.maxDurability),
+                _ => 0f
+            };
+        }
+
+        private static int GetDefaultRewardAmmo(ItemDataSO itemData)
+            => itemData is WeaponDataSO weaponData ? Mathf.Max(0, weaponData.magSize) : 0;
+
+        private static int GetLobbyStashCapacity()
+        {
+            DeadZone.Actors.UI.StashGridUI stashGrid = FindFirstObjectByType<DeadZone.Actors.UI.StashGridUI>(FindObjectsInactive.Include);
+            if (stashGrid != null && stashGrid.ActiveSlotCount > 0)
+                return stashGrid.ActiveSlotCount;
+
+            int stashLevel = 1;
+            LobbyFacilityState facilityState = FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
+            IReadOnlyList<FacilitySaveDTO> facilities = facilityState?.Facilities;
+            if (facilities != null)
+            {
+                for (int i = 0; i < facilities.Count; i++)
+                {
+                    FacilitySaveDTO facility = facilities[i];
+                    if (facility == null || string.IsNullOrWhiteSpace(facility.facilityId))
+                        continue;
+
+                    if (string.Equals(facility.facilityId, "Stash", System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        stashLevel = Mathf.Clamp(facility.level, 1, 4);
+                        break;
+                    }
+                }
+            }
+
+            return stashLevel switch
+            {
+                2 => LobbyStashLevel2Capacity,
+                3 => LobbyStashLevel3Capacity,
+                4 => LobbyStashLevel4Capacity,
+                _ => LobbyStashLevel1Capacity
+            };
+        }
+
+        private static bool TryFindLobbyStashPlacement(
+            IReadOnlyList<ItemSaveDTO> items,
+            ItemDataSO itemData,
+            int capacity,
+            out int slotIndex)
+        {
+            slotIndex = -1;
+            if (itemData == null || capacity <= 0)
+                return false;
+
+            int rows = Mathf.CeilToInt(capacity / (float)LobbyStashGridWidth);
+            Vector2Int size = new(
+                Mathf.Max(1, itemData.gridSize.x),
+                Mathf.Max(1, itemData.gridSize.y));
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < LobbyStashGridWidth; x++)
+                {
+                    int linearIndex = y * LobbyStashGridWidth + x;
+                    if (linearIndex >= capacity)
+                        return false;
+
+                    if (!CanPlaceLobbyItemAt(items, x, y, size, capacity))
+                        continue;
+
+                    slotIndex = linearIndex;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CanPlaceLobbyItemAt(
+            IReadOnlyList<ItemSaveDTO> items,
+            int x,
+            int y,
+            Vector2Int size,
+            int capacity)
+        {
+            if (x < 0 || y < 0 || x + size.x > LobbyStashGridWidth)
+                return false;
+
+            int rows = Mathf.CeilToInt(capacity / (float)LobbyStashGridWidth);
+            if (y + size.y > rows)
+                return false;
+
+            for (int cellY = y; cellY < y + size.y; cellY++)
+            {
+                for (int cellX = x; cellX < x + size.x; cellX++)
+                {
+                    int linearIndex = cellY * LobbyStashGridWidth + cellX;
+                    if (linearIndex >= capacity || IsLobbyCellOccupied(items, cellX, cellY))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsLobbyCellOccupied(IReadOnlyList<ItemSaveDTO> items, int x, int y)
+        {
+            if (items == null)
+                return false;
+
+            IItemDatabase itemDatabase = ResolveItemDatabase();
+            for (int i = 0; i < items.Count; i++)
+            {
+                ItemSaveDTO item = items[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId))
+                    continue;
+
+                ItemDataSO itemData = itemDatabase?.GetById(item.itemId);
+                Vector2Int size = itemData != null
+                    ? new Vector2Int(Mathf.Max(1, itemData.gridSize.x), Mathf.Max(1, itemData.gridSize.y))
+                    : Vector2Int.one;
+
+                if (x >= item.x && x < item.x + size.x && y >= item.y && y < item.y + size.y)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static List<ItemSaveDTO> CloneLobbyItems(IReadOnlyList<ItemSaveDTO> source)
+        {
+            List<ItemSaveDTO> items = new();
+            if (source == null)
+                return items;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                ItemSaveDTO item = source[i];
+                if (item == null)
+                    continue;
+
+                items.Add(new ItemSaveDTO
+                {
+                    itemId = item.itemId,
+                    instanceId = item.instanceId,
+                    containerId = item.containerId,
+                    x = item.x,
+                    y = item.y,
+                    rotated = item.rotated,
+                    stackCount = item.stackCount,
+                    currentDurability = item.currentDurability,
+                    currentAmmo = item.currentAmmo
+                });
+            }
+
+            return items;
+        }
+
+        private static void PersistLobbyInventoryReward()
+        {
+            LobbyInventoryStateUiBridge bridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            bridge?.ApplyStateToUi();
+
+            LobbySaveService saveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            saveService?.SaveCurrentStateToLocalJson("Quest reward claimed");
+            saveService?.SaveLobbyDataToCloud();
         }
 
         private static WalletSystem ResolveClientWallet(ulong clientId)
@@ -848,6 +1229,64 @@ namespace DeadZone.Systems.Quests
                 questId = new FixedString64Bytes(questId),
                 clientId = GetLocalClientIdForState()
             });
+        }
+
+        [System.Serializable]
+        private sealed class QuestStateSnapshot
+        {
+            public string[] activeQuestIds;
+            public string[] completedQuestIds;
+            public string[] rewardClaimedQuestIds;
+            public string[] unlockedZones;
+
+            public static QuestStateSnapshot FromState(PlayerQuestState state)
+            {
+                return new QuestStateSnapshot
+                {
+                    activeQuestIds = ToArray(state?.ActiveQuestIds),
+                    completedQuestIds = ToArray(state?.CompletedQuestIds),
+                    rewardClaimedQuestIds = ToArray(state?.RewardClaimedQuestIds),
+                    unlockedZones = ToArray(state?.UnlockedZones)
+                };
+            }
+
+            public void ApplyTo(PlayerQuestState state)
+            {
+                if (state == null)
+                    return;
+
+                ReplaceSet(state.ActiveQuestIds, activeQuestIds);
+                ReplaceSet(state.CompletedQuestIds, completedQuestIds);
+                ReplaceSet(state.RewardClaimedQuestIds, rewardClaimedQuestIds);
+                ReplaceSet(state.UnlockedZones, unlockedZones);
+                state.PendingCompletionIds.Clear();
+                state.RaidQuestProgress.Clear();
+            }
+
+            private static string[] ToArray(HashSet<string> source)
+            {
+                if (source == null || source.Count == 0)
+                    return System.Array.Empty<string>();
+
+                string[] result = new string[source.Count];
+                source.CopyTo(result);
+                return result;
+            }
+
+            private static void ReplaceSet(HashSet<string> target, string[] source)
+            {
+                target.Clear();
+
+                if (source == null)
+                    return;
+
+                for (int i = 0; i < source.Length; i++)
+                {
+                    string value = source[i];
+                    if (!string.IsNullOrWhiteSpace(value))
+                        target.Add(value);
+                }
+            }
         }
 
         public void OnPlayerDisconnected(ulong clientId)

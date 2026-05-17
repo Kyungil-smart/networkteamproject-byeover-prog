@@ -682,7 +682,7 @@ namespace DeadZone.Actors.UI
             }
 
             int cost = GetUpgradeCost(targetLevel);
-            if (GetCurrentCredits() < cost || walletSystem == null || !walletSystem.TryPayLocalTest(cost))
+            if (GetCurrentCredits() < cost || !TrySpendCredits(cost))
             {
                 SetUpgradeButtonText(GetUpgradeButton(targetLevel), GetUpgradeText(targetLevel), "\uC794\uC561\uBD80\uC871");
                 RefreshUpgradePopup();
@@ -692,8 +692,6 @@ namespace DeadZone.Actors.UI
             int nextLevel = Mathf.Clamp(targetLevel, 1, MaxStashLevel);
             stashLevel = nextLevel;
             facilityState?.SetFacilityLevel("Stash", nextLevel);
-            inventoryState?.SetCredits(walletSystem.CurrentCredits);
-
             RefreshSlots();
             RefreshUpgradePopup();
 
@@ -737,6 +735,28 @@ namespace DeadZone.Actors.UI
             return inventoryState != null && inventoryState.HasCredits
                 ? inventoryState.Credits
                 : 0;
+        }
+
+        private bool TrySpendCredits(int amount)
+        {
+            amount = Mathf.Max(0, amount);
+            if (amount == 0)
+                return true;
+
+            if (walletSystem != null)
+            {
+                if (!walletSystem.TryPayLocalTest(amount))
+                    return false;
+
+                inventoryState?.SetCredits(walletSystem.CurrentCredits);
+                return true;
+            }
+
+            if (inventoryState == null || !inventoryState.HasCredits || inventoryState.Credits < amount)
+                return false;
+
+            inventoryState.SetCredits(inventoryState.Credits - amount);
+            return true;
         }
 
         private static int GetUpgradeCost(int targetLevel)
@@ -885,7 +905,7 @@ namespace DeadZone.Actors.UI
         public void ApplySavedStashItems(IReadOnlyList<ItemSaveDTO> stashItems, IItemDatabase itemDatabase)
         {
             RefreshSlots();
-            ClearActiveSlots();
+            ClearAllSlots();
 
             if (stashItems == null)
                 return;
@@ -1205,16 +1225,21 @@ namespace DeadZone.Actors.UI
                     continue;
 
                 bool active = i < targetCount;
-                slot.gameObject.SetActive(active);
 
                 if (active)
                 {
+                    slot.gameObject.SetActive(true);
                     slot.name = $"StashSlot_{i:000}";
                     slot.CopyRarityBackgroundSpritesFrom(slotPrefab);
                     slot.PrepareDropSlot(tooltipUI, i);
 
                     if (!slot.HasItem)
                         slot.ClearItem();
+                }
+                else
+                {
+                    slot.ClearItem();
+                    slot.gameObject.SetActive(false);
                 }
             }
         }
@@ -1400,6 +1425,18 @@ namespace DeadZone.Actors.UI
             }
         }
 
+        private void ClearAllSlots()
+        {
+            for (int i = 0; i < slots.Count; i++)
+            {
+                InventorySlotUI slot = slots[i];
+                if (slot == null || slot == slotPrefab)
+                    continue;
+
+                slot.ClearItem();
+            }
+        }
+
         private int GetRemainingCapacity(ItemDataSO item, int maxStack)
         {
             int capacity = 0;
@@ -1448,10 +1485,28 @@ namespace DeadZone.Actors.UI
 
         private static bool IsItemIdSlot(InventorySlotUI slot, string itemId)
         {
-            return slot != null &&
-                   slot.HasItem &&
-                   slot.CurrentItemData != null &&
-                   slot.CurrentItemData.itemID == itemId;
+            if (slot == null || !slot.HasItem || slot.CurrentItemData == null)
+                return false;
+
+            return ItemIdsMatch(slot.CurrentItemData.itemID, itemId);
+        }
+
+        private static bool ItemIdsMatch(string storedItemId, string requestedItemId)
+        {
+            if (string.IsNullOrWhiteSpace(storedItemId) || string.IsNullOrWhiteSpace(requestedItemId))
+                return false;
+
+            if (storedItemId == requestedItemId)
+                return true;
+
+            IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
+            ItemDataSO storedItem = itemDatabase?.GetById(storedItemId);
+            ItemDataSO requestedItem = itemDatabase?.GetById(requestedItemId);
+
+            return storedItem != null &&
+                   requestedItem != null &&
+                   !string.IsNullOrWhiteSpace(storedItem.itemID) &&
+                   storedItem.itemID == requestedItem.itemID;
         }
 
         private void LogSlotCacheState()

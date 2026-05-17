@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 using DeadZone.Core;
 using DeadZone.Actors;
@@ -11,6 +12,9 @@ namespace DeadZone.Systems
     /// </summary>
     public static class PenetrationCalculator
     {
+        private const float BaseHeadshotMultiplier = 3.0f;
+        private const float HeadshotReductionPerExtraPlayer = 0.15f;
+
         public static DamageResult Calculate(
             IArmored armored, BodyPart effectiveZone, ProjectileData data)
         {
@@ -46,7 +50,7 @@ namespace DeadZone.Systems
 
             // 2. 관통 및 데미지 연산
             // 치명타에 따른 피해 배율
-            float multiplier = (effectiveZone == BodyPart.Head) ? 3.0f : 1.0f;
+            float multiplier = (effectiveZone == BodyPart.Head) ? GetScaledHeadshotMultiplier() : 1.0f;
         
             // 방어구가 없을 경우 관통 연산 없이 반환
             if (!hasValidArmor)
@@ -107,6 +111,17 @@ namespace DeadZone.Systems
                 5 => 0.60f,
                 _ => 0.70f,
             };
+        }
+
+        private static float GetScaledHeadshotMultiplier()
+        {
+            int playerCount = 1;
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager != null && networkManager.IsListening)
+                playerCount = Mathf.Max(1, networkManager.ConnectedClientsIds.Count);
+
+            float reductionScale = 1f - HeadshotReductionPerExtraPlayer * Mathf.Max(0, playerCount - 1);
+            return Mathf.Max(1f, BaseHeadshotMultiplier * reductionScale);
         }
     }
 }

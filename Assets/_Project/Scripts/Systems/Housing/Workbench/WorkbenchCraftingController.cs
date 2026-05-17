@@ -59,6 +59,9 @@ namespace DeadZone.Systems.Housing
 
             if (!HousingInventoryResolver.IsNetworkReady(out string failReason))
             {
+                if (TryCraftWithLobbySave(recipeID))
+                    return;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (TryCraftOfflineForDebug(recipeID))
                     return;
@@ -68,6 +71,122 @@ namespace DeadZone.Systems.Housing
             }
 
             RequestCraftRpc(recipeID);
+        }
+
+        private bool TryCraftWithLobbySave(string recipeID)
+        {
+            if (!HousingInventoryResolver.TryGetLobbyInventory(out IInventory inventory, out _))
+                return false;
+
+            if (!TryGetRecipeByLobbyLevelRuntime(recipeID, out RecipeSO recipe, out string failReason))
+            {
+                FailCraft(recipeID, failReason);
+                return true;
+            }
+
+            if (!IsRecipeValid(recipe))
+                return true;
+
+            int resultCount = Mathf.Max(1, recipe.resultCount);
+
+            if (inventory is HousingLobbyInventoryBridge lobbyInventoryBridge)
+            {
+                if (!lobbyInventoryBridge.TryCraftRecipeToStash(recipe, resultCount, out failReason))
+                {
+                    FailCraft(recipe.recipeID, failReason);
+                    return true;
+                }
+            }
+            else
+            {
+                if (!HasAllIngredients(inventory, recipe))
+                {
+                    FailCraft(recipe.recipeID, "?쒖옉 ?щ즺媛 遺議깊빀?덈떎.");
+                    return true;
+                }
+
+                if (!CanAcceptCraftResult(inventory, recipe, resultCount))
+                {
+                    FailCraft(recipe.recipeID, "寃곌낵 ?꾩씠?쒖쓣 諛쏆쓣 ?몃깽?좊━ 怨듦컙??遺議깊빀?덈떎.");
+                    return true;
+                }
+
+                if (!ConsumeAllIngredients(inventory, recipe))
+                {
+                    FailCraft(recipe.recipeID, "?쒖옉 ?щ즺 ?뚮え???ㅽ뙣?덉뒿?덈떎.");
+                    return true;
+                }
+
+                if (!TryAddCraftResult(inventory, recipe, resultCount, out int addedCount))
+                {
+                    RemoveAddedCraftResult(inventory, recipe, addedCount);
+                    RestoreConsumedIngredients(inventory);
+                    FailCraft(recipe.recipeID, "寃곌낵 ?꾩씠??吏湲됱뿉 ?ㅽ뙣?덉뒿?덈떎. ?뚮え???щ즺瑜??섎룎?몄뒿?덈떎.");
+                    return true;
+                }
+
+                consumedIngredients.Clear();
+            }
+
+            EventBus.Publish(new WorkbenchCraftSucceededEvent
+            {
+                recipeId = recipe.recipeID,
+                resultItemId = recipe.result.itemID,
+                resultCount = resultCount
+            });
+
+            EventBus.Publish(new HousingCraftResultEvent
+            {
+                facilityName = "Workbench",
+                recipeId = recipe.recipeID,
+                resultItemId = recipe.result.itemID,
+                resultCount = resultCount,
+                success = true,
+                reason = "로비 보관함 제작 성공"
+            });
+
+            if (logCraftResult)
+            {
+                Debug.Log(
+                    $"[WorkbenchCraftingController] Lobby save workbench craft succeeded. RecipeID={recipe.recipeID}, Result={recipe.result.itemID} x{resultCount}",
+                    this);
+            }
+
+            return true;
+        }
+
+        private bool TryGetRecipeByLobbyLevelRuntime(string recipeID, out RecipeSO recipe, out string failReason)
+        {
+            recipe = null;
+            failReason = string.Empty;
+
+            if (recipeCatalog == null)
+                recipeCatalog = GetComponent<WorkbenchRecipeCatalog>();
+
+            if (recipeCatalog == null)
+            {
+                failReason = "WorkbenchRecipeCatalog is missing.";
+                return false;
+            }
+
+            if (!recipeCatalog.TryGetRecipe(recipeID, out recipe))
+            {
+                failReason = $"Recipe not found. RecipeID: {recipeID}";
+                return false;
+            }
+
+            int lobbyWorkbenchLevel = Mathf.Max(1, recipeCatalog.CurrentWorkbenchLevel);
+            if (HousingInventoryResolver.TryGetLobbyFacilityLevel(FacilityType.Workbench, out int savedLevel))
+                lobbyWorkbenchLevel = Mathf.Max(1, savedLevel);
+
+            int requiredLevel = recipeCatalog.GetRequiredWorkbenchLevel(recipe);
+            if (lobbyWorkbenchLevel < requiredLevel)
+            {
+                failReason = $"Workbench Lv.{requiredLevel} is required. Current Lv.{lobbyWorkbenchLevel}";
+                return false;
+            }
+
+            return true;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -150,6 +269,40 @@ namespace DeadZone.Systems.Housing
                     $"RecipeID: {recipe.recipeID}\n" +
                     $"Result: {recipe.result.itemID} x{resultCount}",
                     this);
+            }
+
+            return true;
+        }
+
+        private bool TryGetRecipeByLobbyLevel(string recipeID, out RecipeSO recipe, out string failReason)
+        {
+            recipe = null;
+            failReason = string.Empty;
+
+            if (recipeCatalog == null)
+                recipeCatalog = GetComponent<WorkbenchRecipeCatalog>();
+
+            if (recipeCatalog == null)
+            {
+                failReason = "WorkbenchRecipeCatalog媛 ?놁뒿?덈떎.";
+                return false;
+            }
+
+            if (!recipeCatalog.TryGetRecipe(recipeID, out recipe))
+            {
+                failReason = $"?덉떆?쇰? 李얠? 紐삵뻽?듬땲?? RecipeID: {recipeID}";
+                return false;
+            }
+
+            int lobbyWorkbenchLevel = Mathf.Max(1, recipeCatalog.CurrentWorkbenchLevel);
+            if (HousingInventoryResolver.TryGetLobbyFacilityLevel(FacilityType.Workbench, out int savedLevel))
+                lobbyWorkbenchLevel = Mathf.Max(1, savedLevel);
+
+            int requiredLevel = recipeCatalog.GetRequiredWorkbenchLevel(recipe);
+            if (lobbyWorkbenchLevel < requiredLevel)
+            {
+                failReason = $"?묒뾽? Lv.{requiredLevel} ?댁긽???꾩슂?⑸땲?? ?꾩옱 ?묒뾽? Lv.{lobbyWorkbenchLevel}";
+                return false;
             }
 
             return true;

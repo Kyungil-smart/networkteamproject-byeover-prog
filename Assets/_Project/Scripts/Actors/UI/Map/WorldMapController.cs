@@ -11,6 +11,7 @@ using UnityEngine.InputSystem;
 using DeadZone.Core;
 using DeadZone.InputActions;
 using DeadZone.Actors.UI;
+using DeadZone.Network;
 
 // 작성자 : 홍정옥
 // 기능 : M키 전체 맵 UI 표시/숨김, 퀘스트 클리어에 따른 맵 구역 잠금/해금 표시
@@ -176,8 +177,12 @@ namespace DeadZone.Actors
         private void OnQuestCompleted(QuestCompletedEvent e)
         {
             string completedQuestId = e.questId.ToString();
+            string unlockZoneId = e.unlockZoneId.ToString();
             Debug.Log($"[WorldMapController] QuestCompleted questId={completedQuestId}", this);
             UnlockAreasByQuestId(completedQuestId, playFeedback: true);
+
+            if (!string.IsNullOrWhiteSpace(unlockZoneId) && FindArea(unlockZoneId) != null)
+                UnlockArea(unlockZoneId, playFeedback: true);
         }
 
         // 전체 맵 토글
@@ -266,10 +271,84 @@ namespace DeadZone.Actors
         // 등록된 모든 구역의 잠금 상태를 다시 적용
         public void RefreshAllAreaLocks()
         {
+            HashSet<string> unlockedAreaIds = GetCloudUnlockedAreaIds();
+            HashSet<string> completedQuestIds = GetCloudCompletedQuestIds();
+
             foreach (MapAreaLock areaLock in areaLocks)
             {
-                areaLock.Refresh();
+                if (areaLock == null)
+                    continue;
+
+                if (IsAreaUnlockedByCloud(areaLock, unlockedAreaIds, completedQuestIds))
+                    areaLock.SetUnlocked(true);
+                else
+                    areaLock.Refresh();
             }
+        }
+
+        private static bool IsAreaUnlockedByCloud(
+            MapAreaLock areaLock,
+            HashSet<string> unlockedAreaIds,
+            HashSet<string> completedQuestIds)
+        {
+            if (areaLock == null)
+                return false;
+
+            if (unlockedAreaIds != null && unlockedAreaIds.Contains(areaLock.AreaId))
+                return true;
+
+            if (completedQuestIds == null || completedQuestIds.Count == 0)
+                return false;
+
+            foreach (string questId in completedQuestIds)
+            {
+                if (areaLock.HasRequiredQuest(questId))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static HashSet<string> GetCloudUnlockedAreaIds()
+        {
+            HashSet<string> ids = new(StringComparer.OrdinalIgnoreCase);
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem();
+            List<string> unlockedZones = cloudSaveSystem?.CurrentData?.progress?.unlockedZones;
+            if (unlockedZones == null)
+                return ids;
+
+            for (int i = 0; i < unlockedZones.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(unlockedZones[i]))
+                    ids.Add(unlockedZones[i]);
+            }
+
+            return ids;
+        }
+
+        private static HashSet<string> GetCloudCompletedQuestIds()
+        {
+            HashSet<string> ids = new(StringComparer.OrdinalIgnoreCase);
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem();
+            List<string> completedQuestIds = cloudSaveSystem?.CurrentData?.progress?.personalCompletedQuestIds;
+            if (completedQuestIds == null)
+                return ids;
+
+            for (int i = 0; i < completedQuestIds.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(completedQuestIds[i]))
+                    ids.Add(completedQuestIds[i]);
+            }
+
+            return ids;
+        }
+
+        private static CloudSaveSystem ResolveCloudSaveSystem()
+        {
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            return cloudSaveSystem != null
+                ? cloudSaveSystem
+                : FindFirstObjectByType<CloudSaveSystem>(FindObjectsInactive.Include);
         }
 
         private void RefreshPlayerMarkers()

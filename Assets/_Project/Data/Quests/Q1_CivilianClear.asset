@@ -10,21 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
-  m_Name: Q1_CivilianClear
+  m_Name: Q1_적 처치 임무
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q1
-  questName: "\uBBFC\uAC04 \uC9C0\uC5ED \uC18C\uD0D5"
-  description: "\uBBFC\uAC04 \uC9C0\uC5ED\uC5D0 \uC788\uB294 \uC801 10\uBA85\uC744
-    \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  questName: "적 처치 임무"
+  description: "아무 지역에서 적 10명을 처치 하십시오."
   objectives:
   - type: 0
-    targetID: Enemy_Zone1_Any
+    targetID: Enemy_Any
     requiredCount: 10
-    location: "\uBBFC\uAC04 \uC9C0\uC5ED"
+    location: "아무 지역"
   rewards:
   - type: 1
-    itemID: Weapon_Rare_Choice_Q1
+    itemID: Weapon_B90
     amount: 1
-  unlockZoneID: 
+  - type: 1
+    itemID: Ammo_SMG_BP
+    amount: 120
+  unlockZoneID: Stage1 Open
   prerequisiteQuestID: 
   isSideQuest: 0

@@ -359,7 +359,7 @@ namespace DeadZone.Systems.Raid
             AddEquipmentItemsToLobby(dto.equipmentItems, loadout.equipmentItems);
 
             List<ItemSaveDTO> rawQuickSlotItems = CreateLobbyQuickSlotItems(loadout.quickSlotItems);
-            List<ItemSaveDTO> validQuickSlotItems = CreateValidQuickSlotItems(rawQuickSlotItems, dto.inventoryItems);
+            List<ItemSaveDTO> validQuickSlotItems = CreateValidQuickSlotItems(rawQuickSlotItems);
             AddRange(dto.quickSlotItems, validQuickSlotItems);
         }
 
@@ -578,7 +578,7 @@ namespace DeadZone.Systems.Raid
             };
 
             IReadOnlyList<ItemSaveDTO> inventoryItems = dto.inventoryItems;
-            List<ItemSaveDTO> quickSlotItems = CreateValidQuickSlotItems(dto.quickSlotItems, dto.inventoryItems);
+            List<ItemSaveDTO> quickSlotItems = CreateValidQuickSlotItems(dto.quickSlotItems);
             List<ItemSaveDTO> ammoLookupItems = CreateAmmoLookupItems(dto.inventoryItems);
 
             if (inventoryItems != null)
@@ -832,39 +832,20 @@ namespace DeadZone.Systems.Raid
         }
 
         private static List<ItemSaveDTO> CreateValidQuickSlotItems(
-            IReadOnlyList<ItemSaveDTO> quickSlotItems,
-            IReadOnlyList<ItemSaveDTO> inventoryItems)
+            IReadOnlyList<ItemSaveDTO> quickSlotItems)
         {
             List<ItemSaveDTO> result = new();
             if (quickSlotItems == null || quickSlotItems.Count == 0)
                 return result;
 
-            Dictionary<string, int> availableCounts = new(System.StringComparer.OrdinalIgnoreCase);
-            if (inventoryItems != null)
-            {
-                for (int i = 0; i < inventoryItems.Count; i++)
-                {
-                    ItemSaveDTO inventoryItem = inventoryItems[i];
-                    if (inventoryItem == null || string.IsNullOrWhiteSpace(inventoryItem.itemId))
-                        continue;
-
-                    int stackCount = Mathf.Max(1, inventoryItem.stackCount);
-                    if (availableCounts.TryGetValue(inventoryItem.itemId, out int currentCount))
-                        availableCounts[inventoryItem.itemId] = currentCount + stackCount;
-                    else
-                        availableCounts.Add(inventoryItem.itemId, stackCount);
-                }
-            }
-
-            HashSet<string> assignedItemIds = new(System.StringComparer.OrdinalIgnoreCase);
+            HashSet<int> assignedSlotIndexes = new();
             for (int i = 0; i < quickSlotItems.Count; i++)
             {
                 ItemSaveDTO quickSlotItem = quickSlotItems[i];
+                int slotIndex = Mathf.Clamp(quickSlotItem?.x ?? -1, 0, 5);
                 if (quickSlotItem == null ||
                     string.IsNullOrWhiteSpace(quickSlotItem.itemId) ||
-                    !availableCounts.TryGetValue(quickSlotItem.itemId, out int availableCount) ||
-                    availableCount <= 0 ||
-                    !assignedItemIds.Add(quickSlotItem.itemId))
+                    !assignedSlotIndexes.Add(slotIndex))
                 {
                     continue;
                 }
@@ -874,10 +855,10 @@ namespace DeadZone.Systems.Raid
                     itemId = quickSlotItem.itemId,
                     instanceId = quickSlotItem.instanceId,
                     containerId = quickSlotItem.containerId,
-                    x = quickSlotItem.x,
+                    x = slotIndex,
                     y = quickSlotItem.y,
                     rotated = quickSlotItem.rotated,
-                    stackCount = Mathf.Clamp(quickSlotItem.stackCount, 1, availableCount),
+                    stackCount = Mathf.Max(1, quickSlotItem.stackCount),
                     currentDurability = Mathf.Max(0f, quickSlotItem.currentDurability),
                     currentAmmo = Mathf.Max(0, quickSlotItem.currentAmmo)
                 });

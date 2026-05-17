@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
-  m_Name: Q3_WarehouseBoss
+  m_Name: Q3_창고 지역 보스 처치
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q3
-  questName: "\uCC3D\uACE0 \uBCF4\uC2A4 \uCC98\uCE58"
-  description: "\uCC3D\uACE0\uC5D0 \uC788\uB294 \uBCF4\uC2A4\uB97C \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  questName: "창고 지역 보스 처치"
+  description: "창고 지역 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_Warehouse
     requiredCount: 1
-    location: "\uCC3D\uACE0"
+    location: "창고 지역"
   rewards: []
-  unlockZoneID: MapA_Zone3
+  unlockZoneID: Stage3 Open
   prerequisiteQuestID: Q2
   isSideQuest: 0

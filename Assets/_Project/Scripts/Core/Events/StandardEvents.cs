@@ -165,6 +165,33 @@ namespace DeadZone.Core
         public FixedString64Bytes itemId;
     }
 
+    public struct InventorySlotMovedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public FixedString64Bytes itemId;
+        public byte fromGridX;
+        public byte fromGridY;
+        public byte toGridX;
+        public byte toGridY;
+    }
+
+    public struct QuickSlotChangedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public byte slotIndex;
+        public FixedString64Bytes previousItemId;
+        public FixedString64Bytes nextItemId;
+        public ushort stackCount;
+    }
+
+    public struct EquipmentSlotChangedEvent : IGameEvent
+    {
+        public ulong clientId;
+        public byte targetSlot;
+        public FixedString64Bytes previousItemId;
+        public FixedString64Bytes nextItemId;
+    }
+
     // ShootingSystem이 플레이어와 총구 사이의 장애물을 감지해 투사체 대신 벽 피격 FX를 출력해야 할 때 발행된다.
     public struct BlockedShotImpactEvent : IGameEvent
     {
@@ -390,6 +417,8 @@ namespace DeadZone.Core
     {
         public ulong spectatorClientId;
         public ulong newTargetClientId;
+        public bool hasTarget;
+        public PlayerState targetState;
     }
 
     //테스트

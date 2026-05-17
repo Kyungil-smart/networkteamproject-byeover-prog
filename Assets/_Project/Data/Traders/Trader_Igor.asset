@@ -20,11 +20,41 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 179fe61ddb5d6b84c96f8ab664f34ef3, type: 2}
     basePrice: 2400
     requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: cacbc3e1917fe7f4fa125a54f764f63a, type: 2}
+    basePrice: 3000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: ed0275b28b1729f41a5906cf6b5c66e5, type: 2}
+    basePrice: 3000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: 2aa57e8b45d61c046b22e54b97afaebf, type: 2}
+    basePrice: 3000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: c818b46c41df5a248929b9fb7ef232eb, type: 2}
+    basePrice: 3000
+    requiredCommLevel: 1
+  - item: {fileID: 11400000, guid: cf8c09ee37545964db95d4c746cf1965, type: 2}
+    basePrice: 3000
+    requiredCommLevel: 1
   - item: {fileID: 11400000, guid: 4e7f75c1d36e7004aa003eee4af8517c, type: 2}
     basePrice: 10000
     requiredCommLevel: 2
   - item: {fileID: 11400000, guid: 05fed358211994c48bb87d8052ac969f, type: 2}
     basePrice: 13000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: 6682fefcfde8e664a85942ba69578c43, type: 2}
+    basePrice: 6000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: cd9b237be8e599849b82f50bbba2e135, type: 2}
+    basePrice: 6000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: e491f7c867712204e8d52cf0913e7e68, type: 2}
+    basePrice: 6000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: a20e433692afb9442b6f7297c106f0ea, type: 2}
+    basePrice: 6000
+    requiredCommLevel: 2
+  - item: {fileID: 11400000, guid: b63d7691549605a4d96c7c2d42f17b99, type: 2}
+    basePrice: 6000
     requiredCommLevel: 2
   - item: {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
     basePrice: 24000
@@ -34,5 +64,20 @@ MonoBehaviour:
     requiredCommLevel: 3
   - item: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}
     basePrice: 30000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 5a3b383a31ce9eb4d85c5a09f712b23d, type: 2}
+    basePrice: 12000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 99b5bf4a6b5933d4ea1838314baa03ea, type: 2}
+    basePrice: 12000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 3ecf6f40c28770045886030280d9c2ef, type: 2}
+    basePrice: 12000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: eabc0fa96f2e3e040a7a92ae8e13d191, type: 2}
+    basePrice: 12000
+    requiredCommLevel: 3
+  - item: {fileID: 11400000, guid: 3b1bc2fc72ec2cd41b242b6a626047b5, type: 2}
+    basePrice: 12000
     requiredCommLevel: 3
   sellMultiplier: 0.5

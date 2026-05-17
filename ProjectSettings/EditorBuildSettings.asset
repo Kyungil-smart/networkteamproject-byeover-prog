@@ -26,6 +26,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/HideOut.unity
     guid: c2da797d8183f754b8ee82e46117cfc9
+  - enabled: 1
+    path: Assets/Scenes/RaidResult.unity
+    guid: 79bc355322006a14e91fee34dd054c3a
+  - enabled: 1
+    path: Assets/Scenes/Ending.unity
+    guid: 59bbcb589a3e4c248bc3cc2ad553ce18
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

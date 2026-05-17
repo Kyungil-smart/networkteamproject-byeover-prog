@@ -357,10 +357,11 @@ namespace DeadZone.Actors.UI
             if (item == null)
                 return string.Empty;
 
-            if (!string.IsNullOrWhiteSpace(item.displayName))
-                return item.displayName;
+            string displayName = !string.IsNullOrWhiteSpace(item.displayName)
+                ? item.displayName
+                : !string.IsNullOrWhiteSpace(item.itemID) ? item.itemID : item.name;
 
-            return !string.IsNullOrWhiteSpace(item.itemID) ? item.itemID : item.name;
+            return item is AmmoDataSO ? $"{displayName} x30" : displayName;
         }
     }
 }

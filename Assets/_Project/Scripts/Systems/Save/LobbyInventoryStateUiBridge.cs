@@ -330,6 +330,7 @@ namespace DeadZone.Systems.Save
             if (walletSystem != null && inventoryState.HasCredits)
                 walletSystem.SetCreditsLocalTest(inventoryState.Credits);
 
+            ApplyLobbyBagLevelFromEquipment(inventoryState.EquipmentItems, database);
             ApplyItemSlots(inventorySlotsRoot, inventoryState.InventoryItems, database, InventoryContainerId);
             ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database, StashContainerId);
             ApplyQuickSlotItems(quickSlotSlotsRoot, inventoryState.QuickSlotItems, database);
@@ -337,6 +338,49 @@ namespace DeadZone.Systems.Save
                 ApplyItemSlots(stashSlotsRoot, inventoryState.StashItems, database, StashContainerId);
             ApplyEquipmentSlots(equipmentSlotsRoot, inventoryState.EquipmentItems, database);
             ApplyItemSlots(quickSlotsRoot, inventoryState.QuickSlotItems, database, QuickSlotContainerId);
+        }
+
+        private void ApplyLobbyBagLevelFromEquipment(
+            IReadOnlyList<EquipmentSaveDTO> equipmentItems,
+            IItemDatabase database)
+        {
+            LobbyPlayerInventoryUI lobbyInventory = inventorySlotsRoot != null
+                ? inventorySlotsRoot.GetComponentInParent<LobbyPlayerInventoryUI>(true)
+                : null;
+
+            if (lobbyInventory == null && inventorySlotsRoot != null)
+                lobbyInventory = inventorySlotsRoot.GetComponentInChildren<LobbyPlayerInventoryUI>(true);
+
+            if (lobbyInventory == null)
+                lobbyInventory = FindFirstObjectByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include);
+
+            if (lobbyInventory == null)
+                return;
+
+            int bagLevel = 0;
+            if (equipmentItems != null)
+            {
+                for (int i = 0; i < equipmentItems.Count; i++)
+                {
+                    EquipmentSaveDTO equipmentItem = equipmentItems[i];
+                    if (equipmentItem == null ||
+                        string.IsNullOrWhiteSpace(equipmentItem.slotId) ||
+                        string.IsNullOrWhiteSpace(equipmentItem.itemId) ||
+                        !equipmentItem.slotId.Contains("Backpack", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    BackpackDataSO backpackData = database.GetById<BackpackDataSO>(equipmentItem.itemId);
+                    if (backpackData != null)
+                    {
+                        bagLevel = Mathf.Clamp(backpackData.backpackLevel, 0, 4);
+                        break;
+                    }
+                }
+            }
+
+            lobbyInventory.SetBagLevel(bagLevel);
         }
 
         private static bool ApplyStashGridSlots(
@@ -618,41 +662,31 @@ namespace DeadZone.Systems.Save
                 if (quickSlotItems == null || quickSlotItems.Count == 0)
                     return false;
 
-                Dictionary<string, int> availableCounts = new(System.StringComparer.OrdinalIgnoreCase);
-                if (inventoryItems != null)
-                {
-                    for (int i = 0; i < inventoryItems.Count; i++)
-                    {
-                        ItemSaveDTO item = inventoryItems[i];
-                        if (item == null || string.IsNullOrWhiteSpace(item.itemId))
-                            continue;
-
-                        int stackCount = Mathf.Max(1, item.stackCount);
-                        if (availableCounts.TryGetValue(item.itemId, out int currentCount))
-                            availableCounts[item.itemId] = currentCount + stackCount;
-                        else
-                            availableCounts.Add(item.itemId, stackCount);
-                    }
-                }
-
                 bool changed = false;
-                HashSet<string> assignedItemIds = new(System.StringComparer.OrdinalIgnoreCase);
+                HashSet<int> assignedSlotIndices = new();
 
                 for (int i = quickSlotItems.Count - 1; i >= 0; i--)
                 {
                     ItemSaveDTO quickSlotItem = quickSlotItems[i];
+                    int slotIndex = Mathf.Clamp(
+                        ToLinearSlotIndex(quickSlotItem?.x ?? 0, quickSlotItem?.y ?? 0, QuickSlotGridWidth),
+                        0,
+                        QuickSlotGridWidth - 1);
+
                     if (quickSlotItem == null ||
                         string.IsNullOrWhiteSpace(quickSlotItem.itemId) ||
-                        !availableCounts.TryGetValue(quickSlotItem.itemId, out int availableCount) ||
-                        availableCount <= 0 ||
-                        !assignedItemIds.Add(quickSlotItem.itemId))
+                        !assignedSlotIndices.Add(slotIndex))
                     {
                         quickSlotItems.RemoveAt(i);
                         changed = true;
                         continue;
                     }
 
-                    int safeStackCount = Mathf.Clamp(quickSlotItem.stackCount, 1, availableCount);
+                    quickSlotItem.containerId = QuickSlotContainerId;
+                    quickSlotItem.x = slotIndex;
+                    quickSlotItem.y = 0;
+
+                    int safeStackCount = Mathf.Max(1, quickSlotItem.stackCount);
                     if (quickSlotItem.stackCount != safeStackCount)
                     {
                         quickSlotItem.stackCount = safeStackCount;

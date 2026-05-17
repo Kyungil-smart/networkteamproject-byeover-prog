@@ -683,6 +683,20 @@ MonoBehaviour:
     TransitionDuration: 0.1
     TriggerNameHash: -1525363869
     TransitionIndex: 1
+  - IsCrossFadeExit: 0
+    Layer: 1
+    OriginatingState: -637051596
+    DestinationState: -118708495
+    TransitionDuration: 0.05
+    TriggerNameHash: -118708495
+    TransitionIndex: 1
+  - IsCrossFadeExit: 0
+    Layer: 1
+    OriginatingState: -637051596
+    DestinationState: -1525363869
+    TransitionDuration: 0.1
+    TriggerNameHash: -1525363869
+    TransitionIndex: 2
   AnimatorParameterEntries:
     ParameterEntries:
     - name: Speed
@@ -739,6 +753,7 @@ MonoBehaviour:
   flashColor: {r: 1, g: 0.28773582, b: 0.28773582, a: 1}
   flashDuration: 0.1
   maxSpeedForNormalize: 0
+  useDefaultWeaponCategory: 1
   weaponTypeIndex: 0
 --- !u!114 &6274818321971710425
 MonoBehaviour:
@@ -798,6 +813,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1216
   enemyBulletPrefab: {fileID: 7265609946348786657, guid: e60522a8903c9324995f96d86dd3fe8c, type: 3}
+  projectileVisualMaxLifetime: 0.35
   minimumReactionTime: 1.5
   enemyRangeMultiplier: 0.65
   maxEnemyEffectiveRange: 24
@@ -860,6 +876,8 @@ MonoBehaviour:
   detourDistance: 4
   stuckCheckInterval: 0.5
   stuckMoveThreshold: 0.15
+  hardStuckRecoveryThreshold: 3
+  hardStuckRecoveryRadius: 3
   coverSearchDuration: 10
   searchPointWaitTime: 0.8
   coverCornerPadding: 3
@@ -883,6 +901,12 @@ MonoBehaviour:
   footstepInterval: 0.55
   footstepMinSpeed: 0.15
   footstepVolumeMultiplier: 0.9
+  alertIndicatorRoot: {fileID: 0}
+  alertIndicatorDuration: 0.55
+  alertIndicatorStartScale: 0.18
+  alertIndicatorEndScale: 0.45
+  alertIndicatorHeight: 1.8
+  enemyWeaponVisual: {fileID: 2450661563046473321}
   State:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -3557,6 +3581,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 3793824576257838176}
+  - {fileID: 8284423736034876483}
   - {fileID: 7489591256997111823}
   m_Father: {fileID: 4077195986647316}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3574,11 +3600,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.EnemyWeaponVisual
   autoEquipFromSO: 1
   connectMuzzleToShooter: 1
-  weaponPrefabOverride: {fileID: 7247205917096702570, guid: 627055ce2b9d7694bb6f23ad66e27c1e, type: 3}
+  weaponHolder: {fileID: 5664201741075324417}
+  handgunMount: {fileID: 3793824576257838176}
+  rifleLikeMount: {fileID: 8284423736034876483}
+  fallbackMuzzle: {fileID: 7489591256997111823}
+  weaponPrefabOverride: {fileID: 0}
   muzzlePointName: MuzzlePoint
   positionOffset: {x: 0, y: 0, z: 0}
   rotationOffset: {x: 0, y: 0, z: 0}
   scale: {x: 1, y: 1, z: 1}
+--- !u!1 &1304395897410773649
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3793824576257838176}
+  m_Layer: 9
+  m_Name: HandgunMount
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3793824576257838176
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1304395897410773649}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.328, y: 0.25, z: 0.101}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5664201741075324417}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1379151816451736462
 GameObject:
   m_ObjectHideFlags: 0
@@ -5941,3 +6002,34 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.0004054904, y: 0.8454419, z: -0.05201415}
     m_Extent: {x: 1.02213, y: 0.94312996, z: 0.26729244}
   m_DirtyAABB: 0
+--- !u!1 &9065521549743569035
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8284423736034876483}
+  m_Layer: 9
+  m_Name: RifleLikeMount
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8284423736034876483
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9065521549743569035}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.208, y: 0.177, z: 0.028}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5664201741075324417}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

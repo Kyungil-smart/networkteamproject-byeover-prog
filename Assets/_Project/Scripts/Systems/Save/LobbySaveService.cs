@@ -39,6 +39,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private string lastJson;
 
         private bool isCloudSaveRunning;
+        private bool hasPendingCloudSaveRequest;
         private Coroutine pendingCloudLoadCoroutine;
         private bool isInitialLoadCompleted;
         private string lastLoadedLocalJsonPath;
@@ -123,10 +124,34 @@ namespace DeadZone.Systems.Save
         {
             if (isCloudSaveRunning)
             {
-                Debug.LogWarning("[LobbySaveService] Server save is already running.", this);
+                hasPendingCloudSaveRequest = true;
+                Debug.LogWarning("[LobbySaveService] Server save is already running. Queued one more save with the latest state.", this);
                 return false;
             }
 
+            isCloudSaveRunning = true;
+            bool anySuccess = false;
+
+            try
+            {
+                do
+                {
+                    hasPendingCloudSaveRequest = false;
+                    bool success = await SaveLobbyDataToCloudOnceAsync();
+                    anySuccess |= success;
+                }
+                while (hasPendingCloudSaveRequest);
+
+                return anySuccess;
+            }
+            finally
+            {
+                isCloudSaveRunning = false;
+            }
+        }
+
+        private async Task<bool> SaveLobbyDataToCloudOnceAsync()
+        {
             Debug.Log("[Save] Save requested. reason=LobbySaveService.SaveLobbyDataToCloudAsync", this);
 
             CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
@@ -161,25 +186,16 @@ namespace DeadZone.Systems.Save
                 return false;
             }
 
-            isCloudSaveRunning = true;
+            bool success = await saveSystem.SaveLobbyDataAsync(dto);
+            Debug.Log(success
+                ? "[LobbySaveService] Server save success"
+                : "[LobbySaveService] Server save failed", this);
 
-            try
-            {
-                bool success = await saveSystem.SaveLobbyDataAsync(dto);
-                Debug.Log(success
-                    ? "[LobbySaveService] Server save success"
-                    : "[LobbySaveService] Server save failed", this);
+            SaveLobbyDataToLocalJson(
+                dto,
+                success ? "Server save success sync" : "Server save failed fallback");
 
-                SaveLobbyDataToLocalJson(
-                    dto,
-                    success ? "Server save success sync" : "Server save failed fallback");
-
-                return success;
-            }
-            finally
-            {
-                isCloudSaveRunning = false;
-            }
+            return success;
         }
 
         [Button("Load Last JSON")]
@@ -277,6 +293,8 @@ namespace DeadZone.Systems.Save
 
         private void ApplyLobbySaveDTO(LobbySaveDTO dto, bool preserveRuntimeInventoryOnEmptyInput)
         {
+            RemoveDeprecatedItems(dto);
+
             if (inventoryState != null)
             {
                 if (dto.hasCredits)
@@ -476,6 +494,7 @@ namespace DeadZone.Systems.Save
             else
                 Debug.LogWarning("[LobbySaveService] FacilitySaveCollector missing.", this);
 
+            RemoveDeprecatedItems(dto);
             return dto;
         }
 
@@ -514,7 +533,77 @@ namespace DeadZone.Systems.Save
             else if (facilitySaveCollector != null)
                 facilitySaveCollector.Collect(dto);
 
+            RemoveDeprecatedItems(dto);
             return dto;
+        }
+
+        private static void RemoveDeprecatedItems(LobbySaveDTO dto)
+        {
+            if (dto == null)
+                return;
+
+            int removed = 0;
+            removed += RemoveDeprecatedItemSaves(dto.inventoryItems);
+            removed += RemoveDeprecatedItemSaves(dto.stashItems);
+            removed += RemoveDeprecatedItemSaves(dto.quickSlotItems);
+            removed += RemoveDeprecatedEquipmentSaves(dto.equipmentItems);
+
+            if (removed > 0)
+                Debug.LogWarning($"[LobbySaveService] Deprecated item save entries removed. count={removed}");
+        }
+
+        private static int RemoveDeprecatedItemSaves(List<ItemSaveDTO> items)
+        {
+            if (items == null)
+                return 0;
+
+            int removed = 0;
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                ItemSaveDTO item = items[i];
+                if (item == null || IsDeprecatedItemId(item.itemId))
+                {
+                    items.RemoveAt(i);
+                    removed++;
+                }
+            }
+
+            return removed;
+        }
+
+        private static int RemoveDeprecatedEquipmentSaves(List<EquipmentSaveDTO> items)
+        {
+            if (items == null)
+                return 0;
+
+            int removed = 0;
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                EquipmentSaveDTO item = items[i];
+                if (item == null || IsDeprecatedItemId(item.itemId))
+                {
+                    items.RemoveAt(i);
+                    removed++;
+                    continue;
+                }
+
+                if (IsDeprecatedItemId(item.loadedAmmoId))
+                {
+                    item.loadedAmmoId = string.Empty;
+                    item.currentAmmo = 0;
+                    removed++;
+                }
+            }
+
+            return removed;
+        }
+
+        private static bool IsDeprecatedItemId(string itemId)
+        {
+            return string.Equals(itemId, "Ammo_AP", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(itemId, "ITM_Ammo_AP", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(itemId, "USDollars", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(itemId, "ITM_USDollars", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private IEnumerator LoadLobbyDataFromCloudAfterUiReady()

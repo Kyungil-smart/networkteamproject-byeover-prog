@@ -4,9 +4,7 @@
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// Dead 상태 입력. 이동 키는 프리캠용 시선 힌트로 SpectatorController에 전달되지만
-    /// 캐릭터 제어는 일어나지 않는다.
-    /// 발사/조준/재장전은 아무 것도 하지 않는다. Q/E로 팀원 전환.
+    /// Dead 상태 입력. 캐릭터 제어와 전투 입력은 막고, Q/E 팀원 관전 전환만 허용한다.
     /// </summary>
     public class SpectatorInputContext : IPlayerInputContext
     {
@@ -19,7 +17,6 @@ namespace DeadZone.Actors
 
         public void Tick(Vector2 move, Vector2 look, Vector2 mousePos)
         {
-            if (spectator != null) spectator.SetFreeCamInput(move, look);
         }
 
         public void OnFireInput(bool pressedThisFrame, bool held, Vector2 mousePos) { }
@@ -32,6 +29,6 @@ namespace DeadZone.Actors
 
         public void OnSpectatorNext() => spectator?.SwitchTo(+1);
         public void OnSpectatorPrev() => spectator?.SwitchTo(-1);
-        public void OnSpectatorToggleMode() => spectator?.ToggleFreeCam();
+        public void OnSpectatorToggleMode() { }
     }
 }

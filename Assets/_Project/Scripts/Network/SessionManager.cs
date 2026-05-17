@@ -72,13 +72,31 @@ namespace DeadZone.Network
 
         public bool StartHost()
         {
-            if (NetworkManager.Singleton == null)
+            NetworkManager networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
             {
                 Debug.LogError("[SessionManager] NetworkManager.Singleton이 null이다");
                 return false;
             }
 
-            bool started = NetworkManager.Singleton.StartHost();
+            if (networkManager.IsListening)
+            {
+                if (networkManager.IsServer)
+                {
+                    currentPartyId = string.IsNullOrWhiteSpace(currentPartyId)
+                        ? "LocalHost"
+                        : currentPartyId;
+                    Debug.LogWarning(
+                        $"[SessionManager] Host start ignored because NetworkManager is already listening. partyId={currentPartyId}",
+                        this);
+                    return true;
+                }
+
+                Debug.LogWarning("[SessionManager] Host start blocked because this instance is already connected as a client.", this);
+                return false;
+            }
+
+            bool started = networkManager.StartHost();
             if (started)
             {
                 currentPartyId = "LocalHost";

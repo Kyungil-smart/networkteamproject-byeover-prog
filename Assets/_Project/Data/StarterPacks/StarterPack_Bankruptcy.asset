@@ -58,3 +58,11 @@ MonoBehaviour:
     amount: 240
     durabilityRatio: 1
     currentAmmo: 0
+  - item: {fileID: 11400000, guid: 0dde25b1684935d40b9bff5e224fdad2, type: 2}
+    amount: 1
+    durabilityRatio: 1
+    currentAmmo: 0
+  - item: {fileID: 11400000, guid: 9e9ea9c5bdf17a74ea6d6c04903839b6, type: 2}
+    amount: 1
+    durabilityRatio: 1
+    currentAmmo: 0

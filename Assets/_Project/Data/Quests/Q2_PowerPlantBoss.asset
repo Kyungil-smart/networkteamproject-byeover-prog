@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
-  m_Name: Q2_PowerPlantBoss
+  m_Name: Q2_발전 시설 보스 처치
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q2
-  questName: "\uBC1C\uC804\uC18C \uBCF4\uC2A4 \uCC98\uCE58"
-  description: "\uBC1C\uC804\uC18C\uC5D0 \uC788\uB294 \uBCF4\uC2A4\uB97C \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  questName: "발전 시설 보스 처치"
+  description: "발전 시설에 있는 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_PowerPlant
     requiredCount: 1
-    location: "\uBC1C\uC804\uC18C"
+    location: "발전 시설"
   rewards: []
-  unlockZoneID: MapA_Zone2
+  unlockZoneID: Stage2 Open
   prerequisiteQuestID: Q1
   isSideQuest: 0

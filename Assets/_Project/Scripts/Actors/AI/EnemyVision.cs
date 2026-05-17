@@ -84,8 +84,14 @@ namespace DeadZone.Actors
 
             if (Time.time < nextCheckTime)
             {
-                target = cachedTarget;
-                return cachedTarget != null;
+                if (IsValidTarget(cachedTarget))
+                {
+                    target = cachedTarget;
+                    return true;
+                }
+
+                cachedTarget = null;
+                return false;
             }
             nextCheckTime = Time.time + checkInterval;
 
@@ -103,6 +109,9 @@ namespace DeadZone.Actors
                 if (c == null) continue;
 
                 Transform candidate = ResolveTargetTransform(c);
+                if (!IsValidTarget(candidate))
+                    continue;
+
                 if (CanSee(candidate))
                 {
                     float dist = Vector3.Distance(transform.position, candidate.position);
@@ -132,6 +141,7 @@ namespace DeadZone.Actors
         public bool CanSee(Transform candidate)
         {
             if (candidate == null) return false;
+            if (!IsValidTarget(candidate)) return false;
 
             Vector3 origin = GetEyePosition();
             Vector3 dir = candidate.position - origin;
@@ -143,7 +153,7 @@ namespace DeadZone.Actors
             // FOV 각도 체크
             if (Vector3.Angle(transform.forward, dir) > fov * 0.5f) return false;
 
-            return HasLineOfSight(origin, candidate.position, dist);
+            return HasLineOfSight(origin, candidate, dist);
         }
 
         // ═══════════════════════════════
@@ -176,6 +186,9 @@ namespace DeadZone.Actors
                 if (c == null) continue;
 
                 Transform candidate = ResolveTargetTransform(c);
+                if (!IsValidTarget(candidate))
+                    continue;
+
                 float dist = Vector3.Distance(transform.position, candidate.position);
 
                 // 이미 전방 FOV에서 감지 가능한 대상은 스킵 (중복 방지)
@@ -187,7 +200,7 @@ namespace DeadZone.Actors
                 {
                     Vector3 origin = GetEyePosition();
                     Vector3 dir = candidate.position - origin;
-                    if (!HasLineOfSight(origin, candidate.position, dir.magnitude))
+                    if (!HasLineOfSight(origin, candidate, dir.magnitude))
                         continue;
                 }
 
@@ -218,12 +231,41 @@ namespace DeadZone.Actors
                 : transform.position + Vector3.up * 1.6f;
         }
 
-        private bool HasLineOfSight(Vector3 origin, Vector3 targetPosition, float distance)
+        private bool HasLineOfSight(Vector3 origin, Transform target, float distance)
         {
             if (distance <= 0.01f) return true;
 
+            if (target == null)
+                return false;
+
+            Vector3 targetPosition = target.position;
             Vector3 direction = (targetPosition - origin).normalized;
-            return !Physics.Raycast(origin, direction, distance, obstacleMask);
+            if (Physics.Raycast(origin, direction, distance, obstacleMask, QueryTriggerInteraction.Ignore))
+                return false;
+
+            RaycastHit[] hits = Physics.RaycastAll(origin, direction, distance, ~0, QueryTriggerInteraction.Ignore);
+            if (hits == null || hits.Length == 0)
+                return true;
+
+            System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Collider hitCollider = hits[i].collider;
+                if (hitCollider == null)
+                    continue;
+
+                Transform hitTransform = hitCollider.transform;
+                if (hitTransform == transform || hitTransform.IsChildOf(transform))
+                    continue;
+
+                if (hitTransform == target || hitTransform.IsChildOf(target))
+                    return true;
+
+                return false;
+            }
+
+            return true;
         }
 
         private Transform ResolveTargetTransform(Collider targetCollider)
@@ -235,6 +277,15 @@ namespace DeadZone.Actors
             return targetCollider.attachedRigidbody != null
                 ? targetCollider.attachedRigidbody.transform
                 : targetCollider.transform;
+        }
+
+        private static bool IsValidTarget(Transform candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            PlayerHealthSystem health = candidate.GetComponentInParent<PlayerHealthSystem>();
+            return health != null && health.IsAlive;
         }
 
 #if UNITY_EDITOR

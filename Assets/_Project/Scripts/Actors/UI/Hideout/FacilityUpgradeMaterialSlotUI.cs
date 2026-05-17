@@ -6,7 +6,7 @@ using DeadZone.Core;
 
 namespace DeadZone.Actors.UI.Hideout
 {
-    // ¾÷±×·¹ÀÌµå¿¡ ÇÊ¿äÇÑ Àç·á ÇÏ³ªÀÇ ¾ÆÀÌÄÜ, ÀÌ¸§, º¸À¯/ÇÊ¿ä ¼ö·®À» Ç¥½Ã
+    // ì—…ê·¸ë ˆì´ë“œì— í•„ìš”í•œ ìž¬ë£Œ í•˜ë‚˜ì˜ ì•„ì´ì½˜, ì´ë¦„, ë³´ìœ /í•„ìš” ìˆ˜ëŸ‰ì„ í‘œì‹œí•©ë‹ˆë‹¤.
     [DisallowMultipleComponent]
     public sealed class FacilityUpgradeMaterialSlotUI : MonoBehaviour
     {
@@ -20,14 +20,17 @@ namespace DeadZone.Actors.UI.Hideout
         [SerializeField]
         private TMP_Text amountText;
 
-        [Header("»ö»ó")]
+        [Header("ìƒ‰ìƒ")]
         [SerializeField]
         private Color enoughColor = Color.white;
 
         [SerializeField]
         private Color shortageColor = new Color(1f, 0.25f, 0.25f);
 
-        public void Set(ItemDataSO item, int ownedAmount, int requiredAmount)
+        [SerializeField]
+        private Color inactiveColor = new Color(0.55f, 0.65f, 0.75f);
+
+        public void Set(ItemDataSO item, int ownedAmount, int requiredAmount, bool forceInactive = false)
         {
             if (item == null)
             {
@@ -36,20 +39,33 @@ namespace DeadZone.Actors.UI.Hideout
             }
 
             bool enough = ownedAmount >= requiredAmount;
+            bool emphasize = enough && !forceInactive;
 
             if (iconImage != null)
             {
                 iconImage.sprite = item.icon;
                 iconImage.enabled = item.icon != null;
+                iconImage.color = forceInactive ? inactiveColor : Color.white;
             }
 
             if (itemNameText != null)
-                itemNameText.text = item.itemID;
+            {
+                itemNameText.text = !string.IsNullOrWhiteSpace(item.displayName)
+                    ? item.displayName
+                    : item.itemID;
+                itemNameText.color = forceInactive ? inactiveColor : enoughColor;
+                itemNameText.fontStyle = emphasize ? FontStyles.Bold : FontStyles.Normal;
+            }
 
             if (amountText != null)
             {
                 amountText.text = $"{ownedAmount}/{requiredAmount}";
-                amountText.color = enough ? enoughColor : shortageColor;
+                amountText.color = forceInactive
+                    ? inactiveColor
+                    : enough
+                        ? enoughColor
+                        : shortageColor;
+                amountText.fontStyle = emphasize ? FontStyles.Bold : FontStyles.Normal;
             }
 
             gameObject.SetActive(true);
@@ -61,13 +77,20 @@ namespace DeadZone.Actors.UI.Hideout
             {
                 iconImage.sprite = null;
                 iconImage.enabled = false;
+                iconImage.color = Color.white;
             }
 
             if (itemNameText != null)
+            {
                 itemNameText.text = string.Empty;
+                itemNameText.fontStyle = FontStyles.Normal;
+            }
 
             if (amountText != null)
+            {
                 amountText.text = string.Empty;
+                amountText.fontStyle = FontStyles.Normal;
+            }
 
             gameObject.SetActive(false);
         }
