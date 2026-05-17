@@ -22,8 +22,8 @@ MonoBehaviour:
   defaultWeapon: {fileID: 11400000, guid: 2fbf9be39f6fcc245894b4b70b10ade4, type: 2}
   defaultAmmo: {fileID: 11400000, guid: 6682fefcfde8e664a85942ba69578c43, type: 2}
   penetrationModifier: 0
-  damageMultiplier: 0.7
-  fireInterval: 0.5
+  damageMultiplier: 0.84
+  fireInterval: 0.45
   burstSize: 5
   burstRestDelay: 0.4
   spreadAngleMin: 0.3

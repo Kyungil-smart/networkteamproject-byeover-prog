@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 using DeadZone.Core;
@@ -32,13 +32,13 @@ namespace DeadZone.Actors
         [SerializeField, Min(0f)] private float medicalHealthBonusPerLevel = 5f;
         [SerializeField, Min(0f)] private float kitchenStaminaBonusPerLevel = 5f;
         [SerializeField, Min(0f)] private float bedStaminaBonusPerLevel = 5f;
-        [SerializeField, Min(0f)] private float gymCarryWeightBonusPerLevelKg = 7.5f;
+        [SerializeField, Min(0f)] private float gymHealthBonusPerLevel = 5f;
 
         [Header("실행 중 보너스")]
         [SerializeField] private float medicalHealthBonus;
         [SerializeField] private float kitchenStaminaBonus;
         [SerializeField] private float bedStaminaBonus;
-        [SerializeField] private float gymCarryWeightBonusKg;
+        [SerializeField] private float gymHealthBonus;
 
         [Header("로그")]
         [SerializeField] private bool logBonusChanged = true;
@@ -46,14 +46,16 @@ namespace DeadZone.Actors
         public float MedicalHealthBonus => medicalHealthBonus;
         public float KitchenStaminaBonus => kitchenStaminaBonus;
         public float BedStaminaBonus => bedStaminaBonus;
-        public float GymCarryWeightBonusKg => gymCarryWeightBonusKg;
+        public float GymHealthBonus => gymHealthBonus;
+        public float GymCarryWeightBonusKg => 0f;
         public float TotalStaminaBonus => kitchenStaminaBonus + bedStaminaBonus;
+        public float TotalHealthBonus => medicalHealthBonus + gymHealthBonus;
 
         private int EffectiveBonusStartLevel => bonusConfig != null ? bonusConfig.BonusStartLevel : Mathf.Max(1, bonusStartLevel);
         private float EffectiveMedicalHealthBonusPerLevel => bonusConfig != null ? bonusConfig.MedicalHealthBonusPerLevel : Mathf.Max(0f, medicalHealthBonusPerLevel);
         private float EffectiveKitchenStaminaBonusPerLevel => bonusConfig != null ? bonusConfig.KitchenStaminaBonusPerLevel : Mathf.Max(0f, kitchenStaminaBonusPerLevel);
         private float EffectiveBedStaminaBonusPerLevel => bonusConfig != null ? bonusConfig.BedStaminaBonusPerLevel : Mathf.Max(0f, bedStaminaBonusPerLevel);
-        private float EffectiveGymCarryWeightBonusPerLevelKg => bonusConfig != null ? bonusConfig.GymCarryWeightBonusPerLevelKg : Mathf.Max(0f, gymCarryWeightBonusPerLevelKg);
+        private float EffectiveGymHealthBonusPerLevel => bonusConfig != null ? bonusConfig.GymHealthBonusPerLevel : Mathf.Max(0f, gymHealthBonusPerLevel);
 
         private void Reset()
         {
@@ -146,11 +148,11 @@ namespace DeadZone.Actors
             medicalHealthBonus = CalculateBonus(housingProgress.GetLevel(FacilityType.Medical), EffectiveMedicalHealthBonusPerLevel);
             kitchenStaminaBonus = CalculateBonus(housingProgress.GetLevel(FacilityType.Kitchen), EffectiveKitchenStaminaBonusPerLevel);
             bedStaminaBonus = CalculateBonus(housingProgress.GetLevel(FacilityType.Bed), EffectiveBedStaminaBonusPerLevel);
-            gymCarryWeightBonusKg = CalculateBonus(housingProgress.GetLevel(FacilityType.Gym), EffectiveGymCarryWeightBonusPerLevelKg);
+            gymHealthBonus = CalculateBonus(housingProgress.GetLevel(FacilityType.Gym), EffectiveGymHealthBonusPerLevel);
 
             ApplyHealthBonus();
             ApplyStaminaBonus();
-            ApplyCarryWeightBonus();
+            ResetCarryWeightBonus();
 
             if (logBonusChanged)
             {
@@ -158,9 +160,9 @@ namespace DeadZone.Actors
                     $"[PlayerHousingBonusReceiver] 개인 하우징 보너스 적용 완료\n" +
                     $"클라이언트 ID: {OwnerClientId}\n" +
                     $"의료시설 최대 HP: +{medicalHealthBonus:0.##}\n" +
+                    $"헬스장 최대 HP: +{gymHealthBonus:0.##}\n" +
                     $"주방 스태미너: +{kitchenStaminaBonus:0.##}\n" +
-                    $"침대 스태미너: +{bedStaminaBonus:0.##}\n" +
-                    $"헬스장 소지 무게: +{gymCarryWeightBonusKg:0.##}kg",
+                    $"침대 스태미너: +{bedStaminaBonus:0.##}",
                     this);
             }
         }
@@ -184,7 +186,7 @@ namespace DeadZone.Actors
                 return;
             }
 
-            healthSystem.ApplyHousingMaxHpBonus(medicalHealthBonus, fillHpWhenMaxHpIncreased);
+            healthSystem.ApplyHousingMaxHpBonus(TotalHealthBonus, fillHpWhenMaxHpIncreased);
         }
 
         private void ApplyStaminaBonus()
@@ -198,15 +200,12 @@ namespace DeadZone.Actors
             staminaSystem.ApplyHousingMaxStaminaBonus(TotalStaminaBonus, fillStaminaWhenMaxStaminaIncreased);
         }
 
-        private void ApplyCarryWeightBonus()
+        private void ResetCarryWeightBonus()
         {
             if (carryWeightSystem == null)
-            {
-                Debug.LogWarning("[PlayerHousingBonusReceiver] PlayerCarryWeightSystem을 찾을 수 없습니다.", this);
                 return;
-            }
 
-            carryWeightSystem.ApplyHousingCarryWeightBonus(gymCarryWeightBonusKg);
+            carryWeightSystem.ResetHousingCarryWeightBonus();
         }
 
 #if UNITY_EDITOR
@@ -216,10 +215,10 @@ namespace DeadZone.Actors
             Debug.Log(
                 $"[PlayerHousingBonusReceiver] 현재 하우징 보너스\n" +
                 $"의료시설 최대 HP: +{medicalHealthBonus:0.##}\n" +
+                $"헬스장 최대 HP: +{gymHealthBonus:0.##}\n" +
                 $"주방 스태미너: +{kitchenStaminaBonus:0.##}\n" +
                 $"침대 스태미너: +{bedStaminaBonus:0.##}\n" +
-                $"전체 스태미너: +{TotalStaminaBonus:0.##}\n" +
-                $"헬스장 소지 무게: +{gymCarryWeightBonusKg:0.##}kg",
+                $"전체 스태미너: +{TotalStaminaBonus:0.##}",
                 this);
         }
 
@@ -229,11 +228,11 @@ namespace DeadZone.Actors
             medicalHealthBonus = 0f;
             kitchenStaminaBonus = 0f;
             bedStaminaBonus = 0f;
-            gymCarryWeightBonusKg = 0f;
+            gymHealthBonus = 0f;
 
             ApplyHealthBonus();
             ApplyStaminaBonus();
-            ApplyCarryWeightBonus();
+            ResetCarryWeightBonus();
         }
 #endif
     }

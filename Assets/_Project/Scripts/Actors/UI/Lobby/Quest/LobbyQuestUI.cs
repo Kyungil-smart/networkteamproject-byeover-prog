@@ -157,6 +157,9 @@ namespace DeadZone.Actors.UI.Lobby
 
             ulong localClientId = questManager.GetLocalClientIdForState();
 
+            if (questManager.IsQuestRewardClaimed(localClientId, quest.questID))
+                return QuestViewState.Claimed;
+
             if (questManager.IsQuestCompleted(localClientId, quest.questID))
                 return QuestViewState.Completed;
 
@@ -335,6 +338,7 @@ namespace DeadZone.Actors.UI.Lobby
         Locked,
         Available,
         Active,
-        Completed
+        Completed,
+        Claimed
     }
 }

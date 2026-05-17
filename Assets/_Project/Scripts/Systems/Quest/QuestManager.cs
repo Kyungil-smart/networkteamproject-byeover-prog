@@ -176,8 +176,13 @@ namespace DeadZone.Systems.Quests
             if (!questLookup.TryGetValue(questId, out QuestDataSO questData)) return false;
 
             PlayerQuestState state = GetPlayerState(clientId);
-            if (state.ActiveQuestIds.Contains(questId) || state.CompletedQuestIds.Contains(questId))
+            if (state.ActiveQuestIds.Contains(questId) ||
+                state.CompletedQuestIds.Contains(questId) ||
+                state.RewardClaimedQuestIds.Contains(questId) ||
+                state.PendingCompletionIds.Contains(questId))
+            {
                 return false;
+            }
 
             if (!string.IsNullOrEmpty(questData.prerequisiteQuestID) &&
                 !state.CompletedQuestIds.Contains(questData.prerequisiteQuestID))
@@ -528,6 +533,9 @@ namespace DeadZone.Systems.Quests
                     ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Enemy_Zone1_Any", 1);
                 return;
             }
+
+            if (enemyId == "Boss_S2_01")
+                ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Boss_Sawmill", 1);
 
             if (string.IsNullOrEmpty(enemyId))
                 ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Boss_Stage2_All", 1);

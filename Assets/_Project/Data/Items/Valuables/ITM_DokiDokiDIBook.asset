@@ -15,13 +15,15 @@ MonoBehaviour:
   itemID: DokiDokiDIBook
   displayName: "\uB450\uADFC\uB450\uADFC \uC758\uC874\uC131 \uC8FC\uC785"
   description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uC2EC\uAC04\uD55C
-    \uBD80\uC0C1\uC744 \uC2E0\uC18D\uD788 \uD68C\uBCF5 \uC2DC\uCF1C\uC8FC\uB294 \uC8FC\uC0AC\uAE30"
+    \uBD80\uC0C1\uC744 \uC2E0\uC18D\uD788 \uD68C\uBCF5 \uC2DC\uCF1C\uC8FC\uB294 \uC8FC\uC0AC\uAE30\n-
+    \uD2B8\uB808\uC774\uB354\uC5D0 \uD314\uBA74 \uC801\uB2F9\uD55C \uAC12\uC740 \uBC1B\uC744
+    \uC218 \uC788\uC744 \uAC83 \uAC19\uB2E4"
   icon: {fileID: 21300000, guid: 4cc1ee143cb406e4fb9d8e366dca4359, type: 3}
   category: 7
   rarity: 2
   isValuable: 1
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
-  weightKg: 0.3
-  baseSellPrice: 5000
+  weightKg: 0
+  baseSellPrice: 25000
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}

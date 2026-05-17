@@ -76,6 +76,7 @@ namespace DeadZone.Actors
         [SerializeField] private float stuckMoveThreshold = 0.15f;
         [SerializeField, Min(1)] private int hardStuckRecoveryThreshold = 3;
         [SerializeField, Min(0.5f)] private float hardStuckRecoveryRadius = 3f;
+        [SerializeField, Min(1f)] private float maxAgentSpeedMultiplier = 1.35f;
 
         [Header("엄폐 수색")]
         [Tooltip("시야를 잃은 뒤 엄폐물 주변을 수색하는 최대 시간입니다.")]
@@ -188,6 +189,7 @@ namespace DeadZone.Actors
         private bool hasPreviousSeenPosition;
         private bool hasActiveSearchPoint;
         private bool warnedInsideNavMeshObstacle;
+        private float lastRecoveryWarpTime = -999f;
         private float preferredRangeMin;
         private float preferredRangeMax;
 
@@ -307,6 +309,7 @@ namespace DeadZone.Actors
                     break;
             }
 
+            ClampUnexpectedAgentVelocity();
             TickFootstepAudio();
         }
 
@@ -1881,20 +1884,35 @@ namespace DeadZone.Actors
                 if (!NavMesh.SamplePosition(candidate, out NavMeshHit recoveryHit, hardStuckRecoveryRadius, NavMesh.AllAreas))
                     continue;
 
+                lastRecoveryWarpTime = Time.time;
                 agent.Warp(recoveryHit.position);
                 TrySetDestination(rawDestination);
                 return;
             }
 
-            if (NavMesh.SamplePosition(rawDestination, out NavMeshHit destinationHit, hardStuckRecoveryRadius, NavMesh.AllAreas))
-            {
-                agent.Warp(destinationHit.position);
-                TrySetDestination(rawDestination);
-                return;
-            }
-
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit currentHit, hardStuckRecoveryRadius, NavMesh.AllAreas))
+            {
+                lastRecoveryWarpTime = Time.time;
                 agent.Warp(currentHit.position);
+            }
+        }
+
+        private void ClampUnexpectedAgentVelocity()
+        {
+            if (agent == null || !agent.enabled || !agent.isOnNavMesh || agent.isStopped)
+                return;
+
+            if (Time.time - lastRecoveryWarpTime < 0.25f)
+                return;
+
+            Vector3 velocity = agent.velocity;
+            velocity.y = 0f;
+
+            float maxSpeed = Mathf.Max(agent.speed, 0.1f) * maxAgentSpeedMultiplier;
+            if (velocity.sqrMagnitude <= maxSpeed * maxSpeed)
+                return;
+
+            agent.velocity = velocity.normalized * maxSpeed;
         }
 
         private bool HasArrived()

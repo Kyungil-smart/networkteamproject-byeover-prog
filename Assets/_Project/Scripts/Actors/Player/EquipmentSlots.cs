@@ -235,14 +235,12 @@ namespace DeadZone.Actors
 
         public void DamageHelmetDurability(float amount)
         {
-            if (!IsServer) return;
-            HelmetDurability.Value = Mathf.Max(0f, HelmetDurability.Value - amount);
+            // 내구도 시스템은 폐기되어 장착 방어구 내구도 감소를 적용하지 않습니다.
         }
 
         public void DamageArmorDurability(float amount)
         {
-            if (!IsServer) return;
-            ArmorDurability.Value = Mathf.Max(0f, ArmorDurability.Value - amount);
+            // 내구도 시스템은 폐기되어 장착 방어구 내구도 감소를 적용하지 않습니다.
         }
 
         // ----------- 탄약 소모 -----------

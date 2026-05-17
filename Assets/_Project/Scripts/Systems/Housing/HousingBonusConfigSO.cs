@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace DeadZone.Systems.Housing
 {
@@ -24,13 +24,14 @@ namespace DeadZone.Systems.Housing
         private float bedStaminaBonusPerLevel = 5f;
 
         [SerializeField, Min(0f)]
-        [Tooltip("헬스장 레벨이 보너스 시작 레벨 이상일 때, 레벨마다 증가하는 최대 소지 무게 kg입니다.")]
-        private float gymCarryWeightBonusPerLevelKg = 7.5f;
+        [Tooltip("헬스장 레벨이 보너스 시작 레벨 이상일 때, 레벨마다 증가하는 최대 체력입니다.")]
+        private float gymHealthBonusPerLevel = 5f;
 
         public int BonusStartLevel => Mathf.Max(1, bonusStartLevel);
         public float MedicalHealthBonusPerLevel => Mathf.Max(0f, medicalHealthBonusPerLevel);
         public float KitchenStaminaBonusPerLevel => Mathf.Max(0f, kitchenStaminaBonusPerLevel);
         public float BedStaminaBonusPerLevel => Mathf.Max(0f, bedStaminaBonusPerLevel);
-        public float GymCarryWeightBonusPerLevelKg => Mathf.Max(0f, gymCarryWeightBonusPerLevelKg);
+        public float GymHealthBonusPerLevel => Mathf.Max(0f, gymHealthBonusPerLevel);
+        public float GymCarryWeightBonusPerLevelKg => 0f;
     }
 }

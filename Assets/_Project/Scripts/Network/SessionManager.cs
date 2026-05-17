@@ -83,9 +83,6 @@ namespace DeadZone.Network
             {
                 if (networkManager.IsServer)
                 {
-                    currentPartyId = string.IsNullOrWhiteSpace(currentPartyId)
-                        ? "LocalHost"
-                        : currentPartyId;
                     Debug.LogWarning(
                         $"[SessionManager] Host start ignored because NetworkManager is already listening. partyId={currentPartyId}",
                         this);

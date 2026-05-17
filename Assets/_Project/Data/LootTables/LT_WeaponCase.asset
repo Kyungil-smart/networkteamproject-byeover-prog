@@ -14,28 +14,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.LootTableSO
   entries:
   - item: {fileID: 11400000, guid: 179fe61ddb5d6b84c96f8ab664f34ef3, type: 2}
-    weight: 1166
+    weight: 850
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 383b228f5316ed5459f0c624b4786842, type: 2}
-    weight: 1166
+    weight: 850
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 6749d3919a2aaae4ea56f8fcac906f89, type: 2}
-    weight: 1166
+    weight: 850
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 05fed358211994c48bb87d8052ac969f, type: 2}
-    weight: 2250
+    weight: 2600
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 4e7f75c1d36e7004aa003eee4af8517c, type: 2}
-    weight: 2250
+    weight: 2600
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 5dbc704d01bc662438998288b0482d8b, type: 2}
-    weight: 600
+    weight: 800
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 2fe004c755d76494e8125deaabd9adcf, type: 2}
-    weight: 600
+    weight: 800
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: af57024ef6ae0634ea3818461b3d4eda, type: 2}
-    weight: 600
+    weight: 800
     countRange: {x: 1, y: 1}
   - item: {fileID: 11400000, guid: 8aeaa47fb847b284c94f2a413a3699a3, type: 2}
     weight: 100

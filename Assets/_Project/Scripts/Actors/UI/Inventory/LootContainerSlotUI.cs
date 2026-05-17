@@ -79,6 +79,12 @@ namespace DeadZone.Actors.UI
 
             if (sourceIsContainer)
             {
+                if (target.SlotKind == InventorySlotKind.QuickSlot)
+                {
+                    Container.RequestTakeSlotToPlayerQuickSlot(sourceIndex, target.SlotIndex);
+                    return true;
+                }
+
                 if (Container != null && TryGetEquipmentTargetSlot(target, out EquipmentTargetSlot equipmentTargetSlot))
                 {
                     Container.RequestEquipSlotToPlayer(sourceIndex, equipmentTargetSlot);

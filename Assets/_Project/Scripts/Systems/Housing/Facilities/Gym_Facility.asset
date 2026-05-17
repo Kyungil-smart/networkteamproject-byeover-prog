@@ -23,7 +23,7 @@ MonoBehaviour:
       amount: 2
     - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
       amount: 2
-    effectDescription: "\uBB34\uAC8C +7.5kg"
+    effectDescription: "최대 체력 +5"
   - level: 3
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 011c4bdd974a87149a443808cf0bd4ab, type: 2}
@@ -32,9 +32,9 @@ MonoBehaviour:
       amount: 1
     - item: {fileID: 11400000, guid: 299bb17eb6db867408ca6a5ef09e733d, type: 2}
       amount: 5
-    effectDescription: "\uC18C\uC9C0 \uBB34\uAC8C +15kg"
+    effectDescription: "최대 체력 +10"
   - level: 4
     upgradeMaterials:
     - item: {fileID: 11400000, guid: 920d06dc601dcaf47895d1989f2968d6, type: 2}
       amount: 1
-    effectDescription: "\uC18C\uC9C0 \uBB34\uAC8C +22.5kg"
+    effectDescription: "최대 체력 +15"

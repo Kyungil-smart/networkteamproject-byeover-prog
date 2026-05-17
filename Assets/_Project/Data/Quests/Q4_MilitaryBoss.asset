@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q4
   questName: "군사 지역 보스 처치"
-  description: "군사 지역 보스를 처치 하십시오."
+  description: "군사 지역에 있는 해당 구역 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_MilitaryBase
     requiredCount: 1
     location: "군사 지역"
-  rewards: []
+  rewards:
+  - type: 0
+    itemID:
+    amount: 15000
   unlockZoneID: Stage4 Open
   prerequisiteQuestID: Q3
   isSideQuest: 0

@@ -39,7 +39,7 @@ namespace DeadZone.Actors
         [SerializeField, Min(0f)] private float defaultLookAheadDistance = 1.6f;
 
         [Tooltip("ADS 상태에서 바라보는 방향으로 밀어줄 최대 포커스 거리")]
-        [SerializeField, Min(0f)] private float adsLookAheadDistance = 3f;
+        [SerializeField, Min(0f)] private float adsLookAheadDistance = 4.5f;
 
         [Tooltip("현재 무기를 찾을 수 없을 때 사용할 기본 ADS 진입 시간")]
         [SerializeField, Min(0.01f)] private float defaultAdsTransitionTime = 0.2f;
@@ -69,10 +69,10 @@ namespace DeadZone.Actors
         [SerializeField] private bool useAdsCameraShift = true;
 
         [Tooltip("ADS 중 사용할 카메라 월드 오프셋입니다.")]
-        [SerializeField] private Vector3 adsWorldOffset = new Vector3(0f, 13.5f, -10.5f);
+        [SerializeField] private Vector3 adsWorldOffset = new Vector3(0f, 12.5f, -8.8f);
 
         [Tooltip("ADS 중 사용할 카메라 FOV입니다. 0이면 기본 FOV를 유지합니다.")]
-        [SerializeField, Min(0f)] private float adsFieldOfView = 48f;
+        [SerializeField, Min(0f)] private float adsFieldOfView;
 
         [Tooltip("ADS 카메라 오프셋/FOV 보간 속도입니다.")]
         [SerializeField, Min(0.01f)] private float adsCameraShiftSpeed = 10f;

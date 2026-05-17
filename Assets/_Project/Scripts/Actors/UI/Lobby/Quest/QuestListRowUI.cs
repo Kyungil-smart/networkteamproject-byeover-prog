@@ -69,6 +69,7 @@ namespace DeadZone.Actors.UI.Lobby
                 QuestViewState.Available => questName,
                 QuestViewState.Active => $"[진행중] {questName}",
                 QuestViewState.Completed => $"[완료] {questName}",
+                QuestViewState.Claimed => $"[수령 완료] {questName}",
                 _ => questName
             };
         }

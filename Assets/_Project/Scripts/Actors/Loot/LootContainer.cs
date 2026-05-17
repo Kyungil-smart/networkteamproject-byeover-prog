@@ -33,6 +33,18 @@ namespace DeadZone.Actors
         [Tooltip("처음 열 때 랜덤 생성할 아이템 개수입니다.")]
         [SerializeField] private int rollCount = 6;
 
+        [Tooltip("3명 이상 레이드에서 상자 아이템 수를 늘립니다. 3명 +1, 4명 +2.")]
+        [SerializeField] private bool scaleItemCountByPlayerCount = true;
+
+        [Tooltip("3명 레이드 보너스 아이템 개수입니다.")]
+        [SerializeField, Min(0)] private int threePlayerItemBonus = 1;
+
+        [Tooltip("4명 레이드 보너스 아이템 개수입니다.")]
+        [SerializeField, Min(0)] private int fourPlayerItemBonus = 2;
+
+        [Tooltip("인원 보너스가 붙을 때 희귀 이상 등급 가중치에 곱하는 숨은 보정입니다.")]
+        [SerializeField, Range(0.5f, 1f)] private float multiplayerRareWeightMultiplier = 0.9f;
+
         [Tooltip("기존 상자 설정과의 직렬화 호환을 위해 유지합니다. 실제 추첨은 유효한 weight 총합을 기준으로 수행합니다.")]
         [SerializeField] private bool requireTotalWeight100 = true;
 
@@ -209,6 +221,17 @@ namespace DeadZone.Actors
             Debug.LogWarning("[LootContainer] 네트워크가 실행 중이 아니어서 상자 아이템 이동은 서버 검증 없이 처리하지 않습니다.", this);
         }
 
+        public void RequestTakeSlotToPlayerQuickSlot(int slotIndex, int quickSlotIndex)
+        {
+            if (IsNetworkActive())
+            {
+                TryTakeSlotToPlayerQuickSlotRpc(slotIndex, quickSlotIndex);
+                return;
+            }
+
+            Debug.LogWarning("[LootContainer] Network is not active. Container to quick slot move skipped.", this);
+        }
+
         public void RequestDepositFromPlayer(string itemId, int amount, int targetSlotIndex)
         {
             if (IsNetworkActive())
@@ -351,6 +374,40 @@ namespace DeadZone.Actors
 
             if (!inventory.TryAddItemSlot(itemData, itemSlot))
                 return;
+
+            Slots[slotIndex] = new global::ContainerSlotNetData();
+
+            if (playLootSoundOnTake)
+                PlayLootSoundForClient(rpcParams.Receive.SenderClientId, AudioCueId.Loot2);
+
+            PublishItemLootedForClient(rpcParams.Receive.SenderClientId, slotData.itemId, amount);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void TryTakeSlotToPlayerQuickSlotRpc(
+            int slotIndex,
+            int quickSlotIndex,
+            RpcParams rpcParams = default)
+        {
+            if (!TryGetServerSlot(slotIndex, out global::ContainerSlotNetData slotData) || slotData.IsEmpty)
+                return;
+
+            GridInventory inventory = ResolvePlayerInventory(rpcParams.Receive.SenderClientId);
+            if (inventory == null)
+                return;
+
+            ItemDataSO itemData = ResolveItemData(slotData.itemId.ToString());
+            if (itemData == null)
+                return;
+
+            int amount = Mathf.Max(1, slotData.amount);
+            if (!inventory.TryAddItemToQuickSlotOnServer(
+                    itemData,
+                    amount,
+                    (byte)Mathf.Clamp(quickSlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1)))
+            {
+                return;
+            }
 
             Slots[slotIndex] = new global::ContainerSlotNetData();
 
@@ -572,7 +629,7 @@ namespace DeadZone.Actors
 
         private bool CanRollByProbabilityRule()
         {
-            IReadOnlyList<LootEntry> entries = ResolveActiveEntries();
+            IReadOnlyList<LootEntry> entries = ResolveEntriesForCurrentPlayerCount();
 
             if (entries == null || entries.Count == 0)
             {
@@ -595,7 +652,7 @@ namespace DeadZone.Actors
             int generatedItemCount = RollItemCountForOpen();
             lastGeneratedItemCount = generatedItemCount;
 
-            IReadOnlyList<LootEntry> entries = ResolveActiveEntries();
+            IReadOnlyList<LootEntry> entries = ResolveEntriesForCurrentPlayerCount();
             if (entries != null && entries.Count > 0)
             {
                 return global::LootRollUtility.RollSlots(
@@ -626,7 +683,47 @@ namespace DeadZone.Actors
             if (max <= 0)
                 return 0;
 
-            return Random.Range(min, max + 1);
+            int count = Random.Range(min, max + 1);
+            return Mathf.Clamp(count + GetPlayerCountItemBonus(), 0, slotCount);
+        }
+
+        private IReadOnlyList<LootEntry> ResolveEntriesForCurrentPlayerCount()
+        {
+            IReadOnlyList<LootEntry> entries = ResolveActiveEntries();
+            int playerBonus = GetPlayerCountItemBonus();
+            if (playerBonus <= 0 || multiplayerRareWeightMultiplier >= 0.999f || entries == null || entries.Count == 0)
+                return entries;
+
+            LootEntry[] adjustedEntries = new LootEntry[entries.Count];
+            for (int i = 0; i < entries.Count; i++)
+            {
+                LootEntry entry = entries[i];
+                if (entry.item != null && entry.item.rarity > RarityTier.Common)
+                    entry.weight = Mathf.Max(1, Mathf.RoundToInt(entry.weight * multiplayerRareWeightMultiplier));
+
+                adjustedEntries[i] = entry;
+            }
+
+            return adjustedEntries;
+        }
+
+        private int GetPlayerCountItemBonus()
+        {
+            if (!scaleItemCountByPlayerCount)
+                return 0;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            int playerCount = networkManager != null && networkManager.IsListening
+                ? networkManager.ConnectedClientsIds.Count
+                : 1;
+
+            if (playerCount >= 4)
+                return fourPlayerItemBonus;
+
+            if (playerCount >= 3)
+                return threePlayerItemBonus;
+
+            return 0;
         }
 
         private void ApplyGeneratedSlotsToNetworkList(List<global::ContainerSlotNetData> generated)

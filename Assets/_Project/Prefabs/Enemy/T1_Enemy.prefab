@@ -817,7 +817,7 @@ MonoBehaviour:
   minimumReactionTime: 1.5
   enemyRangeMultiplier: 0.65
   maxEnemyEffectiveRange: 24
-  enemyMuzzleVelocityMultiplier: 0.35
+  enemyMuzzleVelocityMultiplier: 0.42
   maxEnemyMuzzleVelocity: 300
   fallbackEnemyMuzzleVelocity: 220
   targetMemoryResetDelay: 0.5
