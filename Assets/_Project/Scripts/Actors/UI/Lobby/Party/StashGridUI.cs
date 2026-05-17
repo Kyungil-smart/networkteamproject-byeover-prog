@@ -17,12 +17,13 @@ namespace DeadZone.Actors.UI
     public class StashGridUI : MonoBehaviour, IInventory
     {
         private const int BaseSlotCount = 50;
-        private const int AdditionalSlotsPerLevel = 20;
-        private const int MaxStashLevel = 4;
+        private const int MaxStashLevel = 6;
         private const int FixedColumnCount = 10;
-        private const int UpgradeLevel2Cost = 30000;
-        private const int UpgradeLevel3Cost = 50000;
-        private const int UpgradeLevel4Cost = 100000;
+        private const int UpgradeLevel2Cost = 10000;
+        private const int UpgradeLevel3Cost = 30000;
+        private const int UpgradeLevel4Cost = 50000;
+        private const int UpgradeLevel5Cost = 100000;
+        private const int UpgradeLevel6Cost = 200000;
 
         [Title("李몄“")]
         [Required]
@@ -44,13 +45,22 @@ namespace DeadZone.Actors.UI
         [SerializeField] private Button upgradeLevel2Button;
         [SerializeField] private Button upgradeLevel3Button;
         [SerializeField] private Button upgradeLevel4Button;
+        [SerializeField] private Button upgradeLevel5Button;
+        [SerializeField] private Button upgradeLevel6Button;
         [SerializeField] private TMP_Text upgradeLevel2Text;
         [SerializeField] private TMP_Text upgradeLevel3Text;
         [SerializeField] private TMP_Text upgradeLevel4Text;
+        [SerializeField] private TMP_Text upgradeLevel5Text;
+        [SerializeField] private TMP_Text upgradeLevel6Text;
         [SerializeField] private WalletSystem walletSystem;
         [SerializeField] private LobbyInventoryState inventoryState;
         [SerializeField] private LobbyFacilityState facilityState;
         [SerializeField] private LobbySaveService lobbySaveService;
+
+        [Title("Stash Transfer")]
+        [SerializeField] private Button putAllButton;
+        [SerializeField] private LobbyPlayerInventoryUI playerInventoryUI;
+        [SerializeField] private LobbyInventoryStateUiBridge inventoryStateUiBridge;
 
         [Title("?ㅽ겕濡??ㅼ젙")]
         [SerializeField] private ScrollRect scrollRect;
@@ -128,6 +138,7 @@ namespace DeadZone.Actors.UI
             AutoBindReferences();
             AutoBindUpgradeReferences();
             BindUpgradeButtons();
+            BindPutAllButton();
             ApplySavedStashLevel();
 
             if (refreshOnAwake)
@@ -139,6 +150,7 @@ namespace DeadZone.Actors.UI
             EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
             EventBus.Subscribe<CreditsChangedEvent>(HandleCreditsChanged);
             BindUpgradeButtons();
+            BindPutAllButton();
             RefreshUpgradePopup();
         }
 
@@ -147,6 +159,7 @@ namespace DeadZone.Actors.UI
             EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
             EventBus.Unsubscribe<CreditsChangedEvent>(HandleCreditsChanged);
             UnbindUpgradeButtons();
+            UnbindPutAllButton();
         }
 
         private void Start()
@@ -172,6 +185,13 @@ namespace DeadZone.Actors.UI
         public void SetLevel(int level)
         {
             stashLevel = Mathf.Clamp(level, 1, MaxStashLevel);
+            RefreshSlots();
+            RefreshUpgradePopup();
+        }
+
+        public void RefreshSavedLevelAndSlots()
+        {
+            ApplySavedStashLevel();
             RefreshSlots();
             RefreshUpgradePopup();
         }
@@ -206,7 +226,15 @@ namespace DeadZone.Actors.UI
         public int GetSlotCountByLevel(int level)
         {
             int clampedLevel = Mathf.Clamp(level, 1, MaxStashLevel);
-            return BaseSlotCount + (clampedLevel - 1) * AdditionalSlotsPerLevel;
+            return clampedLevel switch
+            {
+                2 => 70,
+                3 => 90,
+                4 => 110,
+                5 => 150,
+                6 => 200,
+                _ => BaseSlotCount
+            };
         }
 
         public bool TryAddItem(ItemDataSO item, int amount = 1)
@@ -533,16 +561,23 @@ namespace DeadZone.Actors.UI
             upgradeLevel2Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.2");
             upgradeLevel3Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.3");
             upgradeLevel4Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.4");
+            upgradeLevel5Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.5");
+            upgradeLevel6Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.6");
             closeUpgradePopupButton ??= FindButtonInUpgradePopup("Btn_Close");
 
             upgradeLevel2Text ??= FindUpgradeButtonText(upgradeLevel2Button, "Text_UpgradeInventoryLv.2");
             upgradeLevel3Text ??= FindUpgradeButtonText(upgradeLevel3Button, "Text_UpgradeInventoryLv.3");
             upgradeLevel4Text ??= FindUpgradeButtonText(upgradeLevel4Button, "Text_UpgradeInventoryLv.4");
+            upgradeLevel5Text ??= FindUpgradeButtonText(upgradeLevel5Button, "Text_UpgradeInventoryLv.5");
+            upgradeLevel6Text ??= FindUpgradeButtonText(upgradeLevel6Button, "Text_UpgradeInventoryLv.6");
 
             walletSystem ??= FindFirstObjectByType<WalletSystem>(FindObjectsInactive.Include);
             inventoryState ??= FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
             facilityState ??= FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
             lobbySaveService ??= FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            playerInventoryUI ??= FindFirstObjectByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include);
+            inventoryStateUiBridge ??= FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            putAllButton ??= FindSceneButton("Btn_PutAll");
         }
 
         private void BindUpgradeButtons()
@@ -564,6 +599,8 @@ namespace DeadZone.Actors.UI
             BindUpgradeLevelButton(upgradeLevel2Button, 2);
             BindUpgradeLevelButton(upgradeLevel3Button, 3);
             BindUpgradeLevelButton(upgradeLevel4Button, 4);
+            BindUpgradeLevelButton(upgradeLevel5Button, 5);
+            BindUpgradeLevelButton(upgradeLevel6Button, 6);
         }
 
         private void UnbindUpgradeButtons()
@@ -582,6 +619,125 @@ namespace DeadZone.Actors.UI
 
             if (upgradeLevel4Button != null)
                 upgradeLevel4Button.onClick.RemoveListener(TryUpgradeStashToLevel4);
+
+            if (upgradeLevel5Button != null)
+                upgradeLevel5Button.onClick.RemoveListener(TryUpgradeStashToLevel5);
+
+            if (upgradeLevel6Button != null)
+                upgradeLevel6Button.onClick.RemoveListener(TryUpgradeStashToLevel6);
+        }
+
+        private void BindPutAllButton()
+        {
+            AutoBindUpgradeReferences();
+
+            if (putAllButton == null)
+                return;
+
+            putAllButton.onClick.RemoveListener(PutAllPlayerInventoryItems);
+            putAllButton.onClick.AddListener(PutAllPlayerInventoryItems);
+        }
+
+        private void UnbindPutAllButton()
+        {
+            if (putAllButton != null)
+                putAllButton.onClick.RemoveListener(PutAllPlayerInventoryItems);
+        }
+
+        public void PutAllPlayerInventoryItems()
+        {
+            AutoBindUpgradeReferences();
+
+            if (playerInventoryUI == null)
+            {
+                Debug.LogWarning("[StashGridUI] Btn_PutAll failed. LobbyPlayerInventoryUI was not found.", this);
+                return;
+            }
+
+            playerInventoryUI.RefreshSlots();
+            RefreshSlots();
+
+            List<InventorySlotUI> sourceSlots = CollectPlayerInventoryItemSlots();
+            if (sourceSlots.Count == 0)
+                return;
+
+            int movedCount = 0;
+            for (int i = 0; i < sourceSlots.Count; i++)
+            {
+                InventorySlotUI sourceSlot = sourceSlots[i];
+                if (sourceSlot == null)
+                    continue;
+
+                sourceSlot.PrepareForSaveSnapshot();
+                if (!sourceSlot.HasItem || sourceSlot.CurrentItemData == null)
+                    continue;
+
+                ItemDataSO itemData = sourceSlot.CurrentItemData;
+                int stackCount = Mathf.Max(1, sourceSlot.CurrentStackCount);
+
+                if (!TryAddItem(itemData, stackCount))
+                    continue;
+
+                sourceSlot.ClearItem();
+                movedCount++;
+            }
+
+            if (movedCount <= 0)
+                return;
+
+            playerInventoryUI.RefreshSlots();
+            RefreshSlots();
+
+            inventoryStateUiBridge ??= FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            inventoryStateUiBridge?.CaptureUiToState();
+
+            lobbySaveService ??= FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            lobbySaveService?.SaveCurrentStateToLocalJson("Stash put all");
+            lobbySaveService?.SaveLobbyDataToCloud();
+        }
+
+        private List<InventorySlotUI> CollectPlayerInventoryItemSlots()
+        {
+            List<InventorySlotUI> sourceSlots = new List<InventorySlotUI>();
+
+            if (playerInventoryUI == null)
+                return sourceSlots;
+
+            InventorySlotUI[] foundSlots =
+                playerInventoryUI.GetComponentsInChildren<InventorySlotUI>(true);
+
+            for (int i = 0; i < foundSlots.Length; i++)
+            {
+                InventorySlotUI slot = foundSlots[i];
+                if (slot == null || !slot.gameObject.activeInHierarchy)
+                    continue;
+
+                slot.PrepareForSaveSnapshot();
+                if (slot.SlotKind != InventorySlotKind.Bag)
+                    continue;
+
+                if (!slot.HasItem || slot.CurrentItemData == null)
+                    continue;
+
+                sourceSlots.Add(slot);
+            }
+
+            sourceSlots.Sort(CompareInventorySlotOrder);
+            return sourceSlots;
+        }
+
+        private static int CompareInventorySlotOrder(InventorySlotUI left, InventorySlotUI right)
+        {
+            if (left == right)
+                return 0;
+
+            if (left == null)
+                return 1;
+
+            if (right == null)
+                return -1;
+
+            return left.SlotIndex.CompareTo(right.SlotIndex);
         }
 
         private void BindUpgradeLevelButton(Button button, int targetLevel)
@@ -604,6 +760,16 @@ namespace DeadZone.Actors.UI
                 button.onClick.RemoveListener(TryUpgradeStashToLevel4);
                 button.onClick.AddListener(TryUpgradeStashToLevel4);
             }
+            else if (targetLevel == 5)
+            {
+                button.onClick.RemoveListener(TryUpgradeStashToLevel5);
+                button.onClick.AddListener(TryUpgradeStashToLevel5);
+            }
+            else if (targetLevel == 6)
+            {
+                button.onClick.RemoveListener(TryUpgradeStashToLevel6);
+                button.onClick.AddListener(TryUpgradeStashToLevel6);
+            }
         }
 
         private void TryUpgradeStashToLevel2() => TryUpgradeStash(2);
@@ -611,6 +777,10 @@ namespace DeadZone.Actors.UI
         private void TryUpgradeStashToLevel3() => TryUpgradeStash(3);
 
         private void TryUpgradeStashToLevel4() => TryUpgradeStash(4);
+
+        private void TryUpgradeStashToLevel5() => TryUpgradeStash(5);
+
+        private void TryUpgradeStashToLevel6() => TryUpgradeStash(6);
 
         private void OpenUpgradePopup()
         {
@@ -635,10 +805,14 @@ namespace DeadZone.Actors.UI
             SetUpgradeSlotVisible(2, true);
             SetUpgradeSlotVisible(3, true);
             SetUpgradeSlotVisible(4, true);
+            SetUpgradeSlotVisible(5, true);
+            SetUpgradeSlotVisible(6, true);
 
             RefreshUpgradeLevelButton(2, upgradeLevel2Button, upgradeLevel2Text);
             RefreshUpgradeLevelButton(3, upgradeLevel3Button, upgradeLevel3Text);
             RefreshUpgradeLevelButton(4, upgradeLevel4Button, upgradeLevel4Text);
+            RefreshUpgradeLevelButton(5, upgradeLevel5Button, upgradeLevel5Text);
+            RefreshUpgradeLevelButton(6, upgradeLevel6Button, upgradeLevel6Text);
         }
 
         private void RefreshUpgradeLevelButton(int targetLevel, Button button, TMP_Text label)
@@ -766,6 +940,8 @@ namespace DeadZone.Actors.UI
                 2 => UpgradeLevel2Cost,
                 3 => UpgradeLevel3Cost,
                 4 => UpgradeLevel4Cost,
+                5 => UpgradeLevel5Cost,
+                6 => UpgradeLevel6Cost,
                 _ => int.MaxValue
             };
         }
@@ -777,6 +953,8 @@ namespace DeadZone.Actors.UI
                 2 => upgradeLevel2Button,
                 3 => upgradeLevel3Button,
                 4 => upgradeLevel4Button,
+                5 => upgradeLevel5Button,
+                6 => upgradeLevel6Button,
                 _ => null
             };
         }
@@ -788,6 +966,8 @@ namespace DeadZone.Actors.UI
                 2 => upgradeLevel2Text,
                 3 => upgradeLevel3Text,
                 4 => upgradeLevel4Text,
+                5 => upgradeLevel5Text,
+                6 => upgradeLevel6Text,
                 _ => null
             };
         }

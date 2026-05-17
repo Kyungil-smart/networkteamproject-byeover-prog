@@ -1180,7 +1180,7 @@ namespace DeadZone.Systems.Save
                     stashGridUI = root.GetComponentInChildren<StashGridUI>(true);
 
                 if (stashGridUI != null)
-                    stashGridUI.RefreshSlots();
+                    stashGridUI.RefreshSavedLevelAndSlots();
             }
 
             private static void RefreshQuickSlots(Transform root)
