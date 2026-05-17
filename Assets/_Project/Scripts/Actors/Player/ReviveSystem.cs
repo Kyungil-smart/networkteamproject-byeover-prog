@@ -23,7 +23,10 @@ namespace DeadZone.Actors
 
         [Tooltip("부활 시작 후 구조자가 움직일 수 있는 최대 거리입니다. " +
                  "이 값보다 많이 이동하면 서버에서 부활을 중단합니다. 단위: 미터")]
-        [SerializeField] private float movementCancelDistance = 0.75f;
+        [SerializeField, HideInInspector] private float movementCancelDistance = 0.75f;
+
+        [Tooltip("Revive cancel distance while progress is active. This is intentionally larger than the start range to absorb network position jitter.")]
+        [SerializeField] private float cancelReviveDistance = 2.7f;
 
         [Header("부활 대상 탐색")]
         [Tooltip("부활 대상으로 탐색할 레이어입니다. 기본값은 Player 레이어(10)이며, " +
@@ -54,6 +57,7 @@ namespace DeadZone.Actors
         private NetworkObject serverTargetObj;
         private Vector3 serverReviveStartPosition;
         private float nextProgressEventTime;
+        private bool isReviveRequestActive;
         private bool isShowingRevivePrompt;
         private string currentRevivePromptText;
 
@@ -61,6 +65,7 @@ namespace DeadZone.Actors
 
         private void Awake()
         {
+            cancelReviveDistance = Mathf.Max(cancelReviveDistance, reviveRange, movementCancelDistance);
             reviverHealth = GetComponent<PlayerHealthSystem>();
         }
 
@@ -74,22 +79,26 @@ namespace DeadZone.Actors
         {
             EventBus.Unsubscribe<ReviveStartedEvent>(OnReviveStarted);
             EventBus.Unsubscribe<ReviveEndedEvent>(OnReviveEnded);
+            isReviveRequestActive = false;
             HideRevivePrompt();
         }
 
         private void OnDisable()
         {
+            isReviveRequestActive = false;
             HideRevivePrompt();
         }
 
         public void StartHold()
         {
             if (!IsOwner) return;
+            if (isReviveRequestActive) return;
             if (IsReviving) return;
             if (!CanReviverAttemptRevive()) return;
             if (!TryFindReviveTarget(out NetworkObject targetObj)) return;
             if (IsTargetBeingRevivedByOther(targetObj)) return;
 
+            isReviveRequestActive = true;
             HideRevivePrompt();
             BeginReviveServerRpc(targetObj.NetworkObjectId);
         }
@@ -97,7 +106,9 @@ namespace DeadZone.Actors
         public void StopHold()
         {
             if (!IsOwner) return;
+            if (!isReviveRequestActive && !IsReviving) return;
 
+            isReviveRequestActive = false;
             CancelReviveServerRpc();
         }
 
@@ -117,10 +128,18 @@ namespace DeadZone.Actors
                 return;
 
             if (!CanReviverAttemptRevive())
+            {
+                Debug.Log($"[Revive] Start rejected: reviver invalid, reviver={reviverId}", this);
                 return;
+            }
 
             if (!TryResolveServerReviveTarget(targetNetworkObjectId, out NetworkObject targetObj))
+            {
+                Debug.Log($"[Revive] Start rejected: target invalid, reviver={reviverId}, targetObj={targetNetworkObjectId}", this);
                 return;
+            }
+
+            Debug.Log($"[Revive] Start request: reviver={reviverId}, target={targetObj.OwnerClientId}, targetObj={targetNetworkObjectId}", this);
 
             BeginReviveTargetOnServer(targetObj, reviverId);
         }
@@ -133,6 +152,10 @@ namespace DeadZone.Actors
             if (reviverId != OwnerClientId)
                 return false;
 
+            ulong targetClientId = targetObj.OwnerClientId;
+            if (reviverId == targetClientId)
+                return false;
+
             if (!CanReviverAttemptRevive())
                 return false;
 
@@ -140,23 +163,40 @@ namespace DeadZone.Actors
             if (targetHealth == null || !targetHealth.CanBeRevived)
                 return false;
 
-            if (targetHealth.IsBeingRevived && targetHealth.CurrentReviverClientId != reviverId)
+            if (targetHealth.IsBeingRevived)
+            {
+                if (targetHealth.CurrentReviverClientId == reviverId && IsReviving && serverTargetObj == targetObj)
+                {
+                    Debug.Log($"[Revive] Ignore duplicate start: reviver={reviverId}, target={targetClientId}", this);
+                    return true;
+                }
+
+                Debug.Log($"[Revive] Start rejected: target occupied, reviver={reviverId}, target={targetClientId}, activeReviver={targetHealth.CurrentReviverClientId}", this);
                 return false;
+            }
 
             if (!IsWithinReviveRange(targetObj))
                 return false;
 
             if (IsReviving)
-                return serverTargetObj == targetObj;
+            {
+                if (serverTargetObj == targetObj)
+                {
+                    Debug.Log($"[Revive] Ignore duplicate start: reviver={reviverId}, target={targetClientId}", this);
+                    return true;
+                }
+
+                return false;
+            }
 
             serverTargetObj = targetObj;
             serverReviveStartPosition = transform.position;
             nextProgressEventTime = 0f;
-            CurrentTargetClientId.Value = targetObj.OwnerClientId;
+            CurrentTargetClientId.Value = targetClientId;
             Progress.Value = 0f;
 
             targetHealth.OnReviveBegin(reviverId);
-            PublishReviveStarted(reviverId, targetObj.OwnerClientId);
+            PublishReviveStarted(reviverId, targetClientId);
 
             return true;
         }
@@ -168,7 +208,7 @@ namespace DeadZone.Actors
             if (senderClientId != OwnerClientId)
                 return;
 
-            EndOnServer(ReviveResult.Cancelled, senderClientId);
+            EndOnServer(ReviveResult.Cancelled, senderClientId, "InputReleased");
         }
 
         private void Update()
@@ -180,26 +220,21 @@ namespace DeadZone.Actors
 
             if (!CanReviverAttemptRevive())
             {
-                EndOnServer(ReviveResult.Interrupted, OwnerClientId);
+                EndOnServer(ReviveResult.Interrupted, OwnerClientId, "ReviverInvalid");
                 return;
             }
 
             var targetHealth = serverTargetObj.GetComponent<IRevivable>();
             if (targetHealth == null || !targetHealth.CanBeRevived)
             {
-                EndOnServer(ReviveResult.Interrupted, OwnerClientId);
+                EndOnServer(ReviveResult.Interrupted, OwnerClientId, "TargetInvalid");
                 return;
             }
 
-            if (Vector3.Distance(transform.position, serverReviveStartPosition) > movementCancelDistance)
+            float currentDistance = GetDistanceTo(serverTargetObj);
+            if (currentDistance > cancelReviveDistance)
             {
-                EndOnServer(ReviveResult.Interrupted, OwnerClientId);
-                return;
-            }
-
-            if (!IsWithinReviveRange(serverTargetObj))
-            {
-                EndOnServer(ReviveResult.Interrupted, OwnerClientId);
+                EndOnServer(ReviveResult.Interrupted, OwnerClientId, "DistanceExceeded", currentDistance);
                 return;
             }
 
@@ -212,17 +247,26 @@ namespace DeadZone.Actors
 
             if (Progress.Value >= 1f)
             {
+                Debug.Log($"[Revive] Complete: reviver={OwnerClientId}, target={serverTargetObj.OwnerClientId}", this);
                 targetHealth.OnReviveComplete(OwnerClientId);
-                EndOnServer(ReviveResult.Completed, OwnerClientId);
+                EndOnServer(ReviveResult.Completed, OwnerClientId, "Completed");
             }
         }
 
-        private void EndOnServer(ReviveResult result, ulong reviverId)
+        private void EndOnServer(ReviveResult result, ulong reviverId, string reason, float distance = -1f)
         {
             if (!IsServer) return;
             if (!IsReviving) return;
 
             ulong targetId = CurrentTargetClientId.Value;
+
+            if (result != ReviveResult.Completed)
+            {
+                if (distance >= 0f)
+                    Debug.Log($"[Revive] Cancel: reason={reason}, distance={distance:F2}, reviver={reviverId}, target={targetId}", this);
+                else
+                    Debug.Log($"[Revive] Cancel: reason={reason}, reviver={reviverId}, target={targetId}", this);
+            }
 
             if (result != ReviveResult.Completed && serverTargetObj != null)
             {
@@ -234,6 +278,7 @@ namespace DeadZone.Actors
             Progress.Value = 0f;
             serverTargetObj = null;
             nextProgressEventTime = 0f;
+            isReviveRequestActive = false;
 
             PublishReviveEnded(reviverId, targetId, result);
         }
@@ -370,8 +415,11 @@ namespace DeadZone.Actors
             if (targetHealth == null || !targetHealth.CanBeRevived)
                 return false;
 
-            if (targetHealth.IsBeingRevived && targetHealth.CurrentReviverClientId != OwnerClientId)
+            if (targetHealth.IsBeingRevived &&
+                !(targetHealth.CurrentReviverClientId == OwnerClientId && IsReviving && serverTargetObj == candidateObj))
+            {
                 return false;
+            }
 
             if (!IsWithinReviveRange(candidateObj))
                 return false;
@@ -411,8 +459,21 @@ namespace DeadZone.Actors
             if (targetObj == null)
                 return false;
 
-            float sqrDistance = (targetObj.transform.position - transform.position).sqrMagnitude;
+            float sqrDistance = GetSqrDistanceTo(targetObj);
             return sqrDistance <= reviveRange * reviveRange;
+        }
+
+        private float GetDistanceTo(NetworkObject targetObj)
+        {
+            return targetObj != null ? Mathf.Sqrt(GetSqrDistanceTo(targetObj)) : float.MaxValue;
+        }
+
+        private float GetSqrDistanceTo(NetworkObject targetObj)
+        {
+            if (targetObj == null)
+                return float.MaxValue;
+
+            return (targetObj.transform.position - transform.position).sqrMagnitude;
         }
 
         private bool IsTargetBeingRevivedByOther(NetworkObject targetObj)
@@ -439,6 +500,9 @@ namespace DeadZone.Actors
 
         private void OnReviveEnded(ReviveEndedEvent e)
         {
+            if (e.reviverClientId == OwnerClientId)
+                isReviveRequestActive = false;
+
             if (ActiveReviversByTargetClientId.TryGetValue(e.targetClientId, out ulong activeReviverClientId) &&
                 activeReviverClientId == e.reviverClientId)
             {
