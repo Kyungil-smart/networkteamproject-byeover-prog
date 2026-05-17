@@ -422,11 +422,20 @@ namespace DeadZone.Actors
 
         private bool CanShootTarget(Transform target, Vector3 aimPoint, float distance)
         {
+            Vector3 direction = (aimPoint - muzzle.position).normalized;
+            if (!HasClearShotToTarget(target, direction, distance, hitMask))
+                return false;
+
+            return HasClearShotToTarget(target, direction, distance, ~0);
+        }
+
+        private bool HasClearShotToTarget(Transform target, Vector3 direction, float distance, LayerMask mask)
+        {
             RaycastHit[] hits = Physics.RaycastAll(
                 muzzle.position,
-                (aimPoint - muzzle.position).normalized,
+                direction,
                 distance,
-                hitMask,
+                mask,
                 QueryTriggerInteraction.Ignore);
 
             if (hits == null || hits.Length == 0)

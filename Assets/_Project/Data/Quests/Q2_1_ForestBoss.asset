@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e119cc969bb536c44890866bb45e133d, type: 3}
-  m_Name: Q2_1_ForestBoss
+  m_Name: Q5_숲 보스 처치
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
-  questID: Q2-1
+  questID: Q5
   questName: "숲 보스 처치"
   description: "숲에 있는 보스를 처치 하십시오."
   objectives:
@@ -20,10 +20,7 @@ MonoBehaviour:
     targetID: Boss_Forest_Sniper
     requiredCount: 1
     location: "숲"
-  rewards:
-  - type: 1
-    itemID: Ammo_Sniper_AP
-    amount: 60
-  unlockZoneID: 
-  prerequisiteQuestID: Q1
-  isSideQuest: 1
+  rewards: []
+  unlockZoneID: Stage5 Open
+  prerequisiteQuestID: Q4
+  isSideQuest: 0

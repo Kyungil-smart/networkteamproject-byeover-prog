@@ -166,9 +166,6 @@ namespace DeadZone.Systems.Quests
 
             Debug.Log($"[QuestManager] Restored client {clientId}: active={state.ActiveQuestIds.Count}, completed={state.CompletedQuestIds.Count}, rewardClaimed={state.RewardClaimedQuestIds.Count}");
 
-            if (state.ActiveQuestIds.Count == 0 && state.CompletedQuestIds.Count == 0)
-                AcceptQuest(clientId, "Q1");
-
             PublishQuestTrackerSnapshot(clientId);
         }
 
@@ -191,7 +188,6 @@ namespace DeadZone.Systems.Quests
             PublishQuestAccepted(clientId, questId);
 
             Debug.Log($"[QuestManager] Client {clientId} accepted {questId}");
-            TryAutoAcceptSideQuests(clientId);
             return true;
         }
 
@@ -362,7 +358,6 @@ namespace DeadZone.Systems.Quests
             }
 
             Debug.Log($"[QuestManager] Client {clientId} completed {questId}");
-            TryAutoAcceptNextQuest(clientId, questId);
         }
 
         private void TryAutoClaimCompletedReward(ulong clientId, string questId)
@@ -381,7 +376,7 @@ namespace DeadZone.Systems.Quests
         }
 
         private static bool ShouldCompleteImmediately(string questId)
-            => string.Equals(questId, "Q6", System.StringComparison.OrdinalIgnoreCase);
+            => string.Equals(questId, "Q7", System.StringComparison.OrdinalIgnoreCase);
 
         private static bool ShouldAutoClaimReward(string questId)
             => ShouldCompleteImmediately(questId);
@@ -408,6 +403,11 @@ namespace DeadZone.Systems.Quests
         private void OnExtractionCompleted(ExtractionCompletedEvent e)
         {
             if (!CanWriteQuestState()) return;
+
+            string extractionId = e.extractionId.ToString();
+            if (!string.IsNullOrEmpty(extractionId))
+                ReportProgress(e.clientId, ObjectiveType.Reach, extractionId, 1);
+
             ConfirmRaidQuestCompletions(e.clientId);
         }
 
@@ -454,40 +454,6 @@ namespace DeadZone.Systems.Quests
         {
             if (!CanWriteQuestState()) return;
             ReportProgress(e.clientId, ObjectiveType.Reach, e.zoneId.ToString(), 1);
-        }
-
-        private void TryAutoAcceptSideQuests(ulong clientId)
-        {
-            if (allQuests == null)
-                return;
-
-            PlayerQuestState state = GetPlayerState(clientId);
-            foreach (QuestDataSO quest in allQuests)
-            {
-                if (quest == null || !quest.isSideQuest) continue;
-                if (state.ActiveQuestIds.Contains(quest.questID)) continue;
-                if (state.CompletedQuestIds.Contains(quest.questID)) continue;
-                if (!string.IsNullOrEmpty(quest.prerequisiteQuestID) &&
-                    !state.CompletedQuestIds.Contains(quest.prerequisiteQuestID))
-                    continue;
-
-                AcceptQuest(clientId, quest.questID);
-            }
-        }
-
-        private void TryAutoAcceptNextQuest(ulong clientId, string completedQuestId)
-        {
-            if (allQuests == null)
-                return;
-
-            foreach (QuestDataSO quest in allQuests)
-            {
-                if (quest == null || quest.isSideQuest) continue;
-                if (quest.prerequisiteQuestID != completedQuestId) continue;
-
-                AcceptQuest(clientId, quest.questID);
-                break;
-            }
         }
 
         private void InitializeActiveQuestRuntimeProgress(PlayerQuestState state)
@@ -635,8 +601,8 @@ namespace DeadZone.Systems.Quests
             if (questData.rewards == null)
                 return true;
 
-            GridInventory inventory = ResolveClientInventory(clientId);
-            LobbyInventoryState lobbyInventoryState = inventory == null ? ResolveLobbyInventoryState() : null;
+            LobbyInventoryState lobbyInventoryState = ResolveLobbyInventoryState();
+            GridInventory inventory = lobbyInventoryState == null ? ResolveClientInventory(clientId) : null;
             WalletSystem wallet = ResolveClientWallet(clientId);
             IItemDatabase itemDatabase = ResolveItemDatabase();
 
@@ -683,8 +649,8 @@ namespace DeadZone.Systems.Quests
                 return;
 
             WalletSystem wallet = ResolveClientWallet(clientId);
-            GridInventory inventory = ResolveClientInventory(clientId);
-            LobbyInventoryState lobbyInventoryState = inventory == null ? ResolveLobbyInventoryState() : null;
+            LobbyInventoryState lobbyInventoryState = ResolveLobbyInventoryState();
+            GridInventory inventory = lobbyInventoryState == null ? ResolveClientInventory(clientId) : null;
             IItemDatabase itemDatabase = ResolveItemDatabase();
             bool changedLobbyInventory = false;
 

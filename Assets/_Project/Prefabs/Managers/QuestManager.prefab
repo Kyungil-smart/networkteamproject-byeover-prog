@@ -75,12 +75,11 @@ MonoBehaviour:
   allQuests:
   - {fileID: 11400000, guid: 09315e5c3eebdc0409d1dee96ffcd5b6, type: 2}
   - {fileID: 11400000, guid: dcc3c242f9ff97343ba03d174b30febc, type: 2}
-  - {fileID: 11400000, guid: a77d61be97d5b6149893b4ba6db2daf4, type: 2}
   - {fileID: 11400000, guid: f8d1d88bf01bc0d42b8d11fb8956fe76, type: 2}
-  - {fileID: 11400000, guid: 522d84decafefea4091bfadfebcfd10c, type: 2}
   - {fileID: 11400000, guid: 5f45fa8d535015c4cacf6651fe713c2f, type: 2}
+  - {fileID: 11400000, guid: a77d61be97d5b6149893b4ba6db2daf4, type: 2}
+  - {fileID: 11400000, guid: 522d84decafefea4091bfadfebcfd10c, type: 2}
   - {fileID: 11400000, guid: f1c3e43f95d53a648b27691d6974927f, type: 2}
-  - {fileID: 11400000, guid: b58ac944aa945094fb54cca950a5666a, type: 2}
   enableDebugKeys: 1
 --- !u!114 &7190497899683804910
 MonoBehaviour:

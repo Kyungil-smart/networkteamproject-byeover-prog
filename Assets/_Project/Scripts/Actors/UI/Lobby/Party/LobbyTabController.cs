@@ -94,6 +94,18 @@ namespace DeadZone.Actors.UI
             DisableBackgroundRaycastBlockers();
             BringTabsToFront();
             BindTabButtons();
+            RefreshFacilityTabInteractivity();
+        }
+
+        private void OnEnable()
+        {
+            LobbyRoomController.PartyRoomVisibilityChanged += HandlePartyRoomVisibilityChanged;
+            RefreshFacilityTabInteractivity();
+        }
+
+        private void OnDisable()
+        {
+            LobbyRoomController.PartyRoomVisibilityChanged -= HandlePartyRoomVisibilityChanged;
         }
 
         private void Start()
@@ -139,6 +151,13 @@ namespace DeadZone.Actors.UI
         }
         private async void LoadFacilityScene()
         {
+            if (IsFacilityEntryBlockedByPartyRoom())
+            {
+                Debug.LogWarning("[LobbyTabController] 파티 방에 들어간 상태에서는 시설로 이동할 수 없습니다. 방을 나간 뒤 시설을 이용하세요.", this);
+                RefreshFacilityTabInteractivity();
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(facilitySceneName))
             {
                 Debug.LogWarning("[LobbyTabController] 시설 씬 이름이 비어 있습니다.", this);
@@ -171,6 +190,32 @@ namespace DeadZone.Actors.UI
             }
 
             LoadingScreenService.LoadSceneOrFallback(facilitySceneName);
+        }
+
+        private void HandlePartyRoomVisibilityChanged()
+        {
+            RefreshFacilityTabInteractivity();
+        }
+
+        private void RefreshFacilityTabInteractivity()
+        {
+            if (tabs == null || facilityTabIndex < 0 || facilityTabIndex >= tabs.Length)
+                return;
+
+            LobbyTabButtonUI facilityTab = tabs[facilityTabIndex];
+            if (facilityTab == null || !facilityTab.EnsureReady() || facilityTab.Button == null)
+                return;
+
+            facilityTab.Button.interactable = !IsFacilityEntryBlockedByPartyRoom();
+        }
+
+        private static bool IsFacilityEntryBlockedByPartyRoom()
+        {
+            if (LobbyRoomController.IsPartyRoomVisible)
+                return true;
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            return networkManager != null && networkManager.IsListening;
         }
 
         [Button("탭/페이지 자동 연결")]

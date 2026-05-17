@@ -824,18 +824,32 @@ namespace DeadZone.Actors.UI
 
             if (source.slotKind == InventorySlotKind.QuickSlot)
             {
-                return TryRequestSwapQuickSlots(source.slotIndex, slotIndex);
-            }
+                if (TryRequestSwapQuickSlots(source.slotIndex, slotIndex))
+                    return true;
 
-            if (HasItem)
-            {
+                ItemDataSO targetItem = CurrentItemData;
+                int targetCount = CurrentStackCount;
+
                 SetItem(sourceItem, sourceCount);
-                CaptureLobbyInventoryStateIfPresent(this);
+                if (targetItem != null && targetCount > 0)
+                    source.SetItem(targetItem, targetCount);
+                else
+                    source.ClearItem();
+
+                CaptureLobbyInventoryStateIfPresent(this, source);
                 return true;
             }
 
+            ItemDataSO existingItem = CurrentItemData;
+            int existingCount = CurrentStackCount;
+
             SetItem(sourceItem, sourceCount);
-            CaptureLobbyInventoryStateIfPresent(this);
+            if (existingItem != null && existingCount > 0)
+                source.SetItem(existingItem, existingCount);
+            else
+                source.ClearItem();
+
+            CaptureLobbyInventoryStateIfPresent(this, source);
             return true;
         }
 

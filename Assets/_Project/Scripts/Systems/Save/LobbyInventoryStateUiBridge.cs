@@ -662,41 +662,31 @@ namespace DeadZone.Systems.Save
                 if (quickSlotItems == null || quickSlotItems.Count == 0)
                     return false;
 
-                Dictionary<string, int> availableCounts = new(System.StringComparer.OrdinalIgnoreCase);
-                if (inventoryItems != null)
-                {
-                    for (int i = 0; i < inventoryItems.Count; i++)
-                    {
-                        ItemSaveDTO item = inventoryItems[i];
-                        if (item == null || string.IsNullOrWhiteSpace(item.itemId))
-                            continue;
-
-                        int stackCount = Mathf.Max(1, item.stackCount);
-                        if (availableCounts.TryGetValue(item.itemId, out int currentCount))
-                            availableCounts[item.itemId] = currentCount + stackCount;
-                        else
-                            availableCounts.Add(item.itemId, stackCount);
-                    }
-                }
-
                 bool changed = false;
-                HashSet<string> assignedItemIds = new(System.StringComparer.OrdinalIgnoreCase);
+                HashSet<int> assignedSlotIndices = new();
 
                 for (int i = quickSlotItems.Count - 1; i >= 0; i--)
                 {
                     ItemSaveDTO quickSlotItem = quickSlotItems[i];
+                    int slotIndex = Mathf.Clamp(
+                        ToLinearSlotIndex(quickSlotItem?.x ?? 0, quickSlotItem?.y ?? 0, QuickSlotGridWidth),
+                        0,
+                        QuickSlotGridWidth - 1);
+
                     if (quickSlotItem == null ||
                         string.IsNullOrWhiteSpace(quickSlotItem.itemId) ||
-                        !availableCounts.TryGetValue(quickSlotItem.itemId, out int availableCount) ||
-                        availableCount <= 0 ||
-                        !assignedItemIds.Add(quickSlotItem.itemId))
+                        !assignedSlotIndices.Add(slotIndex))
                     {
                         quickSlotItems.RemoveAt(i);
                         changed = true;
                         continue;
                     }
 
-                    int safeStackCount = Mathf.Clamp(quickSlotItem.stackCount, 1, availableCount);
+                    quickSlotItem.containerId = QuickSlotContainerId;
+                    quickSlotItem.x = slotIndex;
+                    quickSlotItem.y = 0;
+
+                    int safeStackCount = Mathf.Max(1, quickSlotItem.stackCount);
                     if (quickSlotItem.stackCount != safeStackCount)
                     {
                         quickSlotItem.stackCount = safeStackCount;
