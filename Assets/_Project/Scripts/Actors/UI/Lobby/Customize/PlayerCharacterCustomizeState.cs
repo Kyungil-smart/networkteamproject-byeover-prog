@@ -12,6 +12,7 @@ namespace DeadZone.Actors.Player
         private const string HeadPrefsKey = "DZ_Custom_Head";
         private const string BeardPrefsKey = "DZ_Custom_Beard";
         private const string HatPrefsKey = "DZ_Custom_Hat";
+        private const string SavedTicksPrefsKey = "DZ_Custom_SavedTicks";
         private const string ClientScopedPrefsPrefix = "DZ_ClientCustom";
 
         [Header("외형 적용 대상")]
@@ -140,6 +141,13 @@ namespace DeadZone.Actors.Player
             if (TryGetLocalClientScopedKey(BodyPrefsKey, out string scopedBodyKey) &&
                 PlayerPrefs.HasKey(scopedBodyKey))
             {
+                string scopedSavedTicksKey = GetLocalClientScopedKey(SavedTicksPrefsKey);
+                long scopedSavedTicks = GetSavedTicks(scopedSavedTicksKey);
+                long globalSavedTicks = GetSavedTicks(SavedTicksPrefsKey);
+
+                if (globalSavedTicks > 0 && scopedSavedTicks <= 0)
+                    return LoadGlobalSavedCustomizeData();
+
                 return new CharacterCustomizeNetworkData(
                     PlayerPrefs.GetInt(scopedBodyKey, 0),
                     PlayerPrefs.GetInt(GetLocalClientScopedKey(HeadPrefsKey), 0),
@@ -148,6 +156,33 @@ namespace DeadZone.Actors.Player
                 ).Normalize();
             }
 
+            return LoadGlobalSavedCustomizeData();
+        }
+
+        public static void SaveLocalCustomizeData(CharacterCustomizeNetworkData data)
+        {
+            data = data.Normalize();
+            string savedTicks = DateTime.UtcNow.Ticks.ToString();
+
+            SaveCustomizeData(BodyPrefsKey, HeadPrefsKey, BeardPrefsKey, HatPrefsKey, SavedTicksPrefsKey, savedTicks, data);
+
+            if (TryGetLocalClientScopedKey(BodyPrefsKey, out string scopedBodyKey))
+            {
+                SaveCustomizeData(
+                    scopedBodyKey,
+                    GetLocalClientScopedKey(HeadPrefsKey),
+                    GetLocalClientScopedKey(BeardPrefsKey),
+                    GetLocalClientScopedKey(HatPrefsKey),
+                    GetLocalClientScopedKey(SavedTicksPrefsKey),
+                    savedTicks,
+                    data);
+            }
+
+            PlayerPrefs.Save();
+        }
+
+        private static CharacterCustomizeNetworkData LoadGlobalSavedCustomizeData()
+        {
             return new CharacterCustomizeNetworkData(
                 PlayerPrefs.GetInt(BodyPrefsKey, 0),
                 PlayerPrefs.GetInt(HeadPrefsKey, 0),
@@ -156,26 +191,26 @@ namespace DeadZone.Actors.Player
             ).Normalize();
         }
 
-        public static void SaveLocalCustomizeData(CharacterCustomizeNetworkData data)
+        private static void SaveCustomizeData(
+            string bodyKey,
+            string headKey,
+            string beardKey,
+            string hatKey,
+            string savedTicksKey,
+            string savedTicks,
+            CharacterCustomizeNetworkData data)
         {
-            data = data.Normalize();
+            PlayerPrefs.SetInt(bodyKey, data.BodyIndex);
+            PlayerPrefs.SetInt(headKey, data.HeadIndex);
+            PlayerPrefs.SetInt(beardKey, data.BeardIndex);
+            PlayerPrefs.SetInt(hatKey, data.HatIndex);
+            PlayerPrefs.SetString(savedTicksKey, savedTicks);
+        }
 
-            if (TryGetLocalClientScopedKey(BodyPrefsKey, out string scopedBodyKey))
-            {
-                PlayerPrefs.SetInt(scopedBodyKey, data.BodyIndex);
-                PlayerPrefs.SetInt(GetLocalClientScopedKey(HeadPrefsKey), data.HeadIndex);
-                PlayerPrefs.SetInt(GetLocalClientScopedKey(BeardPrefsKey), data.BeardIndex);
-                PlayerPrefs.SetInt(GetLocalClientScopedKey(HatPrefsKey), data.HatIndex);
-            }
-            else
-            {
-                PlayerPrefs.SetInt(BodyPrefsKey, data.BodyIndex);
-                PlayerPrefs.SetInt(HeadPrefsKey, data.HeadIndex);
-                PlayerPrefs.SetInt(BeardPrefsKey, data.BeardIndex);
-                PlayerPrefs.SetInt(HatPrefsKey, data.HatIndex);
-            }
-
-            PlayerPrefs.Save();
+        private static long GetSavedTicks(string prefsKey)
+        {
+            string value = PlayerPrefs.GetString(prefsKey, string.Empty);
+            return long.TryParse(value, out long ticks) ? ticks : 0;
         }
 
         private static bool TryGetLocalClientScopedKey(string prefsKey, out string scopedKey)

@@ -44,6 +44,12 @@ namespace DeadZone.Actors
         [Tooltip("부활 시작 시 표시 문구")]
         [SerializeField] private string reviveStatusLabel = "응급 처치중...";
 
+        [BoxGroup("설정")]
+        [SerializeField] private string reviverTitleLabel = "팀원 구조 중";
+
+        [BoxGroup("설정")]
+        [SerializeField] private string reviverGuideLabel = "움직이지 말고 구조를 완료하세요";
+
         // Feel 피드백 - 블리드아웃
         [FoldoutGroup("출혈 피드백")]
         [Tooltip("기절시 1회 재생")]
@@ -127,8 +133,13 @@ namespace DeadZone.Actors
         [TitleGroup("디버그")]
         [ShowInInspector, ReadOnly] private bool reviveActive;// 부활 진행 중에는 bleedout fill 갱신을 막음
 
+        private string defaultKnockedTitleText;
+        private string defaultKnockedGuideText;
+        private string defaultKnockedCountText;
+
         private void Awake()
         {
+            CacheDefaultTexts();
             EnsureRootScale();
         }
 
@@ -174,6 +185,81 @@ namespace DeadZone.Actors
 
             EnsureRootScale();
             SetKnockedContentVisible(visible);
+        }
+
+        public void ShowRevivingTargetForUI(float duration)
+        {
+            if (!gameObject.activeSelf)
+                gameObject.SetActive(true);
+
+            EnsureRootScale();
+            SetKnockedContentVisible(true);
+
+            bleedoutActive = false;
+            reviveActive = true;
+            StopHeartbeatLoop();
+            ResetVignette();
+
+            if (knockedTitleText != null)
+            {
+                knockedTitleText.gameObject.SetActive(true);
+                knockedTitleText.text = reviverTitleLabel;
+            }
+
+            if (knockedGuideText != null)
+                knockedGuideText.text = reviverGuideLabel;
+
+            if (knockedCountText != null)
+                knockedCountText.gameObject.SetActive(true);
+
+            UpdateRevivingTargetForUI(0f, duration);
+        }
+
+        public void UpdateRevivingTargetForUI(float progress01, float duration)
+        {
+            float progress = Mathf.Clamp01(progress01);
+
+            if (bleedoutFill != null)
+                bleedoutFill.fillAmount = progress;
+
+            if (knockedCountText != null)
+            {
+                float remaining = Mathf.Max(0f, duration * (1f - progress));
+                knockedCountText.text = $"{remaining:0.0}s";
+            }
+        }
+
+        public void HideRevivingTargetForUI()
+        {
+            reviveActive = false;
+            bleedoutActive = false;
+            RestoreDefaultTexts();
+            ResetVignette();
+            SetKnockedContentVisible(false);
+        }
+
+        private void CacheDefaultTexts()
+        {
+            if (knockedTitleText != null)
+                defaultKnockedTitleText = knockedTitleText.text;
+
+            if (knockedGuideText != null)
+                defaultKnockedGuideText = knockedGuideText.text;
+
+            if (knockedCountText != null)
+                defaultKnockedCountText = knockedCountText.text;
+        }
+
+        private void RestoreDefaultTexts()
+        {
+            if (knockedTitleText != null && defaultKnockedTitleText != null)
+                knockedTitleText.text = defaultKnockedTitleText;
+
+            if (knockedGuideText != null && defaultKnockedGuideText != null)
+                knockedGuideText.text = defaultKnockedGuideText;
+
+            if (knockedCountText != null && defaultKnockedCountText != null)
+                knockedCountText.text = defaultKnockedCountText;
         }
 
         private bool EnsureActiveForTest()
@@ -528,6 +614,9 @@ namespace DeadZone.Actors
             Debug.Log($"[KnockedHUD] PlayerKnocked victim={e.victimClientId}, attacker={e.attackerClientId}, bleedout={e.bleedoutSeconds:F1}", this);
 
             SetKnockedContentVisible(true);
+            RestoreDefaultTexts();
+            if (knockedTitleText != null) knockedTitleText.gameObject.SetActive(true);
+            if (knockedCountText != null) knockedCountText.gameObject.SetActive(true);
             SetBloodVignetteVisible(true);
             SetBloodVignetteIntensity(vignetteMinAlpha);
             SetBloodVignetteScale(vignetteMinScale);

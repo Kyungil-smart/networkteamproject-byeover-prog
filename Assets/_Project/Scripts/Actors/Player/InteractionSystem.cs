@@ -32,10 +32,22 @@ namespace DeadZone.Actors
 
         private NetworkObject playerNetworkObject;
         private Camera interactionCamera;
+        private PlayerStatsUI playerStatsUI;
+        private string currentPromptText;
 
         private void Awake()
         {
             playerNetworkObject = GetComponentInParent<NetworkObject>();
+        }
+
+        private void Update()
+        {
+            UpdateInteractPrompt();
+        }
+
+        private void OnDisable()
+        {
+            ClearInteractPrompt();
         }
 
         /// <summary>
@@ -87,7 +99,8 @@ namespace DeadZone.Actors
             out IInteractable bestInteractable,
             out Collider bestCollider,
             out float bestDistance,
-            out float bestAngle)
+            out float bestAngle,
+            bool logFailure = true)
         {
             bestInteractable = null;
             bestCollider = null;
@@ -160,8 +173,77 @@ namespace DeadZone.Actors
             if (bestInteractable != null)
                 return true;
 
-            LogNoCandidateReason(colliderCount, missingInteractableCount, angleRejectedCount);
+            if (logFailure)
+                LogNoCandidateReason(colliderCount, missingInteractableCount, angleRejectedCount);
+
             return false;
+        }
+
+        private void UpdateInteractPrompt()
+        {
+            if (playerNetworkObject == null)
+            {
+                ClearInteractPrompt();
+                return;
+            }
+
+            if (playerNetworkObject.IsSpawned && !playerNetworkObject.IsOwner)
+            {
+                ClearInteractPrompt();
+                return;
+            }
+
+            if (TryFindBestInteractable(
+                    out IInteractable interactable,
+                    out _,
+                    out _,
+                    out _,
+                    false))
+            {
+                ShowInteractPrompt(interactable.GetPromptText());
+                return;
+            }
+
+            ClearInteractPrompt();
+        }
+
+        private void ShowInteractPrompt(string text)
+        {
+            if (playerStatsUI == null)
+                playerStatsUI = ResolvePlayerStatsUI();
+
+            if (playerStatsUI == null)
+                return;
+
+            if (playerStatsUI.IsRevivePromptActive)
+                return;
+
+            playerStatsUI.ShowInteractPrompt(text);
+            currentPromptText = text;
+        }
+
+        private void ClearInteractPrompt()
+        {
+            if (string.IsNullOrEmpty(currentPromptText))
+                return;
+
+            if (playerStatsUI == null)
+                playerStatsUI = ResolvePlayerStatsUI();
+
+            if (playerStatsUI == null)
+                return;
+
+            playerStatsUI.ShowInteractPrompt(string.Empty);
+            currentPromptText = string.Empty;
+        }
+
+        private PlayerStatsUI ResolvePlayerStatsUI()
+        {
+            PlayerStatsUI[] statsUis = FindObjectsByType<PlayerStatsUI>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            return statsUis.Length > 0 ? statsUis[0] : null;
         }
 
         /// <summary>

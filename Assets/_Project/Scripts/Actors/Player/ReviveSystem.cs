@@ -38,13 +38,18 @@ namespace DeadZone.Actors
                  "값이 낮을수록 UI 반응은 부드럽지만 네트워크 이벤트 빈도가 증가합니다. 단위: 초")]
         [SerializeField, Min(0.02f)] private float progressEventInterval = 0.1f;
 
+        [Header("부활 상호작용 UI")]
+        [SerializeField] private string revivePromptText = "[F] 팀원 살리기";
+
         public NetworkVariable<float> Progress = new(0f);
         public NetworkVariable<ulong> CurrentTargetClientId = new(ulong.MaxValue);
 
         private PlayerHealthSystem reviverHealth;
+        private PlayerStatsUI playerStatsUI;
         private NetworkObject serverTargetObj;
         private Vector3 serverReviveStartPosition;
         private float nextProgressEventTime;
+        private bool isShowingRevivePrompt;
 
         public bool IsReviving => CurrentTargetClientId.Value != ulong.MaxValue;
 
@@ -53,12 +58,18 @@ namespace DeadZone.Actors
             reviverHealth = GetComponent<PlayerHealthSystem>();
         }
 
+        private void OnDisable()
+        {
+            HideRevivePrompt();
+        }
+
         public void StartHold()
         {
             if (!IsOwner) return;
             if (IsReviving) return;
             if (!CanReviverAttemptRevive()) return;
 
+            HideRevivePrompt();
             BeginReviveServerRpc();
         }
 
@@ -138,6 +149,8 @@ namespace DeadZone.Actors
 
         private void Update()
         {
+            UpdateRevivePrompt();
+
             if (!IsServer) return;
             if (!IsReviving || serverTargetObj == null) return;
 
@@ -210,6 +223,55 @@ namespace DeadZone.Actors
                    reviverHealth.IsAlive &&
                    !reviverHealth.IsKnocked &&
                    !reviverHealth.IsDead;
+        }
+
+        private void UpdateRevivePrompt()
+        {
+            if (!IsOwner)
+                return;
+
+            bool shouldShow = !IsReviving && CanReviverAttemptRevive() && TryFindReviveTarget(out _);
+            if (shouldShow)
+            {
+                ShowRevivePrompt();
+            }
+            else
+            {
+                HideRevivePrompt();
+            }
+        }
+
+        private void ShowRevivePrompt()
+        {
+            if (playerStatsUI == null)
+                playerStatsUI = ResolvePlayerStatsUI();
+
+            if (playerStatsUI == null)
+                return;
+
+            playerStatsUI.ShowRevivePrompt(revivePromptText);
+            isShowingRevivePrompt = true;
+        }
+
+        private void HideRevivePrompt()
+        {
+            if (!isShowingRevivePrompt)
+                return;
+
+            if (playerStatsUI == null)
+                playerStatsUI = ResolvePlayerStatsUI();
+
+            playerStatsUI?.HideRevivePrompt();
+            isShowingRevivePrompt = false;
+        }
+
+        private PlayerStatsUI ResolvePlayerStatsUI()
+        {
+            PlayerStatsUI[] statsUis = FindObjectsByType<PlayerStatsUI>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            return statsUis.Length > 0 ? statsUis[0] : null;
         }
 
         private bool TryFindReviveTarget(out NetworkObject targetObj)

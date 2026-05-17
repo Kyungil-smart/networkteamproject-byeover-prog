@@ -122,6 +122,7 @@ namespace DeadZone.Actors.UI
                     savedData.beardIndex,
                     savedData.hatIndex));
 
+            SubmitSavedDataToLocalPlayer();
             ApplyPreview();
             Saved?.Invoke(savedData);
             Close();
@@ -263,6 +264,23 @@ namespace DeadZone.Actors.UI
                 preview.Apply(tempData);
             else
                 Debug.LogWarning($"[CharacterCustomizePopupUI] preview is not assigned. Object={name}", this);
+        }
+
+        private void SubmitSavedDataToLocalPlayer()
+        {
+            PlayerCharacterCustomizeState[] customizeStates = FindObjectsByType<PlayerCharacterCustomizeState>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < customizeStates.Length; i++)
+            {
+                PlayerCharacterCustomizeState customizeState = customizeStates[i];
+                if (customizeState == null || !customizeState.IsOwner)
+                    continue;
+
+                customizeState.SubmitLocalSavedCustomizeData();
+                return;
+            }
         }
 
         private void AutoBindReferences()

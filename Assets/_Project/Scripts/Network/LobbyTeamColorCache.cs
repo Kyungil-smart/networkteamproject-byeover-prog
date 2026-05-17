@@ -81,6 +81,11 @@ namespace DeadZone.Network
             return true;
         }
 
+        public static bool HasCustomizeForClient(ulong clientId)
+        {
+            return CustomizesByClientId.ContainsKey(clientId);
+        }
+
         public static void SaveCustomizesForClients(IReadOnlyList<ulong> clientIds)
         {
             if (clientIds == null || clientIds.Count == 0)
