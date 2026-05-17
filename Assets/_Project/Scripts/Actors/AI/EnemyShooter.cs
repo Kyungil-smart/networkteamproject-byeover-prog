@@ -109,6 +109,11 @@ namespace DeadZone.Actors
                 return;
             }
 
+            if (!IsValidCombatTarget(target))
+            {
+                return;
+            }
+
             if (muzzle == null || enemyBulletPrefab == null)
             {
                 return;
@@ -402,6 +407,17 @@ namespace DeadZone.Actors
             }
 
             return target.position + Vector3.up;
+        }
+
+        private static bool IsValidCombatTarget(Transform target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            PlayerHealthSystem health = target.GetComponentInParent<PlayerHealthSystem>();
+            return health != null && health.IsAlive;
         }
 
         private bool CanShootTarget(Transform target, Vector3 aimPoint, float distance)

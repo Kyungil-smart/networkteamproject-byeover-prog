@@ -63,6 +63,19 @@ namespace DeadZone.Actors
         [Tooltip("현재 무기의 ADS 전환 시간을 확인하기 위한 장비 슬롯" +
                  "\n비워두면 같은 Player Root에서 EquipmentSlots를 자동 탐색")]
         [SerializeField] private EquipmentSlots equipment;
+
+        [Header("====ADS Camera Shift====")]
+        [Tooltip("우클릭 ADS 중 카메라를 조준 방향 중심의 넓은 시점으로 부드럽게 전환합니다.")]
+        [SerializeField] private bool useAdsCameraShift = true;
+
+        [Tooltip("ADS 중 사용할 카메라 월드 오프셋입니다.")]
+        [SerializeField] private Vector3 adsWorldOffset = new Vector3(0f, 13.5f, -10.5f);
+
+        [Tooltip("ADS 중 사용할 카메라 FOV입니다. 0이면 기본 FOV를 유지합니다.")]
+        [SerializeField, Min(0f)] private float adsFieldOfView = 48f;
+
+        [Tooltip("ADS 카메라 오프셋/FOV 보간 속도입니다.")]
+        [SerializeField, Min(0.01f)] private float adsCameraShiftSpeed = 10f;
         
         [Header("====디버그=====")]
         [Tooltip("카메라 활성화 상태, Owner 여부, AudioListener 상태를 Console에 출력" +
@@ -75,6 +88,9 @@ namespace DeadZone.Actors
         private bool isLocalOwnerCamera;
         private Transform ownerFollowTarget;
         private float currentLookAheadDistance;
+        private Vector3 currentWorldOffset;
+        private float defaultFieldOfView;
+        private float currentFieldOfView;
         private Vector3 lastValidLookDirection = Vector3.forward;
 
         private void Awake()
@@ -99,6 +115,9 @@ namespace DeadZone.Actors
                 equipment = GetComponent<EquipmentSlots>();
 
             currentLookAheadDistance = defaultLookAheadDistance;
+            currentWorldOffset = worldOffset;
+            defaultFieldOfView = playerCamera != null ? playerCamera.fieldOfView : 60f;
+            currentFieldOfView = defaultFieldOfView;
 
             SetCameraActive(false, "Awake");
             LogCameraState("Awake");
@@ -432,6 +451,7 @@ namespace DeadZone.Actors
                 return;
 
             UpdateLookAheadDistance();
+            UpdateCameraShift();
 
             Vector3 lookDirection = ResolveMouseLookDirection();
             Vector3 focusPosition = CalculateCameraFocusPosition(lookDirection);
@@ -458,6 +478,33 @@ namespace DeadZone.Actors
                 currentLookAheadDistance,
                 targetDistance,
                 speed * Time.deltaTime);
+        }
+
+        private void UpdateCameraShift()
+        {
+            if (!useAdsCameraShift)
+            {
+                currentWorldOffset = worldOffset;
+                ApplyFieldOfView(defaultFieldOfView);
+                return;
+            }
+
+            bool isAds = adsSystem != null && adsSystem.IsADS;
+            Vector3 targetOffset = isAds ? adsWorldOffset : worldOffset;
+            float targetFov = isAds && adsFieldOfView > 0f ? adsFieldOfView : defaultFieldOfView;
+            float t = 1f - Mathf.Exp(-adsCameraShiftSpeed * Time.deltaTime);
+
+            currentWorldOffset = Vector3.Lerp(currentWorldOffset, targetOffset, t);
+            currentFieldOfView = Mathf.Lerp(currentFieldOfView, targetFov, t);
+            ApplyFieldOfView(currentFieldOfView);
+        }
+
+        private void ApplyFieldOfView(float fieldOfView)
+        {
+            if (playerCamera == null || fieldOfView <= 0f)
+                return;
+
+            playerCamera.fieldOfView = fieldOfView;
         }
 
         /// <summary>
@@ -501,7 +548,7 @@ namespace DeadZone.Actors
         /// </summary>
         private void ApplyCameraPose(Vector3 focusPosition)
         {
-            Vector3 cameraPosition = focusPosition + worldOffset;
+            Vector3 cameraPosition = focusPosition + currentWorldOffset;
             Vector3 lookDirection = focusPosition - cameraPosition;
 
             if (lookDirection.sqrMagnitude <= 0.0001f)

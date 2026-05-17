@@ -588,8 +588,9 @@ namespace DeadZone.Actors
 
         private void TickChase()
         {
-            if (currentTarget == null)
+            if (!IsValidCombatTarget(currentTarget))
             {
+                currentTarget = null;
                 EnterInvestigate(lastKnownPos);
                 return;
             }
@@ -633,8 +634,9 @@ namespace DeadZone.Actors
 
         private void TickCombat()
         {
-            if (currentTarget == null)
+            if (!IsValidCombatTarget(currentTarget))
             {
+                currentTarget = null;
                 animHandler?.SetAimMode(false);
                 EnterInvestigate(lastKnownPos);
                 return;
@@ -812,6 +814,9 @@ namespace DeadZone.Actors
 
         private void EnterChase(Transform target)
         {
+            if (!IsValidCombatTarget(target))
+                return;
+
             bool wasAlreadyAlerted = CurrentState == AIState.Chase || CurrentState == AIState.Combat;
             currentTarget = target;
             RememberTargetPosition(target.position);
@@ -821,6 +826,15 @@ namespace DeadZone.Actors
 
             if (!wasAlreadyAlerted)
                 TryPlayAlertSound(target);
+        }
+
+        private static bool IsValidCombatTarget(Transform target)
+        {
+            if (target == null)
+                return false;
+
+            PlayerHealthSystem health = target.GetComponentInParent<PlayerHealthSystem>();
+            return health != null && health.IsAlive;
         }
 
         private void EnterInvestigate(Vector3 position)

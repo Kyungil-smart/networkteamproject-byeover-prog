@@ -84,8 +84,14 @@ namespace DeadZone.Actors
 
             if (Time.time < nextCheckTime)
             {
-                target = cachedTarget;
-                return cachedTarget != null;
+                if (IsValidTarget(cachedTarget))
+                {
+                    target = cachedTarget;
+                    return true;
+                }
+
+                cachedTarget = null;
+                return false;
             }
             nextCheckTime = Time.time + checkInterval;
 
@@ -103,6 +109,9 @@ namespace DeadZone.Actors
                 if (c == null) continue;
 
                 Transform candidate = ResolveTargetTransform(c);
+                if (!IsValidTarget(candidate))
+                    continue;
+
                 if (CanSee(candidate))
                 {
                     float dist = Vector3.Distance(transform.position, candidate.position);
@@ -132,6 +141,7 @@ namespace DeadZone.Actors
         public bool CanSee(Transform candidate)
         {
             if (candidate == null) return false;
+            if (!IsValidTarget(candidate)) return false;
 
             Vector3 origin = GetEyePosition();
             Vector3 dir = candidate.position - origin;
@@ -176,6 +186,9 @@ namespace DeadZone.Actors
                 if (c == null) continue;
 
                 Transform candidate = ResolveTargetTransform(c);
+                if (!IsValidTarget(candidate))
+                    continue;
+
                 float dist = Vector3.Distance(transform.position, candidate.position);
 
                 // 이미 전방 FOV에서 감지 가능한 대상은 스킵 (중복 방지)
@@ -235,6 +248,15 @@ namespace DeadZone.Actors
             return targetCollider.attachedRigidbody != null
                 ? targetCollider.attachedRigidbody.transform
                 : targetCollider.transform;
+        }
+
+        private static bool IsValidTarget(Transform candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            PlayerHealthSystem health = candidate.GetComponentInParent<PlayerHealthSystem>();
+            return health != null && health.IsAlive;
         }
 
 #if UNITY_EDITOR

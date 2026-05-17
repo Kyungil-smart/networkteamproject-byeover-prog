@@ -39,6 +39,7 @@ namespace DeadZone.Systems.Save
         [SerializeField] private string lastJson;
 
         private bool isCloudSaveRunning;
+        private bool hasPendingCloudSaveRequest;
         private Coroutine pendingCloudLoadCoroutine;
         private bool isInitialLoadCompleted;
         private string lastLoadedLocalJsonPath;
@@ -123,10 +124,34 @@ namespace DeadZone.Systems.Save
         {
             if (isCloudSaveRunning)
             {
-                Debug.LogWarning("[LobbySaveService] Server save is already running.", this);
+                hasPendingCloudSaveRequest = true;
+                Debug.LogWarning("[LobbySaveService] Server save is already running. Queued one more save with the latest state.", this);
                 return false;
             }
 
+            isCloudSaveRunning = true;
+            bool anySuccess = false;
+
+            try
+            {
+                do
+                {
+                    hasPendingCloudSaveRequest = false;
+                    bool success = await SaveLobbyDataToCloudOnceAsync();
+                    anySuccess |= success;
+                }
+                while (hasPendingCloudSaveRequest);
+
+                return anySuccess;
+            }
+            finally
+            {
+                isCloudSaveRunning = false;
+            }
+        }
+
+        private async Task<bool> SaveLobbyDataToCloudOnceAsync()
+        {
             Debug.Log("[Save] Save requested. reason=LobbySaveService.SaveLobbyDataToCloudAsync", this);
 
             CloudSaveSystem saveSystem = ResolveCloudSaveSystem();
@@ -161,25 +186,16 @@ namespace DeadZone.Systems.Save
                 return false;
             }
 
-            isCloudSaveRunning = true;
+            bool success = await saveSystem.SaveLobbyDataAsync(dto);
+            Debug.Log(success
+                ? "[LobbySaveService] Server save success"
+                : "[LobbySaveService] Server save failed", this);
 
-            try
-            {
-                bool success = await saveSystem.SaveLobbyDataAsync(dto);
-                Debug.Log(success
-                    ? "[LobbySaveService] Server save success"
-                    : "[LobbySaveService] Server save failed", this);
+            SaveLobbyDataToLocalJson(
+                dto,
+                success ? "Server save success sync" : "Server save failed fallback");
 
-                SaveLobbyDataToLocalJson(
-                    dto,
-                    success ? "Server save success sync" : "Server save failed fallback");
-
-                return success;
-            }
-            finally
-            {
-                isCloudSaveRunning = false;
-            }
+            return success;
         }
 
         [Button("Load Last JSON")]
