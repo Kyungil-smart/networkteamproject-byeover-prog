@@ -144,6 +144,7 @@ namespace DeadZone.Actors.UI
 
             activeInstance = this;
             EventBus.Subscribe<WeaponFiredEvent>(OnWeaponFired);
+            EventBus.Subscribe<ADSStateChangedEvent>(OnADSStateChanged);
 
             if (subscribeCriticalHitAsHitMarker)
                 EventBus.Subscribe<CriticalHitEvent>(OnCriticalHit);
@@ -167,6 +168,7 @@ namespace DeadZone.Actors.UI
             if (subscribed)
             {
                 EventBus.Unsubscribe<WeaponFiredEvent>(OnWeaponFired);
+                EventBus.Unsubscribe<ADSStateChangedEvent>(OnADSStateChanged);
                 EventBus.Unsubscribe<CriticalHitEvent>(OnCriticalHit);
                 subscribed = false;
             }
@@ -220,6 +222,14 @@ namespace DeadZone.Actors.UI
                 return;
 
             AddShotSpread();
+        }
+
+        private void OnADSStateChanged(ADSStateChangedEvent e)
+        {
+            if (!IsLocalClient(e.clientId))
+                return;
+
+            SetADS(e.isAiming);
         }
 
         private void OnCriticalHit(CriticalHitEvent e)

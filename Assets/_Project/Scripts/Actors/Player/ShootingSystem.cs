@@ -290,6 +290,14 @@ namespace DeadZone.Actors
 
             // 6. 이벤트 발행
             PublishFireEvent(rpc.Receive.SenderClientId, weaponId, weapon);
+            PublishFireEventClientRpc(
+                rpc.Receive.SenderClientId,
+                weaponId,
+                weapon.weaponCategory,
+                weapon.magSize,
+                weapon.maxDurability,
+                muzzleTransform.position,
+                1f);
 
             AudioCueId fireCueId = GetFireCueId(weapon.weaponCategory);
             if (fireCueId != AudioCueId.None)
@@ -598,6 +606,32 @@ namespace DeadZone.Actors
                 maxDurability = weapon != null ? weapon.maxDurability : 0f,
                 origin = muzzleTransform.position,
                 loudness = 1f
+            });
+        }
+
+        [ClientRpc]
+        private void PublishFireEventClientRpc(
+            ulong shooterClientId,
+            FixedString64Bytes weaponId,
+            WeaponCategory weaponCategory,
+            int maxAmmo,
+            float maxDurability,
+            Vector3 origin,
+            float loudness)
+        {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new WeaponFiredEvent
+            {
+                shooterClientId = shooterClientId,
+                weaponId = weaponId,
+                weaponData = null,
+                weaponCategory = weaponCategory,
+                maxAmmo = maxAmmo,
+                maxDurability = maxDurability,
+                origin = origin,
+                loudness = loudness
             });
         }
 

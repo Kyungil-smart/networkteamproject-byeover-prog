@@ -91,7 +91,7 @@ namespace DeadZone.Actors
             if (IsTargetBeingRevivedByOther(targetObj)) return;
 
             HideRevivePrompt();
-            BeginReviveServerRpc();
+            BeginReviveServerRpc(targetObj.NetworkObjectId);
         }
 
         public void StopHold()
@@ -110,7 +110,7 @@ namespace DeadZone.Actors
         }
 
         [ServerRpc]
-        private void BeginReviveServerRpc(ServerRpcParams rpc = default)
+        private void BeginReviveServerRpc(ulong targetNetworkObjectId, ServerRpcParams rpc = default)
         {
             ulong reviverId = rpc.Receive.SenderClientId;
             if (reviverId != OwnerClientId)
@@ -119,7 +119,7 @@ namespace DeadZone.Actors
             if (!CanReviverAttemptRevive())
                 return;
 
-            if (!TryFindReviveTarget(out NetworkObject targetObj))
+            if (!TryResolveServerReviveTarget(targetNetworkObjectId, out NetworkObject targetObj))
                 return;
 
             BeginReviveTargetOnServer(targetObj, reviverId);
@@ -347,6 +347,37 @@ namespace DeadZone.Actors
             }
 
             return targetObj != null;
+        }
+
+        private bool TryResolveServerReviveTarget(ulong targetNetworkObjectId, out NetworkObject targetObj)
+        {
+            targetObj = null;
+
+            if (!IsServer || NetworkManager == null || NetworkManager.SpawnManager == null)
+                return false;
+
+            if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetNetworkObjectId, out NetworkObject candidateObj))
+                return false;
+
+            if (candidateObj == null ||
+                candidateObj == NetworkObject ||
+                candidateObj.OwnerClientId == OwnerClientId)
+            {
+                return false;
+            }
+
+            IRevivable targetHealth = candidateObj.GetComponent<IRevivable>();
+            if (targetHealth == null || !targetHealth.CanBeRevived)
+                return false;
+
+            if (targetHealth.IsBeingRevived && targetHealth.CurrentReviverClientId != OwnerClientId)
+                return false;
+
+            if (!IsWithinReviveRange(candidateObj))
+                return false;
+
+            targetObj = candidateObj;
+            return true;
         }
 
         private bool TryResolveRevivableTarget(Collider candidate, out NetworkObject targetObj)
