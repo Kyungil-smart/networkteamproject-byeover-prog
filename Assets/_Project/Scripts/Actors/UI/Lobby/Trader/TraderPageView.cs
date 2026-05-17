@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -78,6 +79,7 @@ namespace DeadZone.Actors.UI
         private TraderId currentTraderId;
         private bool showingBuyTab = true;
         private readonly List<TraderEntry> testPurchasedEntries = new List<TraderEntry>();
+        private Coroutine restoreSellScrollRoutine;
 
 #if ODIN_INSPECTOR
         [Sirenix.OdinInspector.Title("리스트 레이아웃")]
@@ -291,6 +293,40 @@ namespace DeadZone.Actors.UI
                 entryTemplate.gameObject.SetActive(false);
         }
 
+        private void RebuildSellListPreserveScroll()
+        {
+            ScrollRect sellScrollRect = ResolveScrollRect(sellContent);
+            float sellScrollPosition = sellScrollRect != null
+                ? sellScrollRect.verticalNormalizedPosition
+                : 1f;
+
+            RebuildSellList();
+
+            if (restoreSellScrollRoutine != null)
+                StopCoroutine(restoreSellScrollRoutine);
+
+            restoreSellScrollRoutine = StartCoroutine(RestoreSellScrollNextFrame(sellScrollRect, sellScrollPosition));
+        }
+
+        private IEnumerator RestoreSellScrollNextFrame(ScrollRect scrollRect, float normalizedPosition)
+        {
+            yield return null;
+
+            Canvas.ForceUpdateCanvases();
+
+            if (scrollRect == null)
+            {
+                restoreSellScrollRoutine = null;
+                yield break;
+            }
+
+            scrollRect.StopMovement();
+            scrollRect.verticalNormalizedPosition = Mathf.Clamp01(normalizedPosition);
+            Canvas.ForceUpdateCanvases();
+
+            restoreSellScrollRoutine = null;
+        }
+
         public void ShowBuyTab()
         {
             ShowBuyList();
@@ -391,7 +427,7 @@ namespace DeadZone.Actors.UI
             SaveLobbyAfterTestTrade();
 
             Debug.Log($"[TraderPageView] 테스트 판매 완료. Item={entry.item.itemID}, Price={sellPrice}, TestCurrency={testCurrency}", this);
-            RebuildSellList();
+            RebuildSellListPreserveScroll();
         }
 
         private void TryBuyWithTestCurrency(TraderEntry entry)
@@ -485,7 +521,7 @@ namespace DeadZone.Actors.UI
             SaveLobbyAfterTestTrade();
 
             Debug.Log($"[TraderPageView] 판매 완료. Item={entry.item.itemID}, Price={sellPrice}, TestCurrency={testCurrency}", this);
-            RebuildSellList();
+            RebuildSellListPreserveScroll();
             return true;
         }
 
@@ -826,6 +862,11 @@ namespace DeadZone.Actors.UI
                 return null;
 
             return scrollRoot.GetComponent<ScrollRect>() ?? scrollRoot.gameObject.AddComponent<ScrollRect>();
+        }
+
+        private static ScrollRect ResolveScrollRect(Transform content)
+        {
+            return content != null ? content.GetComponentInParent<ScrollRect>(true) : null;
         }
 
         private static void ConfigureScrollRect(ScrollRect scrollRect, RectTransform contentRect)
