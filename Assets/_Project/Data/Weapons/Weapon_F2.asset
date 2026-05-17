@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.WeaponDataSO
   itemID: Weapon_F2
   displayName: F2
-  description: "F2 AR\n- 등급: 에픽\n\n- 특징\n1. 데미지: 36\n2. 공격 속도: 9\n3. 탄창 크기: 25"
+  description: "F2 AR\n- 등급: 에픽\n\n- 특징\n1. 데미지: 42\n2. 공격 속도: 9\n3. 탄창 크기: 25"
   icon: {fileID: 21300000, guid: 7c05ec0c7f7d09f4ebdbb820a29c4c7a, type: 3}
   category: 0
   rarity: 3
@@ -25,7 +25,7 @@ MonoBehaviour:
   baseSellPrice: 11250
   worldPrefab: {fileID: 5863959962671997655, guid: 84e96cfa27210fe4488f053115ff8dd8, type: 3}
   weaponCategory: 0
-  damage: 36
+  damage: 42
   fireRate: 9
   magSize: 25
   engageRange: {x: 25, y: 70}

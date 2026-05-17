@@ -432,7 +432,7 @@ namespace DeadZone.Systems.Raid
                 if (item == null || string.IsNullOrWhiteSpace(item.itemId))
                     continue;
 
-                int slotIndex = Mathf.Clamp(item.slotIndex, 0, 5);
+                int slotIndex = Mathf.Clamp(item.slotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1);
                 result.Add(new ItemSaveDTO
                 {
                     itemId = item.itemId,
@@ -615,7 +615,7 @@ namespace DeadZone.Systems.Raid
                     {
                         itemId = item.itemId,
                         instanceId = item.instanceId,
-                        slotIndex = Mathf.Clamp(item.x, 0, 5),
+                        slotIndex = Mathf.Clamp(item.x, 0, GridInventory.QUICK_SLOT_COUNT - 1),
                         stackCount = Mathf.Max(1, item.stackCount),
                         currentDurability = Mathf.Max(0f, item.currentDurability),
                         currentAmmo = Mathf.Max(0, item.currentAmmo)
@@ -687,7 +687,7 @@ namespace DeadZone.Systems.Raid
                 {
                     itemId = slot.CurrentItemData.itemID,
                     instanceId = $"{slot.CurrentItemData.itemID}_quickslot_{slot.SlotIndex}",
-                    slotIndex = Mathf.Clamp(slot.SlotIndex, 0, 5),
+                    slotIndex = Mathf.Clamp(slot.SlotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1),
                     stackCount = Mathf.Max(1, slot.CurrentStackCount),
                     currentDurability = 0f,
                     currentAmmo = 0
@@ -724,7 +724,7 @@ namespace DeadZone.Systems.Raid
                 if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
                     continue;
 
-                int slotIndex = Mathf.Clamp(savedItem.slotIndex, 0, 5);
+                int slotIndex = Mathf.Clamp(savedItem.slotIndex, 0, GridInventory.QUICK_SLOT_COUNT - 1);
                 InventorySlotUI slot = FindQuickSlotByIndex(quickSlots, slotIndex);
                 ItemDataSO itemData = itemDatabase.GetById(savedItem.itemId);
 
@@ -824,7 +824,12 @@ namespace DeadZone.Systems.Raid
                     return slot;
             }
 
-            return slotIndex >= 0 && slotIndex < slots.Count ? slots[slotIndex] : null;
+            if (slotIndex < 0 || slotIndex >= slots.Count)
+                return null;
+
+            InventorySlotUI fallbackSlot = slots[slotIndex];
+            fallbackSlot?.PrepareDropSlotAsKind(null, InventorySlotKind.QuickSlot, slotIndex);
+            return fallbackSlot;
         }
 
         private static IItemDatabase ResolveItemDatabase()
@@ -854,7 +859,7 @@ namespace DeadZone.Systems.Raid
             for (int i = 0; i < quickSlotItems.Count; i++)
             {
                 ItemSaveDTO quickSlotItem = quickSlotItems[i];
-                int slotIndex = Mathf.Clamp(quickSlotItem?.x ?? -1, 0, 5);
+                int slotIndex = Mathf.Clamp(quickSlotItem?.x ?? -1, 0, GridInventory.QUICK_SLOT_COUNT - 1);
                 if (quickSlotItem == null ||
                     string.IsNullOrWhiteSpace(quickSlotItem.itemId) ||
                     !assignedSlotIndexes.Add(slotIndex))

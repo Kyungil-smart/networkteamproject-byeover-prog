@@ -1037,6 +1037,9 @@ namespace DeadZone.Actors.UI
 
                 InventorySlotUI slot = child.GetComponent<InventorySlotUI>();
                 if (slot == null)
+                    slot = child.gameObject.AddComponent<InventorySlotUI>();
+
+                if (slot == null)
                     continue;
 
                 slot.PrepareDropSlotAsKind(itemTooltipUI, InventorySlotKind.QuickSlot, index, this);
@@ -1045,7 +1048,7 @@ namespace DeadZone.Actors.UI
             }
         }
 
-        private static void SetQuickSlotsByIndex(List<InventorySlotUI> slots, int slotIndex, ItemDataSO itemData, int stackCount, string sourceItemId)
+        private void SetQuickSlotsByIndex(List<InventorySlotUI> slots, int slotIndex, ItemDataSO itemData, int stackCount, string sourceItemId)
         {
             if (slots == null || itemData == null)
                 return;
@@ -1059,6 +1062,16 @@ namespace DeadZone.Actors.UI
                     slot.SetItem(itemData, stackCount, sourceItemId);
                     return;
                 }
+            }
+
+            if (normalizedSlotIndex >= 0 && normalizedSlotIndex < slots.Count)
+            {
+                InventorySlotUI fallbackSlot = slots[normalizedSlotIndex];
+                if (fallbackSlot == null)
+                    return;
+
+                fallbackSlot.PrepareDropSlotAsKind(itemTooltipUI, InventorySlotKind.QuickSlot, normalizedSlotIndex, this);
+                fallbackSlot.SetItem(itemData, stackCount, sourceItemId);
             }
         }
 

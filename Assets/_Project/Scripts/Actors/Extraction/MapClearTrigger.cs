@@ -17,6 +17,10 @@ namespace DeadZone.Actors.Extraction
                  "비어 있으면 씬에서 자동으로 찾습니다. Cloud Save 저장이나 Lobby 복귀는 이 Trigger가 직접 처리하지 않습니다.")]
         [SerializeField] private RaidClearCoordinator coordinator;
 
+        [Header("==== Result Scene Override ====")]
+        [Tooltip("Optional result scene to load after the clear save flow finishes. Empty keeps the default raid result/lobby flow.")]
+        [SerializeField] private string resultSceneOverride;
+
         [Header("==== 디버그 ====")]
         [Tooltip("Trigger 진입, 서버 판정, PlayerObject 검증, 중복 Clear 방지 로그를 출력합니다.")]
         [SerializeField] private bool logDebug = true;
@@ -84,7 +88,10 @@ namespace DeadZone.Actors.Extraction
                 $"PlayerObject Trigger 진입 감지. " +
                 $"Object={playerNetworkObject.name}, OwnerClientId={playerNetworkObject.OwnerClientId}");
 
-            bool accepted = resolvedCoordinator.TryRequestPartyClear(playerNetworkObject.OwnerClientId);
+            bool accepted = resolvedCoordinator.TryRequestPartyClear(
+                playerNetworkObject.OwnerClientId,
+                null,
+                resultSceneOverride);
 
             if (accepted || resolvedCoordinator.HasClearHandled)
                 hasRequestedClear = true;
