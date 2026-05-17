@@ -15,7 +15,8 @@ MonoBehaviour:
   itemID: VolkimMicrophone
   displayName: "\uBCFC\uD0B4\uC758 \uB9C8\uC774\uD06C"
   description: "- \uB4F1\uAE09: \uC5D0\uD53D\n- \uC6A9\uB3C4: \uC720\uBA85 \uAC00\uC218\uC758
-    \uB9C8\uC774\uD06C"
+    \uB9C8\uC774\uD06C\n- \uCC3E\uB294 \uC0AC\uB78C\uC774 \uB9CE\uC544 \uD2B8\uB808\uC774\uB354\uC5D0\uC11C
+    \uB192\uC740 \uAC12\uC744 \uBC1B\uC744 \uC218 \uC788\uC744 \uAC83 \uAC19\uB2E4."
   icon: {fileID: 21300000, guid: fdfcd7cb8905d5a45a9ee6a4e5c60cf4, type: 3}
   category: 7
   rarity: 3

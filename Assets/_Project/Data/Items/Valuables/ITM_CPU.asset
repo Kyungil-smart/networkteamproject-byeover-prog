@@ -15,7 +15,8 @@ MonoBehaviour:
   itemID: CPU
   displayName: CPU
   description: "- \uB4F1\uAE09: \uD76C\uADC0\n- \uC6A9\uB3C4: intel\uC5D0\uC11C \uAD70\uC0AC\uC6A9\uC73C\uB85C
-    \uC81C\uC791"
+    \uC81C\uC791\n- \uD2B8\uB808\uC774\uB354\uC5D0 \uD314\uBA74 \uC801\uB2F9\uD55C
+    \uAC12\uC740 \uBC1B\uC744 \uC218 \uC788\uC744 \uAC83 \uAC19\uB2E4"
   icon: {fileID: 21300000, guid: d532f37fa93667e47b204faee5f691ec, type: 3}
   category: 7
   rarity: 1
