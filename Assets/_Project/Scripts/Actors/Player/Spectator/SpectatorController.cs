@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -7,29 +7,32 @@ using DeadZone.Core;
 namespace DeadZone.Actors
 {
     /// <summary>
-    /// Owner 측 관전자 로직. 살아있는 팀원들을 폴링하고 유저가 Q/E로 순환할 수 있게 한다.
-    /// Tab으로 자유 카메라 토글.
+    /// Owner 로컬 플레이어가 Dead 상태일 때 기존 PlayerCameraController의 추적 대상만 팀원으로 바꾼다.
+    /// FreeCam과 다른 플레이어의 Camera/AudioListener 활성화는 사용하지 않는다.
     /// </summary>
     public class SpectatorController : NetworkBehaviour
     {
+        private const string SpectatorTargetName = "SpectatorTarget";
+
         [Header("Refs")]
-        [SerializeField] private SpectatorCamera spectatorCamera;
+        [SerializeField] private PlayerCameraController playerCameraController;
+        [SerializeField] private SpectatorCamera legacySpectatorCamera;
         [SerializeField] private float refreshIntervalSeconds = 1.5f;
 
-        private readonly List<NetworkObject> aliveTeammates = new();
+        private readonly List<NetworkObject> spectatorTargets = new();
         private int currentIndex = -1;
-        private bool freeCamActive;
         private float lastRefreshTime;
         private PlayerHealthSystem health;
 
         public bool IsActive { get; private set; }
-        public bool IsFreeCam => freeCamActive;
+        public bool IsFreeCam => false;
         public NetworkObject CurrentTarget =>
-            (currentIndex >= 0 && currentIndex < aliveTeammates.Count) ? aliveTeammates[currentIndex] : null;
+            (currentIndex >= 0 && currentIndex < spectatorTargets.Count) ? spectatorTargets[currentIndex] : null;
 
         private void Awake()
         {
-            if (spectatorCamera == null) spectatorCamera = GetComponentInChildren<SpectatorCamera>();
+            if (playerCameraController == null) playerCameraController = GetComponent<PlayerCameraController>();
+            if (legacySpectatorCamera == null) legacySpectatorCamera = GetComponentInChildren<SpectatorCamera>(true);
             health = GetComponent<PlayerHealthSystem>();
         }
 
@@ -60,17 +63,8 @@ namespace DeadZone.Actors
             if (state == PlayerState.Dead)
             {
                 SetActive(true);
-                RefreshTeammates();
-                if (aliveTeammates.Count > 0)
-                {
-                    currentIndex = 0;
-                    UpdateCameraTarget();
-                }
-                else
-                {
-                    freeCamActive = true;
-                    UpdateCameraTarget();
-                }
+                RefreshTargets(ulong.MaxValue, keepPreferred: false, preferNextAfterPreferred: false);
+                UpdateCameraTarget();
             }
             else
             {
@@ -82,19 +76,22 @@ namespace DeadZone.Actors
         {
             if (!IsOwner || !IsActive) return;
 
-            if (Time.time - lastRefreshTime > refreshIntervalSeconds)
+            NetworkObject beforeTarget = CurrentTarget;
+            ulong beforeClientId = beforeTarget != null ? beforeTarget.OwnerClientId : ulong.MaxValue;
+            bool targetMissing = beforeTarget == null && currentIndex >= 0;
+            bool targetInvalid = beforeTarget != null && !IsValidSpectatorTarget(beforeTarget);
+            bool shouldRefresh = targetMissing || targetInvalid || Time.time - lastRefreshTime > refreshIntervalSeconds;
+
+            if (shouldRefresh)
             {
-                RefreshTeammates();
-                if (CurrentTarget == null && aliveTeammates.Count > 0)
-                {
-                    currentIndex = 0;
-                    UpdateCameraTarget();
-                }
+                RefreshTargets(
+                    beforeClientId,
+                    keepPreferred: !targetInvalid,
+                    preferNextAfterPreferred: beforeTarget != null);
             }
 
-            if (CurrentTarget == null && !freeCamActive && aliveTeammates.Count == 0)
+            if (beforeTarget != CurrentTarget || targetMissing || targetInvalid)
             {
-                freeCamActive = true;
                 UpdateCameraTarget();
             }
         }
@@ -102,76 +99,263 @@ namespace DeadZone.Actors
         public void SwitchTo(int direction)
         {
             if (!IsOwner || !IsActive) return;
-            if (freeCamActive)
-            {
-                freeCamActive = false;
-            }
 
-            if (aliveTeammates.Count == 0)
+            NetworkObject beforeTarget = CurrentTarget;
+            ulong beforeClientId = beforeTarget != null ? beforeTarget.OwnerClientId : ulong.MaxValue;
+            RefreshTargets(beforeClientId, keepPreferred: true, preferNextAfterPreferred: false);
+
+            if (spectatorTargets.Count == 0)
             {
-                freeCamActive = true;
+                currentIndex = -1;
                 UpdateCameraTarget();
                 return;
             }
 
-            currentIndex = (currentIndex + direction + aliveTeammates.Count) % aliveTeammates.Count;
+            if (currentIndex < 0)
+            {
+                currentIndex = direction >= 0 ? 0 : spectatorTargets.Count - 1;
+            }
+            else
+            {
+                currentIndex = (currentIndex + direction + spectatorTargets.Count) % spectatorTargets.Count;
+            }
+
             UpdateCameraTarget();
         }
 
         public void ToggleFreeCam()
         {
-            if (!IsOwner || !IsActive) return;
-            freeCamActive = !freeCamActive;
-            UpdateCameraTarget();
+            // 최종 규칙상 FreeCam은 사용하지 않는다. 기존 입력 인터페이스 호환용 no-op.
         }
 
         public void SetFreeCamInput(Vector2 move, Vector2 look)
         {
-            if (spectatorCamera != null) spectatorCamera.SetFreeCamInput(move, look);
+            // 최종 규칙상 FreeCam 이동 입력은 소비하지 않는다.
         }
 
-        private void RefreshTeammates()
+        private void RefreshTargets(ulong preferredClientId, bool keepPreferred, bool preferNextAfterPreferred)
         {
             lastRefreshTime = Time.time;
-            aliveTeammates.Clear();
+            spectatorTargets.Clear();
 
             if (NetworkManager.Singleton == null) return;
-            foreach (var kvp in NetworkManager.Singleton.ConnectedClients)
+            if (NetworkManager.Singleton.SpawnManager == null) return;
+            if (NetworkManager.Singleton.SpawnManager.SpawnedObjectsList == null) return;
+
+            foreach (NetworkObject spawnedObject in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
             {
-                if (kvp.Key == OwnerClientId) continue;
-                var po = kvp.Value.PlayerObject;
-                if (po == null) continue;
-                var theirHealth = po.GetComponent<PlayerHealthSystem>();
-                if (theirHealth != null && theirHealth.IsAlive)
-                {
-                    aliveTeammates.Add(po);
-                }
+                if (IsValidSpectatorTarget(spawnedObject))
+                    spectatorTargets.Add(spawnedObject);
             }
+
+            spectatorTargets.Sort(CompareByOwnerClientId);
+
+            if (spectatorTargets.Count == 0)
+            {
+                currentIndex = -1;
+                return;
+            }
+
+            if (keepPreferred && TryFindIndexByClientId(preferredClientId, out int preferredIndex))
+            {
+                currentIndex = preferredIndex;
+                return;
+            }
+
+            if (preferNextAfterPreferred && preferredClientId != ulong.MaxValue)
+            {
+                currentIndex = FindNextIndexAfter(preferredClientId);
+                return;
+            }
+
+            currentIndex = SelectInitialIndex();
         }
 
         private void UpdateCameraTarget()
         {
-            if (spectatorCamera == null) return;
-            if (freeCamActive)
+            NetworkObject target = CurrentTarget;
+            bool hasTarget = IsValidSpectatorTarget(target);
+            PlayerState targetState = PlayerState.Dead;
+
+            if (hasTarget)
             {
-                spectatorCamera.SetFreeCam();
+                PlayerHealthSystem targetHealth = target.GetComponent<PlayerHealthSystem>();
+                targetState = targetHealth.State.Value;
+                playerCameraController?.SetFollowTarget(ResolveSpectatorFollowTarget(target));
             }
-            else if (CurrentTarget != null)
+            else
             {
-                spectatorCamera.FollowTarget(CurrentTarget.transform);
+                currentIndex = -1;
+                playerCameraController?.ResetFollowTargetToOwner();
             }
 
             EventBus.Publish(new SpectatorTargetChangedEvent
             {
                 spectatorClientId = OwnerClientId,
-                newTargetClientId = CurrentTarget != null ? CurrentTarget.OwnerClientId : ulong.MaxValue,
+                newTargetClientId = hasTarget ? target.OwnerClientId : ulong.MaxValue,
+                hasTarget = hasTarget,
+                targetState = targetState,
             });
         }
 
         private void SetActive(bool active)
         {
             IsActive = active;
-            if (spectatorCamera != null) spectatorCamera.gameObject.SetActive(active);
+
+            DisableLegacySpectatorCamera();
+
+            if (!active)
+            {
+                currentIndex = -1;
+                spectatorTargets.Clear();
+                playerCameraController?.ResetFollowTargetToOwner();
+            }
+        }
+
+        private bool IsValidSpectatorTarget(NetworkObject target)
+        {
+            if (target == null || !target.IsSpawned)
+                return false;
+
+            if (target.OwnerClientId == OwnerClientId)
+                return false;
+
+            PlayerHealthSystem targetHealth = target.GetComponent<PlayerHealthSystem>();
+            if (targetHealth == null)
+                return false;
+
+            PlayerState state = targetHealth.State.Value;
+            return state == PlayerState.Alive || state == PlayerState.Knocked;
+        }
+
+        private void DisableLegacySpectatorCamera()
+        {
+            if (legacySpectatorCamera == null)
+                return;
+
+            legacySpectatorCamera.enabled = false;
+
+            if (legacySpectatorCamera.gameObject == gameObject)
+                return;
+
+            Camera[] cameras = legacySpectatorCamera.GetComponentsInChildren<Camera>(true);
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                if (cameras[i] != null)
+                    cameras[i].enabled = false;
+            }
+
+            AudioListener[] listeners = legacySpectatorCamera.GetComponentsInChildren<AudioListener>(true);
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                if (listeners[i] != null)
+                    listeners[i].enabled = false;
+            }
+        }
+
+        private int SelectInitialIndex()
+        {
+            for (int i = 0; i < spectatorTargets.Count; i++)
+            {
+                if (TryGetTargetState(i, out PlayerState state) && state == PlayerState.Alive)
+                    return i;
+            }
+
+            for (int i = 0; i < spectatorTargets.Count; i++)
+            {
+                if (TryGetTargetState(i, out PlayerState state) && state == PlayerState.Knocked)
+                    return i;
+            }
+
+            return spectatorTargets.Count > 0 ? 0 : -1;
+        }
+
+        private bool TryGetTargetState(int index, out PlayerState state)
+        {
+            state = PlayerState.Dead;
+
+            if (index < 0 || index >= spectatorTargets.Count)
+                return false;
+
+            PlayerHealthSystem targetHealth = spectatorTargets[index] != null
+                ? spectatorTargets[index].GetComponent<PlayerHealthSystem>()
+                : null;
+
+            if (targetHealth == null)
+                return false;
+
+            state = targetHealth.State.Value;
+            return true;
+        }
+
+        private bool TryFindIndexByClientId(ulong clientId, out int index)
+        {
+            for (int i = 0; i < spectatorTargets.Count; i++)
+            {
+                NetworkObject target = spectatorTargets[i];
+                if (target != null && target.OwnerClientId == clientId)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
+
+        private int FindNextIndexAfter(ulong clientId)
+        {
+            for (int i = 0; i < spectatorTargets.Count; i++)
+            {
+                NetworkObject target = spectatorTargets[i];
+                if (target != null && target.OwnerClientId > clientId)
+                    return i;
+            }
+
+            return spectatorTargets.Count > 0 ? 0 : -1;
+        }
+
+        private Transform ResolveSpectatorFollowTarget(NetworkObject target)
+        {
+            Transform spectatorTarget = FindChildRecursive(target.transform, SpectatorTargetName);
+            return spectatorTarget != null ? spectatorTarget : target.transform;
+        }
+
+        private static Transform FindChildRecursive(Transform root, string childName)
+        {
+            if (root == null)
+                return null;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child.name == childName)
+                    return child;
+
+                Transform nested = FindChildRecursive(child, childName);
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
+        }
+
+        private static int CompareByOwnerClientId(NetworkObject left, NetworkObject right)
+        {
+            if (left == right)
+                return 0;
+
+            if (left == null)
+                return 1;
+
+            if (right == null)
+                return -1;
+
+            int ownerCompare = left.OwnerClientId.CompareTo(right.OwnerClientId);
+            return ownerCompare != 0
+                ? ownerCompare
+                : left.NetworkObjectId.CompareTo(right.NetworkObjectId);
         }
     }
 }
