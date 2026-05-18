@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q2
   questName: "발전 시설 보스 처치"
-  description: "발전 시설에 있는 보스를 처치 하십시오."
+  description: "발전 시설에 있는 해당 구역 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_PowerPlant
     requiredCount: 1
     location: "발전 시설"
-  rewards: []
+  rewards:
+  - type: 0
+    itemID:
+    amount: 5000
   unlockZoneID: Stage2 Open
   prerequisiteQuestID: Q1
   isSideQuest: 0

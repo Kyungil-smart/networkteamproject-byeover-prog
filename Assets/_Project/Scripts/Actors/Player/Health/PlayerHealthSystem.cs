@@ -40,7 +40,7 @@ namespace DeadZone.Actors
 
         [Header("====부활 설정====")]
         [Tooltip("부활 완료 시 CurrentHP에 설정되는 체력\nKnocked 상태에서 Alive 상태로 복귀할 때의 시작 체력")]
-        [SerializeField] private float reviveHpAmount = 30f;
+        [SerializeField] private float reviveHpAmount = 20f;
 
         [Header("====사망 처리====")]
         [Tooltip("Dead 상태로 전환될 때 서버에서 생성할 시체 프리팹\n인벤토리 이전을 위해 NetworkObject, PlayerCorpse, CorpseInventory 구성이 필요")]
@@ -110,6 +110,9 @@ namespace DeadZone.Actors
             CurrentHP.OnValueChanged += BroadcastHpChanged;
             KnockedHP.OnValueChanged += BroadcastKnockedHpChanged;
             State.OnValueChanged += BroadcastStateChanged;
+
+            BroadcastHpChanged(CurrentHP.Value, CurrentHP.Value);
+            BroadcastStateChanged(State.Value, State.Value);
         }
 
         public override void OnNetworkDespawn()
@@ -516,6 +519,21 @@ namespace DeadZone.Actors
                 oldState = oldState,
                 newState = newState,
             });
+
+            if (!IsServer && newState == PlayerState.Knocked)
+            {
+                float replicatedBleedoutSeconds = BleedoutRemaining.Value > 0f
+                    ? BleedoutRemaining.Value
+                    : bleedoutSeconds;
+
+                EventBus.Publish(new PlayerKnockedEvent
+                {
+                    victimClientId = OwnerClientId,
+                    attackerClientId = 0,
+                    position = transform.position,
+                    bleedoutSeconds = replicatedBleedoutSeconds,
+                });
+            }
         }
 
 #if UNITY_EDITOR

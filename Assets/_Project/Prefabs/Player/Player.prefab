@@ -727,13 +727,17 @@ MonoBehaviour:
   worldOffset: {x: 0, y: 12, z: -8}
   lookAtOffset: {x: 0, y: 1, z: 0}
   defaultLookAheadDistance: 1.6
-  adsLookAheadDistance: 3
+  adsLookAheadDistance: 4.5
   defaultAdsTransitionTime: 0.2
   adsReleaseReturnTime: 0.1
   inputController: {fileID: 8480392820659206216}
   fpsController: {fileID: 173030480013012939}
   adsSystem: {fileID: 0}
   equipment: {fileID: 0}
+  useAdsCameraShift: 1
+  adsWorldOffset: {x: 0, y: 12.5, z: -8.8}
+  adsFieldOfView: 0
+  adsCameraShiftSpeed: 10
   enableDebugLogs: 0
 --- !u!114 &5805277289091868248
 MonoBehaviour:
@@ -777,7 +781,7 @@ MonoBehaviour:
   knockedMaxHP: 100
   bleedoutSeconds: 60
   bleedoutDamagePerSecond: 1.5
-  reviveHpAmount: 30
+  reviveHpAmount: 20
   corpsePrefab: {fileID: 0}
   CurrentHP:
     UpdateTraits:
@@ -922,7 +926,7 @@ MonoBehaviour:
   muzzleTransform: {fileID: 7489591256997111823}
   hitMask:
     serializedVersion: 2
-    m_Bits: 2097152
+    m_Bits: 2097216
   groundMask:
     serializedVersion: 2
     m_Bits: 32768
@@ -1769,11 +1773,11 @@ MonoBehaviour:
   medicalHealthBonusPerLevel: 5
   kitchenStaminaBonusPerLevel: 5
   bedStaminaBonusPerLevel: 5
-  gymCarryWeightBonusPerLevelKg: 7.5
+  gymHealthBonusPerLevel: 5
   medicalHealthBonus: 0
   kitchenStaminaBonus: 0
   bedStaminaBonus: 0
-  gymCarryWeightBonusKg: 0
+  gymHealthBonus: 0
   logBonusChanged: 1
 --- !u!114 &8742465977128026345
 MonoBehaviour:
@@ -1830,6 +1834,9 @@ MonoBehaviour:
   fallbackColor: {r: 1, g: 1, b: 1, a: 1}
   rotateWithPlayer: 1
   markerLayerName: Minimap
+  hiddenFromMapLayers:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!114 &3970032432765172834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2014,11 +2021,14 @@ MonoBehaviour:
   reviveDuration: 5
   reviveRange: 2
   movementCancelDistance: 0.75
+  cancelReviveDistance: 2.7
   reviveTargetMask:
     serializedVersion: 2
     m_Bits: 1024
   raycastOrigin: {fileID: 0}
   progressEventInterval: 0.1
+  revivePromptText: "[F] \uD300\uC6D0 \uC0B4\uB9AC\uAE30"
+  occupiedRevivePromptText: "\uB2E4\uB978 \uD300\uC6D0\uC774 \uAD6C\uC870 \uC911\uC785\uB2C8\uB2E4"
   Progress:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0

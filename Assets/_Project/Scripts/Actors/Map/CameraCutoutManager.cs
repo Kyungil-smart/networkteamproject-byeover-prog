@@ -357,6 +357,12 @@ namespace DeadZone.Actors
                 if (renderer == null || !registeredRenderers.Contains(renderer))
                     continue;
 
+                if (IsEnemyOwnedRenderer(renderer))
+                {
+                    SetRendererCutout(renderer, false);
+                    continue;
+                }
+
                 if (active)
                 {
                     activeOccluders.Add(renderer);
@@ -383,6 +389,12 @@ namespace DeadZone.Actors
                 Renderer renderer = renderers[i];
                 if (renderer == null)
                     continue;
+
+                if (IsEnemyOwnedRenderer(renderer))
+                {
+                    SetRendererCutout(renderer, false);
+                    continue;
+                }
 
                 registeredRenderers.Add(renderer);
                 SetRendererCutout(renderer, false);
@@ -445,6 +457,12 @@ namespace DeadZone.Actors
             propertyBlock.SetFloat(CutoutUseFullObjectHeightId, currentFullObjectHeightBlend);
             propertyBlock.SetFloat(UseCameraCutoutId, active ? 1f : 0f);
             renderer.SetPropertyBlock(propertyBlock);
+        }
+
+        private static bool IsEnemyOwnedRenderer(Renderer renderer)
+        {
+            return renderer != null &&
+                   renderer.GetComponentInParent<EnemyStats>() != null;
         }
 
         private void ResolveInputCameraIfNeeded()

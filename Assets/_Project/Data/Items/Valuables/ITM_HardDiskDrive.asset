@@ -15,13 +15,15 @@ MonoBehaviour:
   itemID: HardDiskDrive
   displayName: "\uD558\uB4DC\uB514\uC2A4\uD06C"
   description: "- \uB4F1\uAE09: \uC77C\uBC18\n- \uC6A9\uB3C4: \uBB54\uAC00 \uC911\uC694\uD55C\uAC8C
-    \uC788\uB294 \uD558\uB4DC\uB514\uC2A4\uD06C"
+    \uC788\uB294 \uD558\uB4DC\uB514\uC2A4\uD06C\n- \uD2B8\uB808\uC774\uB354\uC5D0
+    \uD314 \uC218\uB294 \uC788\uC9C0\uB9CC, \uD070\uAC12\uC740 \uAE30\uB300\uD558\uAE30
+    \uC5B4\uB824\uC6B8 \uAC83 \uAC19\uB2E4."
   icon: {fileID: 21300000, guid: 138567ff21d7f464d84ae597324e79a0, type: 3}
   category: 7
   rarity: 0
   isValuable: 1
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
-  weightKg: 0.4
-  baseSellPrice: 800
+  weightKg: 0
+  baseSellPrice: 4000
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}

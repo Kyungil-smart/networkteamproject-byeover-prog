@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Threading.Tasks;
 
 using TMPro;
@@ -36,9 +37,15 @@ namespace DeadZone.Actors.UI
         [SerializeField] private string progressFormat = "{0}%";
 
         [Header("표시 옵션")]
-        [SerializeField, Min(0f)] private float minimumVisibleSeconds = 0.35f;
-        [SerializeField] private bool hideOnUnitySceneLoaded = true;
-        [SerializeField] private bool hideOnNetworkSceneChanged = true;
+        [SerializeField, Min(0f)] private float minimumVisibleSeconds = 1.5f;
+        [SerializeField, Min(0f)] private float fadeDuration = 0.25f;
+        [SerializeField] private bool hideOnUnitySceneLoaded;
+        [SerializeField] private bool hideOnNetworkSceneChanged;
+        [SerializeField] private bool forceOverlayCanvas = true;
+        [SerializeField] private int loadingCanvasSortOrder = 30000;
+
+        [Header("네트워크 로딩 안전장치")]
+        [SerializeField, Min(1f)] private float networkLoadLocalFallbackSeconds = 20f;
 
         [Header("로그")]
         [SerializeField] private bool logDebug;
@@ -46,10 +53,14 @@ namespace DeadZone.Actors.UI
         private static LoadingScreenService instance;
 
         private bool isVisible;
+        private bool isNetworkControlledLoading;
+        private string networkControlledSceneName = string.Empty;
         private float shownAtRealtime;
+        private Coroutine networkLoadFallbackRoutine;
 
         public static LoadingScreenService Instance => instance;
         public bool IsVisible => isVisible;
+        public bool IsLoading => isVisible;
 
         private void Awake()
         {
@@ -82,6 +93,7 @@ namespace DeadZone.Actors.UI
         {
             SceneManager.sceneLoaded -= HandleUnitySceneLoaded;
             EventBus.Unsubscribe<SceneChangedEvent>(HandleNetworkSceneChanged);
+            StopNetworkLoadFallback();
         }
 
         private void OnDestroy()
@@ -117,17 +129,26 @@ namespace DeadZone.Actors.UI
         public static void ShowForNetworkLoadOrFallback(string sceneName)
         {
             LoadingScreenService service = Resolve();
-            service?.Show(sceneName);
+            if (service == null)
+                return;
+
+            service.isNetworkControlledLoading = true;
+            service.networkControlledSceneName = sceneName;
+            service.Show(sceneName);
+            service.StartNetworkLoadFallback(sceneName);
         }
 
         public void Show(string sceneName = null)
         {
             EnsureLoadingRoot();
 
-            shownAtRealtime = Time.realtimeSinceStartup;
+            if (!isVisible)
+                shownAtRealtime = Time.realtimeSinceStartup;
+
             isVisible = true;
             SetRootActive(true);
             SetProgress(0f);
+            ConfigureLoadingCanvas();
 
             LoadingTipView tipView = loadingRoot != null
                 ? loadingRoot.GetComponentInChildren<LoadingTipView>(true)
@@ -158,13 +179,19 @@ namespace DeadZone.Actors.UI
             if (remaining > 0f)
                 await DelaySecondsRealtime(remaining);
 
+            if (fadeDuration > 0f)
+                await FadeCanvasGroupAsync(0f, fadeDuration);
+
             HideImmediate();
         }
 
         public void HideImmediate()
         {
+            isNetworkControlledLoading = false;
+            networkControlledSceneName = string.Empty;
             isVisible = false;
             SetProgress(1f);
+            StopNetworkLoadFallback();
 
             if (canvasGroup != null)
             {
@@ -190,6 +217,9 @@ namespace DeadZone.Actors.UI
             if (!TryResolveLoadableScene(sceneName, null, out string resolvedSceneName))
                 return;
 
+            isNetworkControlledLoading = false;
+            networkControlledSceneName = string.Empty;
+            StopNetworkLoadFallback();
             Show(resolvedSceneName);
 
             AsyncOperation operation = SceneManager.LoadSceneAsync(resolvedSceneName, mode);
@@ -259,6 +289,8 @@ namespace DeadZone.Actors.UI
 
             if (progressSlider == null && loadingRoot != null)
                 progressSlider = loadingRoot.GetComponentInChildren<Slider>(true);
+
+            ConfigureLoadingCanvas();
         }
 
         private void SetRootActive(bool active)
@@ -270,9 +302,31 @@ namespace DeadZone.Actors.UI
                 loadingRoot.SetActive(active);
         }
 
+        private void ConfigureLoadingCanvas()
+        {
+            if (!forceOverlayCanvas || loadingRoot == null)
+                return;
+
+            Canvas[] canvases = loadingRoot.GetComponentsInChildren<Canvas>(true);
+
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas canvas = canvases[i];
+                if (canvas == null)
+                    continue;
+
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = Mathf.Max(canvas.sortingOrder, loadingCanvasSortOrder);
+            }
+        }
+
         private void HandleUnitySceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (!hideOnUnitySceneLoaded)
+                return;
+
+            if (isNetworkControlledLoading)
                 return;
 
             if (!isVisible)
@@ -286,10 +340,78 @@ namespace DeadZone.Actors.UI
             if (!hideOnNetworkSceneChanged)
                 return;
 
+            if (isNetworkControlledLoading)
+                return;
+
             if (!isVisible)
                 return;
 
             _ = HideAsync();
+        }
+
+        private void StartNetworkLoadFallback(string sceneName)
+        {
+            StopNetworkLoadFallback();
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+                return;
+
+            networkLoadFallbackRoutine = StartCoroutine(NetworkLoadFallbackRoutine(sceneName));
+        }
+
+        private void StopNetworkLoadFallback()
+        {
+            if (networkLoadFallbackRoutine == null)
+                return;
+
+            StopCoroutine(networkLoadFallbackRoutine);
+            networkLoadFallbackRoutine = null;
+        }
+
+        private IEnumerator NetworkLoadFallbackRoutine(string sceneName)
+        {
+            float startedAt = Time.realtimeSinceStartup;
+
+            while (isVisible &&
+                   isNetworkControlledLoading &&
+                   string.Equals(networkControlledSceneName, sceneName, System.StringComparison.Ordinal))
+            {
+                string activeSceneName = SceneManager.GetActiveScene().name;
+
+                if (string.Equals(activeSceneName, sceneName, System.StringComparison.Ordinal))
+                {
+                    float elapsedVisible = Time.realtimeSinceStartup - shownAtRealtime;
+                    float remaining = minimumVisibleSeconds - elapsedVisible;
+
+                    if (remaining > 0f)
+                        yield return new WaitForSecondsRealtime(remaining);
+
+                    if (isVisible &&
+                        isNetworkControlledLoading &&
+                        string.Equals(networkControlledSceneName, sceneName, System.StringComparison.Ordinal) &&
+                        string.Equals(SceneManager.GetActiveScene().name, sceneName, System.StringComparison.Ordinal))
+                    {
+                        Debug.LogWarning($"[LoadingScreenService] Network loading fallback hide after local scene loaded. scene={sceneName}", this);
+                        _ = HideAsync();
+                    }
+
+                    networkLoadFallbackRoutine = null;
+                    yield break;
+                }
+
+                if (Time.realtimeSinceStartup - startedAt >= networkLoadLocalFallbackSeconds)
+                {
+                    Debug.LogWarning(
+                        $"[LoadingScreenService] Network loading fallback timeout before scene loaded. target={sceneName}, active={activeSceneName}",
+                        this);
+                    networkLoadFallbackRoutine = null;
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            networkLoadFallbackRoutine = null;
         }
 
         private static LoadingScreenService Resolve()
@@ -382,6 +504,24 @@ namespace DeadZone.Actors.UI
 
             while (Time.realtimeSinceStartup < endTime)
                 await Task.Yield();
+        }
+
+        private async Task FadeCanvasGroupAsync(float targetAlpha, float duration)
+        {
+            if (canvasGroup == null)
+                return;
+
+            float startAlpha = canvasGroup.alpha;
+            float startTime = Time.realtimeSinceStartup;
+
+            while (Time.realtimeSinceStartup - startTime < duration)
+            {
+                float normalized = Mathf.Clamp01((Time.realtimeSinceStartup - startTime) / duration);
+                canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, normalized);
+                await Task.Yield();
+            }
+
+            canvasGroup.alpha = targetAlpha;
         }
     }
 }

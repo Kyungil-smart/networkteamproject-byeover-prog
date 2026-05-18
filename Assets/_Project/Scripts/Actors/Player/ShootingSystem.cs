@@ -39,7 +39,7 @@ namespace DeadZone.Actors
         [SerializeField, Min(0.1f)] private float shotgunEffectiveRange = 7f;
         [SerializeField, Min(0.1f)] private float shotgunMaxRange = 18f;
         [SerializeField, Range(0.05f, 1f)] private float shotgunMinDamageMultiplier = 0.45f;
-        [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.35f;
+        [SerializeField, Range(0.1f, 2f)] private float shotgunTotalDamageMultiplier = 1.45f;
 
         [Header("Projectile Visual")]
         [Tooltip("클라이언트에서 로컬로 재생하는 탄도 시각 효과의 최대 유지 시간입니다. 서버 판정 projectile 수명과는 별개입니다.")]
@@ -290,6 +290,14 @@ namespace DeadZone.Actors
 
             // 6. 이벤트 발행
             PublishFireEvent(rpc.Receive.SenderClientId, weaponId, weapon);
+            PublishFireEventClientRpc(
+                rpc.Receive.SenderClientId,
+                weaponId,
+                weapon.weaponCategory,
+                weapon.magSize,
+                weapon.maxDurability,
+                muzzleTransform.position,
+                1f);
 
             AudioCueId fireCueId = GetFireCueId(weapon.weaponCategory);
             if (fireCueId != AudioCueId.None)
@@ -598,6 +606,32 @@ namespace DeadZone.Actors
                 maxDurability = weapon != null ? weapon.maxDurability : 0f,
                 origin = muzzleTransform.position,
                 loudness = 1f
+            });
+        }
+
+        [ClientRpc]
+        private void PublishFireEventClientRpc(
+            ulong shooterClientId,
+            FixedString64Bytes weaponId,
+            WeaponCategory weaponCategory,
+            int maxAmmo,
+            float maxDurability,
+            Vector3 origin,
+            float loudness)
+        {
+            if (IsServer)
+                return;
+
+            EventBus.Publish(new WeaponFiredEvent
+            {
+                shooterClientId = shooterClientId,
+                weaponId = weaponId,
+                weaponData = null,
+                weaponCategory = weaponCategory,
+                maxAmmo = maxAmmo,
+                maxDurability = maxDurability,
+                origin = origin,
+                loudness = loudness
             });
         }
 

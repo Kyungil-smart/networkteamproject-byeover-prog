@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 using DeadZone.Core;
 using DeadZone.Actors.UI;
@@ -51,6 +52,7 @@ namespace DeadZone.Actors
         private bool reviveHoldStarted;
         private float lastInteractInputTime = -999f;
         private const float InteractInputGuardSeconds = 0.15f;
+        private readonly int[] quickslotUseFrames = new int[GridInventory.QUICK_SLOT_COUNT];
 
         private void Awake()
         {
@@ -59,6 +61,9 @@ namespace DeadZone.Actors
             shooting = GetComponent<ShootingSystem>();
             interaction = GetComponentInChildren<InteractionSystem>();
             revive = GetComponent<ReviveSystem>();
+
+            for (int i = 0; i < quickslotUseFrames.Length; i++)
+                quickslotUseFrames[i] = -1;
 
             aliveCtx = new AliveInputContext(
                 GetComponent<FPSController>(),
@@ -140,6 +145,7 @@ namespace DeadZone.Actors
             currentContext.Tick(moveInput, lookDirection, lookScreenPosition);
             currentContext.OnFireInput(firePressedThisFrame, fireHeld, lookScreenPosition);
             ProcessSpectatorKeyboardInput();
+            ProcessQuickslotKeyboardFallback();
 
             firePressedThisFrame = false;
         }
@@ -235,6 +241,36 @@ namespace DeadZone.Actors
 
             if (keyboard.eKey.wasPressedThisFrame)
                 currentContext?.OnSpectatorNext();
+        }
+
+        private void ProcessQuickslotKeyboardFallback()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            if (WasPressedThisFrame(keyboard.digit4Key) || WasPressedThisFrame(keyboard.numpad4Key))
+                TryUseQuickslotFromInput(0);
+
+            if (WasPressedThisFrame(keyboard.digit5Key) || WasPressedThisFrame(keyboard.numpad5Key))
+                TryUseQuickslotFromInput(1);
+
+            if (WasPressedThisFrame(keyboard.digit6Key) || WasPressedThisFrame(keyboard.numpad6Key))
+                TryUseQuickslotFromInput(2);
+
+            if (WasPressedThisFrame(keyboard.digit7Key) || WasPressedThisFrame(keyboard.numpad7Key))
+                TryUseQuickslotFromInput(3);
+
+            if (WasPressedThisFrame(keyboard.digit8Key) || WasPressedThisFrame(keyboard.numpad8Key))
+                TryUseQuickslotFromInput(4);
+
+            if (WasPressedThisFrame(keyboard.digit9Key) || WasPressedThisFrame(keyboard.numpad9Key))
+                TryUseQuickslotFromInput(5);
+        }
+
+        private static bool WasPressedThisFrame(KeyControl key)
+        {
+            return key != null && key.wasPressedThisFrame;
         }
 
         private void OnPlayerStateChanged(PlayerState oldState, PlayerState newState)
@@ -455,7 +491,7 @@ namespace DeadZone.Actors
             if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
-            TryUseQuickslot(0);
+            TryUseQuickslotFromInput(0);
         }
 
         public void OnQuickslot_2(InputAction.CallbackContext context)
@@ -463,7 +499,7 @@ namespace DeadZone.Actors
             if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
-            TryUseQuickslot(1);
+            TryUseQuickslotFromInput(1);
         }
 
         public void OnQuickslot_3(InputAction.CallbackContext context)
@@ -471,7 +507,7 @@ namespace DeadZone.Actors
             if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
-            TryUseQuickslot(2);
+            TryUseQuickslotFromInput(2);
         }
 
         public void OnQuickslot_4(InputAction.CallbackContext context)
@@ -479,7 +515,7 @@ namespace DeadZone.Actors
             if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
-            TryUseQuickslot(3);
+            TryUseQuickslotFromInput(3);
         }
 
         public void OnQuickslot_5(InputAction.CallbackContext context)
@@ -487,7 +523,7 @@ namespace DeadZone.Actors
             if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
-            TryUseQuickslot(4);
+            TryUseQuickslotFromInput(4);
         }
 
         public void OnQuickslot_6(InputAction.CallbackContext context)
@@ -495,7 +531,19 @@ namespace DeadZone.Actors
             if (!CanProcessInput || GameplayInputBlocker.IsBlocked || !context.performed)
                 return;
 
-            TryUseQuickslot(5);
+            TryUseQuickslotFromInput(5);
+        }
+
+        private void TryUseQuickslotFromInput(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= quickslotUseFrames.Length)
+                return;
+
+            if (quickslotUseFrames[slotIndex] == Time.frameCount)
+                return;
+
+            quickslotUseFrames[slotIndex] = Time.frameCount;
+            TryUseQuickslot(slotIndex);
         }
 
         private static void TryUseQuickslot(int slotIndex)

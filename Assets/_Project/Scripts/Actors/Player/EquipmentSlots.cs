@@ -235,14 +235,12 @@ namespace DeadZone.Actors
 
         public void DamageHelmetDurability(float amount)
         {
-            if (!IsServer) return;
-            HelmetDurability.Value = Mathf.Max(0f, HelmetDurability.Value - amount);
+            // 내구도 시스템은 폐기되어 장착 방어구 내구도 감소를 적용하지 않습니다.
         }
 
         public void DamageArmorDurability(float amount)
         {
-            if (!IsServer) return;
-            ArmorDurability.Value = Mathf.Max(0f, ArmorDurability.Value - amount);
+            // 내구도 시스템은 폐기되어 장착 방어구 내구도 감소를 적용하지 않습니다.
         }
 
         // ----------- 탄약 소모 -----------
@@ -422,13 +420,15 @@ namespace DeadZone.Actors
 
         private WeaponState CreateWeaponState(EquipmentSaveData savedItem)
         {
-            return new WeaponState
+            WeaponState state = new()
             {
                 loadedAmmoId = string.IsNullOrWhiteSpace(savedItem.loadedAmmoId)
                     ? new FixedString64Bytes("")
                     : new FixedString64Bytes(savedItem.loadedAmmoId),
                 currentAmmo = Mathf.Max(0, savedItem.currentAmmo)
             };
+
+            return NormalizeWeaponState(savedItem.itemId, state);
         }
 
         private float ResolveDurability<T>(string itemId, float savedDurability) where T : ItemDataSO
@@ -477,6 +477,11 @@ namespace DeadZone.Actors
             FixedString64Bytes nextSlotId = string.IsNullOrWhiteSpace(itemId)
                 ? new FixedString64Bytes("")
                 : new FixedString64Bytes(itemId);
+
+            if (nextSlotId.Length == 0 || slot == WeaponSlot.Melee)
+                state = default;
+            else
+                state = NormalizeWeaponState(itemId, state);
 
             if (showDebugLogs)
             {
@@ -854,6 +859,30 @@ namespace DeadZone.Actors
             };
         }
 
+        private WeaponState NormalizeWeaponState(string weaponId, WeaponState state)
+        {
+            WeaponDataSO weapon = Lookup<WeaponDataSO>(weaponId);
+            if (weapon == null)
+                return default;
+
+            state.currentAmmo = Mathf.Clamp(state.currentAmmo, 0, weapon.magSize);
+            if (state.currentAmmo <= 0)
+            {
+                state.loadedAmmoId = "";
+                return state;
+            }
+
+            string loadedAmmoId = state.loadedAmmoId.ToString();
+            AmmoDataSO loadedAmmo = Lookup<AmmoDataSO>(loadedAmmoId);
+            if (loadedAmmo == null || loadedAmmo.caliber != weapon.ammoType)
+                state.loadedAmmoId = ResolveDefaultAmmoId(weapon.ammoType);
+
+            if (state.loadedAmmoId.Length == 0)
+                state.currentAmmo = 0;
+
+            return state;
+        }
+
         private static float ResolveEquippedDurability(float sourceDurability, float maxDurability)
         {
             if (maxDurability <= 0f)
@@ -885,14 +914,14 @@ namespace DeadZone.Actors
                 : "";
         }
 
-        private static WeaponState CreateWeaponStateFromInventorySlot(ItemDataSO item, ItemSlotData sourceSlot)
+        private WeaponState CreateWeaponStateFromInventorySlot(ItemDataSO item, ItemSlotData sourceSlot)
         {
             return item is WeaponDataSO
-                ? new WeaponState
+                ? NormalizeWeaponState(item.itemID, new WeaponState
                 {
                     loadedAmmoId = "",
                     currentAmmo = Mathf.Clamp(sourceSlot.currentAmmo, 0, ushort.MaxValue)
-                }
+                })
                 : default;
         }
 

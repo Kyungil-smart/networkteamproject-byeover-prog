@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -219,7 +219,8 @@ namespace DeadZone.Actors
             if (!changeGrade)
             {
                 WeaponState weaponState = equipment.CurrentWeaponState;
-                if (weaponState.currentAmmo >= weapon.magSize)
+                bool hasValidLoadedAmmo = equipment.CurrentAmmoData != null;
+                if (weaponState.currentAmmo >= weapon.magSize && hasValidLoadedAmmo)
                 {
                     failureReason = ReloadCancelReason.FullMagazine;
                     return false;

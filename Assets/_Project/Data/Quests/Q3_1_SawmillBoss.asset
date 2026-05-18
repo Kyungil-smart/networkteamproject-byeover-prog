@@ -14,17 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q6
   questName: "제재소 보스 처치"
-  description: "제재소에 있는 두 명의 보스를 처치 하십시오."
+  description: "제재소에 있는 두 명의 해당 구역 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_Sawmill
-    requiredCount: 1
+    requiredCount: 2
     location: "제재소"
-  - type: 0
-    targetID: Boss_S2_01
-    requiredCount: 1
-    location: "제재소"
-  rewards: []
+  rewards:
+  - type: 1
+    itemID: Weapon_F2
+    amount: 1
+  - type: 1
+    itemID: Armor_C6
+    amount: 1
+  - type: 1
+    itemID: Helmet_C4
+    amount: 1
   unlockZoneID: Ending
   prerequisiteQuestID: Q5
   isSideQuest: 0

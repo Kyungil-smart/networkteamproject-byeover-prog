@@ -449,7 +449,7 @@ namespace DeadZone.Network
 
             CancelLoadTracking($"RaidResult 전환: {reason}");
 
-            SceneEventProgressStatus status = networkManager.SceneManager.LoadScene(raidResultSceneName, LoadSceneMode.Single);
+            SceneEventProgressStatus status = NetworkGameManager.LoadSceneWithLoading(raidResultSceneName, LoadSceneMode.Single);
             if (status != SceneEventProgressStatus.Started)
             {
                 Debug.LogWarning($"[GameSessionManager] RaidResult 씬 로드 요청 실패. Scene={raidResultSceneName}, Status={status}", this);

@@ -355,7 +355,10 @@ namespace DeadZone.Systems.Housing
 
             if (!stashFacility.IsSpawned)
             {
-                offlineCurrentLevel = Mathf.Clamp(nextLevel, 1, 4);
+                int maxLevel = stashFacilityData != null && stashFacilityData.levels != null && stashFacilityData.levels.Length > 0
+                    ? stashFacilityData.levels.Length
+                    : 6;
+                offlineCurrentLevel = Mathf.Clamp(nextLevel, 1, maxLevel);
                 useOfflineCurrentLevel = true;
                 sizeController?.SetOfflineTestLevel(offlineCurrentLevel);
                 return true;

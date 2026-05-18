@@ -32,6 +32,14 @@ namespace DeadZone.Actors
         [Tooltip("잠금 구역 오브젝트들이 들어있는 부모")]
         [SerializeField] private Transform areaRoot;
 
+        [BoxGroup("Map")]
+        [Tooltip("World map background RawImage RectTransform. Area overlay is aligned to this rect.")]
+        [SerializeField] private RectTransform mapImageRect;
+
+        [BoxGroup("Map")]
+        [Tooltip("Hide this minimap root while the world map is open.")]
+        [SerializeField] private GameObject minimapRoot;
+
         [BoxGroup("참조")]
         [SerializeField] private RectTransform playerMarkerRoot;
 
@@ -60,6 +68,14 @@ namespace DeadZone.Actors
         [Tooltip("맵 시스템 루트 스케일이 0으로 저장된 경우 런타임에서 1로 복구")]
         [SerializeField] private bool forceRootScaleOne = true;
 
+        [BoxGroup("Map")]
+        [Tooltip("Keep Area lock overlay on the same RectTransform basis as the RenderTexture RawImage.")]
+        [SerializeField] private bool alignAreaRootToMapRect = true;
+        
+        [BoxGroup("플레이어 마커")]
+        [Tooltip("RenderTexture 안의 월드 스프라이트 마커를 쓰면 false. 기존 UI 마커 방식을 쓰면 true.")]
+        [SerializeField] private bool useUiPlayerMarkers;
+
         [FoldoutGroup("피드백")]
         [Tooltip("맵을 열 때 재생할 피드백")]
         [SerializeField] private MMF_Player onOpenFeedback;
@@ -86,11 +102,16 @@ namespace DeadZone.Actors
         private InputAction activeToggleMapAction;
         private InputAction activeCloseMapAction;
         private readonly Dictionary<ulong, MonoBehaviour> playerMarkersByClientId = new();
+        private const string DefaultMapImageRectName = "Png_WorldMap_01";
+        private const string DefaultMinimapRootName = "Minimap";
+        private bool minimapWasActiveBeforeOpen;
 
         private void Awake()
         {
             if (forceRootScaleOne)
                 transform.localScale = Vector3.one;
+
+            AlignAreaRootToMapRect();
 
             if (hideMapOnAwake && worldMapUI != null)
                 worldMapUI.SetActive(false);
@@ -120,6 +141,7 @@ namespace DeadZone.Actors
 
         private void Start()
         {
+            AlignAreaRootToMapRect();
             RefreshAllAreaLocks();
         }
 
@@ -129,7 +151,9 @@ namespace DeadZone.Actors
             EventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
             GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, false);
             CursorStateController.PopUiOwner(this);
-            ClearPlayerMarkers();
+            RestoreMinimapVisibility();
+            if (useUiPlayerMarkers)
+                ClearPlayerMarkers();
 
             if (activeToggleMapAction != null)
             {
@@ -154,7 +178,7 @@ namespace DeadZone.Actors
 
         private void Update()
         {
-            if (isOpen)
+            if (isOpen && useUiPlayerMarkers)
                 RefreshPlayerMarkers();
         }
 
@@ -203,10 +227,13 @@ namespace DeadZone.Actors
             if (worldMapUI != null)
                 worldMapUI.SetActive(true);
 
+            HideMinimapWhileWorldMapOpen();
             GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, true);
             CursorStateController.PushUiOwner(this);
+            AlignAreaRootToMapRect();
             RefreshAllAreaLocks();
-            RefreshPlayerMarkers();
+            if (useUiPlayerMarkers)
+                RefreshPlayerMarkers();
             UIFeedbackTester.Play(onOpenFeedback, this, "전체 맵 열기");
         }
         
@@ -219,7 +246,9 @@ namespace DeadZone.Actors
             if (worldMapUI != null)
                 worldMapUI.SetActive(false);
 
-            ClearPlayerMarkers();
+            if (useUiPlayerMarkers)
+                ClearPlayerMarkers();
+            RestoreMinimapVisibility();
             GameplayInputBlocker.SetBlocked(GameplayInputBlockReason.Map, false);
             CursorStateController.PopUiOwner(this);
             UIFeedbackTester.Play(onCloseFeedback, this, "전체 맵 닫기");
@@ -390,7 +419,7 @@ namespace DeadZone.Actors
             if (playerMarkerRoot != null)
                 return playerMarkerRoot;
 
-            RectTransform mapRect = ResolveNamedRectTransform("Png_WorldMap_01");
+            RectTransform mapRect = ResolveMapImageRect();
             if (mapRect != null)
                 return mapRect;
 
@@ -402,8 +431,72 @@ namespace DeadZone.Actors
             if (playerMarkerMapRect != null)
                 return playerMarkerMapRect;
 
-            RectTransform mapRect = ResolveNamedRectTransform("Png_WorldMap_01");
+            RectTransform mapRect = ResolveMapImageRect();
             return mapRect != null ? mapRect : fallback;
+        }
+
+        private RectTransform ResolveMapImageRect()
+        {
+            if (mapImageRect != null)
+                return mapImageRect;
+
+            return ResolveNamedRectTransform(DefaultMapImageRectName);
+        }
+
+        private GameObject ResolveMinimapRoot()
+        {
+            if (minimapRoot != null)
+                return minimapRoot;
+
+            RectTransform minimapRect = ResolveNamedRectTransform(DefaultMinimapRootName);
+            return minimapRect != null ? minimapRect.gameObject : null;
+        }
+
+        private void HideMinimapWhileWorldMapOpen()
+        {
+            GameObject root = ResolveMinimapRoot();
+            if (root == null)
+                return;
+
+            minimapWasActiveBeforeOpen = root.activeSelf;
+            root.SetActive(false);
+        }
+
+        private void RestoreMinimapVisibility()
+        {
+            GameObject root = ResolveMinimapRoot();
+            if (root == null)
+                return;
+
+            root.SetActive(minimapWasActiveBeforeOpen);
+        }
+
+        private void AlignAreaRootToMapRect()
+        {
+            if (!alignAreaRootToMapRect)
+                return;
+
+            RectTransform areaRect = areaRoot as RectTransform;
+            RectTransform mapRect = ResolveMapImageRect();
+            if (areaRect == null || mapRect == null)
+                return;
+
+            if (areaRect.parent != mapRect.parent)
+            {
+                Debug.LogWarning("[WorldMapController] Area and map image do not share the same parent RectTransform.", this);
+                return;
+            }
+
+            areaRect.anchorMin = mapRect.anchorMin;
+            areaRect.anchorMax = mapRect.anchorMax;
+            areaRect.pivot = mapRect.pivot;
+            areaRect.anchoredPosition = mapRect.anchoredPosition;
+            areaRect.sizeDelta = mapRect.sizeDelta;
+            areaRect.localRotation = Quaternion.identity;
+            areaRect.localScale = Vector3.one;
+
+            if (areaRect.GetSiblingIndex() <= mapRect.GetSiblingIndex())
+                areaRect.SetSiblingIndex(mapRect.GetSiblingIndex() + 1);
         }
 
         private RectTransform ResolveNamedRectTransform(string targetName)

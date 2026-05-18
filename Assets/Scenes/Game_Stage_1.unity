@@ -138,6 +138,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -190,6 +194,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -867,6 +875,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -919,6 +931,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -1077,6 +1093,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -1129,6 +1149,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -1362,6 +1386,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -2256,7 +2284,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 240842676889098500, guid: 2b686ab052bb11248a8de4714a73b070, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 11.618553
+      value: 32.18
       objectReference: {fileID: 0}
     - target: {fileID: 240842676889098500, guid: 2b686ab052bb11248a8de4714a73b070, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3311,6 +3339,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3465,6 +3497,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3604,6 +3640,10 @@ PrefabInstance:
       propertyPath: coordinator
       value: 
       objectReference: {fileID: 439961240}
+    - target: {fileID: 4343104618188889312, guid: 72e8f1fc3d8aba4408fc06efd3fabae0, type: 3}
+      propertyPath: resultSceneOverride
+      value: Ending
+      objectReference: {fileID: 0}
     - target: {fileID: 5116386292989018259, guid: 72e8f1fc3d8aba4408fc06efd3fabae0, type: 3}
       propertyPath: m_LocalScale.x
       value: 2.9733
@@ -3684,6 +3724,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3736,6 +3780,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3769,6 +3817,59 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+--- !u!1 &288036442
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 288036443}
+  - component: {fileID: 288036444}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &288036443
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 288036442}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 38.94, y: -2.98, z: 106.9}
+  m_LocalScale: {x: 1, y: 10.053182, z: 11.131506}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &288036444
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 288036442}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &288303602
 GameObject:
   m_ObjectHideFlags: 0
@@ -3893,6 +3994,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3945,6 +4050,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -3997,6 +4106,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4417,6 +4530,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4585,6 +4702,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4637,6 +4758,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -4975,6 +5100,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5027,6 +5156,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5179,6 +5312,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -5431,6 +5568,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5665,6 +5806,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5717,6 +5862,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5769,6 +5918,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -5802,6 +5955,59 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+--- !u!1 &467018497
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 467018498}
+  - component: {fileID: 467018499}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &467018498
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467018497}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -68.24, y: -2.98, z: 36.45}
+  m_LocalScale: {x: 1, y: 10.053182, z: 11.131506}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &467018499
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467018497}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &482311042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5821,6 +6027,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6239,6 +6449,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6448,6 +6662,59 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -1.0120001, y: 1.143, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &537049456
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 537049457}
+  - component: {fileID: 537049458}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (8)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &537049457
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537049456}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 51.78, y: -1.9, z: 139.8}
+  m_LocalScale: {x: 1, y: 14.901832, z: 18.95918}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &537049458
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537049456}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &544505821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6467,6 +6734,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6838,6 +7109,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6890,6 +7165,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -6942,6 +7221,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -7162,6 +7445,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -7944,6 +8231,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -7977,108 +8268,6 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
---- !u!1001 &655281524
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 2448597528699807100}
-    m_Modifications:
-    - target: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_Name
-      value: SM_Bld_Tent_01 (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -254.43692
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.00018360576
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 40.66455
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 655281527}
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 655281528}
-  m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
---- !u!4 &655281525 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 655281524}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &655281526 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 655281524}
-  m_PrefabAsset: {fileID: 0}
---- !u!208 &655281527
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 655281526}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 3.88, y: 1.9340001, z: 4.486}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 1.9340001, z: 0}
-  m_TimeToStationary: 0.5
---- !u!114 &655281528
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 655281526}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
-  renderers: []
 --- !u!1001 &661115578
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8352,6 +8541,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8797,6 +8990,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8849,6 +9046,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -8901,6 +9102,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -9036,6 +9241,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -9088,6 +9297,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -9234,6 +9447,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -9689,108 +9906,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7775289706674549485, guid: 4cdb435cc772d964f833f1d76fa035e3, type: 3}
   m_PrefabInstance: {fileID: 787490716}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &788582828
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 2448597528699807100}
-    m_Modifications:
-    - target: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_Name
-      value: SM_Bld_Tent_01
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -254.4101
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.00009964351
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 55.27002
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 788582831}
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 788582832}
-  m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
---- !u!4 &788582829 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 788582828}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &788582830 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 788582828}
-  m_PrefabAsset: {fileID: 0}
---- !u!208 &788582831
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 788582830}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 3.88, y: 1.9340001, z: 4.486}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 1.9340001, z: 0}
-  m_TimeToStationary: 0.5
---- !u!114 &788582832
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 788582830}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
-  renderers: []
 --- !u!1001 &791279095
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10412,6 +10527,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -10620,6 +10739,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -10762,6 +10885,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -10832,6 +10959,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -10917,6 +11048,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11055,6 +11190,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11284,6 +11423,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11438,6 +11581,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -11561,6 +11708,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4077195986647316, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
   m_PrefabInstance: {fileID: 900383333}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &909575336
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 909575337}
+  - component: {fileID: 909575338}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (7)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &909575337
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 909575336}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.38268343, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 40.96, y: -1.72, z: 108.42}
+  m_LocalScale: {x: 1, y: 19.963062, z: 36.96784}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
+--- !u!65 &909575338
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 909575336}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &916366270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11580,6 +11780,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -12133,6 +12337,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -12592,6 +12800,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3651609528745243177, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
   m_PrefabInstance: {fileID: 2448597528699807093}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1001438472
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1001438473}
+  - component: {fileID: 1001438474}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1001438473
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001438472}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -39.74, y: -2.98, z: -5.85}
+  m_LocalScale: {x: 1, y: 10.053182, z: 11.131506}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1001438474
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001438472}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1003640524
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12821,6 +13082,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -12970,6 +13235,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13128,6 +13397,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13622,6 +13895,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13780,6 +14057,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13813,6 +14094,59 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+--- !u!1 &1073131582
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1073131583}
+  - component: {fileID: 1073131584}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (6)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1073131583
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073131582}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.38268343, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: -146.97, y: -2.98, z: 410.63}
+  m_LocalScale: {x: 1, y: 10.053182, z: 11.131506}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
+--- !u!65 &1073131584
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073131582}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &1074956927
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13832,6 +14166,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -13982,6 +14320,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14034,6 +14376,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14086,6 +14432,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14526,6 +14876,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -14672,6 +15026,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -14994,6 +15352,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -15296,6 +15658,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -15454,6 +15820,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -15800,6 +16170,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -16195,6 +16569,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -16689,6 +17067,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -17345,6 +17727,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -17397,6 +17783,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -17449,6 +17839,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -17909,6 +18303,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -17961,6 +18359,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -18345,6 +18747,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -18591,6 +18997,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19056,6 +19466,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19108,6 +19522,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -19160,6 +19578,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19310,6 +19732,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -19704,6 +20130,59 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.6250001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &1471435762
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1471435763}
+  - component: {fileID: 1471435764}
+  m_Layer: 7
+  m_Name: InvisibleWall_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1471435763
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471435762}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.77, y: -2.98, z: -5.85}
+  m_LocalScale: {x: 1, y: 10.053182, z: 11.131506}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1471435764
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471435762}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1472958317
 GameObject:
   m_ObjectHideFlags: 0
@@ -19816,6 +20295,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -21739,6 +22222,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -21791,6 +22278,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -21843,6 +22334,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -21989,6 +22484,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22307,6 +22806,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22359,6 +22862,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22517,6 +23024,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22569,6 +23080,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -22817,6 +23332,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -22869,6 +23388,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -23219,6 +23742,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24100,6 +24627,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24152,6 +24683,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24204,6 +24739,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24346,6 +24885,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -24398,6 +24941,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25172,6 +25719,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25224,6 +25775,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25276,6 +25831,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25328,6 +25887,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25380,6 +25943,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25515,6 +26082,59 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.6250001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &1765177128
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1765177129}
+  - component: {fileID: 1765177130}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (9)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1765177129
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1765177128}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -103.47, y: -2.98, z: 415.87}
+  m_LocalScale: {x: 1, y: 8.136341, z: 7.690646}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!65 &1765177130
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1765177128}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1771033092
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25863,6 +26483,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -25943,6 +26567,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26135,6 +26763,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26187,6 +26819,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26239,6 +26875,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26464,6 +27104,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6983492648746362662, guid: 676f260b778b3984daace8f34df634cd, type: 3}
   m_PrefabInstance: {fileID: 1846710186}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1872787741
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1872787742}
+  - component: {fileID: 1872787743}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (5)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1872787742
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872787741}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 54.08, y: -2.98, z: 142.68}
+  m_LocalScale: {x: 1, y: 10.053182, z: 11.131506}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1872787743
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872787741}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &1883149444
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26483,6 +27176,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26535,6 +27232,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -26830,108 +27531,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4077195986647316, guid: 51a4e2ef57656f042896fff46f9ffed3, type: 3}
   m_PrefabInstance: {fileID: 1902908191}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &1903230510
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 2448597528699807100}
-    m_Modifications:
-    - target: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_Name
-      value: SM_Bld_Tent_01 (2)
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -235.5701
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.00009964351
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 54.649994
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1903230513}
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1903230514}
-  m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
---- !u!4 &1903230511 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 1903230510}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1903230512 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 1903230510}
-  m_PrefabAsset: {fileID: 0}
---- !u!208 &1903230513
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1903230512}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 3.88, y: 1.9340001, z: 4.486}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 1.9340001, z: 0}
-  m_TimeToStationary: 0.5
---- !u!114 &1903230514
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1903230512}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
-  renderers: []
 --- !u!114 &1905299546
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26951,6 +27550,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27039,6 +27642,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27091,6 +27698,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27124,108 +27735,6 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
---- !u!1001 &1930210543
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 2448597528699807100}
-    m_Modifications:
-    - target: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_Name
-      value: SM_Bld_Tent_01 (3)
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -235.5701
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.00009964351
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 42.659973
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1930210546}
-    - targetCorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1930210547}
-  m_SourcePrefab: {fileID: 100100000, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
---- !u!4 &1930210544 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4926261862933284, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 1930210543}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1930210545 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1616294933069960, guid: 8e8c31f8740134d4086fec064d4245d2, type: 3}
-  m_PrefabInstance: {fileID: 1930210543}
-  m_PrefabAsset: {fileID: 0}
---- !u!208 &1930210546
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1930210545}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 3.88, y: 1.9340001, z: 4.486}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 1.9340001, z: 0}
-  m_TimeToStationary: 0.5
---- !u!114 &1930210547
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1930210545}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 792aa9d0f69288d4bb963d682bbfc4e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Actors.CameraCutoutTarget
-  renderers: []
 --- !u!1001 &1934859272
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27316,6 +27825,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27368,6 +27881,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27610,6 +28127,10 @@ MonoBehaviour:
   slotCount: 6
   itemCountRange: {x: 1, y: 6}
   rollCount: 6
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -27662,6 +28183,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28082,6 +28607,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28200,6 +28729,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28252,6 +28785,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28402,6 +28939,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -28668,6 +29209,59 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0df724a5879b6124c93bb020df6af8bd, type: 3}
+--- !u!1 &2015038392
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2015038393}
+  - component: {fileID: 2015038394}
+  m_Layer: 7
+  m_Name: InvisibleWall_01 (4)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2015038393
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015038392}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 24.59, y: -2.98, z: 97.63}
+  m_LocalScale: {x: 1, y: 10.053182, z: 11.131506}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2026744730}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!65 &2015038394
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015038392}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &2019820783
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28770,6 +29364,47 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.6250001, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &2026744729
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2026744730}
+  m_Layer: 7
+  m_Name: InvisibleWall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2026744730
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2026744729}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 35.4655, y: 5.25765, z: -79.39101}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1471435763}
+  - {fileID: 1001438473}
+  - {fileID: 467018498}
+  - {fileID: 288036443}
+  - {fileID: 1872787742}
+  - {fileID: 2015038393}
+  - {fileID: 537049457}
+  - {fileID: 909575337}
+  - {fileID: 1073131583}
+  - {fileID: 1765177129}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2042628269
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28789,6 +29424,10 @@ MonoBehaviour:
   slotCount: 3
   itemCountRange: {x: 1, y: 3}
   rollCount: 3
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29115,6 +29754,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29251,6 +29894,10 @@ MonoBehaviour:
   slotCount: 5
   itemCountRange: {x: 1, y: 5}
   rollCount: 5
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29303,6 +29950,10 @@ MonoBehaviour:
   slotCount: 2
   itemCountRange: {x: 1, y: 2}
   rollCount: 2
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 1
   minWeaponCount: 1
@@ -29453,6 +30104,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29505,6 +30160,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -29662,7 +30321,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7012165055968776979, guid: 397eef88d0f215a48b6bb12f50648cc2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 11.792793
+      value: 32.78
       objectReference: {fileID: 0}
     - target: {fileID: 7012165055968776979, guid: 397eef88d0f215a48b6bb12f50648cc2, type: 3}
       propertyPath: m_LocalPosition.y
@@ -29929,6 +30588,10 @@ MonoBehaviour:
   slotCount: 4
   itemCountRange: {x: 1, y: 4}
   rollCount: 4
+  scaleItemCountByPlayerCount: 1
+  threePlayerItemBonus: 1
+  fourPlayerItemBonus: 2
+  multiplayerRareWeightMultiplier: 0.9
   requireTotalWeight100: 1
   weaponBoxMode: 0
   minWeaponCount: 1
@@ -30092,11 +30755,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2007295440947127122, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.710004
+      value: -6.71
       objectReference: {fileID: 0}
     - target: {fileID: 2007295440947127122, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 55.630005
+      value: 6.46
       objectReference: {fileID: 0}
     - target: {fileID: 2007914057287114211, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.y
@@ -30172,11 +30835,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3504594481253635833, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -26.540005
+      value: -26.539991
       objectReference: {fileID: 0}
     - target: {fileID: 3504594481253635833, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 53.630005
+      value: 4.460005
       objectReference: {fileID: 0}
     - target: {fileID: 3651609528745243177, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -30236,11 +30899,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3892053276295896742, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 12.48
+      value: 12.480004
       objectReference: {fileID: 0}
     - target: {fileID: 3892053276295896742, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 54.12
+      value: 4.949996
       objectReference: {fileID: 0}
     - target: {fileID: 3900460719496392159, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.y
@@ -30360,11 +31023,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5895441336641241867, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.4999962
+      value: 1.500001
       objectReference: {fileID: 0}
     - target: {fileID: 5895441336641241867, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 55.920006
+      value: 6.750003
       objectReference: {fileID: 0}
     - target: {fileID: 5935178173002436962, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       propertyPath: m_LocalPosition.y
@@ -30656,18 +31319,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3651609528745243177, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       insertIndex: 3
       addedObject: {fileID: 1376528934}
-    - targetCorrespondingSourceObject: {fileID: 5756591879214014108, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 788582829}
-    - targetCorrespondingSourceObject: {fileID: 5756591879214014108, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1903230511}
-    - targetCorrespondingSourceObject: {fileID: 5756591879214014108, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1930210544}
-    - targetCorrespondingSourceObject: {fileID: 5756591879214014108, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 655281525}
     - targetCorrespondingSourceObject: {fileID: 4457304839279065193, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
       insertIndex: -1
       addedObject: {fileID: 509441169}
@@ -31474,11 +32125,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4313374636397722280, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
   m_PrefabInstance: {fileID: 2448597528699807093}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &2448597528699807100 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5756591879214014108, guid: e3a1dd3e0a1483345a4c8c4357475bd7, type: 3}
-  m_PrefabInstance: {fileID: 2448597528699807093}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3861023729096314976
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31587,3 +32233,4 @@ SceneRoots:
   - {fileID: 2012427779}
   - {fileID: 1316881411}
   - {fileID: 730010001}
+  - {fileID: 2026744730}

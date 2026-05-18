@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using DeadZone.Network;
 using DeadZone.Systems.Raid;
 
 namespace DeadZone.Actors.UI
@@ -138,10 +139,7 @@ namespace DeadZone.Actors.UI
 
         private void GoLobby()
         {
-            LoadingScreenService.LoadSceneOrFallback(
-                NormalizeLobbySceneName(lobbySceneName),
-                LoadSceneMode.Single,
-                DefaultLobbySceneName);
+            NetworkGameManager.RequestReturnToLobbyAfterRaid(NormalizeLobbySceneName(lobbySceneName));
         }
 
         private static string NormalizeLobbySceneName(string sceneName)

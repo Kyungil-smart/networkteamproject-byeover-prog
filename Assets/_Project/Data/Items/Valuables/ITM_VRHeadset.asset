@@ -15,13 +15,15 @@ MonoBehaviour:
   itemID: VRHeadset
   displayName: "VR\uAE30\uAE30"
   description: "- \uB4F1\uAE09: \uB808\uC5B4\n- \uC6A9\uB3C4: \uB378\uD0C0\uD3EC\uC2A4
-    \uAD70\uC0AC \uD6C8\uB828\uC5D0 \uC4F0\uC784"
+    \uAD70\uC0AC \uD6C8\uB828\uC5D0 \uC4F0\uC784\n- \uD2B8\uB808\uC774\uB354\uC5D0
+    \uD314\uBA74 \uC5B4\uB290 \uC815\uB3C4 \uAC12\uC5B4\uCE58\uB294 \uCCD0\uC904
+    \uAC83 \uAC19\uB2E4."
   icon: {fileID: 21300000, guid: d4ed34aa540440540be7678c0e30554f, type: 3}
   category: 7
   rarity: 2
   isValuable: 1
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
-  weightKg: 0.6
-  baseSellPrice: 6000
+  weightKg: 0
+  baseSellPrice: 30000
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}

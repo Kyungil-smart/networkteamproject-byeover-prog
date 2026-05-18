@@ -5,6 +5,8 @@ using DeadZone.Core;
 using DeadZone.Network;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -45,6 +47,10 @@ namespace DeadZone.Actors.UI
         [Tooltip("로그인 처리 중 표시할 선택 오브젝트입니다. null이어도 동작합니다.")]
         [SerializeField] private GameObject loadingBlocker;
 
+        [Header("====입력 UI 보정====")]
+        [SerializeField, Min(0f)] private float inputTextLeftPadding = 56f;
+        [SerializeField, Min(0f)] private float inputTextRightPadding = 16f;
+
         [Header("====자동 로그인====")]
         [Tooltip("로그인 팝업이 열릴 때 Firebase가 기억한 기존 계정으로 자동 로그인을 시도합니다.")]
         [SerializeField] private bool attemptAutoLoginOnEnable = true;
@@ -73,12 +79,14 @@ namespace DeadZone.Actors.UI
 
         private void Awake()
         {
+            NormalizeInputFieldLayouts();
             SetBusy(false);
             ShowMessage(string.Empty);
         }
 
         private void OnEnable()
         {
+            NormalizeInputFieldLayouts();
             BindButtons();
             SetBusy(false);
             ShowMessage(string.Empty);
@@ -93,6 +101,12 @@ namespace DeadZone.Actors.UI
         private void OnDisable()
         {
             UnbindButtons();    
+        }
+
+        private void Update()
+        {
+            HandleKeyboardNavigation();
+            NormalizeInputFieldLayouts();
         }
         
         private void BindButtons()
@@ -117,6 +131,45 @@ namespace DeadZone.Actors.UI
         private async void OnClickRegister()
         {
             await RunAuthFlowAsync(isRegister: true);
+        }
+
+        private void HandleKeyboardNavigation()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            if (keyboard.tabKey.wasPressedThisFrame && IsInputSelected(emailInput))
+            {
+                SelectInput(passwordInput);
+                return;
+            }
+
+            bool enterPressed = keyboard.enterKey.wasPressedThisFrame ||
+                                keyboard.numpadEnterKey.wasPressedThisFrame;
+            if (enterPressed && IsInputSelected(passwordInput))
+                OnClickLogin();
+        }
+
+        private static bool IsInputSelected(TMP_InputField input)
+        {
+            if (input == null)
+                return false;
+
+            if (input.isFocused)
+                return true;
+
+            return EventSystem.current != null &&
+                   EventSystem.current.currentSelectedGameObject == input.gameObject;
+        }
+
+        private static void SelectInput(TMP_InputField input)
+        {
+            if (input == null)
+                return;
+
+            input.Select();
+            input.ActivateInputField();
         }
         
         private void OnClickClose()
@@ -393,6 +446,106 @@ namespace DeadZone.Actors.UI
         private static string GetText(TMP_InputField input)
         {
             return input == null ? string.Empty : input.text.Trim();
+        }
+
+        private void NormalizeInputFieldLayouts()
+        {
+            NormalizeInputFieldLayout(emailInput);
+            NormalizeInputFieldLayout(passwordInput);
+        }
+
+        private void NormalizeInputFieldLayout(TMP_InputField input)
+        {
+            if (input == null)
+                return;
+
+            RectTransform viewport = input.textViewport;
+            if (viewport == null)
+                viewport = FindTextArea(input.transform);
+
+            if (viewport != null)
+            {
+                SetStretchRect(
+                    viewport,
+                    0f,
+                    0f,
+                    0f,
+                    0f);
+
+                DisableLayoutDrivers(viewport);
+            }
+
+            RectTransform textRect = input.textComponent != null
+                ? input.textComponent.rectTransform
+                : null;
+            RectTransform placeholderRect = input.placeholder != null
+                ? input.placeholder.rectTransform
+                : null;
+
+            SetInputTextRect(textRect);
+            SetInputTextRect(placeholderRect);
+            DisableLayoutDrivers(textRect);
+            DisableLayoutDrivers(placeholderRect);
+        }
+
+        private static RectTransform FindTextArea(Transform inputRoot)
+        {
+            if (inputRoot == null)
+                return null;
+
+            Transform[] children = inputRoot.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (children[i] != null && children[i].name == "Text Area")
+                    return children[i] as RectTransform;
+            }
+
+            return null;
+        }
+
+        private void SetInputTextRect(RectTransform rect)
+        {
+            if (rect == null)
+                return;
+
+            SetStretchRect(rect, inputTextLeftPadding, 0f, inputTextRightPadding, 0f);
+        }
+
+        private static void SetStretchRect(
+            RectTransform rect,
+            float left,
+            float bottom,
+            float right,
+            float top)
+        {
+            if (rect == null)
+                return;
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.offsetMin = new Vector2(left, bottom);
+            rect.offsetMax = new Vector2(-right, -top);
+            rect.anchoredPosition3D = Vector3.zero;
+            rect.localScale = Vector3.one;
+        }
+
+        private static void DisableLayoutDrivers(RectTransform rect)
+        {
+            if (rect == null)
+                return;
+
+            ContentSizeFitter sizeFitter = rect.GetComponent<ContentSizeFitter>();
+            if (sizeFitter != null)
+                sizeFitter.enabled = false;
+
+            HorizontalLayoutGroup horizontalLayoutGroup = rect.GetComponent<HorizontalLayoutGroup>();
+            if (horizontalLayoutGroup != null)
+                horizontalLayoutGroup.enabled = false;
+
+            LayoutElement layoutElement = rect.GetComponent<LayoutElement>();
+            if (layoutElement != null)
+                layoutElement.ignoreLayout = true;
         }
         
     }

@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeadZone.Core.QuestDataSO
   questID: Q3
   questName: "창고 지역 보스 처치"
-  description: "창고 지역 보스를 처치 하십시오."
+  description: "창고 지역에 있는 해당 구역 보스를 처치 하십시오."
   objectives:
   - type: 0
     targetID: Boss_Warehouse
     requiredCount: 1
     location: "창고 지역"
-  rewards: []
+  rewards:
+  - type: 0
+    itemID:
+    amount: 10000
   unlockZoneID: Stage3 Open
   prerequisiteQuestID: Q2
   isSideQuest: 0

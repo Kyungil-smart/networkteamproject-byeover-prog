@@ -24,8 +24,8 @@ MonoBehaviour:
     effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +5"
   - level: 3
     upgradeMaterials:
-    - item: {fileID: 11400000, guid: 0a86ddc589c256a4eb0b256b1380c765, type: 2}
-      amount: 10
+    - item: {fileID: 11400000, guid: bff5e037139d0fd4495065eac0965818, type: 2}
+      amount: 1
     effectDescription: "\uCD5C\uB300 \uCCB4\uB825 +5"
   - level: 4
     upgradeMaterials:

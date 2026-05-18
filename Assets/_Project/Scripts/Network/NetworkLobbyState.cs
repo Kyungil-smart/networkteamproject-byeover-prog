@@ -195,6 +195,7 @@ namespace DeadZone.Network
         {
             if (!IsServer) return;
 
+            Debug.Log($"[PartySession] OnClientConnectedCallback clientId={clientId}, partyLeaderClientId={NetworkManager.ServerClientId}", this);
             EnsurePlayerExistsServer(clientId);
         }
 

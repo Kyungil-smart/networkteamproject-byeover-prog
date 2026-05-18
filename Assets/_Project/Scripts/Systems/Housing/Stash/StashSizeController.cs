@@ -32,9 +32,11 @@ namespace DeadZone.Systems.Housing
         private StashSizeRule[] sizeRules =
         {
             new StashSizeRule { level = 1, columns = 8, rows = 6 },
-            new StashSizeRule { level = 2, columns = 10, rows = 8 },
-            new StashSizeRule { level = 3, columns = 12, rows = 9 },
-            new StashSizeRule { level = 4, columns = 14, rows = 10 },
+            new StashSizeRule { level = 2, columns = 10, rows = 7 },
+            new StashSizeRule { level = 3, columns = 10, rows = 9 },
+            new StashSizeRule { level = 4, columns = 11, rows = 10 },
+            new StashSizeRule { level = 5, columns = 15, rows = 10 },
+            new StashSizeRule { level = 6, columns = 20, rows = 10 },
         };
 
         [Header("오프라인 테스트")]
@@ -43,7 +45,7 @@ namespace DeadZone.Systems.Housing
         private bool useOfflineTestLevel;
 
         [SerializeField]
-        [Range(1, 4)]
+        [Range(1, 6)]
         [Tooltip("오프라인 테스트에서 사용할 보관함 레벨입니다.")]
         private int offlineTestLevel = 1;
 
@@ -100,7 +102,7 @@ namespace DeadZone.Systems.Housing
         private void OnValidate()
         {
             ValidateSizeRules();
-            offlineTestLevel = Mathf.Clamp(offlineTestLevel, 1, 4);
+            offlineTestLevel = Mathf.Clamp(offlineTestLevel, 1, 6);
             FindRequiredComponents();
         }
 
@@ -192,7 +194,7 @@ namespace DeadZone.Systems.Housing
         public void SetOfflineTestLevel(int level)
         {
             useOfflineTestLevel = true;
-            offlineTestLevel = Mathf.Clamp(level, 1, 4);
+            offlineTestLevel = Mathf.Clamp(level, 1, 6);
             RefreshSize(true);
         }
 
@@ -205,7 +207,7 @@ namespace DeadZone.Systems.Housing
         private int GetCurrentStashLevel()
         {
             if (useOfflineTestLevel)
-                return Mathf.Clamp(offlineTestLevel, 1, 4);
+                return Mathf.Clamp(offlineTestLevel, 1, 6);
 
             if (stashFacility == null)
                 return 1;
@@ -239,9 +241,11 @@ namespace DeadZone.Systems.Housing
                 sizeRules = new[]
                 {
                     new StashSizeRule { level = 1, columns = 8, rows = 6 },
-                    new StashSizeRule { level = 2, columns = 10, rows = 8 },
-                    new StashSizeRule { level = 3, columns = 12, rows = 9 },
-                    new StashSizeRule { level = 4, columns = 14, rows = 10 },
+                    new StashSizeRule { level = 2, columns = 10, rows = 7 },
+                    new StashSizeRule { level = 3, columns = 10, rows = 9 },
+                    new StashSizeRule { level = 4, columns = 11, rows = 10 },
+                    new StashSizeRule { level = 5, columns = 15, rows = 10 },
+                    new StashSizeRule { level = 6, columns = 20, rows = 10 },
                 };
             }
 

@@ -15,13 +15,14 @@ MonoBehaviour:
   itemID: JadeChanLaptop
   displayName: "JADE\uCA29\uC758 \uB178\uD2B8\uBD81"
   description: "- \uB4F1\uAE09: \uC5D0\uD53D\n- \uC6A9\uB3C4: \uC720\uBA85\uD55C
-    \uD504\uB85C\uADF8\uB798\uBA70\uC758 \uB178\uD2B8\uBD81"
+    \uD504\uB85C\uADF8\uB798\uBA70\uC758 \uB178\uD2B8\uBD81\n- \uD2B8\uB808\uC774\uB354\uC5D0
+    \uD314\uBA74 \uAF64 \uBE44\uC2F8\uAC8C \uCCD0\uC904 \uAC83 \uAC19\uB2E4."
   icon: {fileID: 21300000, guid: f5ed87c63933ea843851b5f5529951be, type: 3}
   category: 7
   rarity: 3
   isValuable: 1
   gridSize: {x: 1, y: 1}
   maxStackSize: 1
-  weightKg: 1.5
-  baseSellPrice: 25000
+  weightKg: 0
+  baseSellPrice: 112500
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}

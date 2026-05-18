@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using DeadZone.Network;
 using DeadZone.Network._LSH_Temp;
 using DeadZone.Systems.Save;
 using TMPro;
@@ -185,7 +186,7 @@ namespace DeadZone.Actors.UI
                     return;
                 }
 
-                NetworkManager.Singleton.SceneManager.LoadScene(facilitySceneName, LoadSceneMode.Single);
+                NetworkGameManager.LoadSceneWithLoading(facilitySceneName, LoadSceneMode.Single);
                 return;
             }
 

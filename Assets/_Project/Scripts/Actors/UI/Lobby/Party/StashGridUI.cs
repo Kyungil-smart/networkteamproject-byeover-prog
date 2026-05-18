@@ -17,12 +17,13 @@ namespace DeadZone.Actors.UI
     public class StashGridUI : MonoBehaviour, IInventory
     {
         private const int BaseSlotCount = 50;
-        private const int AdditionalSlotsPerLevel = 20;
-        private const int MaxStashLevel = 4;
+        private const int MaxStashLevel = 6;
         private const int FixedColumnCount = 10;
-        private const int UpgradeLevel2Cost = 30000;
-        private const int UpgradeLevel3Cost = 50000;
-        private const int UpgradeLevel4Cost = 100000;
+        private const int UpgradeLevel2Cost = 10000;
+        private const int UpgradeLevel3Cost = 30000;
+        private const int UpgradeLevel4Cost = 50000;
+        private const int UpgradeLevel5Cost = 100000;
+        private const int UpgradeLevel6Cost = 200000;
 
         [Title("李몄“")]
         [Required]
@@ -44,13 +45,23 @@ namespace DeadZone.Actors.UI
         [SerializeField] private Button upgradeLevel2Button;
         [SerializeField] private Button upgradeLevel3Button;
         [SerializeField] private Button upgradeLevel4Button;
+        [SerializeField] private Button upgradeLevel5Button;
+        [SerializeField] private Button upgradeLevel6Button;
         [SerializeField] private TMP_Text upgradeLevel2Text;
         [SerializeField] private TMP_Text upgradeLevel3Text;
         [SerializeField] private TMP_Text upgradeLevel4Text;
+        [SerializeField] private TMP_Text upgradeLevel5Text;
+        [SerializeField] private TMP_Text upgradeLevel6Text;
         [SerializeField] private WalletSystem walletSystem;
         [SerializeField] private LobbyInventoryState inventoryState;
         [SerializeField] private LobbyFacilityState facilityState;
         [SerializeField] private LobbySaveService lobbySaveService;
+
+        [Title("Stash Transfer")]
+        [SerializeField] private Button putAllButton;
+        [SerializeField] private Button autoSortButton;
+        [SerializeField] private LobbyPlayerInventoryUI playerInventoryUI;
+        [SerializeField] private LobbyInventoryStateUiBridge inventoryStateUiBridge;
 
         [Title("?ㅽ겕濡??ㅼ젙")]
         [SerializeField] private ScrollRect scrollRect;
@@ -128,6 +139,8 @@ namespace DeadZone.Actors.UI
             AutoBindReferences();
             AutoBindUpgradeReferences();
             BindUpgradeButtons();
+            BindPutAllButton();
+            BindAutoSortButton();
             ApplySavedStashLevel();
 
             if (refreshOnAwake)
@@ -139,6 +152,8 @@ namespace DeadZone.Actors.UI
             EventBus.Subscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
             EventBus.Subscribe<CreditsChangedEvent>(HandleCreditsChanged);
             BindUpgradeButtons();
+            BindPutAllButton();
+            BindAutoSortButton();
             RefreshUpgradePopup();
         }
 
@@ -147,6 +162,8 @@ namespace DeadZone.Actors.UI
             EventBus.Unsubscribe<CloudSaveLoadedEvent>(HandleCloudSaveLoaded);
             EventBus.Unsubscribe<CreditsChangedEvent>(HandleCreditsChanged);
             UnbindUpgradeButtons();
+            UnbindPutAllButton();
+            UnbindAutoSortButton();
         }
 
         private void Start()
@@ -172,6 +189,13 @@ namespace DeadZone.Actors.UI
         public void SetLevel(int level)
         {
             stashLevel = Mathf.Clamp(level, 1, MaxStashLevel);
+            RefreshSlots();
+            RefreshUpgradePopup();
+        }
+
+        public void RefreshSavedLevelAndSlots()
+        {
+            ApplySavedStashLevel();
             RefreshSlots();
             RefreshUpgradePopup();
         }
@@ -206,7 +230,15 @@ namespace DeadZone.Actors.UI
         public int GetSlotCountByLevel(int level)
         {
             int clampedLevel = Mathf.Clamp(level, 1, MaxStashLevel);
-            return BaseSlotCount + (clampedLevel - 1) * AdditionalSlotsPerLevel;
+            return clampedLevel switch
+            {
+                2 => 70,
+                3 => 90,
+                4 => 110,
+                5 => 150,
+                6 => 200,
+                _ => BaseSlotCount
+            };
         }
 
         public bool TryAddItem(ItemDataSO item, int amount = 1)
@@ -533,16 +565,27 @@ namespace DeadZone.Actors.UI
             upgradeLevel2Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.2");
             upgradeLevel3Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.3");
             upgradeLevel4Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.4");
+            upgradeLevel5Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.5");
+            upgradeLevel6Button ??= FindButtonInUpgradePopup("Btn_UpgradeInventoryLv.6");
             closeUpgradePopupButton ??= FindButtonInUpgradePopup("Btn_Close");
 
             upgradeLevel2Text ??= FindUpgradeButtonText(upgradeLevel2Button, "Text_UpgradeInventoryLv.2");
             upgradeLevel3Text ??= FindUpgradeButtonText(upgradeLevel3Button, "Text_UpgradeInventoryLv.3");
             upgradeLevel4Text ??= FindUpgradeButtonText(upgradeLevel4Button, "Text_UpgradeInventoryLv.4");
+            upgradeLevel5Text ??= FindUpgradeButtonText(upgradeLevel5Button, "Text_UpgradeInventoryLv.5");
+            upgradeLevel6Text ??= FindUpgradeButtonText(upgradeLevel6Button, "Text_UpgradeInventoryLv.6");
 
             walletSystem ??= FindFirstObjectByType<WalletSystem>(FindObjectsInactive.Include);
             inventoryState ??= FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
             facilityState ??= FindFirstObjectByType<LobbyFacilityState>(FindObjectsInactive.Include);
             lobbySaveService ??= FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            playerInventoryUI ??= FindFirstObjectByType<LobbyPlayerInventoryUI>(FindObjectsInactive.Include);
+            inventoryStateUiBridge ??= FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            putAllButton ??= FindSceneButton("Btn_PutAll");
+            autoSortButton ??= FindSceneButton("Btn_AutoSort");
+            autoSortButton ??= FindSceneButton("Btn_Sort");
+            autoSortButton ??= FindSceneButton("Btn_StashSort");
+            autoSortButton ??= FindSceneButtonByLabel("자동정렬");
         }
 
         private void BindUpgradeButtons()
@@ -564,6 +607,8 @@ namespace DeadZone.Actors.UI
             BindUpgradeLevelButton(upgradeLevel2Button, 2);
             BindUpgradeLevelButton(upgradeLevel3Button, 3);
             BindUpgradeLevelButton(upgradeLevel4Button, 4);
+            BindUpgradeLevelButton(upgradeLevel5Button, 5);
+            BindUpgradeLevelButton(upgradeLevel6Button, 6);
         }
 
         private void UnbindUpgradeButtons()
@@ -582,6 +627,262 @@ namespace DeadZone.Actors.UI
 
             if (upgradeLevel4Button != null)
                 upgradeLevel4Button.onClick.RemoveListener(TryUpgradeStashToLevel4);
+
+            if (upgradeLevel5Button != null)
+                upgradeLevel5Button.onClick.RemoveListener(TryUpgradeStashToLevel5);
+
+            if (upgradeLevel6Button != null)
+                upgradeLevel6Button.onClick.RemoveListener(TryUpgradeStashToLevel6);
+        }
+
+        private void BindPutAllButton()
+        {
+            AutoBindUpgradeReferences();
+
+            if (putAllButton == null)
+                return;
+
+            putAllButton.onClick.RemoveListener(PutAllPlayerInventoryItems);
+            putAllButton.onClick.AddListener(PutAllPlayerInventoryItems);
+        }
+
+        private void UnbindPutAllButton()
+        {
+            if (putAllButton != null)
+                putAllButton.onClick.RemoveListener(PutAllPlayerInventoryItems);
+        }
+
+        private void BindAutoSortButton()
+        {
+            AutoBindUpgradeReferences();
+
+            if (autoSortButton == null)
+                return;
+
+            autoSortButton.onClick.RemoveListener(AutoSortStashItems);
+            autoSortButton.onClick.AddListener(AutoSortStashItems);
+        }
+
+        private void UnbindAutoSortButton()
+        {
+            if (autoSortButton != null)
+                autoSortButton.onClick.RemoveListener(AutoSortStashItems);
+        }
+
+        public void AutoSortStashItems()
+        {
+            AutoBindUpgradeReferences();
+            RefreshSlots();
+
+            List<ItemSaveDTO> savedItems = CaptureSavedStashItems();
+            if (savedItems.Count <= 1)
+                return;
+
+            IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
+            savedItems.Sort((left, right) => CompareStashSortOrder(left, right, itemDatabase));
+
+            for (int i = 0; i < savedItems.Count; i++)
+            {
+                ItemSaveDTO item = savedItems[i];
+                item.containerId = "stash";
+                item.x = i;
+                item.y = 0;
+                item.rotated = false;
+                if (string.IsNullOrWhiteSpace(item.instanceId))
+                    item.instanceId = $"stash_{i}_{item.itemId}";
+            }
+
+            inventoryState ??= FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            inventoryState?.SetStashItems(savedItems);
+
+            ApplySavedStashItems(savedItems, itemDatabase);
+
+            inventoryStateUiBridge ??= FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            inventoryStateUiBridge?.CaptureUiToState();
+
+            lobbySaveService ??= FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            lobbySaveService?.SaveCurrentStateToLocalJson("Stash auto sort");
+            lobbySaveService?.SaveLobbyDataToCloud();
+        }
+
+        private static int CompareStashSortOrder(ItemSaveDTO left, ItemSaveDTO right, IItemDatabase itemDatabase)
+        {
+            ItemDataSO leftItem = ResolveSortItem(left, itemDatabase);
+            ItemDataSO rightItem = ResolveSortItem(right, itemDatabase);
+
+            int result = GetCategorySortRank(leftItem).CompareTo(GetCategorySortRank(rightItem));
+            if (result != 0)
+                return result;
+
+            result = GetRaritySortRank(leftItem).CompareTo(GetRaritySortRank(rightItem));
+            if (result != 0)
+                return result;
+
+            string leftName = !string.IsNullOrWhiteSpace(leftItem?.displayName) ? leftItem.displayName : left?.itemId;
+            string rightName = !string.IsNullOrWhiteSpace(rightItem?.displayName) ? rightItem.displayName : right?.itemId;
+            result = string.Compare(leftName, rightName, System.StringComparison.Ordinal);
+            if (result != 0)
+                return result;
+
+            return Mathf.Max(0, right?.stackCount ?? 0).CompareTo(Mathf.Max(0, left?.stackCount ?? 0));
+        }
+
+        private static ItemDataSO ResolveSortItem(ItemSaveDTO savedItem, IItemDatabase itemDatabase)
+        {
+            if (savedItem == null || string.IsNullOrWhiteSpace(savedItem.itemId))
+                return null;
+
+            return itemDatabase?.GetById(savedItem.itemId);
+        }
+
+        private static int GetCategorySortRank(ItemDataSO item)
+        {
+            if (item == null)
+                return 99;
+
+            if (item.isValuable || item.category == ItemCategory.Valuable)
+                return 0;
+
+            return item.category switch
+            {
+                ItemCategory.Weapon => 1,
+                ItemCategory.Ammo => 2,
+                ItemCategory.Armor => 3,
+                ItemCategory.Helmet => 4,
+                ItemCategory.Med => 5,
+                _ => 6
+            };
+        }
+
+        private static int GetRaritySortRank(ItemDataSO item)
+        {
+            if (item == null)
+                return 99;
+
+            return item.rarity switch
+            {
+                RarityTier.Legendary => 0,
+                RarityTier.Epic => 1,
+                RarityTier.Rare => 2,
+                RarityTier.Uncommon => 3,
+                RarityTier.Common => 4,
+                _ => 99
+            };
+        }
+
+        public void PutAllPlayerInventoryItems()
+        {
+            AutoBindUpgradeReferences();
+
+            if (putAllButton != null)
+                putAllButton.interactable = false;
+
+            if (playerInventoryUI == null)
+            {
+                Debug.LogWarning("[StashGridUI] Btn_PutAll failed. LobbyPlayerInventoryUI was not found.", this);
+                if (putAllButton != null)
+                    putAllButton.interactable = true;
+                return;
+            }
+
+            playerInventoryUI.RefreshSlots();
+            RefreshSlots();
+
+            List<InventorySlotUI> sourceSlots = CollectPlayerInventoryItemSlots();
+            if (sourceSlots.Count == 0)
+            {
+                if (putAllButton != null)
+                    putAllButton.interactable = true;
+                return;
+            }
+
+            int movedCount = 0;
+            for (int i = 0; i < sourceSlots.Count; i++)
+            {
+                InventorySlotUI sourceSlot = sourceSlots[i];
+                if (sourceSlot == null)
+                    continue;
+
+                sourceSlot.PrepareForSaveSnapshot();
+                if (!sourceSlot.HasItem || sourceSlot.CurrentItemData == null)
+                    continue;
+
+                ItemDataSO itemData = sourceSlot.CurrentItemData;
+                int stackCount = Mathf.Max(1, sourceSlot.CurrentStackCount);
+
+                if (!TryAddItem(itemData, stackCount))
+                    continue;
+
+                sourceSlot.ClearItem();
+                movedCount++;
+            }
+
+            if (movedCount <= 0)
+            {
+                if (putAllButton != null)
+                    putAllButton.interactable = true;
+                return;
+            }
+
+            playerInventoryUI.RefreshSlots();
+            RefreshSlots();
+
+            inventoryStateUiBridge ??= FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
+            inventoryStateUiBridge?.CaptureUiToState();
+
+            LobbyInventoryState inventoryState = FindFirstObjectByType<LobbyInventoryState>(FindObjectsInactive.Include);
+            inventoryState?.SetInventoryItems(System.Array.Empty<ItemSaveDTO>());
+
+            lobbySaveService ??= FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
+            lobbySaveService?.SaveCurrentStateToLocalJson("Stash put all");
+            lobbySaveService?.SaveLobbyDataToCloud();
+
+            if (putAllButton != null)
+                putAllButton.interactable = true;
+        }
+
+        private List<InventorySlotUI> CollectPlayerInventoryItemSlots()
+        {
+            List<InventorySlotUI> sourceSlots = new List<InventorySlotUI>();
+
+            if (playerInventoryUI == null)
+                return sourceSlots;
+
+            InventorySlotUI[] foundSlots =
+                playerInventoryUI.GetComponentsInChildren<InventorySlotUI>(true);
+
+            for (int i = 0; i < foundSlots.Length; i++)
+            {
+                InventorySlotUI slot = foundSlots[i];
+                if (slot == null || !slot.gameObject.activeInHierarchy)
+                    continue;
+
+                slot.PrepareForSaveSnapshot();
+                if (slot.SlotKind != InventorySlotKind.Bag)
+                    continue;
+
+                if (!slot.HasItem || slot.CurrentItemData == null)
+                    continue;
+
+                sourceSlots.Add(slot);
+            }
+
+            sourceSlots.Sort(CompareInventorySlotOrder);
+            return sourceSlots;
+        }
+
+        private static int CompareInventorySlotOrder(InventorySlotUI left, InventorySlotUI right)
+        {
+            if (left == right)
+                return 0;
+
+            if (left == null)
+                return 1;
+
+            if (right == null)
+                return -1;
+
+            return left.SlotIndex.CompareTo(right.SlotIndex);
         }
 
         private void BindUpgradeLevelButton(Button button, int targetLevel)
@@ -604,6 +905,16 @@ namespace DeadZone.Actors.UI
                 button.onClick.RemoveListener(TryUpgradeStashToLevel4);
                 button.onClick.AddListener(TryUpgradeStashToLevel4);
             }
+            else if (targetLevel == 5)
+            {
+                button.onClick.RemoveListener(TryUpgradeStashToLevel5);
+                button.onClick.AddListener(TryUpgradeStashToLevel5);
+            }
+            else if (targetLevel == 6)
+            {
+                button.onClick.RemoveListener(TryUpgradeStashToLevel6);
+                button.onClick.AddListener(TryUpgradeStashToLevel6);
+            }
         }
 
         private void TryUpgradeStashToLevel2() => TryUpgradeStash(2);
@@ -611,6 +922,10 @@ namespace DeadZone.Actors.UI
         private void TryUpgradeStashToLevel3() => TryUpgradeStash(3);
 
         private void TryUpgradeStashToLevel4() => TryUpgradeStash(4);
+
+        private void TryUpgradeStashToLevel5() => TryUpgradeStash(5);
+
+        private void TryUpgradeStashToLevel6() => TryUpgradeStash(6);
 
         private void OpenUpgradePopup()
         {
@@ -635,10 +950,14 @@ namespace DeadZone.Actors.UI
             SetUpgradeSlotVisible(2, true);
             SetUpgradeSlotVisible(3, true);
             SetUpgradeSlotVisible(4, true);
+            SetUpgradeSlotVisible(5, true);
+            SetUpgradeSlotVisible(6, true);
 
             RefreshUpgradeLevelButton(2, upgradeLevel2Button, upgradeLevel2Text);
             RefreshUpgradeLevelButton(3, upgradeLevel3Button, upgradeLevel3Text);
             RefreshUpgradeLevelButton(4, upgradeLevel4Button, upgradeLevel4Text);
+            RefreshUpgradeLevelButton(5, upgradeLevel5Button, upgradeLevel5Text);
+            RefreshUpgradeLevelButton(6, upgradeLevel6Button, upgradeLevel6Text);
         }
 
         private void RefreshUpgradeLevelButton(int targetLevel, Button button, TMP_Text label)
@@ -703,8 +1022,23 @@ namespace DeadZone.Actors.UI
         {
             AutoBindUpgradeReferences();
 
+            int resolvedLevel = stashLevel;
+            bool hasResolvedLevel = false;
+
             if (TryGetSavedStashLevel(out int savedLevel))
-                stashLevel = Mathf.Clamp(savedLevel, 1, MaxStashLevel);
+            {
+                resolvedLevel = Mathf.Max(resolvedLevel, savedLevel);
+                hasResolvedLevel = true;
+            }
+
+            if (TryGetCloudStashLevel(out int cloudLevel))
+            {
+                resolvedLevel = Mathf.Max(resolvedLevel, cloudLevel);
+                hasResolvedLevel = true;
+            }
+
+            if (hasResolvedLevel)
+                stashLevel = Mathf.Clamp(resolvedLevel, 1, MaxStashLevel);
         }
 
         private bool TryGetSavedStashLevel(out int level)
@@ -717,7 +1051,7 @@ namespace DeadZone.Actors.UI
             for (int i = 0; i < facilityState.Facilities.Count; i++)
             {
                 FacilitySaveDTO facility = facilityState.Facilities[i];
-                if (facility == null || !string.Equals(facility.facilityId, "Stash", System.StringComparison.OrdinalIgnoreCase))
+                if (facility == null || NormalizeFacilityId(facility.facilityId) != "stash")
                     continue;
 
                 level = Mathf.Clamp(facility.level, 1, MaxStashLevel);
@@ -725,6 +1059,47 @@ namespace DeadZone.Actors.UI
             }
 
             return false;
+        }
+
+        private static bool TryGetCloudStashLevel(out int level)
+        {
+            level = 1;
+
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSaveSystem == null || !cloudSaveSystem.HasLoadedData || cloudSaveSystem.CurrentData == null)
+                return false;
+
+            bool found = false;
+            PlayerCloudData currentData = cloudSaveSystem.CurrentData;
+
+            if (currentData.facilities != null && currentData.facilities.stash > 0)
+            {
+                level = Mathf.Max(level, currentData.facilities.stash);
+                found = true;
+            }
+
+            if (currentData.lobbySave?.facilities != null)
+            {
+                for (int i = 0; i < currentData.lobbySave.facilities.Count; i++)
+                {
+                    LobbyFacilityCloudData facility = currentData.lobbySave.facilities[i];
+                    if (facility == null || NormalizeFacilityId(facility.facilityId) != "stash")
+                        continue;
+
+                    level = Mathf.Max(level, facility.level);
+                    found = true;
+                }
+            }
+
+            level = Mathf.Clamp(level, 1, MaxStashLevel);
+            return found;
+        }
+
+        private static string NormalizeFacilityId(string facilityId)
+        {
+            return string.IsNullOrWhiteSpace(facilityId)
+                ? string.Empty
+                : facilityId.Trim().Replace("_", string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
         }
 
         private int GetCurrentCredits()
@@ -766,6 +1141,8 @@ namespace DeadZone.Actors.UI
                 2 => UpgradeLevel2Cost,
                 3 => UpgradeLevel3Cost,
                 4 => UpgradeLevel4Cost,
+                5 => UpgradeLevel5Cost,
+                6 => UpgradeLevel6Cost,
                 _ => int.MaxValue
             };
         }
@@ -777,6 +1154,8 @@ namespace DeadZone.Actors.UI
                 2 => upgradeLevel2Button,
                 3 => upgradeLevel3Button,
                 4 => upgradeLevel4Button,
+                5 => upgradeLevel5Button,
+                6 => upgradeLevel6Button,
                 _ => null
             };
         }
@@ -788,6 +1167,8 @@ namespace DeadZone.Actors.UI
                 2 => upgradeLevel2Text,
                 3 => upgradeLevel3Text,
                 4 => upgradeLevel4Text,
+                5 => upgradeLevel5Text,
+                6 => upgradeLevel6Text,
                 _ => null
             };
         }
@@ -843,6 +1224,26 @@ namespace DeadZone.Actors.UI
         {
             Transform target = FindSceneTransform(objectName);
             return target != null ? target.GetComponent<Button>() : null;
+        }
+
+        private static Button FindSceneButtonByLabel(string label)
+        {
+            if (string.IsNullOrWhiteSpace(label))
+                return null;
+
+            Button[] buttons = FindObjectsByType<Button>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                Button button = buttons[i];
+                TMP_Text text = button != null ? button.GetComponentInChildren<TMP_Text>(true) : null;
+                if (text != null && string.Equals(text.text?.Trim(), label, System.StringComparison.Ordinal))
+                    return button;
+            }
+
+            return null;
         }
 
         private static Transform FindSceneTransform(string objectName)
@@ -1068,6 +1469,7 @@ namespace DeadZone.Actors.UI
 
         private void ApplyCloudStash(IReadOnlyList<StashSlot> cloudSlots)
         {
+            ApplySavedStashLevel();
             RefreshSlots();
 
             if (cloudSlots == null || cloudSlots.Count == 0)
@@ -1081,7 +1483,7 @@ namespace DeadZone.Actors.UI
             IItemDatabase itemDatabase = ServiceLocator.Get<IItemDatabase>();
             if (itemDatabase == null && cloudStashItemDatabase == null)
             {
-                Debug.LogWarning("[StashGridUI] Cloud Save 蹂닿??⑥쓣 ?곸슜?????놁뒿?덈떎. IItemDatabase ?쒕퉬???먮뒗 蹂댁“ ItemDatabaseSO媛 ?꾩슂?⑸땲??", this);
+                Debug.LogWarning("[StashGridUI] Cloud Save stash could not be applied. IItemDatabase service or fallback ItemDatabaseSO is required.", this);
                 return;
             }
 
@@ -1096,14 +1498,14 @@ namespace DeadZone.Actors.UI
                 ItemDataSO itemData = ResolveCloudStashItemData(cloudSlot.itemId, itemDatabase);
                 if (itemData == null)
                 {
-                    Debug.LogWarning($"[StashGridUI] Cloud Save 蹂닿????꾩씠?쒖쓣 李얠쓣 ???놁뒿?덈떎. ItemId={cloudSlot.itemId}", this);
+                    Debug.LogWarning($"[StashGridUI] Cloud Save stash item could not be resolved. ItemId={cloudSlot.itemId}", this);
                     continue;
                 }
 
                 InventorySlotUI targetSlot = FindSlotForCloudSlot(cloudSlot);
                 if (targetSlot == null)
                 {
-                    Debug.LogWarning($"[StashGridUI] Cloud Save 蹂닿????щ’??遺議깊빀?덈떎. ItemId={cloudSlot.itemId}", this);
+                    Debug.LogWarning($"[StashGridUI] Cloud Save stash has no available visible slot. ItemId={cloudSlot.itemId}, StashLevel={stashLevel}, ActiveSlots={activeSlotCount}, TotalSlots={slots.Count}", this);
                     continue;
                 }
 

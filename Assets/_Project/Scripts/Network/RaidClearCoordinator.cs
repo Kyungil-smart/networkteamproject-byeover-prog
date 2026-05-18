@@ -45,15 +45,24 @@ namespace DeadZone.Network
         private bool hasHandledClear;
         private bool hasCompletedSaveResultWait;
         private bool hasRequestedLobbyReturn;
+        private string pendingResultSceneOverride = string.Empty;
 
         public bool HasClearHandled => hasHandledClear;
 
         public bool TryRequestPartyClear(ulong triggeringClientId)
         {
-            return TryRequestPartyClear(triggeringClientId, null);
+            return TryRequestPartyClear(triggeringClientId, null, null);
         }
 
         public bool TryRequestPartyClear(ulong triggeringClientId, IReadOnlyList<ulong> extractedClientIds)
+        {
+            return TryRequestPartyClear(triggeringClientId, extractedClientIds, null);
+        }
+
+        public bool TryRequestPartyClear(
+            ulong triggeringClientId,
+            IReadOnlyList<ulong> extractedClientIds,
+            string resultSceneOverride)
         {
             if (!IsServer) return false;
             if (!IsSpawned) return false;
@@ -84,6 +93,9 @@ namespace DeadZone.Network
 
             BuildExtractionClientIds(extractedClientIds, triggeringClientId);
             PrepareSaveResultTracking(extractedClientIdsBuffer);
+            pendingResultSceneOverride = string.IsNullOrWhiteSpace(resultSceneOverride)
+                ? string.Empty
+                : resultSceneOverride.Trim();
 
             LogDebug(
                 $"Map 1 Clear 감지. TriggerClientId={triggeringClientId}, " +
@@ -320,6 +332,9 @@ namespace DeadZone.Network
                     this);
             }
 
+            if (TryRequestResultSceneOverride())
+                return;
+
             if (!TryRequestRaidResultScene())
             {
                 ResetGameSessionTracking();
@@ -382,6 +397,48 @@ namespace DeadZone.Network
             extractedClientIdsBuffer.Add(clientId);
         }
 
+        private bool TryRequestResultSceneOverride()
+        {
+            if (!IsServer)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(pendingResultSceneOverride))
+                return false;
+
+            if (hasRequestedLobbyReturn)
+                return true;
+
+            string resultSceneName = pendingResultSceneOverride.Trim();
+            NetworkManager networkManager = NetworkManager.Singleton;
+
+            if (networkManager == null || networkManager.SceneManager == null)
+            {
+                Debug.LogWarning(
+                    $"[RaidClearCoordinator] Result scene override failed. NetworkSceneManager missing. Scene={resultSceneName}",
+                    this);
+
+                return false;
+            }
+
+            SceneEventProgressStatus status =
+                NetworkGameManager.LoadSceneWithLoading(resultSceneName, LoadSceneMode.Single);
+
+            if (status != SceneEventProgressStatus.Started)
+            {
+                Debug.LogWarning(
+                    $"[RaidClearCoordinator] Result scene override load request failed. Scene={resultSceneName}, Status={status}",
+                    this);
+
+                return false;
+            }
+
+            hasRequestedLobbyReturn = true;
+            ResetGameSessionTracking();
+
+            Debug.Log($"[RaidClearCoordinator] Result scene override load requested. Scene={resultSceneName}", this);
+            return true;
+        }
+
         private bool TryRequestRaidResultScene()
         {
             if (!TryResolveGameSessionManager(out GameSessionManager gameSessionManager))
@@ -424,7 +481,7 @@ namespace DeadZone.Network
             }
 
             SceneEventProgressStatus status =
-                networkManager.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+                NetworkGameManager.LoadSceneWithLoading(lobbySceneName, LoadSceneMode.Single);
 
             if (status != SceneEventProgressStatus.Started)
             {

@@ -193,6 +193,7 @@ namespace DeadZone.Actors
             EnsureItemDatabase();
 
             int importedCount = 0;
+            HashSet<int> assignedSlotIndexes = new();
 
             for (int i = 0; i < snapshot.Count; i++)
             {
@@ -204,9 +205,12 @@ namespace DeadZone.Actors
                 if (!IsQuickSlotItem(item))
                     continue;
 
+                int slotIndex = ResolveQuickSlotIndex(savedItem.slotIndex, assignedSlotIndexes);
+                assignedSlotIndexes.Add(slotIndex);
+
                 SetQuickSlot(new QuickSlotData
                 {
-                    slotIndex = (byte)Mathf.Clamp(savedItem.slotIndex, 0, QUICK_SLOT_COUNT - 1),
+                    slotIndex = (byte)slotIndex,
                     itemId = savedItem.itemId,
                     stackCount = (ushort)Mathf.Clamp(savedItem.stackCount, 1, ushort.MaxValue),
                     currentDurability = Mathf.Max(0f, savedItem.currentDurability),
@@ -217,6 +221,21 @@ namespace DeadZone.Actors
             }
 
             return importedCount;
+        }
+
+        private static int ResolveQuickSlotIndex(int requestedIndex, HashSet<int> assignedSlotIndexes)
+        {
+            int normalizedIndex = Mathf.Clamp(requestedIndex, 0, QUICK_SLOT_COUNT - 1);
+            if (assignedSlotIndexes == null || !assignedSlotIndexes.Contains(normalizedIndex))
+                return normalizedIndex;
+
+            for (int i = 0; i < QUICK_SLOT_COUNT; i++)
+            {
+                if (!assignedSlotIndexes.Contains(i))
+                    return i;
+            }
+
+            return normalizedIndex;
         }
 
         /// <summary>
@@ -888,6 +907,41 @@ namespace DeadZone.Actors
             return added;
         }
 
+        public bool TryAddItemToQuickSlotOnServer(ItemDataSO item, int amount, byte quickSlotIndex)
+        {
+            if (!IsServer || item == null || quickSlotIndex >= QUICK_SLOT_COUNT || amount <= 0)
+                return false;
+
+            if (!IsQuickSlotItem(item))
+                return false;
+
+            bool hasExistingQuickSlot = TryGetQuickSlot(quickSlotIndex, out QuickSlotData existingQuickSlot);
+            ItemDataSO existingItem = hasExistingQuickSlot ? ResolveItem(existingQuickSlot.itemId.ToString()) : null;
+            if (hasExistingQuickSlot && (existingItem == null || !CanAddItemSlot(existingItem, ToItemSlotData(existingQuickSlot))))
+                return false;
+
+            if (hasExistingQuickSlot)
+                ClearQuickSlot(quickSlotIndex);
+
+            SetQuickSlot(new QuickSlotData
+            {
+                slotIndex = quickSlotIndex,
+                itemId = item.itemID,
+                stackCount = (ushort)Mathf.Clamp(amount, 1, Mathf.Max(1, item.maxStackSize)),
+                currentDurability = GetDefaultInventoryDurability(item),
+                currentAmmo = GetDefaultInventoryAmmo(item)
+            });
+
+            if (!hasExistingQuickSlot)
+                return true;
+
+            if (TryAddItemSlot(existingItem, ToItemSlotData(existingQuickSlot)))
+                return true;
+
+            Debug.LogError($"[GridInventory] Failed to return replaced quickslot item to inventory. itemId={existingItem.itemID}", this);
+            return false;
+        }
+
         private bool TrySwapQuickSlots(byte sourceQuickSlotIndex, byte targetQuickSlotIndex)
         {
             if (!IsServer ||
@@ -1036,6 +1090,17 @@ namespace DeadZone.Actors
             return item is WeaponDataSO weapon
                 ? (ushort)Mathf.Clamp(weapon.magSize, 0, ushort.MaxValue)
                 : (ushort)0;
+        }
+
+        private static float GetDefaultInventoryDurability(ItemDataSO item)
+        {
+            return item switch
+            {
+                WeaponDataSO weapon => Mathf.Max(0f, weapon.maxDurability),
+                ArmorDataSO armor => Mathf.Max(0f, armor.maxDurability),
+                HelmetDataSO helmet => Mathf.Max(0f, helmet.maxDurability),
+                _ => 0f
+            };
         }
 
         private bool CanAddItemSlotAt(ItemDataSO item, ItemSlotData sourceSlot, byte gridX, byte gridY)
@@ -1455,27 +1520,17 @@ namespace DeadZone.Actors
             if (!IsServer || QuickSlots == null || string.IsNullOrWhiteSpace(itemId))
                 return;
 
-            int availableCount = GetItemCount(itemId);
             for (int i = QuickSlots.Count - 1; i >= 0; i--)
             {
                 QuickSlotData quickSlot = QuickSlots[i];
                 if (!ItemIdsMatch(quickSlot.itemId.ToString(), itemId))
                     continue;
 
-                if (availableCount <= 0)
+                if (quickSlot.stackCount <= 0 || ResolveItem(quickSlot.itemId.ToString()) == null)
                 {
                     QuickSlots.RemoveAt(i);
                     PublishQuickSlotChanged(quickSlot.slotIndex, quickSlot.itemId, default, 0);
-                    continue;
                 }
-
-                ushort nextStackCount = (ushort)Mathf.Clamp(quickSlot.stackCount, 1, availableCount);
-                if (nextStackCount == quickSlot.stackCount)
-                    continue;
-
-                quickSlot.stackCount = nextStackCount;
-                QuickSlots[i] = quickSlot;
-                PublishQuickSlotChanged(quickSlot.slotIndex, quickSlot.itemId, quickSlot.itemId, quickSlot.stackCount);
             }
         }
 
@@ -2182,13 +2237,20 @@ namespace DeadZone.Actors
 
             WeaponState weaponState = equipment.CurrentWeaponState;
             AmmoDataSO loadedAmmo = equipment.Lookup<AmmoDataSO>(weaponState.loadedAmmoId.ToString());
+            int currentAmmo = weaponState.currentAmmo;
+            if (currentAmmo > 0 && loadedAmmo == null)
+            {
+                weaponState.loadedAmmoId = "";
+                weaponState.currentAmmo = 0;
+                currentAmmo = 0;
+            }
 
             context = new ReloadContext
             {
                 weapon = weapon,
                 weaponState = weaponState,
                 loadedAmmo = loadedAmmo,
-                currentAmmo = weaponState.currentAmmo,
+                currentAmmo = currentAmmo,
                 maxAmmo = weapon.magSize
             };
 
@@ -2241,9 +2303,9 @@ namespace DeadZone.Actors
 
             AmmoGrade[] preferredGrades =
             {
-                AmmoGrade.LP,
+                AmmoGrade.AP,
                 AmmoGrade.BP,
-                AmmoGrade.AP
+                AmmoGrade.LP
             };
 
             for (int i = 0; i < preferredGrades.Length; i++)

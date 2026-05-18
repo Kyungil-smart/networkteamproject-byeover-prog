@@ -1,20 +1,28 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
+using DeadZone.Network;
 
 namespace DeadZone.Actors.UI
 {
     public sealed class EndingCreditsBootstrap : MonoBehaviour
     {
         private const string EndingSceneName = "Ending";
+        private const string LobbySceneName = "Lobby";
         private const string RootName = "__EndingCredits";
         private const float ScrollSpeed = 70f;
+        private const float MaxCreditsDurationSeconds = 30f;
 
         private static bool registered;
 
         private RectTransform contentRoot;
         private float endY;
+        private float scrollSpeed = ScrollSpeed;
+        private float startedAt;
+        private bool returnRequested;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void RegisterSceneHook()
@@ -81,16 +89,41 @@ namespace DeadZone.Actors.UI
             EndingCreditsBootstrap scroller = root.GetComponent<EndingCreditsBootstrap>();
             scroller.contentRoot = contentRect;
             scroller.endY = 2700f;
+            scroller.scrollSpeed = CalculateScrollSpeed(contentRect.anchoredPosition.y, scroller.endY);
+            scroller.startedAt = Time.time;
         }
 
         private void Update()
         {
+            if (returnRequested)
+                return;
+
+            if (ShouldSkipCredits() || Time.time - startedAt >= MaxCreditsDurationSeconds)
+            {
+                ReturnToLobby();
+                return;
+            }
+
             if (contentRoot == null)
                 return;
 
             Vector2 position = contentRoot.anchoredPosition;
-            position.y = Mathf.Min(endY, position.y + ScrollSpeed * Time.deltaTime);
+            position.y = Mathf.Min(endY, position.y + scrollSpeed * Time.deltaTime);
             contentRoot.anchoredPosition = position;
+
+            if (position.y < endY)
+                return;
+
+            ReturnToLobby();
+        }
+
+        private void ReturnToLobby()
+        {
+            if (returnRequested)
+                return;
+
+            returnRequested = true;
+            NetworkGameManager.RequestReturnToLobbyAfterRaid(LobbySceneName);
         }
 
         private static void EnsureCamera()
@@ -113,10 +146,44 @@ namespace DeadZone.Actors.UI
             rect.offsetMax = Vector2.zero;
         }
 
+        private static float CalculateScrollSpeed(float startY, float targetY)
+        {
+            float distance = Mathf.Max(0f, targetY - startY);
+            if (distance <= 0f)
+                return ScrollSpeed;
+
+            return Mathf.Max(ScrollSpeed, distance / MaxCreditsDurationSeconds);
+        }
+
+        private static bool ShouldSkipCredits()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.anyKey.wasPressedThisFrame)
+                return true;
+
+            Mouse mouse = Mouse.current;
+            if (mouse != null &&
+                (mouse.leftButton.wasPressedThisFrame ||
+                 mouse.rightButton.wasPressedThisFrame ||
+                 mouse.middleButton.wasPressedThisFrame))
+            {
+                return true;
+            }
+
+            Gamepad gamepad = Gamepad.current;
+            return gamepad != null &&
+                   (gamepad.buttonSouth.wasPressedThisFrame ||
+                    gamepad.buttonNorth.wasPressedThisFrame ||
+                    gamepad.buttonEast.wasPressedThisFrame ||
+                    gamepad.buttonWest.wasPressedThisFrame ||
+                    gamepad.startButton.wasPressedThisFrame ||
+                    gamepad.selectButton.wasPressedThisFrame);
+        }
+
         private static string BuildCreditsText()
         {
             return
-                "<size=78>플레이 해주셔서 감사합니다.</size>\n\n\n" +
+                "<size=86>플레이 해주셔서 감사합니다.</size>\n\n\n" +
                 "<size=46>개발팀</size>\n" +
                 "옥황상제의 노예들\n\n" +
                 "정승우\n" +

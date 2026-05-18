@@ -14,6 +14,7 @@ namespace DeadZone.Systems.Quests
     public class QuestManager : NetworkBehaviour, IQuestQuery
     {
         private const ulong StandaloneClientId = 0;
+        private static readonly Dictionary<ulong, HashSet<string>> SessionRewardClaimGuards = new();
 
         [Header("Quest Data")]
         [SerializeField] private QuestDataSO[] allQuests;
@@ -30,6 +31,14 @@ namespace DeadZone.Systems.Quests
         private const int LobbyStashLevel2Capacity = 70;
         private const int LobbyStashLevel3Capacity = 90;
         private const int LobbyStashLevel4Capacity = 110;
+
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticQuestGuardsForPlayMode()
+        {
+            SessionRewardClaimGuards.Clear();
+        }
+#endif
 
         private void Awake()
         {
@@ -148,6 +157,58 @@ namespace DeadZone.Systems.Quests
             return IsServer || !HasNetworkSession();
         }
 
+        private static bool IsSessionRewardClaimGuarded(ulong clientId, string questId)
+        {
+            if (string.IsNullOrWhiteSpace(questId))
+                return false;
+
+            return SessionRewardClaimGuards.TryGetValue(clientId, out HashSet<string> guardedQuestIds)
+                   && guardedQuestIds.Contains(questId);
+        }
+
+        private static bool TryMarkSessionRewardClaimGuard(ulong clientId, string questId)
+        {
+            if (string.IsNullOrWhiteSpace(questId))
+                return false;
+
+            if (!SessionRewardClaimGuards.TryGetValue(clientId, out HashSet<string> guardedQuestIds))
+            {
+                guardedQuestIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+                SessionRewardClaimGuards[clientId] = guardedQuestIds;
+            }
+
+            return guardedQuestIds.Add(questId);
+        }
+
+        private static void ClearSessionRewardClaimGuard(ulong clientId, string questId)
+        {
+            if (string.IsNullOrWhiteSpace(questId))
+                return;
+
+            if (!SessionRewardClaimGuards.TryGetValue(clientId, out HashSet<string> guardedQuestIds))
+                return;
+
+            guardedQuestIds.Remove(questId);
+
+            if (guardedQuestIds.Count == 0)
+                SessionRewardClaimGuards.Remove(clientId);
+        }
+
+        private static void MergeSessionRewardClaims(PlayerQuestState state, ulong clientId)
+        {
+            if (state == null)
+                return;
+
+            if (!SessionRewardClaimGuards.TryGetValue(clientId, out HashSet<string> guardedQuestIds))
+                return;
+
+            foreach (string questId in guardedQuestIds)
+            {
+                if (!string.IsNullOrWhiteSpace(questId))
+                    state.RewardClaimedQuestIds.Add(questId);
+            }
+        }
+
         private void RestoreLocalStateFromCloudIfAvailable()
         {
             CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
@@ -162,7 +223,18 @@ namespace DeadZone.Systems.Quests
         public void RestorePlayerState(ulong clientId, ProgressData progress)
         {
             PlayerQuestState state = GetPlayerState(clientId);
+            HashSet<string> rewardClaimsBeforeRestore = new(state.RewardClaimedQuestIds, System.StringComparer.OrdinalIgnoreCase);
+
             state.ReadFromCloudProgress(progress);
+
+            foreach (string questId in rewardClaimsBeforeRestore)
+            {
+                if (!string.IsNullOrWhiteSpace(questId))
+                    state.RewardClaimedQuestIds.Add(questId);
+            }
+
+            MergeSessionRewardClaims(state, clientId);
+            MirrorRewardClaimsToLoadedCloudProgress(state.RewardClaimedQuestIds);
             InitializeActiveQuestRuntimeProgress(state);
 
             Debug.Log($"[QuestManager] Restored client {clientId}: active={state.ActiveQuestIds.Count}, completed={state.CompletedQuestIds.Count}, rewardClaimed={state.RewardClaimedQuestIds.Count}");
@@ -176,8 +248,13 @@ namespace DeadZone.Systems.Quests
             if (!questLookup.TryGetValue(questId, out QuestDataSO questData)) return false;
 
             PlayerQuestState state = GetPlayerState(clientId);
-            if (state.ActiveQuestIds.Contains(questId) || state.CompletedQuestIds.Contains(questId))
+            if (state.ActiveQuestIds.Contains(questId) ||
+                state.CompletedQuestIds.Contains(questId) ||
+                state.RewardClaimedQuestIds.Contains(questId) ||
+                state.PendingCompletionIds.Contains(questId))
+            {
                 return false;
+            }
 
             if (!string.IsNullOrEmpty(questData.prerequisiteQuestID) &&
                 !state.CompletedQuestIds.Contains(questData.prerequisiteQuestID))
@@ -318,7 +395,18 @@ namespace DeadZone.Systems.Quests
 
             ulong clientId = rpcParams.Receive.SenderClientId;
             PlayerQuestState state = GetPlayerState(clientId);
+            HashSet<string> rewardClaimsBeforeSnapshot = new(state.RewardClaimedQuestIds, System.StringComparer.OrdinalIgnoreCase);
+
             snapshot.ApplyTo(state);
+
+            foreach (string questId in rewardClaimsBeforeSnapshot)
+            {
+                if (!string.IsNullOrWhiteSpace(questId))
+                    state.RewardClaimedQuestIds.Add(questId);
+            }
+
+            MergeSessionRewardClaims(state, clientId);
+            MirrorRewardClaimsToLoadedCloudProgress(state.RewardClaimedQuestIds);
             InitializeActiveQuestRuntimeProgress(state);
             PublishQuestTrackerSnapshot(clientId);
 
@@ -348,13 +436,15 @@ namespace DeadZone.Systems.Quests
             => GetPlayerState(clientId).ActiveQuestIds.Contains(questId);
 
         public bool IsQuestRewardClaimed(ulong clientId, string questId)
-            => GetPlayerState(clientId).RewardClaimedQuestIds.Contains(questId);
+            => GetPlayerState(clientId).RewardClaimedQuestIds.Contains(questId)
+               || IsSessionRewardClaimGuarded(clientId, questId);
 
         public bool CanClaimReward(ulong clientId, string questId)
         {
             PlayerQuestState state = GetPlayerState(clientId);
             return state.CompletedQuestIds.Contains(questId) &&
-                   !state.RewardClaimedQuestIds.Contains(questId);
+                   !state.RewardClaimedQuestIds.Contains(questId) &&
+                   !IsSessionRewardClaimGuarded(clientId, questId);
         }
 
         public bool IsQuestCompleted(string questId)
@@ -382,10 +472,32 @@ namespace DeadZone.Systems.Quests
             if (!questLookup.TryGetValue(questId, out QuestDataSO questData)) return false;
             if (!CanGrantRewards(clientId, questData)) return false;
 
-            GrantRewards(clientId, questData);
-
             PlayerQuestState state = GetPlayerState(clientId);
-            state.RewardClaimedQuestIds.Add(questId);
+            if (!TryMarkSessionRewardClaimGuard(clientId, questId))
+                return false;
+
+            if (!state.RewardClaimedQuestIds.Add(questId))
+                return false;
+
+            bool mirroredToCloudProgress = MirrorRewardClaimToLoadedCloudProgress(questId);
+
+            try
+            {
+                GrantRewards(clientId, questData);
+            }
+            catch (System.Exception exception)
+            {
+                state.RewardClaimedQuestIds.Remove(questId);
+                ClearSessionRewardClaimGuard(clientId, questId);
+
+                if (mirroredToCloudProgress)
+                    RemoveRewardClaimFromLoadedCloudProgress(questId);
+
+                Debug.LogError($"[QuestManager] Reward grant failed. questId={questId}, clientId={clientId}, error={exception}", this);
+                return false;
+            }
+
+            PersistQuestRewardClaim();
 
             EventBus.Publish(new QuestRewardClaimedEvent
             {
@@ -528,6 +640,9 @@ namespace DeadZone.Systems.Quests
                     ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Enemy_Zone1_Any", 1);
                 return;
             }
+
+            if (enemyId == "Boss_S2_01")
+                ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Boss_Sawmill", 1);
 
             if (string.IsNullOrEmpty(enemyId))
                 ReportProgress(e.attackerClientId, ObjectiveType.Kill, "Boss_Stage2_All", 1);
@@ -733,7 +848,6 @@ namespace DeadZone.Systems.Quests
             WalletSystem wallet = ResolveClientWallet(clientId);
             LobbyInventoryState lobbyInventoryState = ResolveLobbyInventoryState();
             IItemDatabase itemDatabase = ResolveItemDatabase();
-            bool changedLobbyInventory = false;
 
             foreach (QuestReward reward in questData.rewards)
             {
@@ -755,15 +869,11 @@ namespace DeadZone.Systems.Quests
                         if (itemData == null)
                             break;
 
-                        if (TryAddRewardToLobbyStashState(lobbyInventoryState, itemData, reward.amount))
-                            changedLobbyInventory = true;
+                        TryAddRewardToLobbyStashState(lobbyInventoryState, itemData, reward.amount);
 
                         break;
                 }
             }
-
-            if (changedLobbyInventory)
-                PersistLobbyInventoryReward();
         }
 
         private static LobbyInventoryState ResolveLobbyInventoryState()
@@ -1023,14 +1133,93 @@ namespace DeadZone.Systems.Quests
             return items;
         }
 
-        private static void PersistLobbyInventoryReward()
+        private static void MirrorRewardClaimsToLoadedCloudProgress(IEnumerable<string> questIds)
+        {
+            if (questIds == null)
+                return;
+
+            foreach (string questId in questIds)
+                MirrorRewardClaimToLoadedCloudProgress(questId);
+        }
+
+        private static bool MirrorRewardClaimToLoadedCloudProgress(string questId)
+        {
+            if (string.IsNullOrWhiteSpace(questId))
+                return false;
+
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem();
+            ProgressData progress = cloudSaveSystem?.CurrentData?.progress;
+            if (progress == null)
+                return false;
+
+            progress.rewardClaimedQuestIds ??= new List<string>();
+
+            if (ContainsQuestId(progress.rewardClaimedQuestIds, questId))
+                return false;
+
+            progress.rewardClaimedQuestIds.Add(questId);
+            return true;
+        }
+
+        private static void RemoveRewardClaimFromLoadedCloudProgress(string questId)
+        {
+            if (string.IsNullOrWhiteSpace(questId))
+                return;
+
+            CloudSaveSystem cloudSaveSystem = ResolveCloudSaveSystem();
+            ProgressData progress = cloudSaveSystem?.CurrentData?.progress;
+            if (progress?.rewardClaimedQuestIds == null)
+                return;
+
+            for (int i = progress.rewardClaimedQuestIds.Count - 1; i >= 0; i--)
+            {
+                if (string.Equals(progress.rewardClaimedQuestIds[i], questId, System.StringComparison.OrdinalIgnoreCase))
+                    progress.rewardClaimedQuestIds.RemoveAt(i);
+            }
+        }
+
+        private static bool ContainsQuestId(List<string> questIds, string questId)
+        {
+            if (questIds == null || string.IsNullOrWhiteSpace(questId))
+                return false;
+
+            for (int i = 0; i < questIds.Count; i++)
+            {
+                if (string.Equals(questIds[i], questId, System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static CloudSaveSystem ResolveCloudSaveSystem()
+        {
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSaveSystem != null)
+                return cloudSaveSystem;
+
+            return FindFirstObjectByType<CloudSaveSystem>(FindObjectsInactive.Include);
+        }
+
+        private static void PersistQuestRewardClaim()
         {
             LobbyInventoryStateUiBridge bridge = FindFirstObjectByType<LobbyInventoryStateUiBridge>(FindObjectsInactive.Include);
             bridge?.ApplyStateToUi();
 
             LobbySaveService saveService = FindFirstObjectByType<LobbySaveService>(FindObjectsInactive.Include);
-            saveService?.SaveCurrentStateToLocalJson("Quest reward claimed");
-            saveService?.SaveLobbyDataToCloud();
+            if (saveService != null)
+            {
+                saveService.SaveCurrentStateToLocalJson("Quest reward claimed");
+                saveService.SaveLobbyDataToCloud();
+                return;
+            }
+
+            CloudSaveSystem cloudSaveSystem = ServiceLocator.Get<CloudSaveSystem>();
+            if (cloudSaveSystem == null)
+                cloudSaveSystem = FindFirstObjectByType<CloudSaveSystem>(FindObjectsInactive.Include);
+
+            if (cloudSaveSystem != null)
+                _ = cloudSaveSystem.UploadAsync();
         }
 
         private static WalletSystem ResolveClientWallet(ulong clientId)
@@ -1222,7 +1411,9 @@ namespace DeadZone.Systems.Quests
                 return;
 
             PlayerQuestState state = GetPlayerState(GetLocalClientIdForState());
+            TryMarkSessionRewardClaimGuard(GetLocalClientIdForState(), questId);
             state.RewardClaimedQuestIds.Add(questId);
+            MirrorRewardClaimToLoadedCloudProgress(questId);
 
             EventBus.Publish(new QuestRewardClaimedEvent
             {

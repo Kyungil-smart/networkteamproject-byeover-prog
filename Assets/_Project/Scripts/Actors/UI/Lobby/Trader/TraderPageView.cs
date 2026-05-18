@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using DeadZone.Core;
 using DeadZone.Systems;
@@ -78,6 +79,7 @@ namespace DeadZone.Actors.UI
         private TraderId currentTraderId;
         private bool showingBuyTab = true;
         private readonly List<TraderEntry> testPurchasedEntries = new List<TraderEntry>();
+        private Coroutine restoreSellScrollRoutine;
 
 #if ODIN_INSPECTOR
         [Sirenix.OdinInspector.Title("리스트 레이아웃")]
@@ -291,6 +293,40 @@ namespace DeadZone.Actors.UI
                 entryTemplate.gameObject.SetActive(false);
         }
 
+        private void RebuildSellListPreserveScroll()
+        {
+            ScrollRect sellScrollRect = ResolveScrollRect(sellContent);
+            float sellScrollPosition = sellScrollRect != null
+                ? sellScrollRect.verticalNormalizedPosition
+                : 1f;
+
+            RebuildSellList();
+
+            if (restoreSellScrollRoutine != null)
+                StopCoroutine(restoreSellScrollRoutine);
+
+            restoreSellScrollRoutine = StartCoroutine(RestoreSellScrollNextFrame(sellScrollRect, sellScrollPosition));
+        }
+
+        private IEnumerator RestoreSellScrollNextFrame(ScrollRect scrollRect, float normalizedPosition)
+        {
+            yield return null;
+
+            Canvas.ForceUpdateCanvases();
+
+            if (scrollRect == null)
+            {
+                restoreSellScrollRoutine = null;
+                yield break;
+            }
+
+            scrollRect.StopMovement();
+            scrollRect.verticalNormalizedPosition = Mathf.Clamp01(normalizedPosition);
+            Canvas.ForceUpdateCanvases();
+
+            restoreSellScrollRoutine = null;
+        }
+
         public void ShowBuyTab()
         {
             ShowBuyList();
@@ -343,7 +379,7 @@ namespace DeadZone.Actors.UI
                 return;
             }
 
-            if (useTestCurrency)
+            if (useTestCurrency || ResolveInventoryTarget() != null)
             {
                 TryBuyWithTestCurrency(entry);
                 return;
@@ -362,13 +398,15 @@ namespace DeadZone.Actors.UI
 
         private void HandleSellClicked(TraderEntry entry)
         {
+            Vector2 sellScrollPosition = CaptureScrollPosition(sellContent);
+
             if (entry.item == null)
             {
                 Debug.LogWarning("[TraderPageView] 판매 요청 실패: TraderEntry.item이 비어 있습니다.", this);
                 return;
             }
 
-            if (TrySellEntryFromInventory(entry))
+            if (TrySellEntryFromInventory(entry, sellScrollPosition))
                 return;
 
             int entryIndex = FindPurchasedEntryIndex(entry);
@@ -391,7 +429,7 @@ namespace DeadZone.Actors.UI
             SaveLobbyAfterTestTrade();
 
             Debug.Log($"[TraderPageView] 테스트 판매 완료. Item={entry.item.itemID}, Price={sellPrice}, TestCurrency={testCurrency}", this);
-            RebuildSellList();
+            RebuildSellListPreserveScroll();
         }
 
         private void TryBuyWithTestCurrency(TraderEntry entry)
@@ -466,7 +504,7 @@ namespace DeadZone.Actors.UI
             return null;
         }
 
-        private bool TrySellEntryFromInventory(TraderEntry entry)
+        private bool TrySellEntryFromInventory(TraderEntry entry, Vector2 sellScrollPosition)
         {
             IInventory inventory = ResolveInventoryTarget();
             if (inventory == null)
@@ -485,8 +523,25 @@ namespace DeadZone.Actors.UI
             SaveLobbyAfterTestTrade();
 
             Debug.Log($"[TraderPageView] 판매 완료. Item={entry.item.itemID}, Price={sellPrice}, TestCurrency={testCurrency}", this);
-            RebuildSellList();
+            RebuildSellListPreserveScroll();
             return true;
+        }
+
+        private static Vector2 CaptureScrollPosition(Transform content)
+        {
+            ScrollRect scrollRect = content != null ? content.GetComponentInParent<ScrollRect>(true) : null;
+            return scrollRect != null ? scrollRect.normalizedPosition : Vector2.up;
+        }
+
+        private static void RestoreScrollPosition(Transform content, Vector2 normalizedPosition)
+        {
+            ScrollRect scrollRect = content != null ? content.GetComponentInParent<ScrollRect>(true) : null;
+            if (scrollRect == null)
+                return;
+
+            Canvas.ForceUpdateCanvases();
+            scrollRect.normalizedPosition = normalizedPosition;
+            Canvas.ForceUpdateCanvases();
         }
 
         private List<TraderEntry> BuildSellableEntries()
@@ -528,6 +583,17 @@ namespace DeadZone.Actors.UI
                     requiredCommLevel = 0
                 });
             }
+
+            entries.Sort((left, right) =>
+            {
+                int priceCompare = CalculateSellPrice(right).CompareTo(CalculateSellPrice(left));
+                if (priceCompare != 0)
+                    return priceCompare;
+
+                string leftName = left.item != null ? left.item.displayName : string.Empty;
+                string rightName = right.item != null ? right.item.displayName : string.Empty;
+                return string.Compare(leftName, rightName, System.StringComparison.Ordinal);
+            });
 
             return entries;
         }
@@ -826,6 +892,11 @@ namespace DeadZone.Actors.UI
                 return null;
 
             return scrollRoot.GetComponent<ScrollRect>() ?? scrollRoot.gameObject.AddComponent<ScrollRect>();
+        }
+
+        private static ScrollRect ResolveScrollRect(Transform content)
+        {
+            return content != null ? content.GetComponentInParent<ScrollRect>(true) : null;
         }
 
         private static void ConfigureScrollRect(ScrollRect scrollRect, RectTransform contentRect)

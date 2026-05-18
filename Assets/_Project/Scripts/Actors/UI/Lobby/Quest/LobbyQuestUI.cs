@@ -29,6 +29,7 @@ namespace DeadZone.Actors.UI.Lobby
         [SerializeField] private bool selectFirstQuestOnEnable = true;
 
         private readonly List<QuestListRowUI> spawnedRows = new();
+        private readonly HashSet<string> pendingRewardClaimQuestIds = new(System.StringComparer.OrdinalIgnoreCase);
         private QuestManager questManager;
         private QuestDataSO selectedQuest;
 
@@ -157,6 +158,9 @@ namespace DeadZone.Actors.UI.Lobby
 
             ulong localClientId = questManager.GetLocalClientIdForState();
 
+            if (questManager.IsQuestRewardClaimed(localClientId, quest.questID))
+                return QuestViewState.Claimed;
+
             if (questManager.IsQuestCompleted(localClientId, quest.questID))
                 return QuestViewState.Completed;
 
@@ -203,6 +207,9 @@ namespace DeadZone.Actors.UI.Lobby
         private bool CanClaimReward(QuestDataSO quest)
         {
             if (quest == null)
+                return false;
+
+            if (pendingRewardClaimQuestIds.Contains(quest.questID))
                 return false;
 
             ResolveQuestManager();
@@ -265,20 +272,32 @@ namespace DeadZone.Actors.UI.Lobby
             if (!CanClaimReward(quest))
                 return;
 
+            if (!pendingRewardClaimQuestIds.Add(quest.questID))
+                return;
+
+            RefreshCurrentView();
+
+            bool rewardClaimedImmediately = false;
+            bool requestSentToServer = false;
+
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
-                questManager.ClaimReward(questManager.GetLocalClientIdForState(), quest.questID);
+                rewardClaimedImmediately = questManager.ClaimReward(questManager.GetLocalClientIdForState(), quest.questID);
             }
             else if (NetworkManager.Singleton.IsServer)
             {
-                questManager.ClaimReward(NetworkManager.Singleton.LocalClientId, quest.questID);
+                rewardClaimedImmediately = questManager.ClaimReward(NetworkManager.Singleton.LocalClientId, quest.questID);
             }
             else
             {
                 questManager.ClaimQuestRewardServerRpc(quest.questID);
+                requestSentToServer = true;
             }
 
-            SelectQuest(quest);
+            if (!requestSentToServer && !rewardClaimedImmediately)
+                pendingRewardClaimQuestIds.Remove(quest.questID);
+
+            RefreshCurrentView();
         }
 
         private void RefreshCurrentView()
@@ -320,6 +339,7 @@ namespace DeadZone.Actors.UI.Lobby
         private void OnQuestRewardClaimed(QuestRewardClaimedEvent e)
         {
             if (!IsLocalClientEvent(e.clientId)) return;
+            pendingRewardClaimQuestIds.Add(e.questId.ToString());
             RefreshCurrentView();
         }
 
@@ -335,6 +355,7 @@ namespace DeadZone.Actors.UI.Lobby
         Locked,
         Available,
         Active,
-        Completed
+        Completed,
+        Claimed
     }
 }

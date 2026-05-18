@@ -24,8 +24,8 @@ MonoBehaviour:
   isValuable: 0
   gridSize: {x: 1, y: 1}
   maxStackSize: 30
-  weightKg: 0.1
-  baseSellPrice: 6000
+  weightKg: 0
+  baseSellPrice: 4200
   worldPrefab: {fileID: 4337095019474041704, guid: 57a9622e1c1401344b219149ecf77502, type: 3}
   caliber: 3
   grade: 1
