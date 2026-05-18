@@ -160,7 +160,7 @@ MonoBehaviour:
     m_Bits: 2097280
   hitboxMask:
     serializedVersion: 2
-    m_Bits: 2097152
+    m_Bits: 2097216
   environmentMask:
     serializedVersion: 2
     m_Bits: 32896
